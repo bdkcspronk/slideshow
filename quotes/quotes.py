@@ -2,6 +2,7 @@ import csv
 import random
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
+from matplotlib import font_manager
 
 QUOTES_DIR = Path(__file__).resolve().parent
 BACKGROUND_PATH = QUOTES_DIR / "images" / "background.png"
@@ -15,13 +16,12 @@ def load_quotes() -> list[dict[str, str]]:
 
 
 def find_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    for path in (
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf",
-        "/usr/share/fonts/truetype/liberation2/LiberationSans-Italic.ttf",
-    ):
-        if Path(path).is_file():
-            return ImageFont.truetype(path, size)
-    return ImageFont.load_default(size=size)
+    properties = font_manager.FontProperties(
+        family="sans-serif",
+        style="italic",
+        weight="ultralight",
+    )
+    return ImageFont.truetype(font_manager.findfont(properties), size)
 
 
 
