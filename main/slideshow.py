@@ -33,6 +33,7 @@ class Slideshow(
 		self.quote_image = quote_image
 		self.vrijmibo_image = vrijmibo_image
 		self.quote_generated_index: int | None = None
+		self.quote_audio_prepared_index: int | None = None
 		self.quote_voice_queued_index: int | None = None
 		self.quote_voice_enabled = True
 		self.vrijmibo_index: int | None = None

@@ -104,6 +104,7 @@ def play_audio(name):
 def main():
     print("Voice Announcer Running")
     print(QUEUE_FILENAME)
+    last_quote_name = None
     with open(QUEUE_FILENAME, 'a+', encoding='utf-8') as queue_file, open(
         QUOTE_QUEUE_FILENAME, 'a+', encoding='utf-8'
     ) as quote_queue_file:
@@ -137,16 +138,21 @@ def main():
                 else:
                     spoken_text = f"{greeting or 'Welcome'} {name}!"
 
+                if is_quote and name == last_quote_name:
+                    continue
                 if name and not audio_exists(name):
                     generate_audio(name, spoken_text)
 
                 if name:
                     play_audio(name)
                     if is_quote:
+                        last_quote_name = name
                         try:
                             os.remove(f"{AUDIO_DIR}{name}.wav")
                         except FileNotFoundError:
                             pass
+                    else:
+                        last_quote_name = None
                     #speak_name(name)
             else:
                 time.sleep(POLL_INTERVAL_SECONDS)

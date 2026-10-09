@@ -25,6 +25,7 @@ class NormalSlidesMixin:
 			return
 		self.beer_hour_started_at = 0.0
 		if not self.prepare_quote_slide():
+			self.next_image()
 			return
 		path = self.images[self.index]
 		if path.name.lower() == SNIFFER_FILENAME:
@@ -162,6 +163,10 @@ class NormalSlidesMixin:
 	def show_photo(self) -> None:
 		self.beer_hour_frame.place_forget()
 		self.label.configure(image=self.photo, text="", background="black")
+		if self.quote_image is not None and self.images[self.index] == self.quote_image:
+			self.queue_quote_if_enabled()
+		else:
+			self.preprocess_next_quote()
 
 	def schedule_animation_frame(self) -> None:
 		self.timer_id = self.root.after(max(1, round((self.animation_deadline - time.monotonic()) * 1000)), self.display_animation_frame)

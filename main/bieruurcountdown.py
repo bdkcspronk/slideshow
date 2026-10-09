@@ -50,6 +50,7 @@ class BieruurCountdownMixin:
 			self.beer_hour_subtitle.configure(text="until bieruur")
 		self.label.configure(image="", text="", background="white")
 		self.beer_hour_frame.place(relx=0.5, rely=0.5, anchor="center")
+		self.preprocess_next_quote()
 		if remaining_seconds <= 0:
 			hold_ends = target + timedelta(minutes=1)
 			self.beer_hour_timer_id = self.root.after(
