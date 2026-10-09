@@ -33,6 +33,8 @@ class Slideshow(
 		self.quote_image = quote_image
 		self.vrijmibo_image = vrijmibo_image
 		self.quote_generated_index: int | None = None
+		self.quote_voice_queued_index: int | None = None
+		self.quote_voice_enabled = True
 		self.vrijmibo_index: int | None = None
 		self.beer_hour_index: int | None = None
 		self.last_vrijmibo_slot: tuple[date, int, int] | None = None
@@ -84,6 +86,7 @@ class Slideshow(
 		root.bind("<Escape>", lambda _event: self.close())
 		root.bind("q", lambda _event: self.close())
 		root.bind("<space>", self.toggle_pause)
+		root.bind("<Control-m>", self.toggle_quote_voice)
 		root.bind("<Right>", self.next_image)
 		root.bind("<Down>", self.next_image)
 		root.bind("<Left>", self.previous_image)
@@ -117,3 +120,8 @@ class Slideshow(
 			self.root.destroy()
 		except tk.TclError:
 			pass
+
+	def toggle_quote_voice(self, _event: tk.Event | None = None) -> None:
+		self.quote_voice_enabled = not self.quote_voice_enabled
+		state = "enabled" if self.quote_voice_enabled else "disabled"
+		print(f"Quote narration {state}", flush=True)

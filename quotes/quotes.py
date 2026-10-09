@@ -1,4 +1,5 @@
 import csv
+import json
 import random
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
@@ -7,6 +8,7 @@ from matplotlib import font_manager
 QUOTES_DIR = Path(__file__).resolve().parent
 BACKGROUND_PATH = QUOTES_DIR / "images" / "background.png"
 OUTPUT_PATH = QUOTES_DIR / "images" / "quote.png"
+METADATA_PATH = QUOTES_DIR / "images" / "quote.json"
 QUOTES_PATH = QUOTES_DIR / "quotes.csv"
 
 
@@ -51,7 +53,13 @@ def make_image(size: int = 80) -> None:
     if not quotes:
         raise ValueError(f"No quotes found in {QUOTES_PATH}")
     row = random.choice(quotes)
-    string = f'"{row["Quote"].strip().capitalize()}"~{row["name"].strip().title()}'
+    quote = row["Quote"].strip()
+    author = row["name"].strip()
+    string = f'"{quote.capitalize()}"~{author.title()}'
+    METADATA_PATH.write_text(
+        json.dumps({"quote": quote, "author": author}),
+        encoding="utf-8",
+    )
     with Image.open(BACKGROUND_PATH) as img:
         w, h = img.size
         font = find_font(size)

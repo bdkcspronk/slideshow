@@ -1,0 +1,11 @@
+# Add one word or phrase per line to prevent quote narration.
+# Matching is case-insensitive.
+kanker
+children
+cancer
+sex
+lick
+racism
+cunt
+alcohol-free
+sandboy

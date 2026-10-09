@@ -5,6 +5,7 @@ import shlex
 import time
 import sys
 import shutil
+from datetime import datetime, timedelta
 
 PIO_PYTHON = os.path.expanduser('~/.platformio/penv/bin/python')
 
@@ -58,6 +59,7 @@ LOG_RETENTION_DAYS = 7
 LOG_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 ENABLE_VOICE_ANNOUNCEMENTS = True
 VOICE_QUEUE_FILENAME = 'voice_queue.jsonl'
+PLAYED_TODAY_FILENAME = 'played_today.txt'
 FILTER_RELOAD_INTERVAL = 300
 
 
@@ -65,15 +67,27 @@ def load_filter_names():
     with open('filter.json', 'r') as f:
         allowed_devices = json.load(f)
 
-    return {
+    mac_to_name = {
         device['mac'].upper(): device['ssid']
         for device in allowed_devices
         if 'mac' in device and 'ssid' in device
     }
+    mac_to_phonetic = {
+        device['mac'].upper(): device.get('phonetic') or device['ssid']
+        for device in allowed_devices
+        if 'mac' in device and 'ssid' in device
+    }
+    mac_to_greeting = {
+        device['mac'].upper(): device.get('custom_greeting')
+        for device in allowed_devices
+        if 'mac' in device and 'ssid' in device
+    }
+
+    return mac_to_name, mac_to_phonetic, mac_to_greeting
 
 # 1. Load filter.json so known devices can always receive a name
 try:
-    mac_to_name = load_filter_names()
+    mac_to_name, mac_to_phonetic, mac_to_greeting = load_filter_names()
 
     if DISABLE_FILTER:
         print(
@@ -151,42 +165,51 @@ def cleanup_log_file(filename):
             os.remove(temporary_filename)
 
 
-def load_announced_names(filename):
-    today = time.strftime('%Y-%m-%d')
-    announced_names = set()
+def played_day_for_timestamp(timestamp):
+    played_day = datetime.fromtimestamp(timestamp)
+    if played_day.hour < 4:
+        played_day -= timedelta(days=1)
+    return played_day.date().isoformat()
+
+
+def load_played_today():
+    now = time.time()
+    current_played_day = played_day_for_timestamp(now)
 
     try:
-        with open(filename, 'r', encoding='utf-8') as source_file:
-            for line in source_file:
-                try:
-                    entry = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-
-                if (
-                    entry.get('timestamp', '').startswith(today)
-                    and entry.get('name')
-                    and entry['name'] != 'Unknown Device'
-                ):
-                    announced_names.add(entry['name'])
+        file_day = played_day_for_timestamp(
+            os.path.getmtime(PLAYED_TODAY_FILENAME)
+        )
     except FileNotFoundError:
-        pass
+        file_day = None
 
-    return announced_names
+    if file_day != current_played_day:
+        with open(PLAYED_TODAY_FILENAME, 'w', encoding='utf-8'):
+            pass
+
+    with open(PLAYED_TODAY_FILENAME, 'r', encoding='utf-8') as played_file:
+        return {
+            line.strip()
+            for line in played_file
+            if line.strip()
+        }
 
 
-def queue_name_for_announcement(name):
+def queue_name_for_announcement(name, greeting=None):
     if not ENABLE_VOICE_ANNOUNCEMENTS:
         return
 
     with open(VOICE_QUEUE_FILENAME, 'a', encoding='utf-8') as queue_file:
-        queue_file.write(name + '\n')
+        if greeting:
+            queue_file.write(json.dumps({"name": name, "greeting": greeting}) + '\n')
+        else:
+            queue_file.write(name + '\n')
         queue_file.flush()
 
 
 cleanup_log_file(output_filename)
 last_cleanup_date = time.strftime('%Y-%m-%d')
-announced_names = load_announced_names(output_filename)
+load_played_today()
 log_file = open(output_filename, 'a')
 last_filter_reload = time.monotonic()
 
@@ -197,7 +220,7 @@ try:
             if time.monotonic() - last_filter_reload >= FILTER_RELOAD_INTERVAL:
                 last_filter_reload = time.monotonic()
                 try:
-                    mac_to_name = load_filter_names()
+                    mac_to_name, mac_to_phonetic, mac_to_greeting = load_filter_names()
                     print(
                         f"🔄 Reloaded filter.json: {len(mac_to_name)} devices loaded"
                     )
@@ -210,7 +233,8 @@ try:
                 cleanup_log_file(output_filename)
                 log_file = open(output_filename, 'a')
                 last_cleanup_date = current_date
-                announced_names = load_announced_names(output_filename)
+
+            load_played_today()
 
             if ser.in_waiting > 0:
                 line = ser.readline().decode(
@@ -261,12 +285,16 @@ try:
                         mac,
                         "Unknown Device"
                     )
+                    device_phonetic = mac_to_phonetic.get(mac, device_name)
+                    device_greeting = mac_to_greeting.get(mac)
 
                 else:
                     # Filter on:
                     # log ONLY devices listed in filter.json.
                     if mac in mac_to_name:
                         device_name = mac_to_name[mac]
+                        device_phonetic = mac_to_phonetic[mac]
+                        device_greeting = mac_to_greeting.get(mac)
                     else:
                         continue
 
@@ -286,12 +314,19 @@ try:
                     "channel": channel_value
                 }
 
+                played_today = load_played_today()
                 if (
-                    device_name not in announced_names
+                    device_name not in played_today
                     and device_name != 'Unknown Device'
                 ):
-                    queue_name_for_announcement(device_name)
-                    announced_names.add(device_name)
+                    queue_name_for_announcement(device_phonetic, device_greeting)
+                    with open(
+                        PLAYED_TODAY_FILENAME,
+                        'a',
+                        encoding='utf-8'
+                    ) as played_file:
+                        played_file.write(device_name + '\n')
+                        played_file.flush()
 
                 # Convert the object to JSON
                 json_string = json.dumps(log_entry)

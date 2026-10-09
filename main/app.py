@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import select
 import signal
 import sys
 
@@ -63,6 +64,15 @@ def main() -> None:
 
 	root = tk.Tk()
 	slideshow = Slideshow(root, images, folder, args.seconds, args.shuffle, quote_image, vrijmibo_image, audio, system_process)
+	def poll_terminal_toggle() -> None:
+		try:
+			readable, _, _ = select.select([sys.stdin], [], [], 0)
+			if readable and sys.stdin.read(1) in ("\r", "\n"):
+				slideshow.toggle_quote_voice()
+		except (OSError, ValueError):
+			return
+		root.after(100, poll_terminal_toggle)
+	poll_terminal_toggle()
 	shutdown = lambda _signum, _frame: slideshow.close()
 	signal.signal(signal.SIGINT, shutdown)
 	signal.signal(signal.SIGTERM, shutdown)

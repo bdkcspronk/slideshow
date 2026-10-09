@@ -3,6 +3,10 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 SNIFFER_DIR = PROJECT_DIR / "Sniffer"
 RUN_SYSTEM_SCRIPT = SNIFFER_DIR / "run_system.py"
+VOICE_QUEUE_FILE = SNIFFER_DIR / "voice_queue.jsonl"
+QUOTE_QUEUE_FILE = PROJECT_DIR / "quotes" / "quote_queue.jsonl"
+QUOTE_FILTER_FILE = PROJECT_DIR / "quotes" / "quote_filter.txt"
+QUOTE_METADATA_FILE = PROJECT_DIR / "quotes" / "images" / "quote.json"
 TERMINAL_EMULATORS = (
 	("x-terminal-emulator", "-e"),
 	("gnome-terminal", "--"),
@@ -23,5 +27,5 @@ AUDIO_OFFSETS = {
 	"gdn.sci.090701.sc.moon-countdown-launch.mp3": 0.0,
 	"i-said-hey.mp3": 0.0,
 	"live-is-life.mp3": 0.0,
-	"toby.mp3": -46.0,
+	"toby.mp3": -39.0,
 }
