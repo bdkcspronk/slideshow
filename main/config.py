@@ -16,9 +16,12 @@ VRIJMIBO_FILENAME = "vrijmibo.gif"
 SNIFFER_FILENAME = "sniffer_slide.png"
 BEER_HOUR_SLIDE = Path("__beer_hour__")
 BEER_HOUR_PREVIEW_SECONDS = 5.0
+AUDIO_SELECTION_MINUTES_BEFORE = 10
+AUDIO_BIERUUR_HOUR = 16
+AUDIO_BIERUUR_MINUTE = 0
 AUDIO_OFFSETS = {
 	"gdn.sci.090701.sc.moon-countdown-launch.mp3": 0.0,
 	"i-said-hey.mp3": 0.0,
 	"live-is-life.mp3": 0.0,
-	"toby.mp3": 0.0,
+	"toby.mp3": -46.0,
 }

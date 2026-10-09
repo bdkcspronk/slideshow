@@ -3,17 +3,15 @@ from __future__ import annotations
 import os
 import random
 import signal
-import shutil
 import subprocess
-import sys
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 import tkinter as tk
 from PIL import Image, ImageTk
 
 from .bieruurcountdown import BieruurCountdownMixin
-from .config import AUDIO_OFFSETS
+from .bieruursound import BieruurSoundMixin
 from .normalslides import NormalSlidesMixin
 from .showquotes import ShowQuotesMixin
 from .vrijmibogif import VrijmiboGifMixin
@@ -22,6 +20,7 @@ from .vrijmibogif import VrijmiboGifMixin
 class Slideshow(
 	VrijmiboGifMixin,
 	BieruurCountdownMixin,
+	BieruurSoundMixin,
 	ShowQuotesMixin,
 	NormalSlidesMixin,
 ):
@@ -38,6 +37,8 @@ class Slideshow(
 		self.beer_hour_index: int | None = None
 		self.last_vrijmibo_slot: tuple[date, int, int] | None = None
 		self.audio = audio or []
+		self.selected_song: Path | None = None
+		self.selected_audio_date: date | None = None
 		self.last_audio_date: date | None = None
 		self.audio_process: subprocess.Popen[bytes] | None = None
 		self.system_process = system_process
@@ -96,27 +97,6 @@ class Slideshow(
 		self.check_vrijmibo()
 		self.check_beer_hour()
 		self.check_audio()
-
-	def check_audio(self) -> None:
-		now = datetime.now()
-		if self.audio and now.hour == 16 and now.minute == 0 and now.date() != self.last_audio_date:
-			self.last_audio_date = now.date()
-			self.play_random_song()
-		self.root.after(15_000, self.check_audio)
-
-	def play_random_song(self) -> None:
-		player = shutil.which("ffplay")
-		if player is None:
-			print("Could not play audio: ffplay was not found", file=sys.stderr)
-			return
-		song = random.choice(self.audio)
-		if self.audio_process is not None and self.audio_process.poll() is None:
-			self.audio_process.terminate()
-		self.audio_process = subprocess.Popen(
-			[player, "-nodisp", "-autoexit", "-loglevel", "error", "-ss", str(AUDIO_OFFSETS.get(song.name, 0.0)), str(song)],
-			stdout=subprocess.DEVNULL,
-			stderr=subprocess.PIPE,
-		)
 
 	def close(self) -> None:
 		if self.closed:
