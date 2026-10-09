@@ -50,6 +50,7 @@ def generate_audio(name, text):
     generate_command = ["python", 
                "-m",  "piper", 
                "-m", voicefile, 
+               "--length_scale", "1.2",
                "--output_file", tempfile_dir, 
                "--data-dir", f"{VOICES_DIR}", 
                f"{text}"]

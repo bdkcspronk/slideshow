@@ -32,6 +32,9 @@ class ShowQuotesMixin:
 	def preprocess_quote(self, index: int) -> bool:
 		if self.quote_generated_index == index:
 			return True
+		self.quote_generated_index = None
+		self.quote_audio_prepared_index = None
+		self.quote_voice_queued_index = None
 		try:
 			subprocess.run(
 				[sys.executable, str(PROJECT_DIR / "quotes" / "quotes.py")],
