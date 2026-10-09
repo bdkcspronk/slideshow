@@ -42,6 +42,7 @@ class Slideshow(
 		self.selected_song: Path | None = None
 		self.selected_audio_date: date | None = None
 		self.last_audio_date: date | None = None
+		self.audio_check_started = False
 		self.audio_process: subprocess.Popen[bytes] | None = None
 		self.system_process = system_process
 		self.closed = False

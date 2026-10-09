@@ -29,13 +29,17 @@ class BieruurSoundMixin:
 	def check_audio(self) -> None:
 		now = datetime.now()
 		self.choose_song(now)
+		bieruur = now.replace(
+			hour=AUDIO_BIERUUR_HOUR,
+			minute=AUDIO_BIERUUR_MINUTE,
+			second=0,
+			microsecond=0,
+		)
+		if not self.audio_check_started:
+			self.audio_check_started = True
+			if self.last_audio_date is None and now >= bieruur:
+				self.last_audio_date = now.date()
 		if self.selected_song is not None and self.last_audio_date != now.date():
-			bieruur = now.replace(
-				hour=AUDIO_BIERUUR_HOUR,
-				minute=AUDIO_BIERUUR_MINUTE,
-				second=0,
-				microsecond=0,
-			)
 			offset = AUDIO_OFFSETS.get(self.selected_song.name, 0.0)
 			if now >= bieruur + timedelta(seconds=offset):
 				if self.play_selected_song():
