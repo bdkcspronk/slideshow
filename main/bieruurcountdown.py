@@ -27,7 +27,7 @@ class BieruurCountdownMixin:
 		if self.beer_hour_index is not None:
 			target = now.replace(hour=16, minute=0, second=0, microsecond=0)
 			hold_starts = target - timedelta(minutes=2)
-			hold_ends = now.replace(hour=18, minute=0, second=0, microsecond=0)
+			hold_ends = target + timedelta(minutes=1)
 			if hold_starts <= now < hold_ends and self.index != self.beer_hour_index:
 				self.index = self.beer_hour_index
 				self.display_current()
@@ -50,7 +50,12 @@ class BieruurCountdownMixin:
 			self.beer_hour_subtitle.configure(text="until bieruur")
 		self.label.configure(image="", text="", background="white")
 		self.beer_hour_frame.place(relx=0.5, rely=0.5, anchor="center")
-		if remaining_seconds <= 120 or time.monotonic() < self.beer_hour_started_at + BEER_HOUR_PREVIEW_SECONDS:
+		if remaining_seconds <= 0:
+			hold_ends = target + timedelta(minutes=1)
+			self.beer_hour_timer_id = self.root.after(
+				max(1, round((hold_ends - now).total_seconds() * 1000)), self.next_image
+			)
+		elif remaining_seconds <= 120 or time.monotonic() < self.beer_hour_started_at + BEER_HOUR_PREVIEW_SECONDS:
 			self.beer_hour_timer_id = self.root.after(1_000, self.display_current)
 		else:
 			self.next_image()
