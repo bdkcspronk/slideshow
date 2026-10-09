@@ -80,10 +80,10 @@ class Slideshow(
 			self.vrijmibo_index = len(self.images)
 			self.images.append(vrijmibo_image)
 		self.update_beer_hour_slide()
-
-		root.title("slideshow")
+		
 		root.configure(background="black", cursor="none")
 		root.attributes("-fullscreen", True)
+		root.title("slideshow")
 		root.bind("<Escape>", lambda _event: self.close())
 		root.bind("q", lambda _event: self.close())
 		root.bind("<space>", self.toggle_pause)
