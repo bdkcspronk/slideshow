@@ -1,60 +1,75 @@
-import pandas as pd
+import csv
 import random
 from pathlib import Path
-from PIL import ImageFont, ImageDraw, Image
-from matplotlib import font_manager
+from PIL import Image, ImageDraw, ImageFont
 
-#put the correct directories here
 QUOTES_DIR = Path(__file__).resolve().parent
-directory_img = QUOTES_DIR / "images" / "background.png"
-directory_output = QUOTES_DIR / "images" / "quote.png"
-quote_directory = QUOTES_DIR / "quotes.csv"
+BACKGROUND_PATH = QUOTES_DIR / "images" / "background.png"
+OUTPUT_PATH = QUOTES_DIR / "images" / "quote.png"
+QUOTES_PATH = QUOTES_DIR / "quotes.csv"
 
-quotes=pd.read_csv(quote_directory)
-quote,name=[quotes["Quote"],quotes["name"]]
 
-def text_wrap(text, font, max_width):
- 
-        lines = []
-        
-        # If the text width is smaller than the image width, then no need to split
-        # just add it to the line list and return
-        if font.getsize(text)[0]  <= max_width:
-            lines.append(text)
-        else:
-            #split the line by spaces to get words
-            words = text.split(' ')
-            i = 0
-            # append every word to a line while its width is shorter than the image width
-            while i < len(words):
-                line = ''
-                while i < len(words) and font.getsize(line + words[i])[0] <= max_width:
-                    line = line + words[i]+ " "
-                    i += 1
-                if not line:
-                    line = words[i]
-                    i += 1
+def load_quotes() -> list[dict[str, str]]:
+    with QUOTES_PATH.open(newline="", encoding="utf-8-sig") as file:
+        return list(csv.DictReader(file))
+
+
+def find_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    for path in (
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSans-Italic.ttf",
+    ):
+        if Path(path).is_file():
+            return ImageFont.truetype(path, size)
+    return ImageFont.load_default(size=size)
+
+
+
+def text_width(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont) -> int:
+        left, _top, right, _bottom = draw.textbbox((0, 0), text, font=font)
+        return right - left
+
+
+def text_wrap(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, max_width: float) -> list[str]:
+        words = text.split()
+        lines: list[str] = []
+        line = ""
+        for word in words:
+            candidate = f"{line} {word}".strip()
+            if line and text_width(draw, candidate, font) > max_width:
                 lines.append(line)
+                line = word
+            else:
+                line = candidate
+        if line:
+            lines.append(line)
         return lines
 
-def make_image(size=80):
-    index=random.randint(0,len(name)-1)
-    string=f'"{quote[index].capitalize()}"~{name[index].title()}'
-    with Image.open(directory_img) as img:
+
+def make_image(size: int = 80) -> None:
+    quotes = load_quotes()
+    if not quotes:
+        raise ValueError(f"No quotes found in {QUOTES_PATH}")
+    row = random.choice(quotes)
+    string = f'"{row["Quote"].strip().capitalize()}"~{row["name"].strip().title()}'
+    with Image.open(BACKGROUND_PATH) as img:
         w, h = img.size
-        font = font_manager.FontProperties(family='sans-serif', style='italic', weight='ultralight')
-        file = font_manager.findfont(font)        
-        font = ImageFont.truetype(file, size)
-        # Call draw Method to add 2D graphics in an image
-        I1 = ImageDraw.Draw(img)          
-        lines = text_wrap(string, font, w*0.8)      
-        
-        for i,line in enumerate(lines):
-            textwidth, textheight = I1.textsize(line, font=font)
-            distance=90
-            dy=0.5*(len(lines)-1)*distance  
-            I1.text((w/2-textwidth/2,h/2-textheight/2+i*distance-dy), line.center(len(line)),font=font, fill=(0, 0, 0))
-              
-        #img.show()
-        img.save(directory_output)
+        font = find_font(size)
+        draw = ImageDraw.Draw(img)
+        lines = text_wrap(draw, string, font, w * 0.8)
+        distance = 90
+        delta_y = 0.5 * (len(lines) - 1) * distance
+        for index, line in enumerate(lines):
+            left, top, right, bottom = draw.textbbox((0, 0), line, font=font)
+            text_width_value = right - left
+            text_height = bottom - top
+            draw.text(
+                (w / 2 - text_width_value / 2, h / 2 - text_height / 2 + index * distance - delta_y),
+                line,
+                font=font,
+                fill=(0, 0, 0),
+            )
+        img.save(OUTPUT_PATH)
+
+
 make_image()

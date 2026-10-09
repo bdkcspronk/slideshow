@@ -22,11 +22,12 @@ import pandas as pd
 
 
 parser = argparse.ArgumentParser()
+PROJECT_DIR = FilePath(__file__).resolve().parent.parent
 parser.add_argument(
     'outputfolder',
     nargs='?',
     type=FilePath,
-    default=FilePath.home() / 'slideshow/slides',
+    default=PROJECT_DIR / 'slides',
 )
 args = parser.parse_args()
 
@@ -278,9 +279,10 @@ for y_index, naam in enumerate(unieke_namen):
 
 # Configure axis limits.
 current_datetime = datetime.now()
+latest_activity = df['timestamp'].max().to_pydatetime()
 ax.set_xlim(
     mdates.date2num(datetime.combine(today, time(8, 0))),
-    mdates.date2num(current_datetime + timedelta(minutes=30))
+    mdates.date2num(max(current_datetime, latest_activity) + timedelta(minutes=30))
 )
 ax.set_ylim(
     -VERTICAL_AXIS_PADDING,

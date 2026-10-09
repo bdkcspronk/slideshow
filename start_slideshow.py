@@ -17,7 +17,7 @@ import shutil
 import subprocess
 import sys
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 try:
@@ -52,6 +52,8 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tif", ".
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg", ".flac", ".m4a"}
 VRIJMIBO_FILENAME = "vrijmibo.gif"
 SNIFFER_FILENAME = "sniffer_slide.png"
+BEER_HOUR_SLIDE = Path("__beer_hour__")
+BEER_HOUR_PREVIEW_SECONDS = 5.0
 AUDIO_OFFSETS = {
 	"gdn.sci.090701.sc.moon-countdown-launch.mp3": 0.0,
 	"i-said-hey.mp3": 0.0,
@@ -61,6 +63,8 @@ AUDIO_OFFSETS = {
 
 
 def start_system_terminal() -> subprocess.Popen[bytes]:
+	environment = os.environ.copy()
+	environment["LIBGL_ALWAYS_SOFTWARE"] = "1"
 	for terminal_name, option in TERMINAL_EMULATORS:
 		terminal = shutil.which(terminal_name)
 		if terminal is not None:
@@ -72,6 +76,7 @@ def start_system_terminal() -> subprocess.Popen[bytes]:
 					str(RUN_SYSTEM_SCRIPT),
 				],
 				cwd=SNIFFER_DIR,
+				env=environment,
 				start_new_session=True,
 			)
 
@@ -98,7 +103,8 @@ class Slideshow:
 		self.vrijmibo_image = vrijmibo_image
 		self.quote_generated_index: int | None = None
 		self.vrijmibo_index: int | None = None
-		self.last_vrijmibo_hour: tuple[date, int] | None = None
+		self.beer_hour_index: int | None = None
+		self.last_vrijmibo_slot: tuple[date, int, int] | None = None
 		self.audio = audio or []
 		self.last_audio_date: date | None = None
 		self.audio_process: subprocess.Popen[bytes] | None = None
@@ -108,19 +114,39 @@ class Slideshow:
 		self.index = 0
 		self.paused = False
 		self.timer_id: str | None = None
+		self.beer_hour_timer_id: str | None = None
+		self.beer_hour_started_at = 0.0
 		self.photo: ImageTk.PhotoImage | None = None
 		self.animation_image: Image.Image | None = None
 		self.animation_photos: list[ImageTk.PhotoImage] = []
 		self.animation_durations: list[float] = []
 		self.animation_frame = 0
 		self.animation_frames = 0
+		self.animation_loop = 0
+		self.animation_loop_count = 1
 		self.animation_deadline = 0.0
 		self.cached_photos: dict[Path, ImageTk.PhotoImage] = {}
 		self.cached_animations: dict[
-			Path, tuple[list[ImageTk.PhotoImage], list[float]]
+			Path, tuple[list[ImageTk.PhotoImage], list[float], int]
 		] = {}
 		self.label = tk.Label(root, background="black")
 		self.label.pack(fill="both", expand=True)
+		self.beer_hour_frame = tk.Frame(root, background="white")
+		self.beer_hour_countdown = tk.Label(
+			self.beer_hour_frame,
+			background="white",
+			foreground="black",
+			font=("DejaVu Sans", 180, "bold"),
+		)
+		self.beer_hour_countdown.pack()
+		self.beer_hour_subtitle = tk.Label(
+			self.beer_hour_frame,
+			background="white",
+			foreground="black",
+			font=("DejaVu Sans", 72),
+		)
+		self.beer_hour_subtitle.pack()
+		self.beer_hour_frame.place_forget()
 
 		if shuffle:
 			random.shuffle(self.images)
@@ -129,6 +155,7 @@ class Slideshow:
 		if vrijmibo_image is not None:
 			self.vrijmibo_index = len(self.images)
 			self.images.append(vrijmibo_image)
+		self.update_beer_hour_slide()
 
 		root.title("slideshow")
 		root.configure(background="black", cursor="none")
@@ -148,20 +175,52 @@ class Slideshow:
 		self.preprocess_images()
 		self.display_current()
 		self.check_vrijmibo()
+		self.check_beer_hour()
 		self.check_audio()
 
 	def check_vrijmibo(self) -> None:
 		now = datetime.now()
-		hour = (now.date(), now.hour)
+		slot = (now.date(), now.hour, now.minute // 15)
 		if (
 			self.vrijmibo_index is not None
 			and now.weekday() == 4
-			and hour != self.last_vrijmibo_hour
+			and slot != self.last_vrijmibo_slot
 		):
-			self.last_vrijmibo_hour = hour
+			self.last_vrijmibo_slot = slot
 			self.index = self.vrijmibo_index
 			self.display_current()
 		self.root.after(60_000, self.check_vrijmibo)
+
+	def update_beer_hour_slide(self) -> None:
+		now = datetime.now()
+		should_include = now.hour < 18
+		if should_include and self.beer_hour_index is None:
+			self.beer_hour_index = len(self.images)
+			self.images.append(BEER_HOUR_SLIDE)
+		elif not should_include and self.beer_hour_index is not None:
+			removed_index = self.beer_hour_index
+			self.images.pop(removed_index)
+			self.beer_hour_index = None
+			if self.index == removed_index:
+				self.index = 0
+				if not self.images:
+					self.cancel_timer()
+					self.label.configure(image="", text="")
+					return
+				self.display_current()
+			elif self.index > removed_index:
+				self.index -= 1
+		if self.beer_hour_index is not None:
+			target = now.replace(hour=16, minute=0, second=0, microsecond=0)
+			hold_starts = target - timedelta(minutes=2)
+			hold_ends = now.replace(hour=18, minute=0, second=0, microsecond=0)
+			if hold_starts <= now < hold_ends and self.index != self.beer_hour_index:
+				self.index = self.beer_hour_index
+				self.display_current()
+
+	def check_beer_hour(self) -> None:
+		self.update_beer_hour_slide()
+		self.root.after(1_000, self.check_beer_hour)
 
 	def check_audio(self) -> None:
 		now = datetime.now()
@@ -226,6 +285,12 @@ class Slideshow:
 
 		self.cancel_timer()
 		self.close_animation()
+		if self.beer_hour_index is not None and self.images[self.index] == BEER_HOUR_SLIDE:
+			if self.beer_hour_started_at == 0.0:
+				self.beer_hour_started_at = time.monotonic()
+			self.display_beer_hour()
+			return
+		self.beer_hour_started_at = 0.0
 		if self.quote_image is not None and self.images[self.index] == self.quote_image:
 			if self.quote_generated_index != self.index:
 				try:
@@ -254,9 +319,10 @@ class Slideshow:
 			self.schedule_next()
 			return
 		if path in self.cached_animations:
-			self.animation_photos, self.animation_durations = [
-				list(cached) for cached in self.cached_animations[path]
-			]
+			cached_photos, cached_durations, self.animation_loop_count = self.cached_animations[path]
+			self.animation_photos = list(cached_photos)
+			self.animation_durations = list(cached_durations)
+			self.animation_loop = 0
 			self.animation_frames = len(self.animation_photos)
 			self.display_animation_frame()
 			return
@@ -270,6 +336,9 @@ class Slideshow:
 			self.animation_frames = getattr(image, "n_frames", 1)
 			if self.animation_frames > 1:
 				self.animation_image = image
+				loop_count = image.info.get("loop", 0)
+				self.animation_loop_count = 1 if path == self.vrijmibo_image else loop_count + 1 if loop_count else 1
+				self.animation_loop = 0
 				self.preload_animation_frame()
 				return
 
@@ -285,7 +354,11 @@ class Slideshow:
 
 	def preprocess_images(self) -> None:
 		for path in self.images:
-			if path == self.quote_image or path.name.lower() == SNIFFER_FILENAME:
+			if (
+				path == self.quote_image
+				or path == BEER_HOUR_SLIDE
+				or path.name.lower() == SNIFFER_FILENAME
+			):
 				continue
 			try:
 				with Image.open(path) as image:
@@ -293,12 +366,14 @@ class Slideshow:
 					if frame_count > 1:
 						photos: list[ImageTk.PhotoImage] = []
 						durations: list[float] = []
+						loop_count = image.info.get("loop", 0)
+						loop_count = 1 if path == self.vrijmibo_image else loop_count + 1 if loop_count else 1
 						for frame_index in range(frame_count):
 							image.seek(frame_index)
 							frame = ImageOps.exif_transpose(image).convert("RGB")
 							photos.append(ImageTk.PhotoImage(frame))
 							durations.append(max(0.01, image.info.get("duration", 100) / 1000))
-						self.cached_animations[path] = (photos, durations)
+						self.cached_animations[path] = (photos, durations, loop_count)
 					else:
 						self.cached_photos[path] = self.show_frame(image)
 			except (OSError, EOFError, ValueError) as error:
@@ -381,11 +456,43 @@ class Slideshow:
 
 		if self.animation_frame < self.animation_frames - 1:
 			self.schedule_animation_frame()
+		elif self.animation_loop + 1 < self.animation_loop_count:
+			self.animation_loop += 1
+			self.animation_frame = 0
+			self.animation_deadline = 0.0
+			self.schedule_animation_frame()
 		else:
 			self.timer_id = self.root.after(0, self.next_image)
 
 	def show_photo(self) -> None:
-		self.label.configure(image=self.photo)
+		self.beer_hour_frame.place_forget()
+		self.label.configure(image=self.photo, text="", background="black")
+
+	def display_beer_hour(self) -> None:
+		now = datetime.now()
+		target = now.replace(hour=16, minute=0, second=0, microsecond=0)
+		remaining_seconds = int((target - now).total_seconds())
+		if remaining_seconds <= 0:
+			self.beer_hour_countdown.configure(text="Het is Bieruur!", font=("DejaVu Sans", 120, "bold"))
+			self.beer_hour_subtitle.configure(text="")
+		else:
+			hours, remainder = divmod(remaining_seconds, 3_600)
+			minutes, seconds = divmod(remainder, 60)
+			self.beer_hour_countdown.configure(
+				text=f"{hours:02d}:{minutes:02d}:{seconds:02d}",
+				font=("DejaVu Sans", 180, "bold"),
+			)
+			self.beer_hour_subtitle.configure(text="until bieruur")
+		self.label.configure(
+			image="",
+			text="",
+			background="white",
+		)
+		self.beer_hour_frame.place(relx=0.5, rely=0.5, anchor="center")
+		if remaining_seconds <= 120 or time.monotonic() < self.beer_hour_started_at + BEER_HOUR_PREVIEW_SECONDS:
+			self.beer_hour_timer_id = self.root.after(1_000, self.display_current)
+		else:
+			self.next_image()
 
 	def schedule_animation_frame(self) -> None:
 		delay = max(1, round((self.animation_deadline - time.monotonic()) * 1000))
@@ -400,6 +507,9 @@ class Slideshow:
 		if self.timer_id is not None:
 			self.root.after_cancel(self.timer_id)
 			self.timer_id = None
+		if self.beer_hour_timer_id is not None:
+			self.root.after_cancel(self.beer_hour_timer_id)
+			self.beer_hour_timer_id = None
 
 	def close_animation(self) -> None:
 		if self.animation_image is not None:
@@ -409,6 +519,8 @@ class Slideshow:
 		self.animation_durations.clear()
 		self.animation_frame = 0
 		self.animation_frames = 0
+		self.animation_loop = 0
+		self.animation_loop_count = 1
 		self.animation_deadline = 0.0
 
 	def next_image(self, _event: tk.Event | None = None) -> None:

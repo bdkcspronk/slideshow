@@ -4,13 +4,17 @@ import time
 import sys
 import os
 import shlex
+import shutil
 
 UPDATE_INTERVAL_SECONDS = 300
-PIO_PYTHON = "/home/scriptcie/.platformio/penv/bin/python"
+PIO_PYTHON = os.path.expanduser("~/.platformio/penv/bin/python")
 
 
 def ensure_platformio_python():
-    if os.path.abspath(sys.executable) == os.path.abspath(PIO_PYTHON):
+    if (
+        os.path.abspath(sys.executable) == os.path.abspath(PIO_PYTHON)
+        or not os.path.isfile(PIO_PYTHON)
+    ):
         return
 
     os.execv(PIO_PYTHON, [PIO_PYTHON, os.path.abspath(__file__), *sys.argv[1:]])
@@ -23,13 +27,17 @@ def ensure_dialout_access():
     ):
         return
 
+    sg_executable = shutil.which('sg')
+    if sg_executable is None:
+        return
+
     environment = os.environ.copy()
     environment['SNIFFER_DIALOUT_REEXEC'] = '1'
     command = ' '.join(
         shlex.quote(argument)
         for argument in [sys.executable, os.path.abspath(__file__), *sys.argv[1:]]
     )
-    os.execvpe('sg', ['sg', 'dialout', '-c', command], environment)
+    os.execvpe(sg_executable, ['sg', 'dialout', '-c', command], environment)
 
 
 ensure_platformio_python()
