@@ -12,3 +12,4 @@ __pycache__
 *.ini
 *.gif
 *.txt
+/slides/events/

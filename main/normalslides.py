@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import sys
+import random
 from pathlib import Path
 
 import tkinter as tk
@@ -198,9 +199,21 @@ class NormalSlidesMixin:
 
 	def next_image(self, _event: tk.Event | None = None) -> None:
 		self.index = (self.index + 1) % len(self.images)
+		if self.index == 0 and self.nextcloud_image_index is not None:
+			self.replace_nextcloud_image()
 		if self.index == self.vrijmibo_index and len(self.images) > 1:
 			self.index = (self.index + 1) % len(self.images)
 		self.display_current()
+
+	def replace_nextcloud_image(self) -> None:
+		if self.nextcloud_image_index is None or not self.nextcloud_images:
+			return
+		old_path = self.images[self.nextcloud_image_index]
+		choices = [path for path in self.nextcloud_images if path != old_path]
+		new_path = random.choice(choices or self.nextcloud_images)
+		self.images[self.nextcloud_image_index] = new_path
+		self.cached_photos.pop(old_path, None)
+		self.cached_animations.pop(old_path, None)
 
 	def previous_image(self, _event: tk.Event | None = None) -> None:
 		self.index = (self.index - 1) % len(self.images)

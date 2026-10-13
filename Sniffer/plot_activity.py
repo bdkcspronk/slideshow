@@ -65,6 +65,7 @@ supported_styles = {
     'square corners',
     'striped',
     'nyan cat',
+    'rainbow',
     'beer',
     'glow',
     'board',
@@ -521,6 +522,30 @@ for (
             )
             bubble.set_clip_path(marker_shape)
             ax.add_patch(bubble)
+    elif user_style == 'rainbow':
+        rainbow_colors = [
+            '#E40303',
+            '#FF8C00',
+            '#FFED00',
+            '#008026',
+            '#004DFF',
+            '#750787',
+        ]
+        rainbow_map = matplotlib.colors.LinearSegmentedColormap.from_list(
+            'nyan_cat_rainbow',
+            rainbow_colors,
+        )
+        gradient_array = rainbow_map(np.linspace(0, 1, 256))[:, None, :]
+        ax.add_patch(marker_shape)
+        ax.imshow(
+            gradient_array,
+            extent=(x0, x1, y0, y1),
+            origin='lower',
+            aspect='auto',
+            transform=display_transform,
+            clip_path=marker_shape,
+            zorder=3,
+        )
     elif user_style == 'nyan cat':
         rainbow_colors = [
             '#E40303',

@@ -50,6 +50,9 @@ class ShowQuotesMixin:
 		return True
 
 	def preprocess_quote_audio(self, index: int) -> bool:
+		if not self.quote_voice_enabled:
+			self.quote_audio_prepared_index = index
+			return True
 		try:
 			metadata = json.loads(QUOTE_METADATA_FILE.read_text(encoding="utf-8"))
 			quote = metadata["quote"]

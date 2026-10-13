@@ -22,6 +22,8 @@ except ImportError as error:
 
 from .config import PROJECT_DIR, VRIJMIBO_FILENAME
 from .files import find_audio, find_images
+from .activities import sync_activity_slide
+from .nextcloud import EVENTS_PATH, sync_recent_event_images
 from .processes import start_system_terminal
 from .slideshow import Slideshow
 
@@ -33,6 +35,7 @@ def parse_args() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(description="Display a folder of images like a screensaver.")
 	parser.add_argument("--seconds", type=float, default=8.0, help="Seconds per image (default: 8)")
 	parser.add_argument("--shuffle", action="store_true", help="Show images in random order")
+	parser.add_argument("--nextcloud", action="store_true", help="Include images from the three newest Nextcloud events")
 	return parser.parse_args()
 
 
@@ -44,12 +47,20 @@ def main() -> None:
 	if args.seconds <= 0:
 		raise SystemExit("--seconds must be greater than zero")
 
+	activity_image = None
+	try:
+		activity_image = sync_activity_slide()
+	except RuntimeError as error:
+		print(f"Could not update activities slide: {error}", file=sys.stderr)
 	images = find_images(folder)
+	nextcloud_images = None
+	if args.nextcloud:
+		EVENTS_PATH.mkdir(parents=True, exist_ok=True)
 	audio = find_audio(PROJECT_DIR / "audio")
 	vrijmibo_image = next((path for path in images if path.name.lower() == VRIJMIBO_FILENAME), None)
 	if vrijmibo_image is not None:
 		images.remove(vrijmibo_image)
-	if not images and vrijmibo_image is None:
+	if not images and vrijmibo_image is None and not args.nextcloud:
 		raise SystemExit(f"No supported images found in {folder}")
 
 	quote_image = PROJECT_DIR / "quotes" / "images" / "quote.png"
@@ -63,7 +74,11 @@ def main() -> None:
 	print("run_system.py started successfully.")
 
 	root = tk.Tk()
-	slideshow = Slideshow(root, images, folder, args.seconds, args.shuffle, quote_image, vrijmibo_image, audio, system_process)
+	slideshow = Slideshow(
+		root, images, folder, args.seconds, args.shuffle or args.nextcloud,
+		quote_image, vrijmibo_image, audio, system_process, nextcloud_images,
+		sync_recent_event_images if args.nextcloud else None, activity_image, sync_activity_slide,
+	)
 	def poll_terminal_toggle() -> None:
 		try:
 			readable, _, _ = select.select([sys.stdin], [], [], 0)
