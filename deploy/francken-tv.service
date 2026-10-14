@@ -1,0 +1,13 @@
+# The slideshow server. Install: see README.md ("Running on the TV PC").
+[Unit]
+Description=Francken TV slideshow server
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/slideshow
+ExecStart=%h/slideshow/.venv/bin/python -m francken_tv
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

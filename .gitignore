@@ -1,13 +1,9 @@
-.pio
-.vscode
-__pycache__
-*.png
-*.wav
-*.mp3
-*.ps1
-*.onnx
-*.json
-*.jsonl
-*.csv
-*.ini
-*.gif
+__pycache__/
+# Runtime data: presence database, caches, downloaded quotes, old logs.
+data/
+# Personal data (phone MAC addresses). Copy to the TV PC by hand.
+config/devices.json
+# Slides, songs, GIF, voice model: large files, copy to the TV PC by hand.
+media/
+firmware/.pio/
+.venv/

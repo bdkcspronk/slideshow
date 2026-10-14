@@ -1,0 +1,230 @@
+/* Francken TV styles. Sizes use vw/vh (% of screen width/height) so every screen size works. */
+
+html, body {
+	margin: 0;
+	height: 100%;
+	overflow: hidden;
+	background: black;
+	cursor: none;
+	font-family: "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
+.layer {
+	position: fixed;
+	inset: 0;
+	opacity: 0;
+	transition: opacity 0.6s ease;
+}
+.layer.visible { opacity: 1; }
+
+.slide {
+	width: 100vw;
+	height: 100vh;
+	box-sizing: border-box;
+}
+
+#toast {
+	position: fixed;
+	right: 2vw;
+	bottom: 2vh;
+	padding: 1.5vh 2vw;
+	border-radius: 0.6vw;
+	background: rgba(0, 0, 0, 0.8);
+	color: white;
+	font-size: 3.5vh;
+	z-index: 10;
+	opacity: 0;
+	transition: opacity 0.3s;
+}
+#toast.visible { opacity: 1; }
+
+/* Images, posters and GIFs: scaled to fill the screen without cropping. */
+.image-slide {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: black;
+	position: relative;
+}
+.image-slide img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+/* Event photos: caption in the bottom-left corner; two portrait photos side by side. */
+.photo-pair img { width: 50%; }
+.photo-caption {
+	position: absolute;
+	left: 3vw;
+	bottom: 4vh;
+	padding: 1.5vh 2vw;
+	border-radius: 0.6vw;
+	background: rgba(0, 0, 0, 0.6);
+	color: white;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5vh;
+}
+.photo-caption strong { font-size: 4vh; }
+.photo-caption span { font-size: 2.6vh; opacity: 0.85; }
+
+/* Upcoming activities. */
+.activities-slide {
+	background: #f4f6fa;
+	color: #10213f;
+	padding: 6vh 6vw;
+}
+.activities-slide h1 {
+	margin: 0 0 4vh;
+	font-size: 6.5vh;
+}
+.activities-slide ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 2.5vh 3vw;
+}
+.activities-slide li {
+	display: flex;
+	align-items: center;
+	gap: 1.5vw;
+	background: white;
+	border-radius: 0.6vw;
+	padding: 1.8vh 1.5vw;
+	box-shadow: 0 0.3vh 1vh rgba(16, 33, 63, 0.08);
+}
+.activities-slide li.today { outline: 0.4vh solid #f3b01f; }
+.activity-date {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-width: 6vw;
+	color: #1f4a8f;
+}
+.activity-date .day { font-size: 5vh; font-weight: bold; line-height: 1; }
+.activity-date .month { font-size: 2.4vh; text-transform: uppercase; }
+.activity-title { font-size: 3.2vh; font-weight: bold; }
+.activity-details { font-size: 2.4vh; color: #5a6880; margin-top: 0.6vh; }
+
+/* Quotes: black text on the quote background, like the old slide. */
+.quote-slide {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: white center / cover no-repeat;
+}
+.quote-slide blockquote {
+	width: 80%;
+	margin: 0;
+	text-align: center;
+	color: black;
+	font-size: 7.4vh;
+	font-style: italic;
+	font-weight: 200;
+	line-height: 1.15;
+}
+.quote-slide footer { margin-top: 2vh; }
+
+/* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. */
+.bieruur-slide {
+	display: flex;
+	align-items: center;
+	justify-content: space-evenly;
+	gap: 2vw;
+	padding: 0 3vw;
+	background: radial-gradient(circle at 30% 40%, #4a2c12 0%, #24150a 55%, #120a04 100%);
+	color: #fff4dc;
+}
+.bieruur-clock { height: 72vh; max-width: 38vw; flex: none; }
+.clock-face { fill: #fffaf0; stroke: #f3b01f; stroke-width: 4; }
+.clock-wedge { fill: #f3b01f; opacity: 0.35; }
+.clock-tick { stroke: #8a6a4a; stroke-width: 1; }
+.clock-tick-hour { stroke: #3a2410; stroke-width: 2.5; }
+.clock-number {
+	fill: #3a2410;
+	font-size: 15px;
+	font-weight: bold;
+	text-anchor: middle;
+	dominant-baseline: central;
+}
+.clock-bieruur-badge { fill: #f3b01f; stroke: #fffaf0; stroke-width: 2; }
+.clock-bieruur-number {
+	fill: #3a2410;
+	font-size: 12px;
+	font-weight: bold;
+	text-anchor: middle;
+	dominant-baseline: central;
+}
+.clock-hand-hour { stroke: #3a2410; stroke-width: 6; stroke-linecap: round; }
+.clock-hand-minute { stroke: #3a2410; stroke-width: 4; stroke-linecap: round; }
+.clock-hand-second { stroke: #d62828; stroke-width: 1.5; stroke-linecap: round; }
+.clock-centre { fill: #d62828; }
+
+.bieruur-info { text-align: center; flex: 1; min-width: 0; }
+.bieruur-label {
+	font-size: 6vh;
+	font-weight: bold;
+	letter-spacing: 0.4vh;
+	text-transform: uppercase;
+	color: #f3b01f;
+}
+.bieruur-countdown {
+	font-size: min(16vh, 8.5vw);
+	font-weight: bold;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	line-height: 1.1;
+}
+
+.beer-glass { height: 58vh; max-width: 18vw; flex: none; overflow: visible; }
+.glass-outline { fill: none; stroke: rgba(255, 255, 255, 0.85); stroke-width: 3; stroke-linejoin: round; }
+.glass-shine { fill: rgba(255, 255, 255, 0.25); }
+.foam { fill: #fffaf0; }
+.bubbles circle {
+	fill: rgba(255, 255, 255, 0.7);
+	animation: bubble-rise 4s linear infinite;
+}
+@keyframes bubble-rise {
+	from { transform: translateY(0); opacity: 0.9; }
+	to { transform: translateY(-165px); opacity: 0.2; }
+}
+
+/* The last two minutes: the countdown pulses. */
+.bieruur-final .bieruur-countdown { color: #ffd45c; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse {
+	50% { transform: scale(1.06); }
+}
+
+/* Bieruur itself. */
+.bieruur-party {
+	background: linear-gradient(120deg, #f3b01f, #ffd45c, #e0901a, #ffd45c, #f3b01f);
+	background-size: 300% 300%;
+	animation: shimmer 6s ease infinite;
+	color: #3a2410;
+}
+@keyframes shimmer {
+	50% { background-position: 100% 50%; }
+}
+.bieruur-party .beer-glass { height: 70vh; max-width: 24vw; }
+.bieruur-party .glass-outline { stroke: #3a2410; }
+.bieruur-party .beer-glass:first-child { transform: rotate(-12deg); animation: cheers-left 2s ease-in-out infinite; }
+.bieruur-party .beer-glass:last-child { transform: rotate(12deg); animation: cheers-right 2s ease-in-out infinite; }
+@keyframes cheers-left { 50% { transform: rotate(-4deg) translateX(3vw); } }
+@keyframes cheers-right { 50% { transform: rotate(4deg) translateX(-3vw); } }
+.party-text { text-align: center; }
+.party-title { font-size: 14vh; font-weight: bold; line-height: 1; }
+.party-subtitle { font-size: 7vh; margin-top: 3vh; }
+
+/* Shown when there is nothing else to show. */
+.empty-slide {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	color: #888;
+	font-size: 6vh;
+}
+.empty-slide small { font-size: 2.5vh; }

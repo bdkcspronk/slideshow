@@ -1,0 +1,13 @@
+# Shows the slideshow full-screen in a browser once the desktop is up. Install: see README.md.
+[Unit]
+Description=Francken TV kiosk browser
+After=graphical-session.target francken-tv.service
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=%h/slideshow/deploy/kiosk.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

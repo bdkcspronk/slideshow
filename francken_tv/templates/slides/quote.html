@@ -1,0 +1,6 @@
+<div class="slide quote-slide" {% if background %}style="background-image: url('{{ background }}')"{% endif %}>
+	<blockquote>
+		&ldquo;{{ quote[:1] | upper }}{{ quote[1:] }}&rdquo;
+		{% if author %}<footer>~ {{ author | title }}</footer>{% endif %}
+	</blockquote>
+</div>

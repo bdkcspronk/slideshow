@@ -1,0 +1,13 @@
+# Reads the ESP32 sniffer into the presence database. Install: see README.md.
+# The user needs serial port access: sudo usermod -aG dialout $USER (then log in again).
+[Unit]
+Description=Francken TV presence sniffer
+
+[Service]
+WorkingDirectory=%h/slideshow
+ExecStart=%h/slideshow/.venv/bin/python -m francken_tv.sniffer
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

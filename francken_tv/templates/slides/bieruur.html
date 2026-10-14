@@ -1,0 +1,55 @@
+{#
+	The bieruur countdown. The values come from countdown_data() in providers/bieruur.py.
+	It is redrawn every second; elements with data-live="..." are updated in place,
+	so animations (bubbles) keep running.
+#}
+{% from "slides/_beer_glass.html" import beer_glass %}
+
+{% if state == "bieruur" %}
+<div class="slide bieruur-slide bieruur-party" data-state="bieruur">
+	{{ beer_glass("left", 22, overflowing=true) }}
+	<div class="party-text">
+		<div class="party-title">Het is bieruur!</div>
+		<div class="party-subtitle">Proost!</div>
+	</div>
+	{{ beer_glass("right", 22, overflowing=true) }}
+</div>
+
+{% else %}
+<div class="slide bieruur-slide bieruur-{{ state }}" data-state="{{ state }}">
+	<svg class="bieruur-clock" viewBox="0 0 200 200" aria-hidden="true">
+		<circle class="clock-face" cx="100" cy="100" r="96"/>
+		<path class="clock-wedge" d="{{ wedge }}" data-live="wedge"/>
+		{% for tick in range(60) %}
+		<line class="{{ 'clock-tick-hour' if tick % 5 == 0 else 'clock-tick' }}"
+			x1="100" y1="{{ 7 if tick % 5 == 0 else 8 }}" x2="100" y2="{{ 17 if tick % 5 == 0 else 12 }}"
+			transform="rotate({{ tick * 6 }} 100 100)"/>
+		{% endfor %}
+		{% for number, x, y in numbers %}
+		{% if number == bieruur_number %}
+		<circle class="clock-bieruur-badge" cx="{{ x }}" cy="{{ y }}" r="12"/>
+		<text class="clock-bieruur-number" x="{{ x }}" y="{{ y }}">{{ bieruur_label }}</text>
+		{% else %}
+		<text class="clock-number" x="{{ x }}" y="{{ y }}">{{ number }}</text>
+		{% endif %}
+		{% endfor %}
+		<g data-live="hour-hand" transform="rotate({{ hour_angle }} 100 100)">
+			<line class="clock-hand-hour" x1="100" y1="110" x2="100" y2="52"/>
+		</g>
+		<g data-live="minute-hand" transform="rotate({{ minute_angle }} 100 100)">
+			<line class="clock-hand-minute" x1="100" y1="112" x2="100" y2="24"/>
+		</g>
+		<g data-live="second-hand" transform="rotate({{ second_angle }} 100 100)">
+			<line class="clock-hand-second" x1="100" y1="118" x2="100" y2="18"/>
+		</g>
+		<circle class="clock-centre" cx="100" cy="100" r="4"/>
+	</svg>
+
+	<div class="bieruur-info">
+		<div class="bieruur-label">{{ "Bijna bieruur!" if state == "final" else "Bieruur in" }}</div>
+		<div class="bieruur-countdown" data-live="countdown">{{ countdown }}</div>
+	</div>
+
+	{{ beer_glass("countdown", beer_top, live=true) }}
+</div>
+{% endif %}

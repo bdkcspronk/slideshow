@@ -1,0 +1,86 @@
+# Francken TV configuration.
+# Times are 24-hour "HH:MM". Relative paths are relative to the project folder.
+# Restart the slideshow after changing this file.
+
+[display]
+seconds_per_slide = 8        # default for slides that don't set their own "seconds"
+screen_width = 1920          # large images are scaled down to this size
+screen_height = 1080
+
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[rotation]
+# The slideshow shows these slide types in this order, then starts over.
+# Remove a name to disable that slide type.
+order = ["images", "activities", "event_photos", "presence", "quote", "bieruur_countdown"]
+
+[images]
+folder = "media/slides"      # drop images here; new files are picked up automatically
+shuffle = false
+
+[activities]
+url = "https://professorfrancken.nl/association/activities"
+max_events = 8
+refresh_minutes = 30
+seconds = 15
+
+[event_photos]
+server = "https://nextcloud.professorfrancken.nl"
+credentials = "~/.config/slideshow/nextcloud.credentials.json"
+albums_folder = "images/albums"   # contains <year>/<YYYY-MM-DD>-<event name>/ folders
+recent_events = 3                 # pick photos from this many most recent events
+photos_to_download = 15           # photos kept locally, re-picked every refresh
+photos_per_round = 1              # photos shown per round of the slideshow
+refresh_minutes = 60
+seconds = 10
+
+[presence]
+database = "data/presence.sqlite3"
+devices = "config/devices.json"   # MAC address -> name, colours, chart style, greeting
+chart_refresh_minutes = 5
+chart_starts_at = "08:00"
+seconds = 15
+greet_arrivals = true
+day_starts_at = "04:00"           # everyone can be greeted again after this time
+
+[quote]
+sheet_id = "12hadm3_zdeU7e3q-YHFfcNSDocQdzjWKnn7lzZLqhI4"   # Google Sheet with "Quote" and "name" columns
+background = "media/quote_background.png"
+blocked_words = "config/quote_filter.txt"   # quotes containing these words are shown but not read aloud
+narrate = true                              # read quotes aloud (toggle at runtime with the "m" key)
+refresh_hours = 6
+
+[bieruur]
+time = "16:00"
+takeover_minutes_before = 2   # the countdown fills the screen from 15:58 ...
+takeover_minutes_after = 2    # ... until 16:02
+countdown_seconds = 5         # how long the countdown is shown during a normal round
+glass_fills_from = "08:00"    # the beer glass on the countdown fills up from this time until bieruur
+days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+songs_folder = "media/bieruur"
+choose_song_minutes_before = 10
+
+[bieruur.song_offsets]
+# Seconds relative to bieruur at which a song starts; negative starts early
+# so that the drop lands exactly at bieruur.
+"toby.mp3" = -39
+
+[vrijmibo]
+file = "media/vrijmibo.gif"
+weekday = "friday"
+every_minutes = 15
+
+[announcer]
+voice = "en_US-ryan-high"        # piper voice, stored in voices_folder
+voices_folder = "media/voices"
+volume = 100
+length_scale = 1.2               # speaking speed: higher is slower
+
+[sniffer]
+port = "/dev/ttyUSB0"
+baud = 115200
+log_every_seconds = 1        # log each device at most this often
+keep_days = 7
+log_unknown_devices = false  # same as the old "--all" flag

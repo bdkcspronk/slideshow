@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Francken TV status</title>
+	<style>
+		body { font-family: sans-serif; margin: 2rem; background: #fff; color: #111; }
+		table { border-collapse: collapse; }
+		td, th { border: 1px solid #ccc; padding: .4rem .8rem; text-align: left; }
+		.error { color: #b00020; }
+	</style>
+</head>
+<body>
+	<h1>Francken TV</h1>
+	<p>Time: {{ app.clock.now().strftime("%A %Y-%m-%d %H:%M:%S") }}
+		&middot; Quotes read aloud: {{ "on" if app.announcer.quotes_enabled else "off" }}</p>
+	<h2>Slide types</h2>
+	<table>
+		<tr><th>Name</th><th>Last refresh</th><th>Last error</th><th>Preview</th></tr>
+		{% for name, provider in app.providers.items() %}
+		{% set status = app.runner.status.get(name) %}
+		<tr>
+			<td>{{ name }}</td>
+			<td>{{ status.last_success.strftime("%H:%M:%S") if status and status.last_success else "-" }}</td>
+			<td class="error">{{ status.last_error or "" if status else "" }}</td>
+			<td><a href="/preview/{{ name }}">preview</a></td>
+		</tr>
+		{% endfor %}
+	</table>
+	<h2>Takeovers</h2>
+	<ul>
+		{% for name in app.takeovers %}<li>{{ name }}</li>{% endfor %}
+	</ul>
+</body>
+</html>

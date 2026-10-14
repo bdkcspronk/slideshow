@@ -1,0 +1,21 @@
+<div class="slide activities-slide">
+	<h1>Upcoming activities</h1>
+	<ul>
+		{% for activity in activities %}
+		<li class="{{ 'today' if activity.day == today else '' }}">
+			<div class="activity-date">
+				<span class="day">{{ activity.day.day }}</span>
+				<span class="month">{{ activity.day.strftime("%b") }}</span>
+			</div>
+			<div class="activity-text">
+				<div class="activity-title">{{ activity.title }}</div>
+				<div class="activity-details">
+					{% if activity.day == today %}Today{% else %}{{ activity.day.strftime("%A") }}{% endif %}
+					{% if activity.time %}&middot; {{ activity.time }}{% endif %}
+					{% if activity.location %}&middot; {{ activity.location }}{% endif %}
+				</div>
+			</div>
+		</li>
+		{% endfor %}
+	</ul>
+</div>

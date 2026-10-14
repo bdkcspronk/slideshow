@@ -1,1 +1,0 @@
-"""Modules for the fullscreen slideshow."""
