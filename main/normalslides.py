@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import sys
-import random
 from pathlib import Path
 
 import tkinter as tk
@@ -10,6 +9,7 @@ from PIL import Image, ImageOps, ImageTk
 
 from .config import BEER_HOUR_SLIDE, SNIFFER_FILENAME
 from .files import find_images
+from .nextcloud import choose_random_event_image
 
 
 class NormalSlidesMixin:
@@ -97,7 +97,10 @@ class NormalSlidesMixin:
 
 	def refresh_images(self) -> None:
 		current_path = self.images[self.index] if self.images else None
-		new_images = find_images(self.image_folder)
+		new_images = [
+			path for path in find_images(self.image_folder)
+			if not path.name.startswith("eventpicture_")
+		]
 		if self.vrijmibo_image is not None:
 			new_images = [path for path in new_images if path != self.vrijmibo_image]
 		known_images = set(self.images)
@@ -198,6 +201,8 @@ class NormalSlidesMixin:
 		self.animation_deadline = 0.0
 
 	def next_image(self, _event: tk.Event | None = None) -> None:
+		if not self.images:
+			return
 		self.index = (self.index + 1) % len(self.images)
 		if self.index == 0 and self.nextcloud_image_index is not None:
 			self.replace_nextcloud_image()
@@ -206,12 +211,19 @@ class NormalSlidesMixin:
 		self.display_current()
 
 	def replace_nextcloud_image(self) -> None:
-		if self.nextcloud_image_index is None or not self.nextcloud_images:
+		if not self.nextcloud_images:
+			return
+		if self.nextcloud_image_index is None or self.nextcloud_image_index >= len(self.images):
+			self.nextcloud_image_index = next(
+				(index for index, path in enumerate(self.images) if path.name.startswith("eventpicture_")),
+				None,
+			)
+		if self.nextcloud_image_index is None:
 			return
 		old_path = self.images[self.nextcloud_image_index]
-		choices = [path for path in self.nextcloud_images if path != old_path]
-		new_path = random.choice(choices or self.nextcloud_images)
+		new_path = choose_random_event_image(self.nextcloud_images)
 		self.images[self.nextcloud_image_index] = new_path
+		self.nextcloud_image_index = self.images.index(new_path)
 		self.cached_photos.pop(old_path, None)
 		self.cached_animations.pop(old_path, None)
 

@@ -9,9 +9,11 @@ import urllib.parse
 import urllib.request
 import random
 import shutil
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from xml.etree import ElementTree
+
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 try:
 	import keyring
@@ -26,6 +28,7 @@ NEXTCLOUD_SERVICE = "slideshow-nextcloud"
 CONFIG_PATH = Path.home() / ".config" / "slideshow" / "nextcloud.json"
 CREDENTIALS_PATH = Path.home() / ".config" / "slideshow" / "nextcloud.credentials.json"
 EVENTS_PATH = PROJECT_DIR / "slides" / "events"
+EVENT_SLIDE_PATTERN = "eventpicture_*.png"
 EVENT_NAME = re.compile(r"^(\d{4})-(\d{2})-(\d{2})(?:-|$)")
 NETWORK_TIMEOUT_SECONDS = 30
 
@@ -61,26 +64,35 @@ def sync_recent_event_images() -> list[Path]:
 		events = client.recent_events((date.today().year, date.today().year - 1))
 		if not events:
 			raise RuntimeError(f"No YYYY-MM-DD event folders found for {date.today().year}")
-		if EVENTS_PATH.exists():
-			shutil.rmtree(EVENTS_PATH)
+		selected_event_names = {Path(remote_path).name for _, remote_path in events[:3]}
 		EVENTS_PATH.mkdir(parents=True, exist_ok=True)
-		downloaded = []
+		for cached_event in EVENTS_PATH.iterdir():
+			if cached_event.is_dir() and cached_event.name not in selected_event_names:
+				shutil.rmtree(cached_event)
+		local_images = []
 		for _, remote_path in events[:3]:
+			event_directory = EVENTS_PATH / Path(remote_path).name
+			event_directory.mkdir(parents=True, exist_ok=True)
 			remote_images = [
 				remote_file
 				for remote_file, is_directory in client._list(remote_path)
 				if not is_directory and remote_file != remote_path
 				and Path(remote_file).suffix.lower() in IMAGE_EXTENSIONS
 			]
-			for remote_file in random.sample(remote_images, min(10, len(remote_images))):
+			remote_by_name = {Path(remote_file).name: remote_file for remote_file in remote_images}
+			cached = [path for path in event_directory.iterdir() if path.is_file() and path.name in remote_by_name]
+			missing_names = [name for name in remote_by_name if name not in {path.name for path in cached}]
+			for filename in random.sample(missing_names, min(20 - len(cached), len(missing_names))):
+				remote_file = remote_by_name[filename]
 				relative_path = Path(remote_file).relative_to(Path(remote_path))
-				local_path = EVENTS_PATH / Path(remote_path).name / relative_path
+				local_path = event_directory / relative_path
 				local_path.parent.mkdir(parents=True, exist_ok=True)
 				client.download(remote_file, local_path)
-				downloaded.append(local_path)
-		if not downloaded:
+			cached = [path for path in event_directory.rglob("*") if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS]
+			local_images.extend(cached[:20])
+		if not local_images:
 			raise RuntimeError("No supported images found in the three newest events")
-		return downloaded
+		return local_images
 	except (urllib.error.URLError, urllib.error.HTTPError, ElementTree.ParseError) as error:
 		raise RuntimeError(f"Could not sync Nextcloud images: {error}") from error
 
@@ -160,3 +172,62 @@ class _NextcloudClient:
 
 	def _url(self, path: str) -> str:
 		return self.base_url + "/" + "/".join(urllib.parse.quote(part) for part in path.strip("/").split("/"))
+
+
+def choose_random_event_image(images: list[Path]) -> Path:
+	groups: dict[str, list[Path]] = {}
+	for image in images:
+		relative = image.relative_to(EVENTS_PATH)
+		if relative.parts:
+			groups.setdefault(relative.parts[0], []).append(image)
+	if not groups:
+		raise RuntimeError("No event images are available")
+	event_images = random.choice(list(groups.values()))
+	selected = random.choice(event_images)
+	with Image.open(selected) as image:
+		is_portrait = image.height > image.width
+	if not is_portrait or len(event_images) < 2:
+		return _make_event_slide(selected, None)
+	other = random.choice([image for image in event_images if image != selected])
+	return _make_event_slide(selected, other)
+
+
+def _make_event_slide(first_path: Path, second_path: Path | None) -> Path:
+	event_name = first_path.relative_to(EVENTS_PATH).parts[0]
+	event_title = _event_description(event_name)
+	filename_title = re.sub(r"[^A-Za-z0-9]+", "_", event_title).strip("_").lower()
+	output = PROJECT_DIR / "slides" / f"eventpicture_{filename_title}_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.png"
+	temporary = output.with_suffix(".tmp.png")
+	with Image.open(first_path) as first:
+		first = ImageOps.exif_transpose(first).convert("RGB")
+		if second_path is None:
+			combined = first.copy()
+		else:
+			with Image.open(second_path) as second:
+				second = ImageOps.exif_transpose(second).convert("RGB")
+				height = max(first.height, second.height)
+				first.thumbnail((height, height), getattr(Image, "Resampling", Image).LANCZOS)
+				second.thumbnail((height, height), getattr(Image, "Resampling", Image).LANCZOS)
+				combined = Image.new("RGB", (first.width + second.width, height), "black")
+				combined.paste(first, (0, (height - first.height) // 2))
+				combined.paste(second, (first.width, (height - second.height) // 2))
+		draw = ImageDraw.Draw(combined, "RGBA")
+		label = _event_description(event_name)
+		font = ImageFont.truetype("/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf", max(24, combined.width // 65))
+		left = max(24, combined.width // 35)
+		bottom = max(24, combined.height // 28)
+		text_box = draw.textbbox((left, 0), label, font=font)
+		draw.rectangle((left - 16, combined.height - bottom - (text_box[3] - text_box[1]) - 18, text_box[2] + 16, combined.height - bottom + 12), fill=(0, 0, 0, 165))
+		draw.text((left, combined.height - bottom - (text_box[3] - text_box[1])), label, font=font, fill=(255, 255, 255, 235))
+		combined.save(temporary, format="PNG")
+	for old_slide in output.parent.glob(EVENT_SLIDE_PATTERN):
+		if old_slide != temporary:
+			old_slide.unlink()
+	temporary.rename(output)
+	return output
+
+
+def _event_description(event_name: str) -> str:
+	event_date = date.fromisoformat(event_name[:10])
+	title = event_name[11:].replace("-", " ").replace("_", " ").strip().title()
+	return f"{event_date.strftime('%d %b %Y').upper()}  ·  {title}"

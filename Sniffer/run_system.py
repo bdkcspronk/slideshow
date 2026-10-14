@@ -5,6 +5,7 @@ import sys
 import os
 import shlex
 import shutil
+import signal
 
 UPDATE_INTERVAL_SECONDS = 300
 PIO_PYTHON = os.path.expanduser("~/.platformio/penv/bin/python")
@@ -108,6 +109,14 @@ voice_command = [LOGGER_PYTHON, "voice_announcer.py"]
 voice_process = subprocess.Popen(voice_command)
 log_process = subprocess.Popen(log_command)
 
+
+def reload_filter(_signum, _frame):
+    if log_process.poll() is None:
+        log_process.send_signal(signal.SIGUSR1)
+
+
+signal.signal(signal.SIGUSR1, reload_filter)
+
 print("   Port ttyUSB0 opened and logging live data.")
 print("-" * 60)
 
@@ -135,3 +144,13 @@ except KeyboardInterrupt:
     voice_process.wait()
     
     print("🔒 ttyUSB0 closed successfully. Logger stopped. Goodbye!")
+finally:
+    for process in (log_process, voice_process):
+        if process.poll() is None:
+            process.terminate()
+    for process in (log_process, voice_process):
+        if process.poll() is None:
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()

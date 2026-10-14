@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import os
 import select
 import signal
 import sys
+import termios
+import tty
 
 try:
 	import tkinter as tk
@@ -22,7 +25,7 @@ except ImportError as error:
 
 from .config import PROJECT_DIR, VRIJMIBO_FILENAME
 from .files import find_audio, find_images
-from .activities import sync_activity_slide
+from .activities import ACTIVITIES_IMAGE, sync_activity_slide
 from .nextcloud import EVENTS_PATH, sync_recent_event_images
 from .processes import start_system_terminal
 from .slideshow import Slideshow
@@ -52,10 +55,11 @@ def main() -> None:
 		activity_image = sync_activity_slide()
 	except RuntimeError as error:
 		print(f"Could not update activities slide: {error}", file=sys.stderr)
-	images = find_images(folder)
+		if ACTIVITIES_IMAGE.is_file():
+			activity_image = ACTIVITIES_IMAGE
+	images = [path for path in find_images(folder) if not path.name.startswith("eventpicture_")]
 	nextcloud_images = None
-	if args.nextcloud:
-		EVENTS_PATH.mkdir(parents=True, exist_ok=True)
+	EVENTS_PATH.mkdir(parents=True, exist_ok=True)
 	audio = find_audio(PROJECT_DIR / "audio")
 	vrijmibo_image = next((path for path in images if path.name.lower() == VRIJMIBO_FILENAME), None)
 	if vrijmibo_image is not None:
@@ -77,13 +81,27 @@ def main() -> None:
 	slideshow = Slideshow(
 		root, images, folder, args.seconds, args.shuffle or args.nextcloud,
 		quote_image, vrijmibo_image, audio, system_process, nextcloud_images,
-		sync_recent_event_images if args.nextcloud else None, activity_image, sync_activity_slide,
+		sync_recent_event_images, activity_image, sync_activity_slide,
 	)
+	terminal_attributes = None
+	if sys.stdin.isatty():
+		terminal_attributes = termios.tcgetattr(sys.stdin)
+		tty.setcbreak(sys.stdin.fileno())
+
 	def poll_terminal_toggle() -> None:
 		try:
 			readable, _, _ = select.select([sys.stdin], [], [], 0)
-			if readable and sys.stdin.read(1) in ("\r", "\n"):
-				slideshow.toggle_quote_voice()
+			if readable:
+				key = sys.stdin.read(1)
+				if key in ("\r", "\n"):
+					slideshow.toggle_quote_voice()
+				elif key == "\x12":
+					try:
+						if slideshow.system_process is not None and slideshow.system_process.poll() is None:
+							os.kill(slideshow.system_process.pid, signal.SIGUSR1)
+							print("Requested filter.json reload in the sniffer.", flush=True)
+					except OSError as error:
+						print(f"Could not request sniffer reload: {error}", file=sys.stderr)
 		except (OSError, ValueError):
 			return
 		root.after(100, poll_terminal_toggle)
@@ -94,6 +112,8 @@ def main() -> None:
 	try:
 		root.mainloop()
 	finally:
+		if terminal_attributes is not None:
+			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, terminal_attributes)
 		slideshow.close()
 
 

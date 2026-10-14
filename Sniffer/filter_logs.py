@@ -5,6 +5,10 @@ import shlex
 import time
 import sys
 import shutil
+import select
+import termios
+import tty
+import signal
 from datetime import datetime, timedelta
 
 PIO_PYTHON = os.path.expanduser('~/.platformio/penv/bin/python')
@@ -113,6 +117,14 @@ except Exception as e:
 # 2. Open the serial port
 try:
     ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+    # Reset the ESP32 when the logger is restarted so promiscuous capture starts fresh.
+    ser.dtr = False
+    ser.rts = False
+    time.sleep(0.2)
+    ser.dtr = True
+    ser.rts = True
+    time.sleep(2)
+    ser.reset_input_buffer()
     print("👂 Listening on ttyUSB0... Press Ctrl+C to stop.\n")
 
 except Exception as e:
@@ -212,6 +224,20 @@ last_cleanup_date = time.strftime('%Y-%m-%d')
 load_played_today()
 log_file = open(output_filename, 'a')
 last_filter_reload = time.monotonic()
+terminal_attributes = None
+if sys.stdin.isatty():
+    terminal_attributes = termios.tcgetattr(sys.stdin)
+    tty.setcbreak(sys.stdin.fileno())
+
+
+def reload_filter(_signum, _frame):
+    global mac_to_name, mac_to_phonetic, mac_to_greeting, last_filter_reload
+    mac_to_name, mac_to_phonetic, mac_to_greeting = load_filter_names()
+    last_filter_reload = time.monotonic()
+    print(f"🔄 Reloaded filter.json: {len(mac_to_name)} devices loaded")
+
+
+signal.signal(signal.SIGUSR1, reload_filter)
 
 # 3. Listen to the ESP32 live and process the data
 try:
@@ -226,6 +252,11 @@ try:
                     )
                 except Exception as error:
                     print(f"⚠️ Could not reload filter.json: {error}")
+
+            if sys.stdin.isatty():
+                readable, _, _ = select.select([sys.stdin], [], [], 0)
+                if readable and sys.stdin.read(1) == '\x12':
+                    reload_filter(None, None)
 
             current_date = time.strftime('%Y-%m-%d')
             if current_date != last_cleanup_date:
@@ -354,3 +385,5 @@ try:
             pass
 finally:
     log_file.close()
+    if terminal_attributes is not None:
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, terminal_attributes)

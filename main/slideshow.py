@@ -17,6 +17,7 @@ from PIL import Image, ImageTk
 from .bieruurcountdown import BieruurCountdownMixin
 from .bieruursound import BieruurSoundMixin
 from .normalslides import NormalSlidesMixin
+from .nextcloud import choose_random_event_image
 from .showquotes import ShowQuotesMixin
 from .vrijmibogif import VrijmiboGifMixin
 
@@ -103,6 +104,11 @@ class Slideshow(
 		if self.nextcloud_images:
 			self.nextcloud_image_index = next(
 				(index for index, path in enumerate(self.images) if path in self.nextcloud_images),
+				None,
+			)
+		if self.nextcloud_image_index is None:
+			self.nextcloud_image_index = next(
+				(index for index, path in enumerate(self.images) if path.name.startswith("eventpicture_")),
 				None,
 			)
 		self.update_beer_hour_slide()
@@ -246,17 +252,25 @@ class Slideshow(
 		if images:
 			self.nextcloud_images = images
 			if self.nextcloud_image_index is None:
-				self.images.append(random.choice(images))
-				self.nextcloud_image_index = len(self.images) - 1
+				new_image = choose_random_event_image(images)
+				insert_at = min(self.index, len(self.images))
+				self.images.insert(insert_at, new_image)
+				if self.vrijmibo_index is not None and self.vrijmibo_index >= insert_at:
+					self.vrijmibo_index += 1
+				if self.beer_hour_index is not None and self.beer_hour_index >= insert_at:
+					self.beer_hour_index += 1
+				self.nextcloud_image_index = insert_at
 				self.preprocess_images()
-				if len(self.images) == 1:
-					self.display_current()
+				self.index = insert_at
+				self.display_current()
 				return
-			old_path = self.images[self.nextcloud_image_index]
-			choices = [path for path in images if path != old_path]
-			self.images[self.nextcloud_image_index] = random.choice(choices or images)
-			self.cached_photos.pop(old_path, None)
-			self.cached_animations.pop(old_path, None)
+		if self.nextcloud_image_index >= len(self.images):
+			self.nextcloud_image_index = None
+			return
+		old_path = self.images[self.nextcloud_image_index]
+		self.images[self.nextcloud_image_index] = choose_random_event_image(images)
+		self.cached_photos.pop(old_path, None)
+		self.cached_animations.pop(old_path, None)
 
 	def toggle_quote_voice(self, _event: tk.Event | None = None) -> None:
 		self.quote_voice_enabled = not self.quote_voice_enabled

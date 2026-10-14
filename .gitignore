@@ -13,3 +13,4 @@ __pycache__
 *.gif
 *.txt
 /slides/events/
+Sniffer/played_today.txt

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import urllib.error
 import urllib.request
 from datetime import date, datetime
 from html.parser import HTMLParser
@@ -68,9 +69,12 @@ class _ActivityParser(HTMLParser):
 
 def sync_activity_slide() -> Path:
 	request = urllib.request.Request(ACTIVITIES_URL, headers={"User-Agent": "slideshow activities updater"})
-	with urllib.request.urlopen(request, timeout=NETWORK_TIMEOUT_SECONDS) as response:
-		parser = _ActivityParser()
-		parser.feed(response.read().decode("utf-8", errors="replace"))
+	try:
+		with urllib.request.urlopen(request, timeout=NETWORK_TIMEOUT_SECONDS) as response:
+			parser = _ActivityParser()
+			parser.feed(response.read().decode("utf-8", errors="replace"))
+	except (OSError, urllib.error.URLError) as error:
+		raise RuntimeError(f"Could not update activities slide: {error}") from error
 
 	activities = []
 	seen: set[tuple[date, str]] = set()
