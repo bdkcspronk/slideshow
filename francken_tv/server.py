@@ -18,8 +18,10 @@ import hashlib
 import json
 import logging
 import mimetypes
+import os
 import shutil
 import threading
+import time
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -41,6 +43,28 @@ PACKAGE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = PACKAGE_DIR / "static"
 SERVED_FOLDERS = [PROJECT_DIR / "media", CACHE_DIR]
 RESIZABLE = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
+FITTED_DIR = CACHE_DIR / "fitted"
+FITTED_KEEP_SECONDS = 7 * 24 * 3600   # scaled copies not shown for a week are deleted
+HOUR = 3600
+
+
+def clean_fitted(folder: Path, keep_seconds: float = FITTED_KEEP_SECONDS) -> int:
+	"""Delete scaled copies that haven't been shown for a while: old versions of edited posters
+	and posters that were removed. Copies in use are touched when shown (see fitted_image)."""
+	if not folder.is_dir():
+		return 0
+	cutoff = time.time() - keep_seconds
+	removed = 0
+	for file in folder.iterdir():
+		try:
+			if file.stat().st_mtime < cutoff:
+				file.unlink()
+				removed += 1
+		except FileNotFoundError:
+			pass
+	if removed:
+		log.info("Removed %d unused scaled posters", removed)
+	return removed
 
 
 def make_templates() -> Environment:
@@ -53,6 +77,7 @@ class SlideRenderer:
 		self.templates = make_templates()
 		self.current: Slide | None = None
 		self.fitted: dict[tuple[Path, float], Path] = {}
+		self.last_cleanup = 0.0
 
 	def render(self, slide: Slide) -> str:
 		data = slide.update(self.app.clock.now()) if slide.update else slide.data
@@ -83,7 +108,7 @@ class SlideRenderer:
 					self.fitted[key] = path
 				else:
 					digest = hashlib.sha1(f"{path}:{key[1]}".encode()).hexdigest()[:16]
-					target = CACHE_DIR / "fitted" / f"{digest}.png"
+					target = FITTED_DIR / f"{digest}.png"
 					if not target.exists():
 						target.parent.mkdir(parents=True, exist_ok=True)
 						image.thumbnail((width, height), Image.LANCZOS)
@@ -91,7 +116,15 @@ class SlideRenderer:
 						image.save(temporary, format="PNG")
 						temporary.replace(target)
 					self.fitted[key] = target
-		return self.fitted[key]
+		fitted = self.fitted[key]
+		if fitted != path:
+			# Mark the copy as in use (at most once an hour), so clean_fitted keeps it.
+			if time.time() - fitted.stat().st_mtime > HOUR:
+				os.utime(fitted)
+			if time.time() - self.last_cleanup > HOUR:
+				self.last_cleanup = time.time()
+				clean_fitted(FITTED_DIR)
+		return fitted
 
 
 class Handler(BaseHTTPRequestHandler):
