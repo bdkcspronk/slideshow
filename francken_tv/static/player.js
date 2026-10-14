@@ -16,6 +16,7 @@ const history = [];      // recently shown slides, for the left arrow key
 let historyIndex = -1;
 let toastTimer = null;
 let lastNoticeId = null;
+let showCount = 0;       // every slide change gets a number; only the newest may touch the screen
 
 async function getJson(url, options) {
 	const response = await fetch(url, options);
@@ -24,6 +25,7 @@ async function getJson(url, options) {
 }
 
 async function show(slide, { canRefresh = true } = {}) {
+	const mine = ++showCount;
 	clearTimeout(nextTimer);
 	clearInterval(refreshTimer);
 	const back = layers[1 - front];
@@ -31,6 +33,7 @@ async function show(slide, { canRefresh = true } = {}) {
 	// Wait until the images are decoded, so slides never appear half-loaded.
 	const images = [...back.querySelectorAll("img")];
 	await Promise.all(images.map((img) => img.decode().catch(() => {})));
+	if (mine !== showCount) return;   // skipped again while loading: the newer change takes over
 	if (images.some((img) => img.naturalWidth === 0)) {
 		// A missing or broken image would show as a black screen: skip this slide instead.
 		console.warn("Skipping a slide with a broken image:", images.map((img) => img.src));
@@ -42,7 +45,8 @@ async function show(slide, { canRefresh = true } = {}) {
 	back.classList.add("visible");
 	old.classList.remove("visible");
 	front = 1 - front;
-	setTimeout(() => { if (!old.classList.contains("visible")) old.innerHTML = ""; }, 1000);
+	// Empty the old layer after the fade, unless a newer slide is already loading into it.
+	setTimeout(() => { if (mine === showCount) old.innerHTML = ""; }, 1000);
 
 	current = slide;
 	if (slide.refresh && canRefresh) refreshTimer = setInterval(refresh, slide.refresh * 1000);
@@ -76,7 +80,9 @@ function previous() {
 // only elements marked data-live="..." are updated, so animations keep running smoothly.
 async function refresh() {
 	try {
+		const started = showCount;
 		const slide = await getJson("/api/current");
+		if (started !== showCount) return;   // the slide changed meanwhile
 		const layer = layers[front];
 		const fresh = document.createElement("div");
 		fresh.innerHTML = slide.html;
