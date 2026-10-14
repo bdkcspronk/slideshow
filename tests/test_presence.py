@@ -124,7 +124,14 @@ class ChartTest(PresenceTestCase):
 		self.assertTrue(bob["glow"] and bob["bubbles"])
 		self.assertTrue(dave["background"].startswith("#"))        # no device entry: a generated colour
 		self.assertLess(alice["delay"], bob["delay"])                 # earlier bars start growing first
-		self.assertEqual([tick["label"] for tick in view["ticks"]], ["08:00", "09:00", "10:00", "11:00"])
+		self.assertEqual([tick["label"] for tick in view["ticks"]], ["08:00", "09:00", "10:00", "11:00"])   # first arrival 09:00
+
+	def test_chart_starts_an_hour_before_the_first_arrival(self):
+		sightings = [Sighting(at("12:40"), ALICE, "Alice"), Sighting(at("13:10"), BOB, "Bob")]
+		view = chart_view(sightings, self.devices.by_mac(), at("14:00"))
+		self.assertEqual([tick["label"] for tick in view["ticks"]], ["12:00", "13:00", "14:00"])
+		self.assertEqual(view["grid"][0]["left"], 0)        # the chart starts at 11:30 (12:40 minus an hour, on a quarter)
+		self.assertEqual(view["bars"][0]["left"], 38.889)   # 12:40 is 70 of 180 minutes into 11:30-14:30
 		self.assertIsNone(chart_view([], {}, at("11:00")))
 
 	def test_time_in_room(self):

@@ -44,7 +44,6 @@ seconds = 10
 [presence]
 database = "data/presence.sqlite3"
 devices = "config/devices.json"   # MAC address -> name, colours, chart style, greeting
-chart_starts_at = "08:00"
 seconds = 15
 greet_arrivals = true
 day_starts_at = "04:00"           # everyone can be greeted again after this time

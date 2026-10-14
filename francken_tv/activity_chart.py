@@ -35,6 +35,7 @@ FALLBACK_BRIGHTNESS_RANGE = (0.85, 1.0)
 BUCKET = timedelta(minutes=5)          # sightings are grouped per 5 minutes
 MAX_GAP = timedelta(minutes=10)        # gaps up to this long don't split a bar
 SHAPES = {"round corners", "square corners", "striped", "nyan cat", "rainbow", "beer", "board"}
+CHART_LEAD = timedelta(hours=1)        # the chart starts this long before the first arrival
 GROW_SECONDS = 4.0                     # the bars draw themselves across the chart in this time
 GROW_STARTS = 0.8                      # ...starting after the slide has faded in
 
@@ -115,6 +116,10 @@ def floor_to_bucket(moment: datetime) -> datetime:
 	return moment.replace(minute=moment.minute - moment.minute % 5, second=0, microsecond=0)
 
 
+def floor_to_quarter(moment: datetime) -> datetime:
+	return moment.replace(minute=moment.minute - moment.minute % 15, second=0, microsecond=0)
+
+
 def merge_into_blocks(buckets: list[datetime]) -> list[tuple[datetime, datetime]]:
 	"""Sorted 5-minute buckets -> (start, end) stretches, bridging gaps of up to 10 minutes."""
 	blocks = []
@@ -158,14 +163,14 @@ def css_colour(colour: str | list) -> str:
 	return colour if isinstance(colour, str) else f"linear-gradient(90deg, {', '.join(colour)})"
 
 
-def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datetime,
-		starts_at: time = time(8, 0)) -> dict | None:
+def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datetime) -> dict | None:
 	"""Everything templates/slides/presence.html needs, or None if nobody was seen today."""
 	data = prepare(sightings, devices)
 	if not data.names:
 		return None
 	first = min(bar.start for bar in data.bars)
-	start = min(datetime.combine(now.date(), starts_at), first.replace(minute=0))
+	# The chart starts an hour before the first person arrived (on a quarter hour, so the grid lines line up).
+	start = floor_to_quarter(first - CHART_LEAD)
 	end = max(now, data.latest_sighting) + timedelta(minutes=30)
 	span = (end - start).total_seconds()
 	percent = lambda moment: round((moment - start).total_seconds() / span * 100, 3)

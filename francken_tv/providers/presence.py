@@ -31,7 +31,6 @@ class PresenceChartProvider(Provider):
 			default_seconds: float) -> None:
 		self.store = store
 		self.devices = devices
-		self.starts_at = parse_time(settings.get("chart_starts_at", "08:00"))
 		self.seconds = settings.get("seconds", default_seconds)
 		self.nyan_cat = None
 		if nyan_cat_path.is_file():
@@ -40,7 +39,7 @@ class PresenceChartProvider(Provider):
 
 	def slides(self, now: datetime) -> list[Slide]:
 		midnight = datetime.combine(now.date(), time())
-		chart = chart_view(self.store.known_sightings(midnight, now), self.devices.by_mac(), now, self.starts_at)
+		chart = chart_view(self.store.known_sightings(midnight, now), self.devices.by_mac(), now)
 		if chart is None:
 			return []   # nobody seen yet today
 		return [Slide("presence.html", self.seconds, {**chart, "nyan_cat": self.nyan_cat})]
