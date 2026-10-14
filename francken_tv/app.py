@@ -21,7 +21,7 @@ from .providers.wordle import WordleProvider
 from .providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
 from .providers.event_photos import EventPhotosProvider
 from .providers.images import ImagesProvider
-from .providers.presence import Greeter, PresenceChartProvider
+from .providers.presence import Greeter, LeaderboardProvider, PresenceChartProvider
 from .providers.quote import QuoteProvider
 from .providers.vrijmibo import VrijmiboTakeover
 from .scheduler import Scheduler
@@ -54,8 +54,7 @@ class App:
 		self.notify(f"Reading quotes aloud: {'on' if enabled else 'off'}")
 
 	def reload_devices(self) -> None:
-		count = len(self.devices.reload())
-		self.runner.refresh_soon("presence")
+		count = len(self.devices.reload())   # the activity chart uses it the next time it's shown
 		self.notify(f"Reloaded {count} devices")
 
 
@@ -86,8 +85,8 @@ def build_app(config: dict, clock: Clock) -> App:
 		ImagesProvider(config.get("images", {}), seconds),
 		ActivitiesProvider(config.get("activities", {}), seconds),
 		EventPhotosProvider(config.get("event_photos", {}), CACHE_DIR / "event_photos", seconds),
-		PresenceChartProvider(presence, store, devices, CACHE_DIR / "presence_chart.png",
-			project_path("media/nyancat.png"), seconds),
+		PresenceChartProvider(presence, store, devices, project_path("media/nyancat.png"), seconds),
+		LeaderboardProvider(config.get("leaderboard", {}), store, devices, seconds),
 		QuoteProvider(config.get("quote", {}), DATA_DIR / "quotes.csv", announcer, seconds),
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),
 		*available_puzzles.values(),

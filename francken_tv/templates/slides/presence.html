@@ -1,0 +1,39 @@
+{#
+	Today's activity chart. The numbers come from chart_view() in activity_chart.py; the looks and
+	animations ("Activity chart" in style.css): bars grow in from left to right, beer bubbles
+	rise, and the nyan cat rides the front of its rainbow. Positions are in % of the chart width.
+#}
+<div class="slide presence-slide" style="--rows: {{ names | length }}">
+	<h1>Francken activity tracker</h1>
+	<div class="chart">
+		<div class="chart-names">
+			{% for name in names %}<div>{{ name }}</div>{% endfor %}
+		</div>
+		<div class="chart-plot">
+			{% for line in grid %}<i class="chart-grid {{ line.kind }}" style="left: {{ line.left }}%"></i>{% endfor %}
+			{% for name in names %}<i class="chart-row" style="--row: {{ loop.index0 }}"></i>{% endfor %}
+
+			{% for bar in bars %}
+			<div class="bar {{ bar.shape }}{{ ' glow' if bar.glow }}" style="--row: {{ bar.row }}; left: {{ bar.left }}%; width: {{ bar.width }}%;
+				--delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s; background: {{ bar.background }};
+				{%- if bar.gradient_size %} background-size: {{ bar.gradient_size }}% 100%; background-position: {{ bar.gradient_position }}% 0;{% endif %}
+				{%- if bar.glow_colour %} --glow: {{ bar.glow_colour }};{% endif %}">
+				{% if bar.stripes %}<span class="bar-stripes" style="background: {{ bar.stripes }};{% if bar.stripe_width %} --stripe: {{ bar.stripe_width }};{% endif %}"></span>{% endif %}
+				{% if bar.bubbles %}
+				<span class="beer-foam" style="max-width: {{ bar.foam_max }}"></span>
+				{% for bubble in bar.bubbles %}<i class="beer-bubble" style="left: {{ bubble.x }}%; --size: {{ bubble.size }}%; --rise: {{ bubble.rise }}s; --wait: {{ bubble.wait }}s"></i>{% endfor %}
+				{% endif %}
+			</div>
+			{% if bar.nyan_cat and nyan_cat %}
+			{# The cat rides along the front of the bar while it grows, then keeps bobbing at the end. #}
+			<img class="nyan-cat-sprite" src="{{ nyan_cat.url }}" alt="" style="--row: {{ bar.row }}; --from: {{ bar.left }}%;
+				--to: {{ bar.left + bar.width }}%; --delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s;
+				--aspect: {{ nyan_cat.aspect }}; --offset: {{ bar.cat_offset }}%">
+			{% endif %}
+			{% endfor %}
+		</div>
+		<div class="chart-hours">
+			{% for tick in ticks %}<span style="left: {{ tick.left }}%">{{ tick.label }}</span>{% endfor %}
+		</div>
+	</div>
+</div>

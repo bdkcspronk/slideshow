@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from francken_tv.activity_chart import merge_into_blocks, parse_style, prepare, render_chart
+from francken_tv.activity_chart import chart_view, merge_into_blocks, parse_style, prepare, time_in_room
 from francken_tv.devices import DeviceList
 from francken_tv.presence_store import PresenceStore, Sighting
 from francken_tv.providers.presence import Greeter, greeting_day
@@ -111,14 +111,39 @@ class ChartTest(PresenceTestCase):
 		sightings = [Sighting(at("10:00"), BOB, "Bob"), Sighting(at("09:00"), ALICE, "Alice")]
 		self.assertEqual(prepare(sightings, self.devices.by_mac()).names, ["Alice", "Bob"])
 
-	def test_renders_png(self):
+	def test_chart_view_positions_and_styles(self):
 		sightings = [Sighting(at(t), mac, name) for t, mac, name in [
 			("09:00", ALICE, "Alice"), ("09:05", ALICE, "Alice"), ("10:00", BOB, "Bob"), ("10:30", "DD:00:00:00:00:04", "Dave"),
 		]]
-		output = self.dir / "chart.png"
-		self.assertTrue(render_chart(sightings, self.devices.by_mac(), at("11:00"), output))
-		self.assertGreater(output.stat().st_size, 10_000)
-		self.assertFalse(render_chart([], {}, at("11:00"), self.dir / "empty.png"))
+		view = chart_view(sightings, self.devices.by_mac(), at("11:00"))
+		self.assertEqual(view["names"], ["Alice", "Bob", "Dave"])
+		alice, bob, dave = view["bars"]
+		self.assertEqual(alice["left"], 28.571)                     # 09:00 on a 08:00-11:30 axis: 60 of 210 minutes
+		self.assertEqual((alice["shape"], bob["shape"]), ("striped", "beer"))
+		self.assertTrue(alice["stripes"].startswith("linear-gradient"))
+		self.assertTrue(bob["glow"] and bob["bubbles"])
+		self.assertTrue(dave["background"].startswith("#"))        # no device entry: a generated colour
+		self.assertLess(alice["delay"], bob["delay"])                 # earlier bars start growing first
+		self.assertEqual([tick["label"] for tick in view["ticks"]], ["08:00", "09:00", "10:00", "11:00"])
+		self.assertIsNone(chart_view([], {}, at("11:00")))
+
+	def test_time_in_room(self):
+		sightings = [Sighting(at(t), ALICE, "Alice") for t in ("09:00", "09:05", "09:10", "13:00")]
+		total, days = time_in_room(sightings)["Alice"]
+		self.assertEqual((total, len(days)), (timedelta(minutes=20), 1))   # 09:00-09:15 and 13:00-13:05
+
+
+class LeaderboardTest(PresenceTestCase):
+	def test_ranking_this_week(self):
+		from francken_tv.providers.presence import LeaderboardProvider
+		for minute in range(0, 60, 5):
+			self.store.add_sighting(at("09:00") + timedelta(minutes=minute), BOB, "Bob", -50, 1)
+		self.store.add_sighting(at("10:00"), ALICE, "Alice", -50, 1)
+		self.store.add_sighting(at("10:00") - timedelta(days=7), ALICE, "Alice", -50, 1)   # last week: not counted
+		[slide] = LeaderboardProvider({}, self.store, self.devices, 8).slides(at("12:00"))
+		rows = slide.data["rows"]
+		self.assertEqual([(r["place"], r["name"], r["time"], r["days"]) for r in rows], [(1, "Bob", "1 h 00 min", 1), (2, "Alice", "5 min", 1)])
+		self.assertEqual(rows[0]["width"], 100.0)
 
 
 class SnifferTest(unittest.TestCase):

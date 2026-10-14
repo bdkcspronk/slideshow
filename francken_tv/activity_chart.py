@@ -1,7 +1,9 @@
-"""Draws the daily "Francken activity tracker" chart: who was in the room when today.
+"""The daily "Francken activity tracker" chart: who was in the room when today.
 
-Each person gets a row; every stretch of time they were around is a bar. The bar's look
-comes from their entry in config/devices.json:
+This file turns sightings into rows, bars and timings; templates/slides/presence.html and
+the "Activity chart" styles in style.css draw them (the bars grow in, beer fizzes, the nyan
+cat rides its rainbow). Each person gets a row; every stretch of time they were around is a
+bar. The bar's look comes from their entry in config/devices.json:
 
 	"color":           "#fcd303", or a list of colours for a gradient
 	"style":           "round corners" (default), "square corners", "striped", "nyan cat",
@@ -20,41 +22,21 @@ from __future__ import annotations
 
 import colorsys
 import hashlib
+import random
 from dataclasses import dataclass, field
-from datetime import datetime, time, timedelta
-from pathlib import Path
-
-import matplotlib
-
-matplotlib.use("Agg")   # no window; render straight to a file
-
-import matplotlib.dates as mdates
-import matplotlib.image
-import matplotlib.patches as patches
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.collections import LineCollection
-from matplotlib.path import Path as MplPath
-from matplotlib.transforms import IdentityTransform
+from datetime import date, datetime, time, timedelta
 
 from .devices import Device
 from .presence_store import Sighting
 
-DEFAULT_COLOR = "#00E676"
-GRID_COLOR = "#263238"
-BACKGROUND_COLOR = "#151722"
 TEXT_COLOR = "#ECEFF1"
 FALLBACK_SATURATION_RANGE = (0.65, 0.9)
 FALLBACK_BRIGHTNESS_RANGE = (0.85, 1.0)
-FIGURE_SIZE = (19.2, 10.8)
-FIGURE_DPI = 100
-CORNER_RADIUS = 8
-CURVE_FACTOR = 0.5522848
-VERTICAL_AXIS_PADDING = 1.0
-SUBPLOT_MARGINS = {"left": 0.12, "right": 0.98, "bottom": 0.12, "top": 0.88}
 BUCKET = timedelta(minutes=5)          # sightings are grouped per 5 minutes
 MAX_GAP = timedelta(minutes=10)        # gaps up to this long don't split a bar
 SHAPES = {"round corners", "square corners", "striped", "nyan cat", "rainbow", "beer", "board"}
+GROW_SECONDS = 4.0                     # the bars draw themselves across the chart in this time
+GROW_STARTS = 0.8                      # ...starting after the slide has faded in
 
 
 @dataclass
@@ -171,213 +153,84 @@ def prepare(sightings: list[Sighting], devices: dict[str, Device]) -> ChartData:
 	return data
 
 
-def render_chart(sightings: list[Sighting], devices: dict[str, Device], now: datetime, output: Path,
-		starts_at: time = time(8, 0), nyan_cat_path: Path | None = None) -> bool:
-	"""Draw today's chart to `output` (PNG). Returns False if there is nothing to draw."""
+def css_colour(colour: str | list) -> str:
+	"""A CSS background for a colour or a gradient list."""
+	return colour if isinstance(colour, str) else f"linear-gradient(90deg, {', '.join(colour)})"
+
+
+def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datetime,
+		starts_at: time = time(8, 0)) -> dict | None:
+	"""Everything templates/slides/presence.html needs, or None if nobody was seen today."""
 	data = prepare(sightings, devices)
 	if not data.names:
-		return False
-	nyan_cat_image = matplotlib.image.imread(nyan_cat_path) if nyan_cat_path and nyan_cat_path.is_file() else None
-	today = now.date()
+		return None
+	first = min(bar.start for bar in data.bars)
+	start = min(datetime.combine(now.date(), starts_at), first.replace(minute=0))
+	end = max(now, data.latest_sighting) + timedelta(minutes=30)
+	span = (end - start).total_seconds()
+	percent = lambda moment: round((moment - start).total_seconds() / span * 100, 3)
 
-	with plt.style.context("dark_background"):
-		fig, ax = plt.subplots(figsize=FIGURE_SIZE, dpi=FIGURE_DPI, facecolor=BACKGROUND_COLOR)
-		try:
-			ax.set_facecolor(BACKGROUND_COLOR)
-			ax.set_axisbelow(True)   # grid lines behind the bars
-			ax.set_xlim(
-				mdates.date2num(datetime.combine(today, starts_at)),
-				mdates.date2num(max(now, data.latest_sighting) + timedelta(minutes=30)),
-			)
-			ax.set_ylim(-VERTICAL_AXIS_PADDING, len(data.names) - 1 + VERTICAL_AXIS_PADDING)
-			ax.set_yticks(range(len(data.names)))
-			ax.set_yticklabels(data.names, fontsize=20, fontweight="normal", color=TEXT_COLOR)
-			ax.invert_yaxis()
-			ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
-			ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
-			ax.tick_params(axis="x", colors=TEXT_COLOR, labelsize=20, pad=8)
-			ax.tick_params(axis="y", colors=TEXT_COLOR, pad=12)
-			for spine in ax.spines.values():
-				spine.set_visible(False)
-			draw_grid(ax, datetime.combine(today, starts_at), now + timedelta(minutes=5))
-			ax.set_title("FRANCKEN ACTIVITY TRACKER", fontsize=25, fontweight="bold", color=TEXT_COLOR, loc="left", pad=25)
-			fig.autofmt_xdate()
-			fig.subplots_adjust(**SUBPLOT_MARGINS)
+	# Bars with the same gradient share one gradient across the chart (as in the old chart).
+	gradient_extent: dict[tuple, tuple[float, float]] = {}
+	for bar in data.bars:
+		if isinstance(bar.style.color, list) and bar.style.shape not in ("nyan cat", "rainbow", "beer", "board"):
+			key = tuple(bar.style.color)
+			left, right = gradient_extent.get(key, (100.0, 0.0))
+			gradient_extent[key] = (min(left, percent(bar.start)), max(right, percent(bar.end)))
 
-			# Bars are drawn in screen pixels so corners stay round; that needs the final layout first.
-			fig.canvas.draw()
-			gradient_groups: dict[tuple, dict] = {}
-			rng = np.random.default_rng()
-			for bar in data.bars:
-				draw_bar(ax, bar, gradient_groups, rng, nyan_cat_image)
-			draw_gradient_groups(ax, gradient_groups)
+	bars = []
+	for bar in data.bars:
+		style = bar.style
+		left, width = percent(bar.start), max(percent(bar.end) - percent(bar.start), 0.2)
+		view = {
+			"row": bar.row, "left": left, "width": width, "shape": style.shape.replace(" ", "-"),
+			"glow": style.glow, "background": css_colour(style.color),
+			# Grow at a steady speed from left to right, like time playing back.
+			"delay": round(GROW_STARTS + left / 100 * GROW_SECONDS, 2),
+			"grow": round(max(width / 100 * GROW_SECONDS, 0.25), 2),
+			"nyan_cat": style.shape == "nyan cat" and bar.is_latest, "cat_offset": style.nyan_cat_x_offset,
+		}
+		if isinstance(style.color, list) and tuple(style.color) in gradient_extent:
+			group_left, group_right = gradient_extent[tuple(style.color)]
+			group_width = max(group_right - group_left, width)
+			view["gradient_size"] = round(group_width / width * 100, 2)
+			view["gradient_position"] = round((left - group_left) / (group_width - width) * 100, 2) if group_width > width else 0
+		if style.glow:
+			view["glow_colour"] = style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color
+		if style.shape in ("striped", "board"):
+			view["stripes"] = "#0057B8" if style.shape == "board" else css_colour(style.stripe_color)
+			view["stripe_width"] = f"{max(4, style.stripe_thickness * 1.5):.1f}px" if style.stripe_thickness else None
+		if style.shape == "beer":
+			view["foam_max"] = f"{style.beer_foam_max_width:.0f}px" if style.beer_foam_max_width else "100%"
+			rng = random.Random(f"{bar.row}-{bar.start}")   # the same bubbles every time this bar is drawn
+			view["bubbles"] = [
+				{"x": round(rng.uniform(2, 70), 1), "size": round(rng.uniform(0.7, 1.0) * 26, 1),
+					"rise": round(rng.uniform(1.6, 3.2), 2), "wait": round(rng.uniform(0, 3), 2)}
+				for _ in range(max(2, min(14, round(width * 1.5))))
+			]
+		bars.append(view)
 
-			output.parent.mkdir(parents=True, exist_ok=True)
-			temporary = output.with_suffix(".tmp.png")
-			fig.savefig(temporary, dpi=FIGURE_DPI, facecolor=fig.get_facecolor(), edgecolor="none")
-			temporary.replace(output)   # the web server never sees a half-written file
-		finally:
-			plt.close(fig)
-	return True
-
-
-def draw_grid(ax, start: datetime, end: datetime) -> None:
-	"""Vertical lines every 15 minutes, stronger on the half hour and hour."""
-	moment = start
+	hour = start.replace(minute=0, second=0, microsecond=0)
+	grid, ticks = [], []
+	moment = hour
 	while moment <= end:
-		width, alpha = (2.0, 0.9) if moment.minute == 0 else (1.3, 0.75) if moment.minute == 30 else (0.7, 0.5)
-		ax.axvline(moment, linestyle="-", linewidth=width, color=GRID_COLOR, alpha=alpha, zorder=1)
+		if moment >= start:
+			kind = "hour" if moment.minute == 0 else "half" if moment.minute == 30 else "quarter"
+			grid.append({"left": percent(moment), "kind": kind})
+			if moment.minute == 0:
+				ticks.append({"left": percent(moment), "label": moment.strftime("%H:%M")})
 		moment += timedelta(minutes=15)
-	ax.yaxis.grid(True, linestyle="-", color=GRID_COLOR, alpha=0.3, zorder=1)
+	return {"names": data.names, "bars": bars, "grid": grid, "ticks": ticks}
 
 
-def rounded_rectangle(x0: float, y0: float, x1: float, y1: float, radius: float) -> MplPath:
-	curve = radius * CURVE_FACTOR
-	return MplPath([
-		(x0 + radius, y0), (x1 - radius, y0),
-		(x1 - radius + curve, y0), (x1, y0 + radius - curve), (x1, y0 + radius),
-		(x1, y1 - radius),
-		(x1, y1 - radius + curve), (x1 - radius + curve, y1), (x1 - radius, y1),
-		(x0 + radius, y1),
-		(x0 + radius - curve, y1), (x0, y1 - radius + curve), (x0, y1 - radius),
-		(x0, y0 + radius),
-		(x0, y0 + radius - curve), (x0 + radius - curve, y0), (x0 + radius, y0),
-	], [
-		MplPath.MOVETO, MplPath.LINETO,
-		MplPath.CURVE4, MplPath.CURVE4, MplPath.CURVE4,
-		MplPath.LINETO,
-		MplPath.CURVE4, MplPath.CURVE4, MplPath.CURVE4,
-		MplPath.LINETO,
-		MplPath.CURVE4, MplPath.CURVE4, MplPath.CURVE4,
-		MplPath.LINETO,
-		MplPath.CURVE4, MplPath.CURVE4, MplPath.CURVE4,
-	])
-
-
-def draw_bar(ax, bar: Bar, gradient_groups: dict, rng, nyan_cat_image) -> None:
-	style = bar.style
-	screen = IdentityTransform()
-	height = 0.8
-	y_pos = bar.row - height / 2
-	x0, y0 = ax.transData.transform((mdates.date2num(bar.start), y_pos))
-	x1, y1 = ax.transData.transform((mdates.date2num(bar.end), y_pos + height))
-	x0, x1 = sorted((x0, x1))
-	y0, y1 = sorted((y0, y1))
-	radius = min(CORNER_RADIUS, abs(x1 - x0) / 2, abs(y1 - y0) / 2)
-
-	if style.shape == "square corners":
-		shape = patches.Rectangle((x0, y0), x1 - x0, y1 - y0, transform=screen, facecolor="none", edgecolor="none", zorder=3)
-	else:
-		shape = patches.PathPatch(rounded_rectangle(x0, y0, x1, y1, radius), transform=screen, facecolor="none", edgecolor="none", zorder=3)
-
-	if style.glow:
-		glow_color = style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color
-		glow_width = max(4.0, min(18.0, (y1 - y0) * 0.22))
-		for width, alpha in ((glow_width, 0.08), (glow_width * 0.65, 0.14), (glow_width * 0.35, 0.24)):
-			ax.add_patch(patches.PathPatch(
-				shape.get_path(), transform=shape.get_transform(), facecolor="none", edgecolor=glow_color,
-				linewidth=width, alpha=alpha, joinstyle="round", zorder=2,
-			))
-
-	if style.shape == "board":
-		shape.set_facecolor("#D62828")
-		ax.add_patch(shape)
-	elif style.shape == "beer":
-		draw_beer(ax, shape, style, x0, y0, x1, y1, rng)
-	elif style.shape in {"nyan cat", "rainbow"}:
-		rainbow = matplotlib.colors.LinearSegmentedColormap.from_list(
-			"nyan_cat_rainbow", ["#E40303", "#FF8C00", "#FFED00", "#008026", "#004DFF", "#750787"],
-		)
-		ax.add_patch(shape)
-		ax.imshow(rainbow(np.linspace(0, 1, 256))[:, None, :], extent=(x0, x1, y0, y1), origin="lower",
-			aspect="auto", transform=screen, clip_path=shape, zorder=3)
-	elif isinstance(style.color, list):
-		# All bars with the same gradient share one gradient that runs across the whole chart.
-		group = gradient_groups.setdefault(tuple(style.color), {"paths": [], "bounds": []})
-		group["paths"].append(shape.get_path().transformed(shape.get_transform()))
-		group["bounds"].append((x0, x1, y0, y1))
-	else:
-		shape.set_facecolor(style.color)
-		ax.add_patch(shape)
-
-	if style.shape == "nyan cat" and bar.is_latest and nyan_cat_image is not None:
-		image_height = (y1 - y0) * 1.3
-		source_height, source_width = nyan_cat_image.shape[:2]
-		image_width = image_height * source_width / source_height
-		image_y0 = y0 + ((y1 - y0) - image_height) / 2
-		offset = image_width * style.nyan_cat_x_offset / 100
-		ax.imshow(nyan_cat_image, extent=(x1 + offset, x1 + offset + image_width, image_y0, image_y0 + image_height),
-			origin="upper", aspect="auto", transform=screen, zorder=5)
-
-	if style.shape in {"striped", "board"}:
-		draw_stripes(ax, shape, style, x0, y0, x1, y1)
-
-
-def draw_beer(ax, shape, style: MarkerStyle, x0, y0, x1, y1, rng) -> None:
-	screen = IdentityTransform()
-	beer_map = matplotlib.colors.LinearSegmentedColormap.from_list("beer_gradient", ["#F3B01F", "#F5C340"])
-	beer_gradient = np.tile(beer_map(np.linspace(0, 1, 256))[None, :, :], (256, 1, 1))
-	ax.add_patch(shape)
-	ax.imshow(beer_gradient, extent=(x0, x1, y0, y1), origin="lower", aspect="auto", interpolation="bilinear",
-		transform=screen, clip_path=shape, zorder=3)
-
-	foam_width = (x1 - x0) * 0.28
-	if style.beer_foam_max_width is not None:
-		foam_width = min(foam_width, style.beer_foam_max_width)
-	foam = patches.Rectangle((x1 - foam_width, y0), foam_width, y1 - y0, transform=screen, facecolor="#FCEFCA", edgecolor="none", zorder=4)
-	foam.set_clip_path(shape)
-	ax.add_patch(foam)
-
-	# Bubbles, more of them towards the bottom of the glass.
-	bubble_radius = max(1.2, min(4.0, (y1 - y0) * 0.1))
-	bubble_start = x0 + bubble_radius * 2
-	bubble_end = x1 - foam_width - bubble_radius * 2
-	beer_width = max(0, bubble_end - bubble_start)
-	bubble_count = max(1, min(12, round(beer_width / 12)))
-	scale = 120
-	truncation = -np.expm1(-beer_width / scale)
-	positions = np.sort(bubble_start + -scale * np.log(1 - rng.random(bubble_count) * truncation))
-	for index, bubble_x in enumerate(positions):
-		bubble = patches.Circle(
-			(bubble_x, rng.uniform(y0 + bubble_radius, y1 - bubble_radius)),
-			bubble_radius * (0.7 + (index % 2) * 0.3),
-			transform=screen, facecolor="#FFEEC1", edgecolor="none", zorder=4,
-		)
-		bubble.set_clip_path(shape)
-		ax.add_patch(bubble)
-
-
-def draw_stripes(ax, shape, style: MarkerStyle, x0, y0, x1, y1) -> None:
-	thickness = style.stripe_thickness if style.stripe_thickness is not None else (y1 - y0) / 2.0
-	width = max(4.0, thickness * 1.5)
-	spacing = width * 2 * np.sqrt(2)
-	offsets = np.arange(-y1 + y0, x1 - x0 + y1 - y0, spacing)
-	segments = [
-		[(x0 + offset - (y1 - y0), y0 - (y1 - y0)), (x0 + offset + 2 * (y1 - y0), y1 + (y1 - y0))]
-		for offset in offsets
-	]
-	if style.shape == "board":
-		colors = ["#0057B8"] * len(segments)
-	elif isinstance(style.stripe_color, list):
-		stripe_map = matplotlib.colors.LinearSegmentedColormap.from_list("stripe_gradient", style.stripe_color)
-		colors = stripe_map([np.clip((offset + (y1 - y0) / 2) / (x1 - x0), 0, 1) for offset in offsets])
-	else:
-		colors = [style.stripe_color] * len(segments)
-	stripes = LineCollection(segments, colors=colors, linewidths=width, transform=IdentityTransform(), zorder=6)
-	stripes.set_clip_path(shape.get_path(), shape.get_transform())
-	ax.add_collection(stripes)
-
-
-def draw_gradient_groups(ax, gradient_groups: dict) -> None:
-	for colors, group in gradient_groups.items():
-		shape = patches.PathPatch(MplPath.make_compound_path(*group["paths"]), transform=IdentityTransform(),
-			facecolor="none", edgecolor="none", zorder=3)
-		bounds = group["bounds"]
-		ax.add_patch(shape)
-		ax.imshow(
-			np.linspace(0, 1, 256)[None, :],
-			extent=(min(b[0] for b in bounds), max(b[1] for b in bounds), min(b[2] for b in bounds), max(b[3] for b in bounds)),
-			origin="lower", aspect="auto", interpolation="nearest",
-			cmap=matplotlib.colors.LinearSegmentedColormap.from_list("activity_gradient", list(colors)),
-			vmin=0, vmax=1, transform=IdentityTransform(), clip_path=shape, zorder=3,
-		)
+def time_in_room(sightings: list[Sighting]) -> dict[str, tuple[timedelta, set[date]]]:
+	"""Per person: total time in the room (the same stretches as the chart) and the days present."""
+	buckets: dict[tuple[str, date], set[datetime]] = {}
+	for sighting in sightings:
+		buckets.setdefault((sighting.name, sighting.time.date()), set()).add(floor_to_bucket(sighting.time))
+	totals: dict[str, tuple[timedelta, set[date]]] = {}
+	for (name, day), times in buckets.items():
+		duration = sum((end - start for start, end in merge_into_blocks(sorted(times))), timedelta())
+		total, days = totals.get(name, (timedelta(), set()))
+		totals[name] = (total + duration, days | {day})
+	return totals

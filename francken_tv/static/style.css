@@ -255,6 +255,145 @@ html, body {
 body.show-cursor { cursor: default; }
 body.show-cursor button { cursor: pointer; }
 
+/* Activity chart (activity_chart.py + templates/slides/presence.html). Rows are 1/--rows of the
+   chart height; bars grow from left to right (a clip that opens), like time playing back. */
+.presence-slide {
+	display: flex;
+	flex-direction: column;
+	gap: 3vh;
+	padding: 5vh 3vw 3vh;
+	background: #151722;
+	color: #ECEFF1;
+}
+.presence-slide h1 { margin: 0 0 0 13vw; font-size: 3.4vh; letter-spacing: 0.2vh; text-transform: uppercase; }
+.chart {
+	flex: 1;
+	display: grid;
+	grid-template-columns: 12vw 1fr;
+	grid-template-rows: 1fr 5vh;
+	column-gap: 1vw;
+	min-height: 0;
+}
+.chart-names { display: flex; flex-direction: column; }
+.chart-names div {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	font-size: min(2.6vh, calc(55vh / var(--rows)));
+}
+.chart-plot { position: relative; }
+.chart-grid { position: absolute; top: 0; bottom: 0; border-left: 0.1vh solid rgba(38, 50, 56, 0.5); }
+.chart-grid.half { border-left: 0.15vh solid rgba(38, 50, 56, 0.75); }
+.chart-grid.hour { border-left: 0.2vh solid rgba(38, 50, 56, 0.9); }
+.chart-row { position: absolute; left: 0; right: 0; top: calc((var(--row) + 0.5) * 100% / var(--rows)); border-top: 0.1vh solid rgba(38, 50, 56, 0.3); }
+.chart-hours { grid-column: 2; position: relative; }
+.chart-hours span { position: absolute; top: 1vh; transform: translateX(-50%); font-size: 2.4vh; }
+.bar {
+	position: absolute;
+	top: calc((var(--row) + 0.1) * 100% / var(--rows));
+	height: calc(0.8 * 100% / var(--rows));
+	box-sizing: border-box;
+	border-radius: 8px;
+	overflow: hidden;
+	clip-path: inset(-3vh 100% -3vh 0);
+	animation: bar-grow var(--grow) linear var(--delay) forwards;
+}
+@keyframes bar-grow { to { clip-path: inset(-3vh -3vh -3vh -3vh); } }
+.bar.square-corners { border-radius: 0; }
+.bar.glow { filter: drop-shadow(0 0 1.2vh var(--glow)) drop-shadow(0 0 0.4vh var(--glow)); }   /* outside the bar, which stays clipped */
+.bar.board { background: #D62828 !important; }
+.bar.nyan-cat, .bar.rainbow { background: linear-gradient(#E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787) !important; }
+.bar.beer { background: linear-gradient(90deg, #F3B01F, #F5C340) !important; }
+/* Stripes: the stripe colour (or gradient), cut into diagonal stripes by a mask. */
+.bar-stripes {
+	--s: var(--stripe, calc(42vh / var(--rows)));
+	position: absolute;
+	inset: 0;
+	-webkit-mask: repeating-linear-gradient(-45deg, #000 0 var(--s), transparent var(--s) calc(2 * var(--s)));
+	mask: repeating-linear-gradient(-45deg, #000 0 var(--s), transparent var(--s) calc(2 * var(--s)));
+}
+/* Beer: foam at the end, bubbles rising from the bottom over and over. */
+.beer-foam { position: absolute; top: 0; right: 0; bottom: 0; width: 28%; background: #FCEFCA; }
+.beer-bubble {
+	position: absolute;
+	top: 100%;
+	height: var(--size);
+	aspect-ratio: 1;
+	border-radius: 50%;
+	background: #FFEEC1;
+	animation: fizz var(--rise) ease-in var(--wait) infinite;
+}
+@keyframes fizz {
+	from { top: 100%; opacity: 0.95; transform: translateX(0); }
+	50% { transform: translateX(0.3vh); }
+	to { top: -30%; opacity: 0.25; transform: translateX(-0.3vh); }
+}
+/* The nyan cat rides the front of its rainbow while it grows, then keeps bobbing. */
+.nyan-cat-sprite {
+	position: absolute;
+	top: calc((var(--row) + 0.5) * 100% / var(--rows));
+	height: calc(1.04 * 100% / var(--rows));
+	aspect-ratio: var(--aspect);
+	transform: translate(var(--offset), -50%);
+	opacity: 0;
+	animation:
+		cat-ride var(--grow) linear var(--delay) forwards,
+		cat-bob 0.45s ease-in-out calc(var(--delay) + var(--grow)) infinite alternate;
+}
+@keyframes cat-ride {
+	from { left: var(--from); opacity: 1; }
+	to { left: var(--to); opacity: 1; }
+}
+@keyframes cat-bob { to { margin-top: -0.8vh; } }
+
+/* Weekly leaderboard. */
+.leaderboard-slide {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 0 8vw;
+	background: #151722;
+	color: #ECEFF1;
+}
+.leaderboard-slide h1 { margin: 0 0 4vh; font-size: 5.5vh; }
+.leaderboard-slide ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.6vh; }
+.leaderboard-slide li {
+	display: grid;
+	grid-template-columns: 5.5vh 16vw 1fr 15vw 6vw;
+	align-items: center;
+	gap: 1.5vw;
+	font-size: 3vh;
+	opacity: 0;
+	animation: leader-in 0.6s ease calc(0.6s + var(--i) * 0.15s) forwards;
+}
+@keyframes leader-in { from { opacity: 0; transform: translateY(1vh); } to { opacity: 1; transform: none; } }
+.leaderboard-place {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 5.5vh;
+	height: 5.5vh;
+	border-radius: 50%;
+	background: #263238;
+	font-weight: bold;
+}
+.place-1 .leaderboard-place { background: #f3b01f; color: #151722; }
+.place-2 .leaderboard-place { background: #c0c6cc; color: #151722; }
+.place-3 .leaderboard-place { background: #cd7f32; color: #151722; }
+.leaderboard-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leaderboard-track { height: 3.4vh; border-radius: 1.7vh; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+.leaderboard-bar {
+	display: block;
+	height: 100%;
+	border-radius: 1.7vh;
+	transform-origin: left;
+	animation: leader-bar 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.9s + var(--i) * 0.15s) both;
+}
+@keyframes leader-bar { from { transform: scaleX(0); } }
+.leaderboard-time { text-align: right; font-weight: bold; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.leaderboard-days { color: #8a9aa3; font-size: 2.4vh; }
+
 /* Daily puzzles: one half per puzzle, tap to play. */
 .puzzles-slide {
 	display: flex;

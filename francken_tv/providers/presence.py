@@ -6,7 +6,9 @@ import logging
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
-from ..activity_chart import render_chart
+from PIL import Image
+
+from ..activity_chart import MarkerStyle, chart_view, css_colour, generate_bright_color, parse_style, time_in_room
 from ..announcer import Announcer
 from ..config import parse_time
 from ..devices import DeviceList
@@ -21,29 +23,62 @@ GREET_WINDOW = timedelta(minutes=5)
 
 
 class PresenceChartProvider(Provider):
+	"""Today's activity chart, drawn by templates/slides/presence.html (see activity_chart.py)."""
+
 	name = "presence"
 
-	def __init__(self, settings: dict, store: PresenceStore, devices: DeviceList, chart_path: Path,
-			nyan_cat_path: Path, default_seconds: float) -> None:
+	def __init__(self, settings: dict, store: PresenceStore, devices: DeviceList, nyan_cat_path: Path,
+			default_seconds: float) -> None:
 		self.store = store
 		self.devices = devices
-		self.chart_path = chart_path
-		self.nyan_cat_path = nyan_cat_path
 		self.starts_at = parse_time(settings.get("chart_starts_at", "08:00"))
 		self.seconds = settings.get("seconds", default_seconds)
-		self.refresh_seconds = settings.get("chart_refresh_minutes", 5) * 60
-		self.chart_date: date | None = None
-
-	def refresh(self, now: datetime) -> None:
-		midnight = datetime.combine(now.date(), time())
-		sightings = self.store.known_sightings(midnight, now)
-		if render_chart(sightings, self.devices.by_mac(), now, self.chart_path, self.starts_at, self.nyan_cat_path):
-			self.chart_date = now.date()
+		self.nyan_cat = None
+		if nyan_cat_path.is_file():
+			with Image.open(nyan_cat_path) as image:
+				self.nyan_cat = {"url": media_url(nyan_cat_path), "aspect": round(image.width / image.height, 3)}
 
 	def slides(self, now: datetime) -> list[Slide]:
-		if self.chart_date != now.date() or not self.chart_path.exists():
+		midnight = datetime.combine(now.date(), time())
+		chart = chart_view(self.store.known_sightings(midnight, now), self.devices.by_mac(), now, self.starts_at)
+		if chart is None:
 			return []   # nobody seen yet today
-		return [Slide("image.html", self.seconds, {"url": media_url(self.chart_path)})]
+		return [Slide("presence.html", self.seconds, {**chart, "nyan_cat": self.nyan_cat})]
+
+
+class LeaderboardProvider(Provider):
+	"""Who spent the most time in the room this week (since Monday)."""
+
+	name = "leaderboard"
+
+	def __init__(self, settings: dict, store: PresenceStore, devices: DeviceList, default_seconds: float) -> None:
+		self.store = store
+		self.devices = devices
+		self.top = settings.get("top", 10)
+		self.seconds = settings.get("seconds", default_seconds)
+
+	def slides(self, now: datetime) -> list[Slide]:
+		monday = datetime.combine(now.date() - timedelta(days=now.weekday()), time())
+		sightings = self.store.known_sightings(monday, now)
+		totals = time_in_room(sightings)
+		if not totals:
+			return []
+		mac_of = {s.name: s.mac for s in sightings}
+		ranking = sorted(totals.items(), key=lambda item: item[1][0], reverse=True)[: self.top]
+		longest = ranking[0][1][0].total_seconds() or 1
+		rows = []
+		for place, (name, (total, days)) in enumerate(ranking, start=1):
+			device = self.devices.get(mac_of[name])
+			style = parse_style(device.options) if device else MarkerStyle()
+			colour = style.color or generate_bright_color(mac_of[name] or name)
+			minutes = round(total.total_seconds() / 60)
+			rows.append({
+				"place": place, "name": name, "days": len(days),
+				"time": f"{minutes // 60} h {minutes % 60:02d} min" if minutes >= 60 else f"{minutes} min",
+				"width": round(total.total_seconds() / longest * 100, 1),
+				"background": css_colour(colour),
+			})
+		return [Slide("leaderboard.html", self.seconds, {"rows": rows})]
 
 
 def greeting_day(now: datetime, day_starts_at: time) -> date:

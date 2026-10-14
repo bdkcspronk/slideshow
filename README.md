@@ -7,7 +7,8 @@ The slideshow on the TV in the Francken room. It shows:
 | Posters and announcements | images in `media/slides/` | `providers/images.py` |
 | Upcoming activities | professorfrancken.nl/association/activities | `providers/activities.py` |
 | A photo from one of the last 3 events | Nextcloud `images/albums/` | `providers/event_photos.py` |
-| Who was in the room today | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
+| Who was in the room today (animated chart) | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
+| This week's leaderboard: most time in the room | the ESP32 sniffer | `providers/presence.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing, with today's status; tap one to play it | nytimes.com, catfishing.net | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song | | `providers/bieruur.py` |
@@ -52,7 +53,7 @@ Each slide type is one Python file plus one small HTML template in `francken_tv/
 ```
 
 In the terminal: **Ctrl+M** (or Enter) turns reading quotes aloud on/off, **Ctrl+R** reloads
-`config/devices.json` and redraws the presence chart, **Ctrl+C** stops everything.
+`config/devices.json`, **Ctrl+C** stops everything.
 Alt+F4 closes the full-screen browser.
 Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
 
@@ -94,7 +95,7 @@ Then follow the steps below (venv, piper) and start it with `./start.sh`.
 ## Running on the TV PC
 
 ```sh
-sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-matplotlib python3-serial python3-venv ffmpeg chromium
+sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial python3-venv ffmpeg chromium
 sudo usermod -aG dialout $USER                      # serial port access for the sniffer; log in again after
 git clone <this repo> ~/slideshow && cd ~/slideshow
 python3 -m venv --system-site-packages .venv        # uses the apt packages above

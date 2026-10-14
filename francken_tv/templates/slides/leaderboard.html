@@ -1,0 +1,15 @@
+{# Who spent the most time in the room this week. The bars grow in one after another. #}
+<div class="slide leaderboard-slide">
+	<h1>This week in the Francken room</h1>
+	<ol>
+		{% for row in rows %}
+		<li class="place-{{ row.place }}" style="--i: {{ loop.index0 }}">
+			<span class="leaderboard-place">{{ row.place }}</span>
+			<span class="leaderboard-name">{{ row.name }}</span>
+			<span class="leaderboard-track"><span class="leaderboard-bar" style="width: {{ row.width }}%; background: {{ row.background }}"></span></span>
+			<span class="leaderboard-time">{{ row.time }}</span>
+			<span class="leaderboard-days">{{ row.days }} {{ "day" if row.days == 1 else "days" }}</span>
+		</li>
+		{% endfor %}
+	</ol>
+</div>

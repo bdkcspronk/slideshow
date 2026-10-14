@@ -13,7 +13,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "event_photos", "presence", "puzzles", "quote", "bieruur_countdown"]
+order = ["images", "activities", "event_photos", "presence", "puzzles", "leaderboard", "quote", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
@@ -40,11 +40,15 @@ seconds = 10
 [presence]
 database = "data/presence.sqlite3"
 devices = "config/devices.json"   # MAC address -> name, colours, chart style, greeting
-chart_refresh_minutes = 5
 chart_starts_at = "08:00"
 seconds = 15
 greet_arrivals = true
 day_starts_at = "04:00"           # everyone can be greeted again after this time
+
+[leaderboard]
+# Who spent the most time in the room this week (since Monday).
+top = 10
+seconds = 12
 
 [quote]
 sheet_id = "12hadm3_zdeU7e3q-YHFfcNSDocQdzjWKnn7lzZLqhI4"   # Google Sheet with "Quote" and "name" columns

@@ -1,7 +1,7 @@
 """Keyboard shortcuts in the terminal that runs the slideshow:
 
 	Ctrl+M (or Enter)  read quotes aloud on/off
-	Ctrl+R             reload config/devices.json and redraw the presence chart
+	Ctrl+R             reload config/devices.json
 
 Only active when the slideshow runs in a terminal (not under systemd).
 """

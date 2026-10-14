@@ -1,8 +1,7 @@
-# Debian/Ubuntu: sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-matplotlib python3-serial ffmpeg
+# Debian/Ubuntu: sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial ffmpeg
 jinja2
 requests
 beautifulsoup4
 pillow
-matplotlib
 pyserial      # only for the sniffer
 piper-tts     # only for spoken greetings and quotes
