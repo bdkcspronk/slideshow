@@ -416,12 +416,11 @@ body.show-cursor button { cursor: pointer; }
 /* Brand slide: white. Red and blue stripes come in from the bottom and glide diagonally to the top
    right, one after another, until they cover the whole screen (they are slanted with skewX, so moving
    one down in its own frame also moves it left). Our name (top) and logo (below it) are white, so they
-   appear as the stripes come in behind them, and get a shadow once the screen is covered. */
+   appear as the stripes come in behind them. */
 .brand-slide {
 	--navy: #173249;
 	--red: #a51c30;
 	--stripe: 6.5vw;   /* width of one stripe */
-	--covered: 2s;     /* when the name and logo get their shadow */
 	position: relative;
 	overflow: hidden;
 	background: #ffffff;
@@ -441,13 +440,11 @@ body.show-cursor button { cursor: pointer; }
 @keyframes stripe-in { from { transform: skewX(-25deg) translateY(130vh); } }   /* from below, up to the right */
 .brand-name, .brand-logo {
 	position: absolute;
-	left: 50%;
-	transform: translateX(-50%);
-	color: #ffffff;
-	/* Own compositor layer from the start: otherwise they only get one once the stripes beneath start
-	   moving, and that switch (and redrawing the shadow every frame) makes the text flicker. */
-	will-change: transform, filter;
-	animation: brand-shadow 1.4s ease-in-out var(--covered) both;
+	left: 0;
+	right: 0;
+	display: flex;
+	justify-content: center;
+	color: #ffffff;   /* no animation or transform here: the kiosk (Firefox) then repaints them every frame, which flickers */
 }
 .brand-name {
 	top: 15vh;
@@ -458,10 +455,6 @@ body.show-cursor button { cursor: pointer; }
 }
 .brand-logo { top: 35vh; height: 45vh; }   /* same scale as the name */
 .brand-logo svg { height: 100%; width: auto; display: block; }
-@keyframes brand-shadow {
-	from { filter: drop-shadow(0 0.5vh 1.2vh rgba(0, 0, 0, 0)); }
-	to { filter: drop-shadow(0 0.5vh 1.2vh rgba(0, 0, 0, 0.45)); }
-}
 
 /* Spotify: the album cover, blurred, as the background; the cover itself, title and progress on top. */
 .spotify-slide { position: relative; overflow: hidden; background: #121212; color: #ffffff; }
