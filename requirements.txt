@@ -3,5 +3,6 @@ jinja2
 requests
 beautifulsoup4
 pillow
+tomli; python_version < "3.11"   # only needed on Python 3.10 and older
 pyserial      # only for the sniffer
 piper-tts     # only for spoken greetings and quotes

@@ -99,7 +99,7 @@ sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3
 sudo usermod -aG dialout $USER                      # serial port access for the sniffer; log in again after
 git clone <this repo> ~/slideshow && cd ~/slideshow
 python3 -m venv --system-site-packages .venv        # uses the apt packages above
-.venv/bin/pip install piper-tts                     # text-to-speech
+.venv/bin/pip install piper-tts tomli               # text-to-speech; tomli is only needed on Python 3.10
 mkdir -p ~/.config/systemd/user && cp deploy/*.service ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user enable --now francken-tv francken-tv-sniffer francken-tv-kiosk

@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-import tomllib
+try:
+	import tomllib   # built into Python 3.11 and newer
+except ModuleNotFoundError:   # Python 3.10 and older: pip install tomli
+	import tomli as tomllib
 from datetime import time
 from pathlib import Path
 
