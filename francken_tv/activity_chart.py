@@ -206,13 +206,17 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			view["stripes"] = "#0057B8" if style.shape == "board" else css_colour(style.stripe_color)
 			view["stripe_width"] = f"{max(4, style.stripe_thickness * 1.5):.1f}px" if style.stripe_thickness else None
 		if style.shape == "beer":
-			view["foam_max"] = f"{style.beer_foam_max_width:.0f}px" if style.beer_foam_max_width else "100%"
+			view["foam"] = f"min(28%, {style.beer_foam_max_width:.0f}px)" if style.beer_foam_max_width else "28%"
 			rng = random.Random(f"{bar.row}-{bar.start}")   # the same bubbles every time this bar is drawn
-			view["bubbles"] = [
-				{"x": round(rng.uniform(2, 70), 1), "size": round(rng.uniform(0.7, 1.0) * 26, 1),
-					"rise": round(rng.uniform(1.6, 3.2), 2), "wait": round(rng.uniform(0, 3), 2)}
-				for _ in range(max(2, min(14, round(width * 1.5))))
-			]
+			# Bubbles drift from the left towards the foam on the right, at roughly the same speed in
+			# every bar (so longer bars take longer). The negative wait starts each one somewhere along
+			# the way, so the bar is full of bubbles straight away.
+			travel = max(1.5, width * 0.13)
+			view["bubbles"] = []
+			for _ in range(max(2, min(14, round(width * 1.5)))):
+				duration = round(travel * rng.uniform(0.8, 1.25), 2)
+				view["bubbles"].append({"y": round(rng.uniform(12, 72), 1), "size": round(rng.uniform(0.7, 1.0) * 24, 1),
+					"duration": duration, "wait": round(-rng.uniform(0, duration), 2)})
 		bars.append(view)
 
 	hour = start.replace(minute=0, second=0, microsecond=0)

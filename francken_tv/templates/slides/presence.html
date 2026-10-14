@@ -20,8 +20,8 @@
 				{%- if bar.glow_colour %} --glow: {{ bar.glow_colour }};{% endif %}">
 				{% if bar.stripes %}<span class="bar-stripes" style="background: {{ bar.stripes }};{% if bar.stripe_width %} --stripe: {{ bar.stripe_width }};{% endif %}"></span>{% endif %}
 				{% if bar.bubbles %}
-				<span class="beer-foam" style="max-width: {{ bar.foam_max }}"></span>
-				{% for bubble in bar.bubbles %}<i class="beer-bubble" style="left: {{ bubble.x }}%; --size: {{ bubble.size }}%; --rise: {{ bubble.rise }}s; --wait: {{ bubble.wait }}s"></i>{% endfor %}
+				<span class="beer-foam" style="width: {{ bar.foam }}"></span>
+				{% for bubble in bar.bubbles %}<i class="beer-bubble" style="top: {{ bubble.y }}%; --foam: {{ bar.foam }}; --size: {{ bubble.size }}%; --duration: {{ bubble.duration }}s; --wait: {{ bubble.wait }}s"></i>{% endfor %}
 				{% endif %}
 			</div>
 			{% if bar.nyan_cat and nyan_cat %}

@@ -331,21 +331,23 @@ body.show-cursor button { cursor: pointer; }
 	-webkit-mask: repeating-linear-gradient(-45deg, #000 0 var(--s), transparent var(--s) calc(2 * var(--s)));
 	mask: repeating-linear-gradient(-45deg, #000 0 var(--s), transparent var(--s) calc(2 * var(--s)));
 }
-/* Beer: foam at the end, bubbles rising from the bottom over and over. */
-.beer-foam { position: absolute; top: 0; right: 0; bottom: 0; width: 28%; background: #FCEFCA; }
+/* Beer: foam at the end, bubbles drifting from the left towards the foam over and over. */
+.beer-foam { position: absolute; top: 0; right: 0; bottom: 0; background: #FCEFCA; }
 .beer-bubble {
 	position: absolute;
-	top: 100%;
+	left: 0;
 	height: var(--size);
 	aspect-ratio: 1;
 	border-radius: 50%;
 	background: #FFEEC1;
-	animation: fizz var(--rise) ease-in var(--wait) infinite;
+	animation: fizz var(--duration) linear var(--wait) infinite;
 }
 @keyframes fizz {
-	from { top: 100%; opacity: 0.95; transform: translateX(0); }
-	50% { transform: translateX(0.3vh); }
-	to { top: -30%; opacity: 0.25; transform: translateX(-0.3vh); }
+	from { left: 0; opacity: 0; transform: translateY(0); }
+	10% { opacity: 0.95; }
+	50% { transform: translateY(-0.3vh); }
+	90% { opacity: 0.8; }
+	to { left: calc(100% - var(--foam)); opacity: 0; transform: translateY(0.2vh); }   /* fades into the foam */
 }
 /* The nyan cat rides the front of its rainbow while it grows, then keeps bobbing. */
 .nyan-cat-sprite {
