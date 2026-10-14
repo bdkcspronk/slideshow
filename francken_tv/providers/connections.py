@@ -17,6 +17,7 @@ from datetime import date, datetime, timedelta
 import requests
 
 from ..slides import Provider, Slide
+from .puzzles import PuzzleStatus
 
 log = logging.getLogger(__name__)
 
@@ -97,6 +98,7 @@ def parse_puzzle(data: dict) -> Puzzle:
 
 class ConnectionsProvider(Provider):
 	name = "connections"
+	title = "Connections"
 
 	def __init__(self, settings: dict, default_seconds: float) -> None:
 		self.seconds = settings.get("seconds", default_seconds)
@@ -126,6 +128,19 @@ class ConnectionsProvider(Provider):
 		if self.game is None or self.game.puzzle is not puzzle:
 			self.game = Game(puzzle, list(puzzle.words))   # a new day: a new game
 		return self.game
+
+	def status(self, now: datetime) -> PuzzleStatus | None:
+		"""For the Daily puzzles slide. None if today's puzzle isn't available."""
+		game = self.todays_game(now)
+		if game is None:
+			return None
+		if game.won:
+			return PuzzleStatus("solved", "Solved")
+		if game.lost:
+			return PuzzleStatus("lost", "Not solved today")
+		if game.found or game.mistakes:
+			return PuzzleStatus("playing", f"{len(game.found)} of 4 groups found")
+		return PuzzleStatus("new", "Not tried yet")
 
 	def slides(self, now: datetime, selected: list[str] | None = None, shake: bool = False,
 			new_group: int | None = None) -> list[Slide]:

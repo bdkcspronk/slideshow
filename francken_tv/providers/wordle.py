@@ -14,6 +14,7 @@ from pathlib import Path
 import requests
 
 from ..slides import Provider, Slide
+from .puzzles import PuzzleStatus
 
 log = logging.getLogger(__name__)
 
@@ -95,6 +96,7 @@ class Game:
 
 class WordleProvider(Provider):
 	name = "wordle"
+	title = "Wordle"
 
 	def __init__(self, settings: dict, default_seconds: float) -> None:
 		self.seconds = settings.get("seconds", default_seconds)
@@ -125,6 +127,20 @@ class WordleProvider(Provider):
 		if self.game is None or self.game.day != now.date():
 			self.game = Game(now.date(), solution)   # a new day: a new game
 		return self.game
+
+	def status(self, now: datetime) -> PuzzleStatus | None:
+		"""For the Daily puzzles slide. None if today's word isn't available."""
+		game = self.todays_game(now)
+		if game is None:
+			return None
+		count = len(game.guesses)
+		if game.won:
+			return PuzzleStatus("solved", f"Solved in {count} {'guess' if count == 1 else 'guesses'}")
+		if game.lost:
+			return PuzzleStatus("lost", "Not solved today")
+		if count:
+			return PuzzleStatus("playing", f"{count} of {MAX_GUESSES} guesses used")
+		return PuzzleStatus("new", "Not tried yet")
 
 	def slides(self, now: datetime, typed: str = "", shake: bool = False, new_row: int | None = None) -> list[Slide]:
 		game = self.todays_game(now)

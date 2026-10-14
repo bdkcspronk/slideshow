@@ -15,6 +15,7 @@ from .devices import DeviceList
 from .presence_store import PresenceStore
 from .providers.activities import ActivitiesProvider
 from .providers.connections import ConnectionsProvider
+from .providers.puzzles import PuzzlesProvider
 from .providers.wordle import WordleProvider
 from .providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
 from .providers.event_photos import EventPhotosProvider
@@ -71,6 +72,14 @@ def build_app(config: dict, clock: Clock) -> App:
 	devices = DeviceList(project_path(presence.get("devices", "config/devices.json")))
 	bieruur = BieruurSettings(**config.get("bieruur", {}))
 
+	# The puzzles are shown through the Daily puzzles slide, in the order of puzzles.order.
+	puzzle_settings = config.get("puzzles", {})
+	available_puzzles = {puzzle.name: puzzle for puzzle in [
+		ConnectionsProvider(config.get("connections", {}), seconds),
+		WordleProvider(config.get("wordle", {}), seconds),
+	]}
+	puzzles = [available_puzzles[name] for name in puzzle_settings.get("order", list(available_puzzles))]
+
 	all_providers: list[Provider] = [
 		ImagesProvider(config.get("images", {}), seconds),
 		ActivitiesProvider(config.get("activities", {}), seconds),
@@ -78,8 +87,8 @@ def build_app(config: dict, clock: Clock) -> App:
 		PresenceChartProvider(presence, store, devices, CACHE_DIR / "presence_chart.png",
 			project_path("media/nyancat.png"), seconds),
 		QuoteProvider(config.get("quote", {}), DATA_DIR / "quotes.csv", announcer, seconds),
-		ConnectionsProvider(config.get("connections", {}), seconds),
-		WordleProvider(config.get("wordle", {}), seconds),
+		PuzzlesProvider(puzzle_settings, puzzles, seconds),
+		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),
 	]
 	providers = {provider.name: provider for provider in all_providers}

@@ -129,7 +129,8 @@ async function checkNotice() {
 // ---- Interactive slides -----------------------------------------------------------------
 // A slide with data-interactive pauses the slideshow when clicked or typed on.
 // - data-toggle elements can be selected (at most data-max-selected), e.g. Connections tiles;
-// - data-action buttons send the selected data-values to the provider's action() in Python;
+// - data-action buttons send the selected data-values (or their own data-value) to the provider's
+//   action() in Python (or to another provider, with data-provider on the button);
 // - data-input-cell elements are filled by typing (keyboard or data-key buttons, e.g. Wordle);
 //   Enter sends the typed text as data-submit-action.
 // action() returns the redrawn slide and an optional message.
@@ -151,7 +152,8 @@ document.addEventListener("click", async (event) => {
 	} else if (action && action.dataset.action === "deselect") {
 		selected().forEach((element) => element.classList.remove("selected"));
 	} else if (action) {
-		sendAction(slide, action.dataset.action, selected().map((element) => element.dataset.value));
+		const values = action.dataset.value ? [action.dataset.value] : selected().map((element) => element.dataset.value);
+		sendAction(slide, action.dataset.action, values, action.dataset.provider);
 	}
 });
 
@@ -173,11 +175,11 @@ function typeKey(slide, key) {
 	}
 }
 
-async function sendAction(slide, action, values) {
+async function sendAction(slide, action, values, provider = slide.dataset.provider) {
 	const result = await getJson("/api/action", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ provider: slide.dataset.provider, action, values }),
+		body: JSON.stringify({ provider, action, values }),
 	});
 	let messageDelay = 0;
 	if (result.html) {

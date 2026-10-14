@@ -13,7 +13,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "event_photos", "presence", "connections", "quote", "wordle", "bieruur_countdown"]
+order = ["images", "activities", "event_photos", "presence", "puzzles", "quote", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
@@ -53,14 +53,17 @@ blocked_words = "config/quote_filter.txt"   # quotes containing these words are 
 narrate = false                             # read quotes aloud at startup? Toggle while running: Ctrl+M in the terminal, "m" in the browser
 refresh_hours = 6
 
+[puzzles]
+# The Daily puzzles slide: one half per puzzle, tap one to play it.
+order = ["connections", "wordle"]
+seconds = 20
+
 [connections]
 # The New York Times "Connections" puzzle of the day.
-seconds = 20
 show_yesterday = true         # also show yesterday's answers next to today's puzzle
 
 [wordle]
 # The New York Times Wordle of the day.
-seconds = 20
 show_yesterday = true         # also show yesterday's word
 
 [bieruur]

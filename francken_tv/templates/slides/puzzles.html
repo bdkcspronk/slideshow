@@ -1,0 +1,23 @@
+{#
+	The Daily puzzles slide: one half per puzzle. Tapping a half sends "open" to
+	PuzzlesProvider.action() in providers/puzzles.py, which returns that puzzle's slide.
+#}
+<div class="slide puzzles-slide" data-interactive data-provider="puzzles">
+	{% for card in cards %}
+	{% if not loop.first %}<div class="puzzles-divider"></div>{% endif %}
+	<button class="puzzle-card puzzle-{{ card.name }} status-{{ card.state }}" data-action="open" data-value="{{ card.name }}">
+		{# A small picture of each game, in its own colours. #}
+		<span class="puzzle-icon" aria-hidden="true">
+			{% if card.name == "connections" %}
+			{% for colour in ["yellow", "green", "blue", "purple"] %}<i class="{{ colour }}"></i><i class="{{ colour }}"></i><i class="{{ colour }}"></i><i class="{{ colour }}"></i>{% endfor %}
+			{% elif card.name == "wordle" %}
+			{% for state in ["absent", "present", "absent", "correct", "absent", "correct", "correct", "correct", "correct", "correct"] %}<i class="{{ state }}"></i>{% endfor %}
+			{% endif %}
+		</span>
+		<span class="puzzle-title">{{ card.title }}</span>
+		<span class="puzzle-status">{% if card.state == "solved" %}&#10003; {% endif %}{{ card.status }}</span>
+		<span class="puzzle-play">{{ "View" if card.state in ["solved", "lost"] else "Play" }}</span>
+	</button>
+	{% endfor %}
+	<p class="puzzles-footer">Daily puzzles from The New York Times &middot; tap one to play</p>
+</div>

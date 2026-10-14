@@ -230,6 +230,79 @@ html, body {
 body.show-cursor { cursor: default; }
 body.show-cursor button { cursor: pointer; }
 
+/* Daily puzzles: one half per puzzle, tap to play. */
+.puzzles-slide {
+	display: flex;
+	align-items: stretch;
+	padding: 8vh 4vw 12vh;
+	gap: 0;
+	background: #ffffff;
+	color: #121212;
+	position: relative;
+}
+.puzzles-divider { width: 0.3vw; margin: 6vh 0; background: #d3d6da; border-radius: 1vw; }
+.puzzle-card {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2.5vh;
+	margin: 0 2vw;
+	border: none;
+	border-radius: 2vh;
+	background: transparent;
+	color: inherit;
+	font-family: inherit;
+	transition: background 0.2s, transform 0.1s;
+}
+.puzzle-card:active { transform: scale(0.98); background: #f4f4f0; }
+.puzzle-icon { display: grid; gap: 0.6vh; height: 23vh; align-content: center; }   /* same height, so the titles line up */
+.puzzle-connections .puzzle-icon { grid-template-columns: repeat(4, 5vh); }
+.puzzle-wordle .puzzle-icon { grid-template-columns: repeat(5, 5vh); }
+.puzzle-icon i { display: block; height: 5vh; border-radius: 0.5vh; }
+.puzzle-icon .yellow { background: #f9df6d; }
+.puzzle-icon .green { background: #a0c35a; }
+.puzzle-icon .blue { background: #b0c4ef; }
+.puzzle-icon .purple { background: #ba81c5; }
+.puzzle-icon .correct { background: #6aaa64; border-radius: 0; }
+.puzzle-icon .present { background: #c9b458; border-radius: 0; }
+.puzzle-icon .absent { background: #787c7e; border-radius: 0; }
+.puzzle-title { font-size: 8vh; font-weight: bold; letter-spacing: 0.3vh; text-transform: uppercase; }
+.puzzle-status { font-size: 3.4vh; color: #5a5a5a; }
+.status-solved .puzzle-status { color: #3a8a3a; font-weight: bold; }
+.status-playing .puzzle-status { color: #b08a00; font-weight: bold; }
+.puzzle-play {
+	margin-top: 1vh;
+	padding: 1.4vh 3vw;
+	border-radius: 4vh;
+	background: #121212;
+	color: #ffffff;
+	font-size: 2.8vh;
+	font-weight: bold;
+}
+.puzzles-footer {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 5vh;
+	margin: 0;
+	text-align: center;
+	font-size: 2.4vh;
+	color: #8a8a8a;
+}
+.puzzle-back {
+	margin-bottom: 1.5vh;
+	padding: 0.8vh 1.4vw;
+	border: 0.2vh solid #d3d6da;
+	border-radius: 4vh;
+	background: #ffffff;
+	color: #121212;
+	font-family: inherit;
+	font-size: 2.2vh;
+	font-weight: bold;
+}
+
 /* NYT Connections: today's grid on the left, yesterday's answers on the right. */
 .connections-slide {
 	display: flex;

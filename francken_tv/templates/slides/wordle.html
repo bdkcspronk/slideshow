@@ -6,9 +6,10 @@
 <div class="slide wordle-slide" data-interactive data-provider="wordle" data-submit-action="submit"
 	{% if finished %}data-resume-after="15"{% endif %} {% if new_row is not none %}data-message-delay="1800"{% endif %}>
 	<div class="wordle-left">
+		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
 		<h1>Wordle</h1>
 		<p class="wordle-subtitle">
-			{% if finished %}See you tomorrow for a new word!{% else %}Guess the word in six tries! Click or type to play{% endif %}
+			{% if finished %}See you tomorrow for a new word!{% else %}Guess the word in six tries! Type or tap the letters{% endif %}
 			&middot; Daily puzzle from The New York Times
 		</p>
 		<div class="wordle-grid">

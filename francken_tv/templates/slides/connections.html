@@ -6,9 +6,10 @@
 <div class="slide connections-slide" data-interactive data-provider="connections" data-max-selected="4"
 	{% if finished %}data-resume-after="15"{% endif %} {% if new_group is not none %}data-effect="solve-group"{% endif %}>
 	<div class="connections-today">
+		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
 		<h1>Connections</h1>
 		<p class="connections-subtitle">
-			{% if finished %}See you tomorrow for a new puzzle!{% else %}Make four groups of four! Click to play{% endif %}
+			{% if finished %}See you tomorrow for a new puzzle!{% else %}Make four groups of four!{% endif %}
 			&middot; Daily puzzle from The New York Times
 		</p>
 
