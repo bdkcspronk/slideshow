@@ -77,6 +77,15 @@ Copy these to the TV PC by hand:
 
 `data/` is created automatically: the presence database, caches and the downloaded quotes.
 
+## Updating a PC that ran the old slideshow
+
+```sh
+git pull
+deploy/migrate_from_old_layout.sh   # moves slides/, audio/, Sniffer/filter.json, ... to the new places
+```
+
+Then follow the steps below (venv, piper) and start it with `./start.sh`.
+
 ## Running on the TV PC
 
 ```sh
