@@ -414,13 +414,15 @@ body.show-cursor button { cursor: pointer; }
 .leaderboard-time { text-align: right; font-weight: bold; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .leaderboard-days { color: #8a9aa3; font-size: 2.4vh; }
 
-/* Brand slide: white, with red and blue stripes covering the right part of the screen. Each stripe
-   comes in from the bottom and glides diagonally to the top right (it is slanted with skewX, so
-   moving it down in its own frame also moves it left), one after another. */
+/* Brand slide: our name (top) and logo (below it) in navy on white. Then red and blue stripes come in
+   from the bottom and glide diagonally to the top right, one after another, until they cover the whole
+   screen (they are slanted with skewX, so moving one down in its own frame also moves it left).
+   Meanwhile the name and logo turn white, so they stay readable on the stripes. */
 .brand-slide {
 	--navy: #173249;
 	--red: #a51c30;
 	--stripe: 6.5vw;   /* width of one stripe */
+	--covered: 2s;     /* when the name and logo turn white */
 	position: relative;
 	overflow: hidden;
 	background: #ffffff;
@@ -430,39 +432,33 @@ body.show-cursor button { cursor: pointer; }
 	position: absolute;
 	top: -15vh;
 	height: 130vh;
-	left: calc(62vw + var(--i) * var(--stripe));
+	left: calc(-30vw + var(--i) * var(--stripe));   /* also past both edges: the slant leaves gaps there */
 	width: calc(var(--stripe) + 1px);   /* 1px overlap: no hairline gaps between stripes */
 	transform: skewX(-25deg);
-	animation: stripe-in 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) calc(0.4s + var(--i) * 0.09s) both;
+	animation: stripe-in 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) calc(1.2s + var(--i) * 0.06s) both;
 }
 .brand-stripes i.blue { background: var(--navy); }
 .brand-stripes i.red { background: var(--red); }
 @keyframes stripe-in { from { transform: skewX(-25deg) translateY(130vh); } }   /* from below, up to the right */
-.brand-logo {
+.brand-name, .brand-logo {
 	position: absolute;
-	left: 82vw;
-	top: 50%;
-	height: 46vh;
-	color: #ffffff;
-	transform: translate(-50%, -50%);
-	filter: drop-shadow(0 0.6vh 1.5vh rgba(0, 0, 0, 0.35));
-	animation: brand-logo-in 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) 1.9s both;
-}
-.brand-logo svg { height: 100%; width: auto; display: block; }
-@keyframes brand-logo-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); } }
-.brand-name {
-	position: absolute;
-	left: 6vw;
-	top: 50%;
-	margin: 0;
-	transform: translateY(-50%);
+	left: 50%;
+	transform: translateX(-50%);
 	color: var(--navy);
-	font-size: 6.4vh;
+	animation: brand-to-white 1.4s ease-in-out var(--covered) both;
+}
+.brand-name {
+	top: 6vh;
+	margin: 0;
+	font-size: 6.2vw;   /* the name almost fills the width */
 	font-weight: bold;
 	white-space: nowrap;
-	animation: brand-name-in 1.3s cubic-bezier(0.2, 0.8, 0.2, 1) 1.2s both;
 }
-@keyframes brand-name-in { from { opacity: 0; transform: translate(-3vw, -50%); } }
+.brand-logo { top: 30vh; height: 60vh; }
+.brand-logo svg { height: 100%; width: auto; display: block; }
+@keyframes brand-to-white {
+	to { color: #ffffff; filter: drop-shadow(0 0.5vh 1.2vh rgba(0, 0, 0, 0.45)); }
+}
 
 /* Spotify: the album cover, blurred, as the background; the cover itself, title and progress on top. */
 .spotify-slide { position: relative; overflow: hidden; background: #121212; color: #ffffff; }

@@ -1,12 +1,12 @@
 {#
-	Our name, logo and colours ("Brand slide" in style.css): red and blue stripes come in from the
-	bottom and glide diagonally to the top right until they cover the right part of the screen,
-	then the logo appears on top of them. The name stands on one line on the white left side.
+	Our name, logo and colours ("Brand slide" in style.css): the name (top) and logo (below it) stand
+	on white; then red and blue stripes come in from the bottom and glide diagonally to the top right
+	until they cover the whole screen, and the name and logo turn white on top of them.
 #}
 <div class="slide brand-slide">
 	<div class="brand-stripes">
-		{% for i in range(12) %}<i class="{{ 'red' if i % 2 else 'blue' }}" style="--i: {{ i }}"></i>{% endfor %}
-		<div class="brand-logo">{{ logo | safe }}</div>
+		{% for i in range(24) %}<i class="{{ 'red' if i % 2 else 'blue' }}" style="--i: {{ i }}"></i>{% endfor %}
 	</div>
 	<h1 class="brand-name">T.F.V. &lsquo;Professor Francken&rsquo;</h1>
+	<div class="brand-logo">{{ logo | safe }}</div>
 </div>
