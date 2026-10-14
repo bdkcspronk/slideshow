@@ -4,6 +4,8 @@
 	/api/next       the next slide as HTML, plus how long to show it
 	/api/current    the current slide re-rendered (for slides that update, like the countdown)
 	/api/narration  POST: toggle reading quotes aloud
+	/api/action     POST: a button on an interactive slide (the puzzle) was clicked
+	/api/takeover   whether a takeover should interrupt a paused interactive slide
 	/api/notice     the latest short message to show in the corner of the screen
 	/preview/<name> one slide of a provider or takeover, for checking templates
 	/status         what every provider is doing, and the last error
@@ -102,6 +104,10 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_html(renderer.templates.get_template("player.html").render())
 		elif path == "/api/next":
 			self.send_json(renderer.next_slide())
+		elif path == "/api/takeover":
+			now = self.server.app.clock.now()
+			due = any(t.interrupts_paused and t.due(now) for t in self.server.app.takeovers.values())
+			self.send_json({"due": due})
 		elif path == "/api/notice":
 			self.send_json({"id": self.server.app.notice_id, "text": self.server.app.notice_text})
 		elif path == "/api/current":
@@ -119,11 +125,29 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_error(HTTPStatus.NOT_FOUND)
 
 	def do_POST(self) -> None:
-		if urlparse(self.path).path == "/api/narration":
+		if urlparse(self.path).path == "/api/action":
+			self.send_action()
+		elif urlparse(self.path).path == "/api/narration":
 			self.server.app.toggle_quotes()
 			self.send_json({"quotes_enabled": self.server.app.announcer.quotes_enabled})
 		else:
 			self.send_error(HTTPStatus.NOT_FOUND)
+
+	def send_action(self) -> None:
+		"""{"provider": "connections", "action": "submit", "values": [...]} -> the redrawn slide."""
+		request = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+		provider = self.server.app.providers.get(request.get("provider", ""))
+		if provider is None:
+			self.send_error(HTTPStatus.NOT_FOUND)
+			return
+		try:
+			slide, message = provider.action(request.get("action", ""), request.get("values", []), self.server.app.clock.now())
+		except NotImplementedError:
+			self.send_error(HTTPStatus.BAD_REQUEST, "this slide is not interactive")
+			return
+		if slide is not None:
+			self.server.renderer.current = slide
+		self.send_json({"html": self.server.renderer.render(slide) if slide else None, "message": message})
 
 	def send_preview(self, name: str) -> None:
 		app = self.server.app

@@ -9,7 +9,7 @@ The slideshow on the TV in the Francken room. It shows:
 | A photo from one of the last 3 events | Nextcloud `images/albums/` | `providers/event_photos.py` |
 | Who was in the room today | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
-| NYT Connections puzzle + yesterday's answers | nytimes.com | `providers/connections.py` |
+| NYT Connections puzzle (playable with mouse or touch) + yesterday's answers | nytimes.com | `providers/connections.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song | | `providers/bieruur.py` |
 | The vrijmibo GIF, every 15 minutes on Fridays | `media/vrijmibo.gif` | `providers/vrijmibo.py` |
 
@@ -59,6 +59,8 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
 - http://127.0.0.1:8080/status shows each slide type, when it last refreshed, and its last error.
 - http://127.0.0.1:8080/preview/activities shows one slide (also `quote`, `presence`, `bieruur_countdown`, ...).
 - Keys in the slideshow: →/↓ next, ←/↑ previous, space pause, `m` toggle reading quotes aloud.
+- Clicking the Connections puzzle pauses the slideshow so people can play it; it continues after a
+  minute without clicks, 15 seconds after the game ends, or when bieruur starts. One shared game per day.
 
 Run the tests with `python3 -m unittest`.
 

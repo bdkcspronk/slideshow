@@ -136,14 +136,19 @@ class BieruurTakeover(Takeover):
 	"""Fills the screen from 2 minutes before until 2 minutes after bieruur."""
 
 	name = "bieruur"
+	interrupts_paused = True   # even someone solving the puzzle gets the countdown
 
 	def __init__(self, settings: BieruurSettings) -> None:
 		self.settings = settings
 
-	def slide(self, now: datetime) -> Slide | None:
+	def due(self, now: datetime) -> bool:
 		window = self.settings.takeover_window(now)
-		if window is None or not window[0] <= now < window[1]:
+		return window is not None and window[0] <= now < window[1]
+
+	def slide(self, now: datetime) -> Slide | None:
+		if not self.due(now):
 			return None
+		window = self.settings.takeover_window(now)
 		seconds_left = (window[1] - now).total_seconds()
 		return countdown_slide(self.settings, self.settings.bieruur(now), seconds_left)
 

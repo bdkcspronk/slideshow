@@ -3,6 +3,7 @@
 // this file only loads each slide, fades it in, and waits.
 //
 // Keys: right/down = next, left/up = previous, space = pause, m = read quotes aloud on/off.
+// Interactive slides (the puzzle): clicking pauses the slideshow there; see "Interactive slides" below.
 // Messages from the server (e.g. Ctrl+M / Ctrl+R in the terminal) appear in the corner.
 
 const layers = [document.getElementById("layer-a"), document.getElementById("layer-b")];
@@ -16,6 +17,10 @@ const history = [];      // recently shown slides, for the left arrow key
 let historyIndex = -1;
 let toastTimer = null;
 let lastNoticeId = null;
+let interacting = false;   // someone is playing an interactive slide
+let idleTimer = null;
+let takeoverTimer = null;
+const IDLE_SECONDS = 60;   // continue the slideshow after this long without clicks
 let showCount = 0;       // every slide change gets a number; only the newest may touch the screen
 
 async function getJson(url, options) {
@@ -26,6 +31,7 @@ async function getJson(url, options) {
 
 async function show(slide, { canRefresh = true } = {}) {
 	const mine = ++showCount;
+	stopInteracting();
 	clearTimeout(nextTimer);
 	clearInterval(refreshTimer);
 	const back = layers[1 - front];
@@ -119,6 +125,75 @@ async function checkNotice() {
 		// server not reachable; next() already handles that
 	}
 }
+
+// ---- Interactive slides -----------------------------------------------------------------
+// A slide with data-interactive pauses the slideshow when clicked. Elements with data-toggle
+// can be selected (at most data-max-selected); buttons with data-action are sent to the
+// provider's action() in Python, which returns the redrawn slide and an optional message.
+
+document.addEventListener("click", async (event) => {
+	const slide = layers[front].querySelector("[data-interactive]");
+	if (!slide || !slide.contains(event.target)) return;
+	keepPaused(IDLE_SECONDS);
+	const toggle = event.target.closest("[data-toggle]");
+	const action = event.target.closest("[data-action]");
+	const selected = () => [...slide.querySelectorAll("[data-toggle].selected")];
+	if (toggle) {
+		const max = parseInt(slide.dataset.maxSelected || "1000", 10);
+		if (toggle.classList.contains("selected") || selected().length < max) toggle.classList.toggle("selected");
+	} else if (action && action.dataset.action === "deselect") {
+		selected().forEach((element) => element.classList.remove("selected"));
+	} else if (action) {
+		const result = await getJson("/api/action", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				provider: slide.dataset.provider,
+				action: action.dataset.action,
+				values: selected().map((element) => element.dataset.value),
+			}),
+		});
+		if (result.html) {
+			layers[front].innerHTML = result.html;
+			const resumeAfter = layers[front].querySelector("[data-resume-after]");
+			if (resumeAfter) keepPaused(parseFloat(resumeAfter.dataset.resumeAfter));   // e.g. game over
+		}
+		if (result.message) showToast(result.message);
+	}
+});
+
+function keepPaused(seconds) {
+	if (!interacting) {
+		interacting = true;
+		clearTimeout(nextTimer);
+		showToast("Paused: the slideshow continues after a minute without clicks");
+		takeoverTimer = setInterval(checkTakeover, 5000);
+	}
+	clearTimeout(idleTimer);
+	idleTimer = setTimeout(next, seconds * 1000);
+}
+
+function stopInteracting() {
+	interacting = false;
+	clearTimeout(idleTimer);
+	clearInterval(takeoverTimer);
+}
+
+async function checkTakeover() {   // bieruur interrupts even a paused puzzle
+	try {
+		if ((await getJson("/api/takeover")).due) next();
+	} catch (error) {
+		console.error(error);
+	}
+}
+
+// Show the mouse pointer while it moves; hide it again after 3 seconds.
+let cursorTimer = null;
+document.addEventListener("mousemove", () => {
+	document.body.classList.add("show-cursor");
+	clearTimeout(cursorTimer);
+	cursorTimer = setTimeout(() => document.body.classList.remove("show-cursor"), 3000);
+});
 
 document.addEventListener("keydown", async (event) => {
 	if (event.key === "ArrowRight" || event.key === "ArrowDown") {

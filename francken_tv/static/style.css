@@ -226,6 +226,9 @@ html, body {
 .party-title { font-size: 14vh; font-weight: bold; line-height: 1; }
 .party-subtitle { font-size: 7vh; margin-top: 3vh; }
 
+body.show-cursor { cursor: default; }
+body.show-cursor button { cursor: pointer; }
+
 /* NYT Connections: today's grid on the left, yesterday's answers on the right. */
 .connections-slide {
 	display: flex;
@@ -237,24 +240,65 @@ html, body {
 }
 .connections-today { flex: 3; min-width: 0; }
 .connections-today h1 { margin: 0; font-size: 6vh; }
-.connections-subtitle { margin: 1vh 0 3vh; font-size: 2.6vh; color: #5a5a5a; }
+.connections-subtitle { margin: 1vh 0 2.5vh; font-size: 2.6vh; color: #5a5a5a; }
 .connections-grid {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 1.2vh;
 }
+.connections-board { display: flex; flex-direction: column; gap: 1.2vh; }
+.connections-board .connections-group { height: 14vh; margin: 0; justify-content: center; box-sizing: border-box; }
+.connections-board .connections-group strong { font-size: 3vh; }
+.connections-board .connections-group span { font-size: 2.6vh; }
 .connections-tile {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	height: 14vh;
 	padding: 0 0.5vw;
+	border: none;
 	border-radius: 0.8vh;
 	background: #efefe6;
+	color: #121212;
+	font-family: inherit;
 	font-size: 3vh;
 	font-weight: bold;
 	text-align: center;
+	transition: background 0.1s, transform 0.1s;
 }
+.connections-tile:active { transform: scale(0.96); }
+.connections-tile.selected { background: #5a594e; color: #ffffff; }
+.connections-tile.shake { animation: shake 0.4s; }
+@keyframes shake {
+	20%, 60% { transform: translateX(-0.6vw); }
+	40%, 80% { transform: translateX(0.6vw); }
+}
+.connections-controls {
+	display: flex;
+	align-items: center;
+	gap: 1vw;
+	margin-top: 2.5vh;
+}
+.connections-mistakes { flex: 1; font-size: 2.4vh; color: #5a5a5a; }
+.connections-mistakes i {
+	display: inline-block;
+	width: 1.6vh;
+	height: 1.6vh;
+	margin-left: 0.6vh;
+	border-radius: 50%;
+	background: #5a594e;
+}
+.connections-controls button {
+	padding: 1.2vh 1.6vw;
+	border: 0.2vh solid #121212;
+	border-radius: 4vh;
+	background: #ffffff;
+	color: #121212;
+	font-family: inherit;
+	font-size: 2.4vh;
+	font-weight: bold;
+}
+.connections-controls button.primary { background: #121212; color: #ffffff; }
 .connections-tile.long { font-size: 2.4vh; }
 .connections-tile.very-long { font-size: 1.9vh; }
 .connections-yesterday { flex: 2; min-width: 0; }

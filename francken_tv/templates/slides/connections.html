@@ -1,22 +1,53 @@
-<div class="slide connections-slide">
+{#
+	The NYT Connections puzzle. Clicking pauses the slideshow on this slide (data-interactive);
+	tiles with data-toggle can be selected, buttons with data-action are sent to
+	ConnectionsProvider.action() in providers/connections.py, which returns the redrawn slide.
+#}
+<div class="slide connections-slide" data-interactive data-provider="connections" data-max-selected="4"
+	{% if finished %}data-resume-after="15"{% endif %}>
 	<div class="connections-today">
 		<h1>Connections</h1>
-		<p class="connections-subtitle">Make four groups of four! &middot; Daily puzzle from The New York Times</p>
-		<div class="connections-grid">
-			{# Long words get a smaller font so they fit on one line. #}
-			{% for word in today.words %}
-			<div class="connections-tile{{ ' long' if word | length > 8 }}{{ ' very-long' if word | length > 11 }}">{{ word }}</div>
+		<p class="connections-subtitle">
+			{% if finished %}See you tomorrow for a new puzzle!{% else %}Make four groups of four! Click to play{% endif %}
+			&middot; Daily puzzle from The New York Times
+		</p>
+
+		<div class="connections-board">
+			{% for level, title, group in groups %}
+			<div class="connections-group connections-group-{{ level + 1 }}">
+				<strong>{{ title }}</strong>
+				<span>{{ group | join(", ") }}</span>
+			</div>
 			{% endfor %}
+			<div class="connections-grid">
+				{# Long words get a smaller font so they fit on one line. #}
+				{% for word in words %}
+				<button class="connections-tile{{ ' long' if word | length > 8 }}{{ ' very-long' if word | length > 11 }}
+					{%- if word in selected %} selected{{ ' shake' if shake }}{% endif %}"
+					data-toggle data-value="{{ word }}">{{ word }}</button>
+				{% endfor %}
+			</div>
 		</div>
+
+		{% if not finished %}
+		<div class="connections-controls">
+			<span class="connections-mistakes">Mistakes remaining:
+				{% for _ in range(mistakes_left) %}<i></i>{% endfor %}
+			</span>
+			<button data-action="shuffle">Shuffle</button>
+			<button data-action="deselect">Deselect all</button>
+			<button data-action="submit" class="primary">Submit</button>
+		</div>
+		{% endif %}
 	</div>
 
 	{% if yesterday %}
 	<div class="connections-yesterday">
 		<h2>Yesterday's answers</h2>
-		{% for title, words in yesterday.groups %}
+		{% for title, group in yesterday.groups %}
 		<div class="connections-group connections-group-{{ loop.index }}">
 			<strong>{{ title }}</strong>
-			<span>{{ words | join(", ") }}</span>
+			<span>{{ group | join(", ") }}</span>
 		</div>
 		{% endfor %}
 	</div>

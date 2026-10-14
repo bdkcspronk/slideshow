@@ -41,14 +41,24 @@ class Provider:
 	def slides(self, now: datetime) -> list[Slide]:
 		raise NotImplementedError
 
+	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
+		"""For interactive slides: a data-action button was clicked, with the values of the
+		selected data-toggle elements. Return the redrawn slide and an optional message."""
+		raise NotImplementedError
+
 
 class Takeover:
 	"""Interrupts the normal rotation when slide() returns a slide."""
 
 	name = ""
+	interrupts_paused = False   # True: also interrupts someone playing an interactive slide
 
 	def slide(self, now: datetime) -> Slide | None:
 		raise NotImplementedError
+
+	def due(self, now: datetime) -> bool:
+		"""Whether slide() would take over right now (without side effects)."""
+		return False
 
 	def next_start(self, now: datetime) -> datetime | None:
 		"""When the next takeover starts, so the slide before it can be cut short. None = don't care."""
