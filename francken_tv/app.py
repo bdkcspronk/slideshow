@@ -99,7 +99,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		providers=providers,
 		takeovers={takeover.name: takeover for takeover in takeovers},
 		jobs=jobs,
-		scheduler=Scheduler(enabled, takeovers),
+		scheduler=Scheduler(enabled, takeovers, config.get("rotation", {}).get("fill_with", "images")),
 		runner=BackgroundRunner(clock, enabled, jobs),
 		screen_size=(display.get("screen_width", 1920), display.get("screen_height", 1080)),
 	)

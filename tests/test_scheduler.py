@@ -42,6 +42,16 @@ class RotationTest(unittest.TestCase):
 		names = [scheduler.next_slide(now).data["name"] for _ in range(6)]
 		self.assertEqual(names, ["a0", "a1", "b0", "a0", "a1", "b0"])
 
+	def test_special_slides_are_spread_between_the_images(self):
+		images = FixedProvider("images", 26)
+		scheduler = Scheduler([images, FixedProvider("special", 6)], [])
+		names = [slide.data["name"] for slide in scheduler.build_round(at(THURSDAY, "10:00:00"))]
+		positions = [i for i, name in enumerate(names) if name.startswith("special")]
+		gaps = [b - a - 1 for a, b in zip([-1] + positions, positions)]
+		self.assertEqual(gaps, [5, 4, 4, 5, 4, 4])   # posters between consecutive special slides
+		self.assertEqual(names[-1], "special5")         # the round ends with a special slide
+		self.assertEqual([n for n in names if n.startswith("special")], [f"special{i}" for i in range(6)])
+
 	def test_broken_provider_is_skipped(self):
 		scheduler = Scheduler([BrokenProvider(), FixedProvider("a", 1)], [])
 		with self.assertLogs("francken_tv.scheduler", "ERROR"):

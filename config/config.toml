@@ -12,9 +12,10 @@ host = "127.0.0.1"
 port = 8080
 
 [rotation]
-# The slideshow shows these slide types in this order, then starts over.
-# Remove a name to disable that slide type.
+# The slide types in each round. Remove a name to disable that slide type.
 order = ["images", "activities", "event_photos", "presence", "quote", "connections", "bieruur_countdown"]
+# The other slide types are spread evenly between these slides, in the order above.
+fill_with = "images"
 
 [images]
 folder = "media/slides"      # drop images here; new files are picked up automatically
