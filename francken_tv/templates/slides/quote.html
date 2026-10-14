@@ -1,6 +1,13 @@
-<div class="slide quote-slide" {% if background %}style="background-image: url('{{ background }}')"{% endif %}>
+{#
+	The quote is typed letter by letter, then the author fades in. Every letter is its own <span>
+	that appears after --i letters (pure CSS, see "Quotes" in style.css); the timing comes from
+	QuoteProvider in providers/quote.py.
+#}
+{% set text = "\u201c" ~ quote[:1] | upper ~ quote[1:] ~ "\u201d" %}
+<div class="slide quote-slide" style="--letter: {{ letter_ms }}ms; --typed: {{ typing_ms }}ms;
+	{%- if background %} background-image: url('{{ background }}'){% endif %}">
 	<blockquote>
-		&ldquo;{{ quote[:1] | upper }}{{ quote[1:] }}&rdquo;
+		<span class="quote-text">{% for letter in text %}<span style="--i: {{ loop.index0 }}"{% if loop.last %} class="last"{% endif %}>{{ letter }}</span>{% endfor %}</span>
 		{% if author %}<footer>~ {{ author | title }}</footer>{% endif %}
 	</blockquote>
 </div>

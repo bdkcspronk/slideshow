@@ -136,6 +136,24 @@ html, body {
 	line-height: 1.15;
 }
 .quote-slide footer { margin-top: 2vh; }
+/* Typed letter by letter: each letter appears after --i letters, with a blinking cursor behind the
+   newest one (a shadow, so nothing shifts); then the author fades in. */
+.quote-text span {
+	opacity: 0;
+	animation:
+		quote-letter 1ms calc(800ms + var(--i) * var(--letter)) forwards,
+		quote-cursor var(--letter) steps(1, end) calc(800ms + var(--i) * var(--letter));
+}
+.quote-text span.last {
+	animation:
+		quote-letter 1ms calc(800ms + var(--i) * var(--letter)) forwards,
+		quote-cursor-blink 0.9s steps(1, end) calc(800ms + var(--i) * var(--letter)) 3;
+}
+@keyframes quote-letter { to { opacity: 1; } }
+@keyframes quote-cursor { from { box-shadow: 0.08em 0 0 #000; } }
+@keyframes quote-cursor-blink { 0% { box-shadow: 0.08em 0 0 #000; } 50% { box-shadow: none; } }
+.quote-slide footer { opacity: 0; animation: quote-author 1.2s ease var(--typed) forwards; }
+@keyframes quote-author { from { opacity: 0; transform: translateY(1vh); } to { opacity: 1; transform: none; } }
 
 /* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. */
 .bieruur-slide {

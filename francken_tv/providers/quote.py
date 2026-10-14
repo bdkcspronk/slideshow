@@ -18,6 +18,8 @@ from ..slides import Provider, Slide, media_url
 
 log = logging.getLogger(__name__)
 
+TYPING_STARTS_MS = 800      # after the slide has faded in
+AUTHOR_FADE_SECONDS = 1.5
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
 
 
@@ -50,7 +52,9 @@ class QuoteProvider(Provider):
 		self.sheet_id = settings.get("sheet_id")
 		self.background = project_path(settings.get("background", "media/quote_background.png"))
 		self.blocked_words_path = project_path(settings.get("blocked_words", "config/quote_filter.txt"))
-		self.seconds = settings.get("seconds", default_seconds)
+		self.seconds = settings.get("seconds", default_seconds)        # reading time after the quote is typed
+		self.letter_ms = settings.get("letter_ms", 45)                     # typing speed
+		self.max_typing_seconds = settings.get("max_typing_seconds", 8)    # long quotes type faster
 		self.refresh_seconds = settings.get("refresh_hours", 6) * 3600
 		self.csv_path = csv_path
 		self.announcer = announcer
@@ -84,8 +88,13 @@ class QuoteProvider(Provider):
 			announce = quote["quote"]
 			if self.announcer.quotes_enabled:
 				self.announcer.prepare(announce)
-		return [Slide("quote.html", self.seconds, {
+		letters = len(quote["quote"]) + 2   # with the quotation marks
+		letter_ms = min(self.letter_ms, self.max_typing_seconds * 1000 / letters)
+		typing_ms = TYPING_STARTS_MS + letters * letter_ms
+		return [Slide("quote.html", typing_ms / 1000 + AUTHOR_FADE_SECONDS + self.seconds, {
 			"quote": quote["quote"],
+			"letter_ms": round(letter_ms),
+			"typing_ms": round(typing_ms),
 			"author": quote["author"],
 			"background": media_url(self.background) if self.background.exists() else None,
 		}, announce=announce)]

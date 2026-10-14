@@ -51,6 +51,9 @@ sheet_id = "12hadm3_zdeU7e3q-YHFfcNSDocQdzjWKnn7lzZLqhI4"   # Google Sheet with 
 background = "media/quote_background.png"
 blocked_words = "config/quote_filter.txt"   # quotes containing these words are shown but not read aloud
 narrate = false                             # read quotes aloud at startup? Toggle while running: Ctrl+M in the terminal, "m" in the browser
+letter_ms = 45                              # the quote is typed letter by letter at this speed...
+max_typing_seconds = 8                      # ...but long quotes type faster, to finish within this time
+seconds = 6                                 # reading time after the quote is typed and the author shown
 refresh_hours = 6
 
 [puzzles]
