@@ -33,7 +33,7 @@ class Announcer:
 		self.length_scale = settings.get("length_scale", 1.2)   # >1 speaks slower
 		self.cache_folder = cache_folder
 		self.cache_folder.mkdir(parents=True, exist_ok=True)
-		self.quotes_enabled = True
+		self.quotes_enabled = False   # QuoteProvider sets this from quote.narrate in config.toml
 		self.speech_queue: queue.Queue[tuple[str, bool]] = queue.Queue()
 		self.synthesize_lock = threading.Lock()
 		self.preparer = ThreadPoolExecutor(max_workers=1, thread_name_prefix="tts-prepare")

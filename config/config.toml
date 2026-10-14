@@ -49,7 +49,7 @@ day_starts_at = "04:00"           # everyone can be greeted again after this tim
 sheet_id = "12hadm3_zdeU7e3q-YHFfcNSDocQdzjWKnn7lzZLqhI4"   # Google Sheet with "Quote" and "name" columns
 background = "media/quote_background.png"
 blocked_words = "config/quote_filter.txt"   # quotes containing these words are shown but not read aloud
-narrate = true                              # read quotes aloud (toggle at runtime with the "m" key)
+narrate = false                             # read quotes aloud at startup? Toggle while running: Ctrl+M in the terminal, "m" in the browser
 refresh_hours = 6
 
 [bieruur]

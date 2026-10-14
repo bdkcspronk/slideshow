@@ -54,7 +54,7 @@ class QuoteProvider(Provider):
 		self.refresh_seconds = settings.get("refresh_hours", 6) * 3600
 		self.csv_path = csv_path
 		self.announcer = announcer
-		announcer.quotes_enabled = settings.get("narrate", True)
+		announcer.quotes_enabled = settings.get("narrate", False)
 		self.quotes: list[dict[str, str]] = []
 		self.last_quote: dict[str, str] | None = None
 
