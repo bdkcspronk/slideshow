@@ -14,6 +14,7 @@ from .config import CACHE_DIR, DATA_DIR, project_path
 from .devices import DeviceList
 from .presence_store import PresenceStore
 from .providers.activities import ActivitiesProvider
+from .providers.connections import ConnectionsProvider
 from .providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
 from .providers.event_photos import EventPhotosProvider
 from .providers.images import ImagesProvider
@@ -76,6 +77,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		PresenceChartProvider(presence, store, devices, CACHE_DIR / "presence_chart.png",
 			project_path("media/nyancat.png"), seconds),
 		QuoteProvider(config.get("quote", {}), DATA_DIR / "quotes.csv", announcer, seconds),
+		ConnectionsProvider(config.get("connections", {}), seconds),
 		BieruurCountdownProvider(bieruur),
 	]
 	providers = {provider.name: provider for provider in all_providers}

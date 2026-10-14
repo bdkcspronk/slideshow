@@ -226,6 +226,56 @@ html, body {
 .party-title { font-size: 14vh; font-weight: bold; line-height: 1; }
 .party-subtitle { font-size: 7vh; margin-top: 3vh; }
 
+/* NYT Connections: today's grid on the left, yesterday's answers on the right. */
+.connections-slide {
+	display: flex;
+	align-items: center;
+	gap: 4vw;
+	padding: 0 5vw;
+	background: #ffffff;
+	color: #121212;
+}
+.connections-today { flex: 3; min-width: 0; }
+.connections-today h1 { margin: 0; font-size: 6vh; }
+.connections-subtitle { margin: 1vh 0 3vh; font-size: 2.6vh; color: #5a5a5a; }
+.connections-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 1.2vh;
+}
+.connections-tile {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 14vh;
+	padding: 0 0.5vw;
+	border-radius: 0.8vh;
+	background: #efefe6;
+	font-size: 3vh;
+	font-weight: bold;
+	text-align: center;
+}
+.connections-tile.long { font-size: 2.4vh; }
+.connections-tile.very-long { font-size: 1.9vh; }
+.connections-yesterday { flex: 2; min-width: 0; }
+.connections-yesterday h2 { margin: 0 0 2vh; font-size: 3.6vh; }
+.connections-group {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.6vh;
+	margin-bottom: 1.2vh;
+	padding: 1.6vh 1vw;
+	border-radius: 0.8vh;
+	text-align: center;
+}
+.connections-group strong { font-size: 2.6vh; }
+.connections-group span { font-size: 2.2vh; }
+.connections-group-1 { background: #f9df6d; }
+.connections-group-2 { background: #a0c35a; }
+.connections-group-3 { background: #b0c4ef; }
+.connections-group-4 { background: #ba81c5; }
+
 /* Shown when there is nothing else to show. */
 .empty-slide {
 	display: flex;

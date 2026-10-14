@@ -14,7 +14,7 @@ port = 8080
 [rotation]
 # The slideshow shows these slide types in this order, then starts over.
 # Remove a name to disable that slide type.
-order = ["images", "activities", "event_photos", "presence", "quote", "bieruur_countdown"]
+order = ["images", "activities", "event_photos", "presence", "quote", "connections", "bieruur_countdown"]
 
 [images]
 folder = "media/slides"      # drop images here; new files are picked up automatically
@@ -51,6 +51,11 @@ background = "media/quote_background.png"
 blocked_words = "config/quote_filter.txt"   # quotes containing these words are shown but not read aloud
 narrate = false                             # read quotes aloud at startup? Toggle while running: Ctrl+M in the terminal, "m" in the browser
 refresh_hours = 6
+
+[connections]
+# The New York Times "Connections" puzzle of the day.
+seconds = 20
+show_yesterday = true         # also show yesterday's answers next to today's puzzle
 
 [bieruur]
 time = "16:00"

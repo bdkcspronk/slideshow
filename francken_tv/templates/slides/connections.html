@@ -1,0 +1,24 @@
+<div class="slide connections-slide">
+	<div class="connections-today">
+		<h1>Connections</h1>
+		<p class="connections-subtitle">Make four groups of four! &middot; Daily puzzle from The New York Times</p>
+		<div class="connections-grid">
+			{# Long words get a smaller font so they fit on one line. #}
+			{% for word in today.words %}
+			<div class="connections-tile{{ ' long' if word | length > 8 }}{{ ' very-long' if word | length > 11 }}">{{ word }}</div>
+			{% endfor %}
+		</div>
+	</div>
+
+	{% if yesterday %}
+	<div class="connections-yesterday">
+		<h2>Yesterday's answers</h2>
+		{% for title, words in yesterday.groups %}
+		<div class="connections-group connections-group-{{ loop.index }}">
+			<strong>{{ title }}</strong>
+			<span>{{ words | join(", ") }}</span>
+		</div>
+		{% endfor %}
+	</div>
+	{% endif %}
+</div>
