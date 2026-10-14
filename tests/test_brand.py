@@ -12,7 +12,7 @@ class BrandTest(unittest.TestCase):
 		html = make_templates().get_template(f"slides/{slide.template}").render(**slide.data)
 		self.assertIn("<svg", html)                 # the logo, inline so CSS can colour it
 		self.assertIn("T.F.V.", html)
-		self.assertIn(">F</span>", html)            # the name is split into letters that rise one by one
+		self.assertIn("Professor Francken", html)   # on one line
 
 
 if __name__ == "__main__":

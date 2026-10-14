@@ -1,29 +1,12 @@
 {#
-	Our name, logo and colours. Everything moves with CSS ("Brand slide" in style.css):
-	the diagonal bands sweep in from the top right, the logo eases into focus, the name rises
-	letter by letter and a soft light sweeps across now and then.
+	Our name, logo and colours ("Brand slide" in style.css): red and blue stripes come in from the
+	bottom and glide diagonally to the top right until they cover the right part of the screen,
+	then the logo appears on top of them. The name stands on one line on the white left side.
 #}
 <div class="slide brand-slide">
-	<div class="brand-stripes"></div>
-	<div class="brand-sash">
-		<i class="band hairline"></i>
-		<i class="band red"></i>
-		<i class="band bright"></i>
-		<i class="band navy"></i>
-		<i class="band hairline far"></i>
-	</div>
-
-	<div class="brand-content">
+	<div class="brand-stripes">
+		{% for i in range(12) %}<i class="{{ 'red' if i % 2 else 'blue' }}" style="--i: {{ i }}"></i>{% endfor %}
 		<div class="brand-logo">{{ logo | safe }}</div>
-		<div class="brand-name">
-			<div class="brand-tfv">T.F.V.</div>
-			{% set letter = namespace(i=0) %}
-			{% for line in ["‘Professor", "Francken’"] %}
-			<div class="brand-line">{% for character in line %}<span style="--i: {{ letter.i }}">{{ character }}</span>{% set letter.i = letter.i + 1 %}{% endfor %}</div>
-			{% endfor %}
-			<div class="brand-rule"></div>
-		</div>
 	</div>
-
-	<div class="brand-sheen"></div>
+	<h1 class="brand-name">T.F.V. &lsquo;Professor Francken&rsquo;</h1>
 </div>
