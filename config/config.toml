@@ -55,7 +55,7 @@ refresh_hours = 6
 
 [puzzles]
 # The Daily puzzles slide: one half per puzzle, tap one to play it.
-order = ["connections", "wordle"]
+order = ["connections", "wordle", "catfishing"]
 seconds = 20
 
 [connections]

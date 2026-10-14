@@ -1,0 +1,92 @@
+{#
+	catfishing.net: guess the Wikipedia article from its categories. Clicking or typing pauses the
+	slideshow (data-interactive). Typing goes into data-input-text; Enter sends it to
+	CatfishingProvider.action() in providers/catfishing.py, which returns the redrawn slide.
+#}
+<div class="slide catfishing-slide" data-interactive data-provider="catfishing" data-submit-action="submit"
+	{% if game.done %}data-resume-after="15"{% endif %}>
+	<header class="catfishing-header">
+		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
+		<h1>Catfishing</h1>
+		<div class="catfishing-progress">
+			{% for result in results %}<i class="{{ result }}"></i>{% endfor %}
+			<span>{{ game.score }} / {{ total_points }} points</span>
+		</div>
+	</header>
+
+	{% if game.done %}
+	{# ---- All ten answered: the summary ---- #}
+	<div class="catfishing-summary">
+		<h2>{{ game.score }} of {{ total_points }} points</h2>
+		<ol>
+			{% for article, answer in summary %}
+			<li class="{{ answer.result }}"><b>{{ article.title }}</b>{% if answer.guess and answer.result != "correct" %} <span>you said: {{ answer.guess }}</span>{% endif %}</li>
+			{% endfor %}
+		</ol>
+		<p class="catfishing-credit">See you tomorrow for ten new articles!</p>
+	</div>
+
+	{% elif game.showing_answer %}
+	{# ---- The answer to the last article ---- #}
+	<div class="catfishing-reveal result-{{ last.result }}">
+		<div class="catfishing-reveal-text">
+			<div class="catfishing-verdict">
+				{{ {"correct": "Correct!", "close": "Close enough", "incorrect": "Not quite", "skipped": "Skipped"}[last.result] }}
+				{% if last.guess and last.result != "correct" %}<span>you said: {{ last.guess }}</span>{% endif %}
+			</div>
+			<h2>{{ article.title }}</h2>
+			<p class="catfishing-extract">{{ article.extract | truncate(420) }}</p>
+			<div class="catfishing-buttons">
+				{% if last.result in ["incorrect", "close"] %}
+				<button data-action="close">{{ "Undo close enough" if last.result == "close" else "Mark as close enough (1 point)" }}</button>
+				{% endif %}
+				<button data-action="next" class="primary">{{ "See the results" if game.answers | length == game.articles | length else "Next article" }} &rarr;</button>
+			</div>
+		</div>
+		{% if article.image %}
+		<figure>
+			<img src="{{ article.image }}" alt="">
+			{% if article.image_credit %}<figcaption>{{ article.image_credit | striptags | truncate(80) }}</figcaption>{% endif %}
+		</figure>
+		{% endif %}
+	</div>
+
+	{% else %}
+	{# ---- A question: the categories, and a box to type the guess ---- #}
+	<div class="catfishing-question">
+		{# Longer lists get more columns and a smaller font, so up to ~45 categories fit. #}
+		<div class="catfishing-categories{{ ' many' if article.categories | length > 16 }}{{ ' lots' if article.categories | length > 28 }}">
+			<h2>Article {{ number }} of {{ game.articles | length }}: which Wikipedia article has these categories?</h2>
+			<ul>{% for category in article.categories %}<li>{{ category }}</li>{% endfor %}</ul>
+		</div>
+		<div class="catfishing-input">
+			{% if game.did_you_mean %}
+			<div class="catfishing-did-you-mean">
+				Did you mean <b>{{ game.did_you_mean }}</b>?
+				<div class="catfishing-buttons">
+					<button data-action="did_you_mean" data-value="no">No</button>
+					<button data-action="did_you_mean" data-value="yes" class="primary">Yes</button>
+				</div>
+			</div>
+			{% else %}
+			<div class="catfishing-guess" data-input-text>{{ typed }}</div>
+			<div class="catfishing-buttons">
+				<button data-action="skip">Skip</button>
+				<button data-key="ENTER" class="primary">Guess</button>
+			</div>
+			<div class="wordle-keyboard catfishing-keyboard">
+				{% for row in ["1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"] %}
+				<div class="wordle-keyboard-row">
+					{% for key in row %}<button class="wordle-key" data-key="{{ key }}">{{ key }}</button>{% endfor %}
+					{% if loop.last %}<button class="wordle-key wide" data-key="BACK">&#9003;</button>{% endif %}
+				</div>
+				{% endfor %}
+				<div class="wordle-keyboard-row"><button class="wordle-key space" data-key="SPACE">space</button></div>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+	{% endif %}
+
+	<p class="catfishing-credit footer">Daily game from catfishing.net &middot; articles and categories from Wikipedia</p>
+</div>

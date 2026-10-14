@@ -9,7 +9,7 @@ The slideshow on the TV in the Francken room. It shows:
 | A photo from one of the last 3 events | Nextcloud `images/albums/` | `providers/event_photos.py` |
 | Who was in the room today | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
-| Daily puzzles: Connections \| Wordle, with today's status; tap one to play it | nytimes.com | `providers/puzzles.py`, `connections.py`, `wordle.py` |
+| Daily puzzles: Connections \| Wordle \| Catfishing, with today's status; tap one to play it | nytimes.com, catfishing.net | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song | | `providers/bieruur.py` |
 | The vrijmibo GIF, every 15 minutes on Fridays | `media/vrijmibo.gif` | `providers/vrijmibo.py` |
 

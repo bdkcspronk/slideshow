@@ -2,7 +2,7 @@
 	The Daily puzzles slide: one half per puzzle. Tapping a half sends "open" to
 	PuzzlesProvider.action() in providers/puzzles.py, which returns that puzzle's slide.
 #}
-<div class="slide puzzles-slide" data-interactive data-provider="puzzles">
+<div class="slide puzzles-slide" data-interactive data-provider="puzzles" style="--cards: {{ cards | length }}">
 	{% for card in cards %}
 	{% if not loop.first %}<div class="puzzles-divider"></div>{% endif %}
 	<button class="puzzle-card puzzle-{{ card.name }} status-{{ card.state }}" data-action="open" data-value="{{ card.name }}">
@@ -12,6 +12,8 @@
 			{% for colour in ["yellow", "green", "blue", "purple"] %}<i class="{{ colour }}"></i><i class="{{ colour }}"></i><i class="{{ colour }}"></i><i class="{{ colour }}"></i>{% endfor %}
 			{% elif card.name == "wordle" %}
 			{% for state in ["absent", "present", "absent", "correct", "absent", "correct", "correct", "correct", "correct", "correct"] %}<i class="{{ state }}"></i>{% endfor %}
+			{% elif card.name == "catfishing" %}
+			<i class="tag w1"></i><i class="tag w2"></i><i class="tag w3"></i>
 			{% endif %}
 		</span>
 		<span class="puzzle-title">{{ card.title }}</span>
@@ -19,5 +21,5 @@
 		<span class="puzzle-play">{{ "View" if card.state in ["solved", "lost"] else "Play" }}</span>
 	</button>
 	{% endfor %}
-	<p class="puzzles-footer">Daily puzzles from The New York Times &middot; tap one to play</p>
+	<p class="puzzles-footer">Daily puzzles from The New York Times and catfishing.net &middot; tap one to play</p>
 </div>

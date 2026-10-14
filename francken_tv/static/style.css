@@ -268,7 +268,11 @@ body.show-cursor button { cursor: pointer; }
 .puzzle-icon .correct { background: #6aaa64; border-radius: 0; }
 .puzzle-icon .present { background: #c9b458; border-radius: 0; }
 .puzzle-icon .absent { background: #787c7e; border-radius: 0; }
-.puzzle-title { font-size: 8vh; font-weight: bold; letter-spacing: 0.3vh; text-transform: uppercase; }
+.puzzle-catfishing .puzzle-icon { grid-template-columns: auto; justify-items: center; }
+.puzzle-icon .tag { height: 4.2vh; border-radius: 2.1vh; background: #e3f1ec; border: 0.3vh solid #2f8f72; }
+.puzzle-icon .tag.w1 { width: 22vh; } .puzzle-icon .tag.w2 { width: 16vh; } .puzzle-icon .tag.w3 { width: 19vh; }
+/* Smaller titles when there are more puzzles side by side (--cards is set on the slide). */
+.puzzle-title { font-size: min(8vh, calc(52vw / var(--cards, 2) / 6.5)); font-weight: bold; letter-spacing: 0.3vh; text-transform: uppercase; }
 .puzzle-status { font-size: 3.4vh; color: #5a5a5a; }
 .status-solved .puzzle-status { color: #3a8a3a; font-weight: bold; }
 .status-playing .puzzle-status { color: #b08a00; font-weight: bold; }
@@ -302,6 +306,89 @@ body.show-cursor button { cursor: pointer; }
 	font-size: 2.2vh;
 	font-weight: bold;
 }
+
+/* Catfishing: categories on the left, the guess and a keyboard on the right. */
+.catfishing-slide {
+	display: flex;
+	flex-direction: column;
+	padding: 4vh 4vw 6vh;
+	gap: 2.5vh;
+	background: #fbfaf6;
+	color: #1d2b26;
+	position: relative;
+}
+.catfishing-header { display: flex; align-items: center; gap: 2vw; }
+.catfishing-header .puzzle-back { margin: 0; }
+.catfishing-header h1 { margin: 0; font-size: 5vh; }
+.catfishing-progress { margin-left: auto; display: flex; align-items: center; gap: 0.6vw; font-size: 2.6vh; font-weight: bold; }
+.catfishing-progress i { width: 2.2vh; height: 2.2vh; border-radius: 50%; background: #d8dcd5; }
+.catfishing-progress i.correct { background: #2f8f72; }
+.catfishing-progress i.close { background: #e0b23a; }
+.catfishing-progress i.incorrect, .catfishing-progress i.skipped { background: #b84a3a; }
+.catfishing-progress span { margin-left: 1vw; }
+.catfishing-question { flex: 1; display: flex; gap: 4vw; min-height: 0; }
+.catfishing-categories { flex: 3; min-width: 0; }
+.catfishing-categories h2 { margin: 0 0 2vh; font-size: 2.8vh; color: #4d5c56; font-weight: normal; }
+.catfishing-categories ul { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 2.5vw; }
+.catfishing-categories li {
+	break-inside: avoid;
+	margin-bottom: 1vh;
+	padding: 0.6vh 1vw;
+	border-radius: 1vh;
+	background: #e3f1ec;
+	font-size: 2.8vh;
+}
+.catfishing-categories.many ul { columns: 3; column-gap: 1.2vw; }
+.catfishing-categories.many li { font-size: 2vh; margin-bottom: 0.6vh; padding: 0.4vh 0.6vw; }
+.catfishing-categories.lots li { font-size: 1.7vh; margin-bottom: 0.45vh; padding: 0.3vh 0.5vw; }
+.catfishing-input { flex: 2; display: flex; flex-direction: column; gap: 2vh; min-width: 0; }
+.catfishing-guess {
+	min-height: 7vh;
+	padding: 1.2vh 1.2vw;
+	border: 0.3vh solid #2f8f72;
+	border-radius: 1vh;
+	background: #ffffff;
+	font-size: 3.6vh;
+	overflow-wrap: anywhere;
+}
+.catfishing-guess::after { content: "|"; color: #2f8f72; animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.catfishing-buttons { display: flex; gap: 1vw; justify-content: flex-end; }
+.catfishing-buttons button, .catfishing-did-you-mean button {
+	padding: 1.2vh 1.8vw;
+	border: 0.2vh solid #1d2b26;
+	border-radius: 4vh;
+	background: #ffffff;
+	color: #1d2b26;
+	font-family: inherit;
+	font-size: 2.4vh;
+	font-weight: bold;
+}
+.catfishing-buttons button.primary { background: #1d2b26; color: #ffffff; }
+.catfishing-keyboard .wordle-key { min-width: 3.2vw; height: 6.5vh; font-size: 2.2vh; background: #d3d6da; }
+.catfishing-keyboard .wordle-key.space { min-width: 28vw; }
+.catfishing-did-you-mean { font-size: 3.6vh; display: flex; flex-direction: column; gap: 3vh; margin-top: 10vh; }
+.catfishing-reveal { flex: 1; display: flex; gap: 4vw; align-items: center; min-height: 0; }
+.catfishing-reveal-text { flex: 3; }
+.catfishing-verdict { font-size: 4vh; font-weight: bold; }
+.catfishing-verdict span { margin-left: 1vw; font-size: 2.6vh; font-weight: normal; color: #4d5c56; }
+.result-correct .catfishing-verdict { color: #2f8f72; }
+.result-close .catfishing-verdict { color: #b8860b; }
+.result-incorrect .catfishing-verdict, .result-skipped .catfishing-verdict { color: #b84a3a; }
+.catfishing-reveal h2 { margin: 1.5vh 0; font-size: 6vh; }
+.catfishing-extract { font-size: 2.6vh; line-height: 1.45; color: #34433d; }
+.catfishing-reveal .catfishing-buttons { justify-content: flex-start; margin-top: 3vh; }
+.catfishing-reveal figure { flex: 2; margin: 0; text-align: center; }
+.catfishing-reveal img { max-width: 100%; max-height: 60vh; border-radius: 1vh; }
+.catfishing-reveal figcaption { font-size: 1.6vh; color: #7a857f; }
+.catfishing-summary h2 { margin: 0 0 2vh; font-size: 5vh; }
+.catfishing-summary ol { margin: 0; padding-left: 3vw; columns: 2; font-size: 2.8vh; line-height: 1.8; }
+.catfishing-summary li.correct b { color: #2f8f72; }
+.catfishing-summary li.close b { color: #b8860b; }
+.catfishing-summary li.incorrect b, .catfishing-summary li.skipped b { color: #b84a3a; }
+.catfishing-summary li span { font-size: 2.2vh; color: #7a857f; }
+.catfishing-credit { font-size: 2.2vh; color: #7a857f; }
+.catfishing-credit.footer { position: absolute; bottom: 2vh; left: 0; right: 0; margin: 0; text-align: center; }
 
 /* NYT Connections: today's grid on the left, yesterday's answers on the right. */
 .connections-slide {

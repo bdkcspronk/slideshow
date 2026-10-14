@@ -2,6 +2,7 @@
 # Matching is case-insensitive.
 kanker
 children
+kanker
 cancer
 sex
 lick

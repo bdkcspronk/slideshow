@@ -14,6 +14,7 @@ from .config import CACHE_DIR, DATA_DIR, project_path
 from .devices import DeviceList
 from .presence_store import PresenceStore
 from .providers.activities import ActivitiesProvider
+from .providers.catfishing import CatfishingProvider
 from .providers.connections import ConnectionsProvider
 from .providers.puzzles import PuzzlesProvider
 from .providers.wordle import WordleProvider
@@ -77,6 +78,7 @@ def build_app(config: dict, clock: Clock) -> App:
 	available_puzzles = {puzzle.name: puzzle for puzzle in [
 		ConnectionsProvider(config.get("connections", {}), seconds),
 		WordleProvider(config.get("wordle", {}), seconds),
+		CatfishingProvider(config.get("catfishing", {}), seconds),
 	]}
 	puzzles = [available_puzzles[name] for name in puzzle_settings.get("order", list(available_puzzles))]
 

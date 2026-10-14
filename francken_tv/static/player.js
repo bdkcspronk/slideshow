@@ -131,7 +131,8 @@ async function checkNotice() {
 // - data-toggle elements can be selected (at most data-max-selected), e.g. Connections tiles;
 // - data-action buttons send the selected data-values (or their own data-value) to the provider's
 //   action() in Python (or to another provider, with data-provider on the button);
-// - data-input-cell elements are filled by typing (keyboard or data-key buttons, e.g. Wordle);
+// - data-input-cell elements are filled by typing (keyboard or data-key buttons, e.g. Wordle),
+//   or a data-input-text element takes free text (e.g. Catfishing);
 //   Enter sends the typed text as data-submit-action.
 // action() returns the redrawn slide and an optional message.
 
@@ -161,8 +162,15 @@ function interactiveSlide() {
 	return layers[front].querySelector("[data-interactive]");
 }
 
-// Typing into data-input-cell elements: a letter, "ENTER" or "BACK".
+// Typing: a character, "SPACE", "ENTER" or "BACK".
 function typeKey(slide, key) {
+	const text = slide.querySelector("[data-input-text]");
+	if (text) {   // free text
+		if (key === "ENTER") sendAction(slide, slide.dataset.submitAction, [text.textContent]);
+		else if (key === "BACK") text.textContent = text.textContent.slice(0, -1);
+		else text.textContent += key === "SPACE" ? " " : key;
+		return;
+	}
 	const cells = [...slide.querySelectorAll("[data-input-cell]")];
 	if (key === "ENTER") {
 		sendAction(slide, slide.dataset.submitAction, [cells.map((cell) => cell.textContent.trim()).join("")]);
@@ -260,8 +268,17 @@ document.addEventListener("mousemove", () => {
 });
 
 document.addEventListener("keydown", async (event) => {
-	// On a slide you can type on (Wordle), letters, Enter and Backspace go to the game.
+	// On a slide you can type on, keys go to the game instead of the shortcuts below.
 	const slide = interactiveSlide();
+	if (slide && slide.querySelector("[data-input-text]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
+		const key = event.key === "Enter" ? "ENTER" : event.key === "Backspace" ? "BACK" : event.key === " " ? "SPACE" : event.key;
+		if (key.length === 1 || ["ENTER", "BACK", "SPACE"].includes(key)) {
+			event.preventDefault();
+			keepPaused(IDLE_SECONDS);
+			typeKey(slide, key);
+			return;
+		}
+	}
 	if (slide && slide.querySelector("[data-input-cell]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		const key = event.key === "Enter" ? "ENTER" : event.key === "Backspace" ? "BACK" : event.key.toUpperCase();
 		if (key === "ENTER" || key === "BACK" || /^[A-Z]$/.test(key)) {
