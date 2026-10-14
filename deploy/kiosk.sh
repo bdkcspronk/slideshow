@@ -18,4 +18,8 @@ for browser in chromium chromium-browser google-chrome; do
 			--check-for-update-interval=31536000 --incognito "$URL" >"$LOG" 2>&1
 	fi
 done
-exec firefox --kiosk --private-window "$URL" >"$LOG" 2>&1
+# Firefox gets its own profile and --no-remote, so it runs as a separate process instead of handing the URL
+# to a Firefox that is already open and exiting at once (systemd would then restart it every few seconds).
+PROFILE="$(dirname "$0")/../data/kiosk-firefox-profile"
+mkdir -p "$PROFILE"
+exec firefox --kiosk --no-remote --profile "$(realpath "$PROFILE")" --private-window "$URL" >"$LOG" 2>&1

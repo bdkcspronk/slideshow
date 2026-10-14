@@ -6,7 +6,8 @@ PartOf=graphical-session.target
 
 [Service]
 ExecStart=%h/slideshow/deploy/kiosk.sh
-Restart=always
+# A crash restarts it; closing it with Alt+F4 keeps it closed.
+Restart=on-failure
 RestartSec=5
 
 [Install]

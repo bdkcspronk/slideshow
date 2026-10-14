@@ -123,6 +123,8 @@ sudo loginctl enable-linger $USER                   # keep running without anyon
 
 Logs: `journalctl --user -u francken-tv -f` (or `-u francken-tv-sniffer`).
 After changing `config.toml`: `systemctl --user restart francken-tv`.
+Closed the full-screen slideshow with Alt+F4? It stays closed; bring it back with `systemctl --user start francken-tv-kiosk`
+(`stop` to close it from a terminal).
 
 To import the logs of the old sniffer: `python3 -m francken_tv.sniffer --import filtered_output.jsonl`.
 
