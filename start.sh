@@ -1,9 +1,9 @@
 #!/bin/bash
-# Start the Francken TV slideshow: server, sniffer (if the ESP32 is plugged in) and a full-screen browser.
+# Start the Francken TV slideshow: server, sniffer (if the ESP32 is plugged in) and a browser window.
 # Press Ctrl+C here to stop everything. Ctrl+M = read quotes aloud on/off, Ctrl+R = reload devices.json.
 #
-#   ./start.sh                                   normal start
-#   ./start.sh --window                          normal browser window instead of full screen
+#   ./start.sh                                   normal start, in a browser window
+#   ./start.sh --fullscreen                      full screen (kiosk), as on the TV
 #   ./start.sh --no-browser                      only the server; open http://127.0.0.1:8080 yourself
 #   ./start.sh --fake-time "2026-10-16 15:57:30" pretend it's a different moment (other options go to the server too)
 
@@ -13,11 +13,12 @@ PYTHON=.venv/bin/python
 SERIAL_PORT=/dev/ttyUSB0
 URL=http://127.0.0.1:8080
 
-browser=kiosk
+browser=window
 server_args=()
 for arg in "$@"; do
 	case "$arg" in
-		--window) browser=window ;;
+		--fullscreen) browser=kiosk ;;
+		--window) browser=window ;;   # the default; still accepted
 		--no-browser) browser=none ;;
 		*) server_args+=("$arg") ;;
 	esac

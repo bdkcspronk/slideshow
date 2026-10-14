@@ -47,8 +47,8 @@ Each slide type is one Python file plus one small HTML template in `francken_tv/
 ## Running it on your laptop
 
 ```sh
-./start.sh                                    # server + sniffer (if plugged in) + full-screen browser
-./start.sh --window                           # normal browser window instead of full screen
+./start.sh                                    # server + sniffer (if plugged in) + a browser window
+./start.sh --fullscreen                       # full screen (kiosk), as on the TV
 ./start.sh --fake-time "2026-10-16 15:57:30"  # pretend it's Friday just before bieruur
 ```
 
@@ -90,7 +90,7 @@ git pull
 deploy/migrate_from_old_layout.sh   # moves slides/, audio/, Sniffer/filter.json, ... to the new places
 ```
 
-Then follow the steps below (venv, piper) and start it with `./start.sh`.
+Then follow the steps below (venv, piper) and start it with `./start.sh --fullscreen`.
 
 ## Running on the TV PC
 
