@@ -102,6 +102,10 @@ html, body {
 	box-shadow: 0 0.3vh 1vh rgba(16, 33, 63, 0.08);
 }
 .activities-slide li.today { outline: 0.4vh solid #f3b01f; }
+.activities-slide li.from-left { animation: slide-from-left 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.6s + var(--i) * 0.25s) both; }
+.activities-slide li.from-right { animation: slide-from-right 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.6s + var(--i) * 0.25s) both; }
+@keyframes slide-from-left { from { transform: translateX(-60vw); opacity: 0; } }
+@keyframes slide-from-right { from { transform: translateX(60vw); opacity: 0; } }
 .activity-date {
 	display: flex;
 	flex-direction: column;
