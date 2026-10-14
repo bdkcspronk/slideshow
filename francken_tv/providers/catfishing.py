@@ -148,6 +148,8 @@ class Game:
 		elif name == "skip":
 			self.answer("skipped")
 		elif name == "did_you_mean":
+			if self.did_you_mean is None:
+				return {}   # a click on an old copy of the slide (e.g. after skipping back)
 			if values and values[0] == "yes":
 				self.answer("correct", self.pending_guess)
 			else:

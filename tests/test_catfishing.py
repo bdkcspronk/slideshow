@@ -75,6 +75,11 @@ class CatfishingGameTest(unittest.TestCase):
 		data, _ = self.act("did_you_mean", "yes")
 		self.assertEqual(data["last"].result, "correct")
 
+	def test_old_did_you_mean_click_is_ignored(self):
+		# E.g. "Yes" on an old copy of the slide after skipping back: nothing is pending, nothing happens.
+		data, _ = self.act("did_you_mean", "yes")
+		self.assertEqual(data["game"].answers, [])
+
 	def test_wrong_answer_can_be_marked_close_enough(self):
 		self.act("submit", "The Rolling Stones")
 		data, _ = self.act("close")

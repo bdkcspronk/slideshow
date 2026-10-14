@@ -98,9 +98,31 @@ class Handler(BaseHTTPRequestHandler):
 	server: "Server"
 
 	def do_GET(self) -> None:
+		self.handle_safely(self.get)
+
+	def do_POST(self) -> None:
+		self.handle_safely(self.post)
+
+	def handle_safely(self, handler) -> None:
+		"""A request that fails is logged and answered with an error; the slideshow keeps running."""
+		try:
+			handler()
+		except (BrokenPipeError, ConnectionResetError):
+			pass   # the browser went away (e.g. reloaded); nothing to answer
+		except Exception:
+			log.exception("Request %s %s failed", self.command, self.path)
+			try:
+				self.send_error(HTTPStatus.INTERNAL_SERVER_ERROR)
+			except Exception:
+				pass
+
+	def get(self) -> None:
 		path = unquote(urlparse(self.path).path)
 		renderer = self.server.renderer
-		if path == "/":
+		if path == "/favicon.ico":
+			self.send_response(HTTPStatus.NO_CONTENT)   # no icon; just keep the browser quiet
+			self.end_headers()
+		elif path == "/":
 			self.send_html(renderer.templates.get_template("player.html").render())
 		elif path == "/api/next":
 			self.send_json(renderer.next_slide())
@@ -124,7 +146,7 @@ class Handler(BaseHTTPRequestHandler):
 		else:
 			self.send_error(HTTPStatus.NOT_FOUND)
 
-	def do_POST(self) -> None:
+	def post(self) -> None:
 		if urlparse(self.path).path == "/api/action":
 			self.send_action()
 		elif urlparse(self.path).path == "/api/narration":
@@ -135,13 +157,20 @@ class Handler(BaseHTTPRequestHandler):
 
 	def send_action(self) -> None:
 		"""{"provider": "connections", "action": "submit", "values": [...]} -> the redrawn slide."""
-		request = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
-		provider = self.server.app.providers.get(request.get("provider", ""))
+		try:
+			request = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+			name, action, values = str(request.get("provider", "")), str(request.get("action", "")), request.get("values", [])
+			if not isinstance(values, list):
+				raise ValueError("values must be a list")
+		except (ValueError, AttributeError) as error:
+			self.send_error(HTTPStatus.BAD_REQUEST, str(error))
+			return
+		provider = self.server.app.providers.get(name)
 		if provider is None:
 			self.send_error(HTTPStatus.NOT_FOUND)
 			return
 		try:
-			slide, message = provider.action(request.get("action", ""), request.get("values", []), self.server.app.clock.now())
+			slide, message = provider.action(action, [str(value) for value in values], self.server.app.clock.now())
 		except NotImplementedError:
 			self.send_error(HTTPStatus.BAD_REQUEST, "this slide is not interactive")
 			return
