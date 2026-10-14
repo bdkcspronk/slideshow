@@ -72,6 +72,37 @@ class PortraitPairTest(unittest.TestCase):
 			self.assertEqual(len(slides["2.jpg"]), 1)   # portrait, but no other photo from that event
 
 
+class FakeNextcloud:
+	"""Two years, one album, and twenty photos; downloads write a small file."""
+
+	def list_folder(self, path):
+		if path == "images/albums/":
+			return [Entry("images/albums/2026/", True)]
+		if path == "images/albums/2026/":
+			return [Entry("images/albums/2026/2026-10-12-Dies-Natalis/", True)]
+		return [Entry(f"{path}photo{i}.jpg", False) for i in range(20)]
+
+	def download(self, path, destination):
+		destination.write_bytes(b"jpg")
+
+
+class EventPhotoRefreshTest(unittest.TestCase):
+	def test_previous_batch_is_kept_for_one_refresh(self):
+		from francken_tv.providers.event_photos import EventPhotosProvider
+		with TemporaryDirectory() as folder:
+			provider = EventPhotosProvider({"photos_to_download": 5}, Path(folder), 8)
+			provider.client = FakeNextcloud()
+			now = datetime(2026, 10, 14, 12, 0)
+			provider.refresh(now)
+			first = {photo.path for photo in provider.photos}
+			provider.refresh(now)
+			self.assertTrue(all(path.exists() for path in first))   # still shown in the current round
+			second = {photo.path for photo in provider.photos}
+			provider.refresh(now)
+			on_disk = set(Path(folder).iterdir())
+			self.assertTrue(on_disk <= second | {photo.path for photo in provider.photos})   # older ones are gone
+
+
 class FakeAnnouncer:
 	def __init__(self):
 		self.played = []

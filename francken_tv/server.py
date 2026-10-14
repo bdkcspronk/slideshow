@@ -74,7 +74,7 @@ class SlideRenderer:
 	def fitted_image(self, path: Path) -> Path:
 		"""A copy of `path` scaled down to the screen size, or `path` itself if it's small enough."""
 		key = (path, path.stat().st_mtime)
-		if key not in self.fitted:
+		if key not in self.fitted or not self.fitted[key].exists():   # the cache folder may have been cleared
 			width, height = self.app.screen_size
 			with Image.open(path) as image:
 				if image.width <= width and image.height <= height:
@@ -150,8 +150,8 @@ class Handler(BaseHTTPRequestHandler):
 		if fit and path.suffix.lower() in RESIZABLE:
 			try:
 				path = self.server.renderer.fitted_image(path)
-			except OSError as error:
-				log.warning("Could not scale %s: %s", path, error)
+			except Exception:
+				log.exception("Could not scale %s; sending the original", path)
 		self.send_response(HTTPStatus.OK)
 		self.send_header("Content-Type", mimetypes.guess_type(path.name)[0] or "application/octet-stream")
 		self.send_header("Content-Length", str(path.stat().st_size))

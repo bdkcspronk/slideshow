@@ -29,7 +29,15 @@ async function show(slide, { canRefresh = true } = {}) {
 	const back = layers[1 - front];
 	back.innerHTML = slide.html;
 	// Wait until the images are decoded, so slides never appear half-loaded.
-	await Promise.all([...back.querySelectorAll("img")].map((img) => img.decode().catch(() => {})));
+	const images = [...back.querySelectorAll("img")];
+	await Promise.all(images.map((img) => img.decode().catch(() => {})));
+	if (images.some((img) => img.naturalWidth === 0)) {
+		// A missing or broken image would show as a black screen: skip this slide instead.
+		console.warn("Skipping a slide with a broken image:", images.map((img) => img.src));
+		back.innerHTML = "";
+		nextTimer = setTimeout(next, 500);
+		return;
+	}
 	const old = layers[front];
 	back.classList.add("visible");
 	old.classList.remove("visible");

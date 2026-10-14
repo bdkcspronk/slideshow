@@ -105,7 +105,8 @@ class EventPhotosProvider(Provider):
 			if not local.exists():
 				client.download(entry.path, local)
 			photos.append(Photo(local, album, is_portrait(local)))
-		keep = {photo.path for photo in photos}
+		# Keep the previous batch too: the current round of the slideshow may still show one of them.
+		keep = {photo.path for photo in photos} | {photo.path for photo in self.photos}
 		for old in self.cache_folder.iterdir():
 			if old not in keep:
 				old.unlink()
