@@ -85,6 +85,7 @@ html, body {
 	padding: 0;
 	display: grid;
 	grid-template-columns: 1fr 1fr;
+	grid-auto-flow: column;   /* in date order down the left column, then down the right */
 	gap: 2.5vh 3vw;
 }
 .activities-slide li {

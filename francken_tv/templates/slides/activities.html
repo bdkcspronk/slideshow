@@ -1,6 +1,7 @@
 <div class="slide activities-slide">
 	<h1>Upcoming activities</h1>
-	<ul>
+	{# Fill the left column top to bottom, then the right column. #}
+	<ul style="grid-template-rows: repeat({{ (activities | length + 1) // 2 }}, auto)">
 		{% for activity in activities %}
 		<li class="{{ 'today' if activity.day == today else '' }}">
 			<div class="activity-date">
