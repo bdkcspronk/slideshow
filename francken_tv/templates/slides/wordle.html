@@ -1,0 +1,42 @@
+{#
+	The NYT Wordle. Clicking or typing pauses the slideshow on this slide (data-interactive).
+	Letters go into the data-input-cell tiles; Enter sends them to WordleProvider.action() in
+	providers/wordle.py, which returns the redrawn slide. The flip and bounce animations are CSS.
+#}
+<div class="slide wordle-slide" data-interactive data-provider="wordle" data-submit-action="submit"
+	{% if finished %}data-resume-after="15"{% endif %} {% if new_row is not none %}data-message-delay="1800"{% endif %}>
+	<div class="wordle-left">
+		<h1>Wordle</h1>
+		<p class="wordle-subtitle">
+			{% if finished %}See you tomorrow for a new word!{% else %}Guess the word in six tries! Click or type to play{% endif %}
+			&middot; Daily puzzle from The New York Times
+		</p>
+		<div class="wordle-grid">
+			{% for row in rows %}
+			{% set row_index = loop.index0 %}
+			<div class="wordle-row{{ ' shake' if row.input and shake }}">
+				{% for letter, state in row.cells %}
+				<div class="wordle-tile {{ state }}{{ ' filled' if letter }}{{ ' reveal' if row_index == new_row }}{{ ' win' if won and row_index == new_row }}"
+					style="--i: {{ loop.index0 }}" {% if row.input %}data-input-cell{% endif %}>{{ letter }}</div>
+				{% endfor %}
+			</div>
+			{% endfor %}
+		</div>
+	</div>
+
+	<div class="wordle-right">
+		<div class="wordle-keyboard">
+			{% for row in keyboard %}
+			<div class="wordle-keyboard-row">
+				{% if loop.last %}<button class="wordle-key wide" data-key="ENTER">Enter</button>{% endif %}
+				{# A key that changes colour with the newest guess shows its old colour until the tiles have flipped. #}
+				{% for letter, state, was in row %}
+				<button class="wordle-key {{ state }}{{ ' delayed was-' ~ (was or 'blank') if state != was }}" data-key="{{ letter }}">{{ letter }}</button>
+				{% endfor %}
+				{% if loop.last %}<button class="wordle-key wide" data-key="BACK">&#9003;</button>{% endif %}
+			</div>
+			{% endfor %}
+		</div>
+		{% if yesterday %}<p class="wordle-yesterday">Yesterday's word: <strong>{{ yesterday }}</strong></p>{% endif %}
+	</div>
+</div>

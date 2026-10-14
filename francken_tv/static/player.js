@@ -127,42 +127,70 @@ async function checkNotice() {
 }
 
 // ---- Interactive slides -----------------------------------------------------------------
-// A slide with data-interactive pauses the slideshow when clicked. Elements with data-toggle
-// can be selected (at most data-max-selected); buttons with data-action are sent to the
-// provider's action() in Python, which returns the redrawn slide and an optional message.
+// A slide with data-interactive pauses the slideshow when clicked or typed on.
+// - data-toggle elements can be selected (at most data-max-selected), e.g. Connections tiles;
+// - data-action buttons send the selected data-values to the provider's action() in Python;
+// - data-input-cell elements are filled by typing (keyboard or data-key buttons, e.g. Wordle);
+//   Enter sends the typed text as data-submit-action.
+// action() returns the redrawn slide and an optional message.
 
 document.addEventListener("click", async (event) => {
-	const slide = layers[front].querySelector("[data-interactive]");
+	const slide = interactiveSlide();
 	if (!slide || !slide.contains(event.target)) return;
+	event.target.closest("button")?.blur();   // so Space/Enter later don't press it again
 	keepPaused(IDLE_SECONDS);
 	const toggle = event.target.closest("[data-toggle]");
 	const action = event.target.closest("[data-action]");
+	const key = event.target.closest("[data-key]");
 	const selected = () => [...slide.querySelectorAll("[data-toggle].selected")];
 	if (toggle) {
 		const max = parseInt(slide.dataset.maxSelected || "1000", 10);
 		if (toggle.classList.contains("selected") || selected().length < max) toggle.classList.toggle("selected");
+	} else if (key) {
+		typeKey(slide, key.dataset.key);
 	} else if (action && action.dataset.action === "deselect") {
 		selected().forEach((element) => element.classList.remove("selected"));
 	} else if (action) {
-		const result = await getJson("/api/action", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				provider: slide.dataset.provider,
-				action: action.dataset.action,
-				values: selected().map((element) => element.dataset.value),
-			}),
-		});
-		if (result.html) {
-			const effect = new DOMParser().parseFromString(result.html, "text/html").querySelector("[data-effect]");
-			if (effect && effects[effect.dataset.effect]) await effects[effect.dataset.effect](slide);
-			layers[front].innerHTML = result.html;
-			const resumeAfter = layers[front].querySelector("[data-resume-after]");
-			if (resumeAfter) keepPaused(parseFloat(resumeAfter.dataset.resumeAfter));   // e.g. game over
-		}
-		if (result.message) showToast(result.message);
+		sendAction(slide, action.dataset.action, selected().map((element) => element.dataset.value));
 	}
 });
+
+function interactiveSlide() {
+	return layers[front].querySelector("[data-interactive]");
+}
+
+// Typing into data-input-cell elements: a letter, "ENTER" or "BACK".
+function typeKey(slide, key) {
+	const cells = [...slide.querySelectorAll("[data-input-cell]")];
+	if (key === "ENTER") {
+		sendAction(slide, slide.dataset.submitAction, [cells.map((cell) => cell.textContent.trim()).join("")]);
+	} else if (key === "BACK") {
+		const last = cells.filter((cell) => cell.textContent.trim()).pop();
+		if (last) { last.textContent = ""; last.classList.remove("filled"); }
+	} else {
+		const empty = cells.find((cell) => !cell.textContent.trim());
+		if (empty) { empty.textContent = key; empty.classList.add("filled"); }
+	}
+}
+
+async function sendAction(slide, action, values) {
+	const result = await getJson("/api/action", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ provider: slide.dataset.provider, action, values }),
+	});
+	let messageDelay = 0;
+	if (result.html) {
+		const fresh = new DOMParser().parseFromString(result.html, "text/html");
+		const effect = fresh.querySelector("[data-effect]");
+		if (effect && effects[effect.dataset.effect]) await effects[effect.dataset.effect](slide);
+		messageDelay = parseInt(fresh.querySelector("[data-message-delay]")?.dataset.messageDelay || "0", 10);
+		layers[front].innerHTML = result.html;
+		const resumeAfter = layers[front].querySelector("[data-resume-after]");
+		if (resumeAfter) keepPaused(parseFloat(resumeAfter.dataset.resumeAfter));   // e.g. game over
+	}
+	if (result.message) setTimeout(() => showToast(result.message), messageDelay);   // e.g. after the tiles flip
+}
 
 // Animations that play on the current slide before the redrawn one replaces it.
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -230,6 +258,17 @@ document.addEventListener("mousemove", () => {
 });
 
 document.addEventListener("keydown", async (event) => {
+	// On a slide you can type on (Wordle), letters, Enter and Backspace go to the game.
+	const slide = interactiveSlide();
+	if (slide && slide.querySelector("[data-input-cell]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
+		const key = event.key === "Enter" ? "ENTER" : event.key === "Backspace" ? "BACK" : event.key.toUpperCase();
+		if (key === "ENTER" || key === "BACK" || /^[A-Z]$/.test(key)) {
+			event.preventDefault();
+			keepPaused(IDLE_SECONDS);
+			typeKey(slide, key);
+			return;
+		}
+	}
 	if (event.key === "ArrowRight" || event.key === "ArrowDown") {
 		next();
 	} else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {

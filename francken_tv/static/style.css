@@ -327,6 +327,88 @@ body.show-cursor button { cursor: pointer; }
 .connections-group-3 { background: #b0c4ef; }
 .connections-group-4 { background: #ba81c5; }
 
+/* NYT Wordle: the grid on the left, the keyboard on the right. */
+.wordle-slide {
+	--correct: #6aaa64;
+	--present: #c9b458;
+	--absent: #787c7e;
+	--blank-key: #d3d6da;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6vw;
+	background: #ffffff;
+	color: #121212;
+}
+.wordle-left h1 { margin: 0; font-size: 6vh; }
+.wordle-subtitle { margin: 1vh 0 2.5vh; font-size: 2.6vh; color: #5a5a5a; max-width: 45vw; }
+.wordle-grid { display: flex; flex-direction: column; gap: 0.8vh; align-items: flex-start; }
+.wordle-row { display: flex; gap: 0.8vh; }
+.wordle-row.shake { animation: shake 0.4s; }
+.wordle-tile {
+	--tile: transparent;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 10vh;
+	height: 10vh;
+	box-sizing: border-box;
+	border: 0.3vh solid #d3d6da;
+	font-size: 5.5vh;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+.wordle-tile.filled { border-color: #878a8c; }
+.wordle-tile.correct { --tile: var(--correct); }
+.wordle-tile.present { --tile: var(--present); }
+.wordle-tile.absent { --tile: var(--absent); }
+.wordle-tile.correct, .wordle-tile.present, .wordle-tile.absent {
+	background: var(--tile);
+	border-color: var(--tile);
+	color: #ffffff;
+}
+/* The newest guess: tiles flip one by one and show their colour halfway (as on the NYT page). */
+.wordle-tile.reveal { animation: flip 0.5s ease-in-out calc(var(--i) * 0.3s) both; }
+@keyframes flip {
+	0% { transform: rotateX(0); background: #ffffff; border-color: #878a8c; color: #121212; }
+	50% { transform: rotateX(-90deg); background: #ffffff; border-color: #878a8c; color: #121212; }
+	50.1% { transform: rotateX(-90deg); background: var(--tile); border-color: var(--tile); color: #ffffff; }
+	100% { transform: rotateX(0); background: var(--tile); border-color: var(--tile); color: #ffffff; }
+}
+.wordle-tile.reveal.win {
+	animation: flip 0.5s ease-in-out calc(var(--i) * 0.3s) both, bounce 0.5s ease calc(1.6s + var(--i) * 0.1s);
+}
+@keyframes bounce {
+	30% { transform: translateY(-3vh); }
+	60% { transform: translateY(0.5vh); }
+}
+.wordle-keyboard { display: flex; flex-direction: column; gap: 1vh; }
+.wordle-keyboard-row { display: flex; justify-content: center; gap: 0.5vw; }
+.wordle-key {
+	min-width: 3.6vw;
+	height: 8vh;
+	padding: 0 0.6vw;
+	border: none;
+	border-radius: 0.6vh;
+	background: var(--blank-key);
+	color: #121212;
+	font-family: inherit;
+	font-size: 2.6vh;
+	font-weight: bold;
+}
+.wordle-key.wide { min-width: 6vw; }
+.wordle-key.correct { background: var(--correct); color: #ffffff; }
+.wordle-key.present { background: var(--present); color: #ffffff; }
+.wordle-key.absent { background: var(--absent); color: #ffffff; }
+/* Keys that changed with the newest guess keep their old colour until the tiles have flipped. */
+.wordle-key.delayed { animation: key-update 1.8s steps(1, end) both; }
+@keyframes key-update { from { background: var(--was-bg); color: var(--was-fg); } }
+.was-blank { --was-bg: var(--blank-key); --was-fg: #121212; }
+.was-present { --was-bg: var(--present); --was-fg: #ffffff; }
+.was-absent { --was-bg: var(--absent); --was-fg: #ffffff; }
+.wordle-yesterday { margin-top: 4vh; text-align: center; font-size: 2.8vh; color: #5a5a5a; }
+.wordle-yesterday strong { color: #121212; letter-spacing: 0.3vh; }
+
 /* Shown when there is nothing else to show. */
 .empty-slide {
 	display: flex;
