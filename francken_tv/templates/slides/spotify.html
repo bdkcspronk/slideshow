@@ -1,0 +1,21 @@
+{#
+	What's playing on Spotify (providers/spotify.py). Redrawn every second: the parts marked
+	data-live update in place; a new song (data-state changes) redraws the whole slide.
+#}
+<div class="slide spotify-slide" data-state="{{ track }}">
+	{% if cover %}<div class="spotify-backdrop" style="background-image: url('{{ cover }}')"></div>{% endif %}
+	<div class="spotify-content">
+		{% if cover %}<img class="spotify-cover" src="{{ cover }}" alt="">{% endif %}
+		<div class="spotify-info">
+			<div class="spotify-label">
+				<span class="spotify-eq{{ ' paused' if not is_playing }}" data-live="eq"><i></i><i></i><i></i><i></i></span>
+				Now playing on Spotify
+			</div>
+			<h1 class="spotify-title">{{ title }}</h1>
+			<div class="spotify-artist">{{ artist }}</div>
+			<div class="spotify-album">{{ album }}</div>
+			<div class="spotify-progress"><div class="spotify-bar" data-live="bar" style="width: {{ percent }}%"></div></div>
+			<div class="spotify-times"><span data-live="elapsed">{{ elapsed }}</span><span>{{ total }}</span></div>
+		</div>
+	</div>
+</div>

@@ -9,6 +9,7 @@
 	/api/notice     the latest short message to show in the corner of the screen
 	/preview/<name> one slide of a provider or takeover, for checking templates
 	/status         what every provider is doing, and the last error
+	/spotify/login  connect the slideshow to a Spotify account (once; see providers/spotify.py)
 	/files/...      images from media/ and data/cache/ (large images are scaled down)
 """
 
@@ -26,7 +27,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import TYPE_CHECKING
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
@@ -168,6 +169,8 @@ class Handler(BaseHTTPRequestHandler):
 		elif path == "/api/current":
 			slide = renderer.current
 			self.send_json(renderer.as_json(slide) if slide else {"html": "", "seconds": 0, "refresh": None})
+		elif path in ("/spotify/login", "/spotify/callback"):
+			self.spotify(path)
 		elif path.startswith("/preview/"):
 			self.send_preview(path.removeprefix("/preview/"))
 		elif path == "/status":
@@ -187,6 +190,34 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_json({"quotes_enabled": self.server.app.announcer.quotes_enabled})
 		else:
 			self.send_error(HTTPStatus.NOT_FOUND)
+
+	def spotify(self, path: str) -> None:
+		"""Log in with Spotify: /spotify/login sends the browser to Spotify, which comes back to /spotify/callback."""
+		spotify = self.server.app.providers.get("spotify")
+		if spotify is None:
+			self.send_error(HTTPStatus.NOT_FOUND, "the spotify slide is not set up")
+			return
+		if path == "/spotify/login":
+			url = spotify.login_url()
+			if url is None:
+				self.send_html(f"<h1>Spotify</h1><p>First put the keys of your Spotify app in <code>{spotify.credentials_path}</code>: "
+					'<code>{"client_id": "...", "client_secret": "..."}</code>. See the README, section "Spotify".</p>')
+				return
+			self.send_response(HTTPStatus.FOUND)
+			self.send_header("Location", url)
+			self.end_headers()
+			return
+		query = parse_qs(urlparse(self.path).query)
+		if "error" in query:
+			self.send_html(f"<h1>Spotify</h1><p>Not connected: {query['error'][0]}. <a href='/spotify/login'>Try again</a>.</p>")
+			return
+		try:
+			spotify.finish_login(query.get("code", [""])[0], query.get("state", [""])[0])
+		except Exception as error:
+			log.warning("Spotify login failed: %s", error)
+			self.send_html(f"<h1>Spotify</h1><p>Not connected: {error}. <a href='/spotify/login'>Try again</a>.</p>")
+			return
+		self.send_html("<h1>Spotify</h1><p>Connected! The slideshow now shows what's playing. You can close this tab.</p>")
 
 	def send_action(self) -> None:
 		"""{"provider": "connections", "action": "submit", "values": [...]} -> the redrawn slide."""

@@ -18,6 +18,7 @@ from .providers.brand import BrandProvider
 from .providers.catfishing import CatfishingProvider
 from .providers.connections import ConnectionsProvider
 from .providers.puzzles import PuzzlesProvider
+from .providers.spotify import SpotifyProvider
 from .providers.wordle import WordleProvider
 from .providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
 from .providers.event_photos import EventPhotosProvider
@@ -93,6 +94,8 @@ def build_app(config: dict, clock: Clock) -> App:
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),
 		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),
+		SpotifyProvider(config.get("spotify", {}), project_path(config.get("spotify", {}).get("credentials",
+			"~/.config/slideshow/spotify.json")), seconds),
 	]
 	providers = {provider.name: provider for provider in all_providers}
 	order = config.get("rotation", {}).get("order", list(providers))

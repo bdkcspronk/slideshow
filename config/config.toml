@@ -13,7 +13,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "brand", "activities", "event_photos", "presence", "puzzles", "leaderboard", "quote", "bieruur_countdown"]
+order = ["images", "brand", "activities", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "quote", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
@@ -47,6 +47,13 @@ devices = "config/devices.json"   # MAC address -> name, colours, chart style, g
 seconds = 15
 greet_arrivals = true
 day_starts_at = "04:00"           # everyone can be greeted again after this time
+
+[spotify]
+# What's playing on Spotify; only shown while something plays. Setup: README, section "Spotify".
+credentials = "~/.config/slideshow/spotify.json"
+redirect_uri = "http://127.0.0.1:8080/spotify/callback"   # must match the app at developer.spotify.com
+check_every_seconds = 5
+seconds = 15
 
 [leaderboard]
 # Who spent the most time in the room this week (since Monday).

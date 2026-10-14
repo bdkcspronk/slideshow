@@ -10,6 +10,7 @@ The slideshow on the TV in the Francken room. It shows:
 | Who was in the room today (animated chart) | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
 | This week's leaderboard: most time in the room | the ESP32 sniffer | `providers/presence.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
+| What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing, with today's status; tap one to play it | nytimes.com, catfishing.net | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song | | `providers/bieruur.py` |
 | The vrijmibo GIF, every 15 minutes on Fridays | `media/vrijmibo.gif` | `providers/vrijmibo.py` |
@@ -82,6 +83,20 @@ Copy these to the TV PC by hand:
 | `~/.config/slideshow/nextcloud.credentials.json` | Nextcloud login |
 
 `data/` is created automatically: the presence database, caches and the downloaded quotes.
+
+## Spotify
+
+The Spotify slide shows what's playing (it only appears while something plays). One-time setup:
+
+1. At https://developer.spotify.com/dashboard, log in and **Create app**. Any name and description;
+   **Redirect URI**: `http://127.0.0.1:8080/spotify/callback` (exactly this; `127.0.0.1`, not
+   `localhost`); tick **Web API**.
+2. Open the app's **Settings** and put its **Client ID** and **Client secret** in
+   `~/.config/slideshow/spotify.json` on the TV PC:
+   `{"client_id": "...", "client_secret": "..."}`
+3. Start the slideshow and open http://127.0.0.1:8080/spotify/login **on the TV PC**; log in with
+   the Spotify account whose music should be shown. The slideshow adds a refresh token to that
+   file (no password is stored). It keeps working after restarts.
 
 ## Updating a PC that ran the old slideshow
 
