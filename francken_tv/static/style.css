@@ -8,6 +8,8 @@ html, body {
 	cursor: none;
 	font-family: "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
 }
+body.show-cursor { cursor: default; }
+body.show-cursor button { cursor: pointer; }
 
 .layer {
 	position: fixed;
@@ -142,7 +144,6 @@ html, body {
 	font-weight: 200;
 	line-height: 1.15;
 }
-.quote-slide footer { margin-top: 2vh; }
 /* Typed letter by letter: each letter appears after --i letters, with a blinking cursor behind the
    newest one (a shadow, so nothing shifts); then the author fades in. */
 .quote-text span {
@@ -159,7 +160,7 @@ html, body {
 @keyframes quote-letter { to { opacity: 1; } }
 @keyframes quote-cursor { from { box-shadow: 0.08em 0 0 #000; } }
 @keyframes quote-cursor-blink { 0% { box-shadow: 0.08em 0 0 #000; } 50% { box-shadow: none; } }
-.quote-slide footer { opacity: 0; animation: quote-author 1.2s ease var(--typed) forwards; }
+.quote-slide footer { margin-top: 2vh; opacity: 0; animation: quote-author 1.2s ease var(--typed) forwards; }
 @keyframes quote-author { from { opacity: 0; transform: translateY(1vh); } to { opacity: 1; transform: none; } }
 
 /* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. */
@@ -169,6 +170,8 @@ html, body {
 	justify-content: space-evenly;
 	gap: 2vw;
 	padding: 0 3vw;
+	position: relative;
+	overflow: hidden;
 	background: radial-gradient(circle at 30% 40%, #4a2c12 0%, #24150a 55%, #120a04 100%);
 	color: #fff4dc;
 }
@@ -215,7 +218,6 @@ html, body {
 
 /* The background fills up with beer towards bieruur: a beer layer from the bottom (its height is
    updated every second), a foam head on top, and bubbles rising through it. */
-.bieruur-slide { position: relative; overflow: hidden; }
 .bieruur-slide > :not(.beer) { position: relative; z-index: 1; }
 .beer {
 	position: absolute;
@@ -269,9 +271,6 @@ html, body {
 .party-text { text-align: center; }
 .party-title { font-size: 14vh; font-weight: bold; line-height: 1; }
 .party-subtitle { font-size: 7vh; margin-top: 3vh; }
-
-body.show-cursor { cursor: default; }
-body.show-cursor button { cursor: pointer; }
 
 /* Activity chart (activity_chart.py + templates/slides/presence.html). Rows are 1/--rows of the
    chart height; bars grow from left to right (a clip that opens), like time playing back. */
@@ -414,15 +413,15 @@ body.show-cursor button { cursor: pointer; }
 .leaderboard-time { text-align: right; font-weight: bold; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .leaderboard-days { color: #8a9aa3; font-size: 2.4vh; }
 
-/* Brand slide: our name (top) and logo (below it) in navy on white. Then red and blue stripes come in
-   from the bottom and glide diagonally to the top right, one after another, until they cover the whole
-   screen (they are slanted with skewX, so moving one down in its own frame also moves it left).
-   Meanwhile the name and logo turn white, so they stay readable on the stripes. */
+/* Brand slide: white. Red and blue stripes come in from the bottom and glide diagonally to the top
+   right, one after another, until they cover the whole screen (they are slanted with skewX, so moving
+   one down in its own frame also moves it left). Our name (top) and logo (below it) are white, so they
+   appear as the stripes come in behind them, and get a shadow once the screen is covered. */
 .brand-slide {
 	--navy: #173249;
 	--red: #a51c30;
 	--stripe: 6.5vw;   /* width of one stripe */
-	--covered: 2s;     /* when the name and logo turn white */
+	--covered: 2s;     /* when the name and logo get their shadow */
 	position: relative;
 	overflow: hidden;
 	background: #ffffff;
@@ -444,20 +443,24 @@ body.show-cursor button { cursor: pointer; }
 	position: absolute;
 	left: 50%;
 	transform: translateX(-50%);
-	color: var(--navy);
-	animation: brand-to-white 1.4s ease-in-out var(--covered) both;
+	color: #ffffff;
+	/* Own compositor layer from the start: otherwise they only get one once the stripes beneath start
+	   moving, and that switch (and redrawing the shadow every frame) makes the text flicker. */
+	will-change: transform, filter;
+	animation: brand-shadow 1.4s ease-in-out var(--covered) both;
 }
 .brand-name {
-	top: 6vh;
+	top: 15vh;
 	margin: 0;
-	font-size: 6.2vw;   /* the name almost fills the width */
+	font-size: 4.6vw;
 	font-weight: bold;
 	white-space: nowrap;
 }
-.brand-logo { top: 30vh; height: 60vh; }
+.brand-logo { top: 35vh; height: 45vh; }   /* same scale as the name */
 .brand-logo svg { height: 100%; width: auto; display: block; }
-@keyframes brand-to-white {
-	to { color: #ffffff; filter: drop-shadow(0 0.5vh 1.2vh rgba(0, 0, 0, 0.45)); }
+@keyframes brand-shadow {
+	from { filter: drop-shadow(0 0.5vh 1.2vh rgba(0, 0, 0, 0)); }
+	to { filter: drop-shadow(0 0.5vh 1.2vh rgba(0, 0, 0, 0.45)); }
 }
 
 /* Spotify: the album cover, blurred, as the background; the cover itself, title and progress on top. */
@@ -516,7 +519,6 @@ body.show-cursor button { cursor: pointer; }
 	display: flex;
 	align-items: stretch;
 	padding: 8vh 4vw 12vh;
-	gap: 0;
 	background: #ffffff;
 	color: #121212;
 	position: relative;
