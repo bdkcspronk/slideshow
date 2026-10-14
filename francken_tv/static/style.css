@@ -326,48 +326,51 @@ body.show-cursor button { cursor: pointer; }
 .catfishing-progress i.close { background: #e0b23a; }
 .catfishing-progress i.incorrect, .catfishing-progress i.skipped { background: #b84a3a; }
 .catfishing-progress span { margin-left: 1vw; }
-.catfishing-question { flex: 1; display: flex; gap: 4vw; min-height: 0; }
-.catfishing-categories { flex: 3; min-width: 0; }
+.catfishing-question { flex: 1; display: flex; flex-direction: column; gap: 2.5vh; min-height: 0; }
+.catfishing-categories { flex: 1; min-height: 0; }
 .catfishing-categories h2 { margin: 0 0 2vh; font-size: 2.8vh; color: #4d5c56; font-weight: normal; }
-.catfishing-categories ul { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 2.5vw; }
+.catfishing-categories ul { margin: 0; padding: 0; list-style: none; columns: 3; column-gap: 2vw; }
 .catfishing-categories li {
 	break-inside: avoid;
-	margin-bottom: 1vh;
-	padding: 0.6vh 1vw;
+	margin-bottom: 1.2vh;
+	padding: 0.8vh 1vw;
 	border-radius: 1vh;
 	background: #e3f1ec;
-	font-size: 2.8vh;
+	font-size: 3vh;
 }
-.catfishing-categories.many ul { columns: 3; column-gap: 1.2vw; }
-.catfishing-categories.many li { font-size: 2vh; margin-bottom: 0.6vh; padding: 0.4vh 0.6vw; }
-.catfishing-categories.lots li { font-size: 1.7vh; margin-bottom: 0.45vh; padding: 0.3vh 0.5vw; }
-.catfishing-input { flex: 2; display: flex; flex-direction: column; gap: 2vh; min-width: 0; }
+.catfishing-categories.short ul { columns: 2; }
+.catfishing-categories.short li { font-size: 3.6vh; }
+.catfishing-categories.many ul { columns: 4; column-gap: 1.2vw; }
+.catfishing-categories.many li { font-size: 2.3vh; margin-bottom: 0.7vh; padding: 0.5vh 0.7vw; }
+.catfishing-categories.lots li { font-size: 2vh; margin-bottom: 0.5vh; padding: 0.35vh 0.6vw; }
+/* The bar at the bottom: the guess (typed on a keyboard) with Skip and Guess, or "Did you mean ...?". */
+.catfishing-input { display: flex; align-items: center; gap: 1vw; margin-bottom: 3vh; }
 .catfishing-guess {
-	min-height: 7vh;
-	padding: 1.2vh 1.2vw;
+	flex: 1;
+	padding: 1.4vh 1.2vw;
 	border: 0.3vh solid #2f8f72;
 	border-radius: 1vh;
 	background: #ffffff;
 	font-size: 3.6vh;
-	overflow-wrap: anywhere;
+	white-space: nowrap;
+	overflow: hidden;
 }
+.catfishing-guess:empty::before { content: "Type your guess\2026"; color: #9aa59f; }
 .catfishing-guess::after { content: "|"; color: #2f8f72; animation: caret 1s steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
-.catfishing-buttons { display: flex; gap: 1vw; justify-content: flex-end; }
-.catfishing-buttons button, .catfishing-did-you-mean button {
-	padding: 1.2vh 1.8vw;
+.catfishing-did-you-mean { flex: 1; font-size: 3.6vh; }
+.catfishing-buttons { display: flex; gap: 1vw; }
+.catfishing-buttons button, .catfishing-input button {
+	padding: 1.4vh 2vw;
 	border: 0.2vh solid #1d2b26;
 	border-radius: 4vh;
 	background: #ffffff;
 	color: #1d2b26;
 	font-family: inherit;
-	font-size: 2.4vh;
+	font-size: 2.6vh;
 	font-weight: bold;
 }
-.catfishing-buttons button.primary { background: #1d2b26; color: #ffffff; }
-.catfishing-keyboard .wordle-key { min-width: 3.2vw; height: 6.5vh; font-size: 2.2vh; background: #d3d6da; }
-.catfishing-keyboard .wordle-key.space { min-width: 28vw; }
-.catfishing-did-you-mean { font-size: 3.6vh; display: flex; flex-direction: column; gap: 3vh; margin-top: 10vh; }
+.catfishing-buttons button.primary, .catfishing-input button.primary { background: #1d2b26; color: #ffffff; }
 .catfishing-reveal { flex: 1; display: flex; gap: 4vw; align-items: center; min-height: 0; }
 .catfishing-reveal-text { flex: 3; }
 .catfishing-verdict { font-size: 4vh; font-weight: bold; }

@@ -52,37 +52,23 @@
 	</div>
 
 	{% else %}
-	{# ---- A question: the categories, and a box to type the guess ---- #}
+	{# ---- A question: the categories fill the screen, the guess goes in the bar at the bottom ---- #}
 	<div class="catfishing-question">
 		{# Longer lists get more columns and a smaller font, so up to ~45 categories fit. #}
-		<div class="catfishing-categories{{ ' many' if article.categories | length > 16 }}{{ ' lots' if article.categories | length > 28 }}">
+		{% set count = article.categories | length %}
+		<div class="catfishing-categories{{ ' short' if count <= 8 }}{{ ' many' if count > 16 }}{{ ' lots' if count > 28 }}">
 			<h2>Article {{ number }} of {{ game.articles | length }}: which Wikipedia article has these categories?</h2>
 			<ul>{% for category in article.categories %}<li>{{ category }}</li>{% endfor %}</ul>
 		</div>
 		<div class="catfishing-input">
 			{% if game.did_you_mean %}
-			<div class="catfishing-did-you-mean">
-				Did you mean <b>{{ game.did_you_mean }}</b>?
-				<div class="catfishing-buttons">
-					<button data-action="did_you_mean" data-value="no">No</button>
-					<button data-action="did_you_mean" data-value="yes" class="primary">Yes</button>
-				</div>
-			</div>
+			<div class="catfishing-did-you-mean">Did you mean <b>{{ game.did_you_mean }}</b>?</div>
+			<button data-action="did_you_mean" data-value="no">No</button>
+			<button data-action="did_you_mean" data-value="yes" class="primary">Yes</button>
 			{% else %}
 			<div class="catfishing-guess" data-input-text>{{ typed }}</div>
-			<div class="catfishing-buttons">
-				<button data-action="skip">Skip</button>
-				<button data-key="ENTER" class="primary">Guess</button>
-			</div>
-			<div class="wordle-keyboard catfishing-keyboard">
-				{% for row in ["1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"] %}
-				<div class="wordle-keyboard-row">
-					{% for key in row %}<button class="wordle-key" data-key="{{ key }}">{{ key }}</button>{% endfor %}
-					{% if loop.last %}<button class="wordle-key wide" data-key="BACK">&#9003;</button>{% endif %}
-				</div>
-				{% endfor %}
-				<div class="wordle-keyboard-row"><button class="wordle-key space" data-key="SPACE">space</button></div>
-			</div>
+			<button data-action="skip">Skip</button>
+			<button data-key="ENTER" class="primary">Guess</button>
 			{% endif %}
 		</div>
 	</div>
