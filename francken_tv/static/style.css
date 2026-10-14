@@ -72,9 +72,12 @@ html, body {
 
 /* Upcoming activities. */
 .activities-slide {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;   /* the title and list together, with equal space above and below */
 	background: #f4f6fa;
 	color: #10213f;
-	padding: 6vh 6vw;
+	padding: 0 6vw;
 }
 .activities-slide h1 {
 	margin: 0 0 4vh;
