@@ -30,7 +30,7 @@ class BieruurSettings:
 	songs_folder: str = "media/bieruur"
 	choose_song_minutes_before: float = 10
 	song_offsets: dict | None = None
-	glass_fills_from: str = "08:00"   # the beer glass on the countdown is empty at this time, full at bieruur
+	beer_fills_from: str = "08:00"   # the countdown's background is empty at this time, full of beer at bieruur
 
 	def bieruur(self, now: datetime) -> datetime | None:
 		"""Today's bieruur, or None if there is no bieruur today."""
@@ -52,7 +52,6 @@ class BieruurSettings:
 CLOCK_CENTRE = 100
 DIAL_RADIUS = 88
 NUMBER_RADIUS = 72
-GLASS_TOP, GLASS_BOTTOM = 30, 186   # inside of the beer glass (SVG viewBox 0 0 120 200)
 
 
 def dial_point(degrees: float, radius: float) -> tuple[float, float]:
@@ -89,10 +88,9 @@ def countdown_data(now: datetime, bieruur: datetime, settings: BieruurSettings |
 
 	hours, rest = divmod(remaining, 3600)
 	minutes, seconds = divmod(rest, 60)
-	fill_from = datetime.combine(now.date(), parse_time(settings.glass_fills_from))
+	fill_from = datetime.combine(now.date(), parse_time(settings.beer_fills_from))
 	fill = (now - fill_from) / (bieruur - fill_from) if bieruur > fill_from else 1.0
 	fill = min(max(fill, 0.0), 1.0)
-	beer_top = round(GLASS_BOTTOM - fill * (GLASS_BOTTOM - GLASS_TOP), 2)
 	return {
 		"state": "final" if remaining <= settings.takeover_minutes_before * 60 else "countdown",
 		"countdown": f"{hours}:{minutes:02d}:{seconds:02d}" if hours else f"{minutes:02d}:{seconds:02d}",
@@ -104,7 +102,7 @@ def countdown_data(now: datetime, bieruur: datetime, settings: BieruurSettings |
 		"bieruur_number": bieruur.hour % 12 or 12,   # this number on the clock gets a beer badge...
 		"bieruur_label": f"{bieruur:%H}",            # ...showing "16"
 		"numbers": CLOCK_NUMBERS,
-		"beer_top": beer_top,
+		"beer_level": round(fill * 100, 2),   # % of the screen filled with beer
 	}
 
 

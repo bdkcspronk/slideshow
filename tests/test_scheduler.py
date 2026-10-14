@@ -110,13 +110,11 @@ class BieruurTest(unittest.TestCase):
 		self.assertTrue(countdown_data(at(THURSDAY, "13:00:00"), bieruur)["wedge"].startswith("M 100 100"))
 		self.assertEqual(countdown_data(at(THURSDAY, "03:00:00"), bieruur)["wedge"], "")   # more than 12 hours away
 
-	def test_glass_fills_up_during_the_day(self):
+	def test_beer_fills_up_during_the_day(self):
 		bieruur = at(THURSDAY, "16:00:00")
-		tops = [countdown_data(at(THURSDAY, t), bieruur)["beer_top"] for t in ("07:00:00", "08:00:00", "12:00:00", "15:59:59")]
-		self.assertEqual(tops[0], tops[1])         # empty until 08:00
-		self.assertGreater(tops[1], tops[2])       # the surface rises (smaller y)...
-		self.assertGreater(tops[2], tops[3])
-		self.assertAlmostEqual(tops[3], 30, places=0)   # ...until the glass is full
+		levels = [countdown_data(at(THURSDAY, t), bieruur)["beer_level"] for t in ("07:00:00", "08:00:00", "12:00:00", "15:59:59")]
+		self.assertEqual(levels[:3], [0, 0, 50])      # empty until 08:00, half full at noon...
+		self.assertAlmostEqual(levels[3], 100, places=1)   # ...full at bieruur
 
 	def test_days_setting(self):
 		settings = BieruurSettings(days=("friday",))

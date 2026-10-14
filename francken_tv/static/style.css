@@ -213,41 +213,59 @@ html, body {
 	line-height: 1.1;
 }
 
-.beer-glass { height: 58vh; max-width: 18vw; flex: none; overflow: visible; }
-.glass-outline { fill: none; stroke: rgba(255, 255, 255, 0.85); stroke-width: 3; stroke-linejoin: round; }
-.glass-shine { fill: rgba(255, 255, 255, 0.25); }
-.foam { fill: #fffaf0; }
-.bubbles circle {
-	fill: rgba(255, 255, 255, 0.7);
-	animation: bubble-rise 4s linear infinite;
+/* The background fills up with beer towards bieruur: a beer layer from the bottom (its height is
+   updated every second), a foam head on top, and bubbles rising through it. */
+.bieruur-slide { position: relative; overflow: hidden; }
+.bieruur-slide > :not(.beer) { position: relative; z-index: 1; }
+.beer {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(#f5c340, #e9a21a 60%, #c97f0e);
+	transition: height 1s linear;
 }
-@keyframes bubble-rise {
-	from { transform: translateY(0); opacity: 0.9; }
-	to { transform: translateY(-165px); opacity: 0.2; }
+.beer-head {
+	position: absolute;
+	left: -5vh;
+	right: -5vh;
+	bottom: calc(100% - 2vh);
+	height: 6vh;
+	/* a row of bubbly foam on a solid band */
+	background:
+		radial-gradient(circle at 50% 70%, #fff8e7 55%, transparent 57%) 0 0 / 5vh 5vh repeat-x,
+		linear-gradient(transparent 45%, #fff8e7 45%);
+	animation: foam-drift 7s linear infinite;
 }
+@keyframes foam-drift { to { transform: translateX(-5vh); } }   /* one foam bubble along, so it loops */
+.beer-rising {
+	position: absolute;
+	bottom: 0;
+	width: var(--size);
+	height: var(--size);
+	border-radius: 50%;
+	background: rgba(255, 248, 225, 0.75);
+	animation: beer-rise var(--rise) ease-in var(--wait) infinite;
+}
+@keyframes beer-rise {
+	from { bottom: 0; opacity: 0.9; transform: translateX(0); }
+	50% { transform: translateX(0.6vh); }
+	to { bottom: 100%; opacity: 0.4; transform: translateX(-0.4vh); }
+}
+/* Once the beer is behind the countdown, the text turns dark to stay readable. */
+.bieruur-info.on-beer { color: #3a2410; }
+.bieruur-info.on-beer .bieruur-label { color: #7a3d00; }
 
 /* The last two minutes: the countdown pulses. */
 .bieruur-final .bieruur-countdown { color: #ffd45c; animation: pulse 1s ease-in-out infinite; }
+.bieruur-final .on-beer .bieruur-countdown { color: #3a2410; }
 @keyframes pulse {
 	50% { transform: scale(1.06); }
 }
 
-/* Bieruur itself. */
-.bieruur-party {
-	background: linear-gradient(120deg, #f3b01f, #ffd45c, #e0901a, #ffd45c, #f3b01f);
-	background-size: 300% 300%;
-	animation: shimmer 6s ease infinite;
-	color: #3a2410;
-}
-@keyframes shimmer {
-	50% { background-position: 100% 50%; }
-}
-.bieruur-party .beer-glass { height: 70vh; max-width: 24vw; }
-.bieruur-party .glass-outline { stroke: #3a2410; }
-.bieruur-party .beer-glass:first-child { transform: rotate(-12deg); animation: cheers-left 2s ease-in-out infinite; }
-.bieruur-party .beer-glass:last-child { transform: rotate(12deg); animation: cheers-right 2s ease-in-out infinite; }
-@keyframes cheers-left { 50% { transform: rotate(-4deg) translateX(3vw); } }
-@keyframes cheers-right { 50% { transform: rotate(4deg) translateX(-3vw); } }
+/* Bieruur itself: a screen full of beer. */
+.bieruur-party { justify-content: center; color: #3a2410; }
+.bieruur-party .beer-head { bottom: calc(100% - 6vh); }
 .party-text { text-align: center; }
 .party-title { font-size: 14vh; font-weight: bold; line-height: 1; }
 .party-subtitle { font-size: 7vh; margin-top: 3vh; }

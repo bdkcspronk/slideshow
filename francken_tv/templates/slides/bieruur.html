@@ -1,22 +1,31 @@
 {#
 	The bieruur countdown. The values come from countdown_data() in providers/bieruur.py.
-	It is redrawn every second; elements with data-live="..." are updated in place,
-	so animations (bubbles) keep running.
+	It is redrawn every second; elements with data-live="..." are updated in place, so the
+	animations (bubbles, foam) keep running. The background fills up with beer towards bieruur.
 #}
-{% from "slides/_beer_glass.html" import beer_glass %}
+{% macro beer(level, live=false) %}
+{# Beer from the bottom up to `level` % of the screen, with a foam head and rising bubbles. #}
+<div class="beer" style="height: {{ level }}%" {% if live %}data-live="beer"{% endif %}>
+	<div class="beer-head"></div>
+	{% for i in range(28) %}
+	<i class="beer-rising" style="left: {{ (i * 37) % 100 }}%; --size: {{ 0.6 + (i * 13) % 9 / 10 }}vh;
+		--rise: {{ 3 + (i * 7) % 5 }}s; --wait: {{ (i * 11) % 40 / 10 }}s"></i>
+	{% endfor %}
+</div>
+{% endmacro %}
 
 {% if state == "bieruur" %}
 <div class="slide bieruur-slide bieruur-party" data-state="bieruur">
-	{{ beer_glass("left", 22, overflowing=true) }}
+	{{ beer(100) }}
 	<div class="party-text">
 		<div class="party-title">Het is bieruur!</div>
 		<div class="party-subtitle">Proost!</div>
 	</div>
-	{{ beer_glass("right", 22, overflowing=true) }}
 </div>
 
 {% else %}
 <div class="slide bieruur-slide bieruur-{{ state }}" data-state="{{ state }}">
+	{{ beer(beer_level, live=true) }}
 	<svg class="bieruur-clock" viewBox="0 0 200 200" aria-hidden="true">
 		<circle class="clock-face" cx="100" cy="100" r="96"/>
 		<path class="clock-wedge" d="{{ wedge }}" data-live="wedge"/>
@@ -45,11 +54,9 @@
 		<circle class="clock-centre" cx="100" cy="100" r="4"/>
 	</svg>
 
-	<div class="bieruur-info">
+	<div class="bieruur-info{{ ' on-beer' if beer_level > 40 }}" data-live="info">   {# dark text once the beer is behind it #}
 		<div class="bieruur-label">{{ "Bijna bieruur!" if state == "final" else "Bieruur in" }}</div>
 		<div class="bieruur-countdown" data-live="countdown">{{ countdown }}</div>
 	</div>
-
-	{{ beer_glass("countdown", beer_top, live=true) }}
 </div>
 {% endif %}
