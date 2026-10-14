@@ -13,9 +13,10 @@ html, body {
 	position: fixed;
 	inset: 0;
 	opacity: 0;
+	pointer-events: none;   /* an invisible layer must not catch clicks meant for the visible one */
 	transition: opacity 0.6s ease;
 }
-.layer.visible { opacity: 1; }
+.layer.visible { opacity: 1; pointer-events: auto; z-index: 1; }
 
 .slide {
 	width: 100vw;
