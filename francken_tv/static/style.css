@@ -84,7 +84,7 @@ html, body {
 	margin: 0;
 	padding: 0;
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);   /* two equal columns, even with long names */
 	grid-auto-flow: column;   /* in date order down the left column, then down the right */
 	gap: 2.5vh 3vw;
 }
@@ -107,7 +107,14 @@ html, body {
 }
 .activity-date .day { font-size: 5vh; font-weight: bold; line-height: 1; }
 .activity-date .month { font-size: 2.4vh; text-transform: uppercase; }
-.activity-title { font-size: 3.2vh; font-weight: bold; }
+.activity-text { min-width: 0; }   /* lets long titles shrink instead of widening the card */
+.activity-title {
+	font-size: 3.2vh;
+	font-weight: bold;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;   /* long names end in "..." on one line */
+}
 .activity-details { font-size: 2.4vh; color: #5a6880; margin-top: 0.6vh; }
 
 /* Quotes: black text on the quote background, like the old slide. */
