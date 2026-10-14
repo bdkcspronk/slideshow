@@ -57,7 +57,7 @@ class ActivitiesProvider(Provider):
 
 	def __init__(self, settings: dict, default_seconds: float) -> None:
 		self.url = settings.get("url", "https://professorfrancken.nl/association/activities")
-		self.max_events = settings.get("max_events", 8)
+		self.max_events = settings.get("max_events", 10)
 		self.seconds = settings.get("seconds", default_seconds)
 		self.refresh_seconds = settings.get("refresh_minutes", 30) * 60
 		self.activities: list[Activity] = []

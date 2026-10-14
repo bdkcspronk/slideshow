@@ -22,7 +22,7 @@ shuffle = false
 
 [activities]
 url = "https://professorfrancken.nl/association/activities"
-max_events = 8
+max_events = 10
 refresh_minutes = 30
 seconds = 15
 
