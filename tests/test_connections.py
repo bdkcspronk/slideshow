@@ -63,6 +63,18 @@ class GameTest(unittest.TestCase):
 		self.assertEqual(len(data["words"]), 12)
 		self.assertEqual(data["mistakes_left"], 4)
 
+	def test_found_words_swap_into_the_top_row_like_the_animation(self):
+		# Starting grid: W00 W10 W20 W30 / W01 W11 W21 W31 / W02 W12 W22 W32 / W03 W13 W23 W33.
+		# Finding W1x: W11, W12, W13 swap with W00, W20, W30 (the top row minus W10), then the
+		# top row becomes the bar. The rest of the board stays where the animation left it.
+		data, _ = self.submit(group(1))
+		self.assertEqual(data["words"], [
+			"W01", "W00", "W21", "W31",
+			"W02", "W20", "W22", "W32",
+			"W03", "W30", "W23", "W33",
+		])
+		self.assertEqual(data["new_group"], 1)
+
 	def test_one_away_keeps_the_selection(self):
 		guess = group(0)[:3] + [group(1)[0]]
 		data, message = self.submit(guess)

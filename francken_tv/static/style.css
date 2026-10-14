@@ -270,6 +270,12 @@ body.show-cursor button { cursor: pointer; }
 .connections-tile:active { transform: scale(0.96); }
 .connections-tile.selected { background: #5a594e; color: #ffffff; }
 .connections-tile.shake { animation: shake 0.4s; }
+/* Solving a group: hop, slide into the top row, the bar appears (see "solve-group" in player.js). */
+.connections-tile.hop { animation: hop 0.35s ease-in-out both; }
+@keyframes hop { 50% { transform: translateY(-1.5vh); } }
+.connections-tile.moving { transition: transform 0.5s ease-in-out; z-index: 1; }
+.connections-group.appear { animation: group-appear 0.35s ease-out; }
+@keyframes group-appear { from { transform: scale(0.9); opacity: 0.4; } }
 @keyframes shake {
 	20%, 60% { transform: translateX(-0.6vw); }
 	40%, 80% { transform: translateX(0.6vw); }

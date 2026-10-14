@@ -60,14 +60,30 @@ class Game:
 		for index, (_title, group) in enumerate(self.puzzle.groups):
 			if set(group) == chosen:
 				self.found.append(index)
-				self.order = [word for word in self.order if word not in chosen]
-				return {"message": WIN_MESSAGES[self.mistakes]} if self.won else {}
+				self.remove_into_top_row(chosen)
+				result = {"new_group": index}
+				if self.won:
+					result["message"] = WIN_MESSAGES[self.mistakes]
+				return result
 
 		self.mistakes += 1
 		if self.lost:
 			return {"message": "Next time!"}
 		closest = max(len(chosen & set(group)) for index, (_title, group) in enumerate(self.puzzle.groups) if index not in self.found)
 		return {"message": "One away..." if closest == 3 else "Not quite", "selected": words, "shake": True}
+
+
+	def remove_into_top_row(self, chosen: set[str]) -> None:
+		"""Like on the NYT page: the found words swap places with the other words in the top row
+		(in reading order), and then the top row becomes the coloured bar. player.js animates the
+		same swap, so the board after the animation matches."""
+		order = list(self.order)
+		moving_up = [word for word in order[4:] if word in chosen]
+		making_room = [word for word in order[:4] if word not in chosen]
+		for up, down in zip(moving_up, making_room):
+			i, j = order.index(up), order.index(down)
+			order[i], order[j] = order[j], order[i]
+		self.order = order[4:]
 
 
 def parse_puzzle(data: dict) -> Puzzle:
@@ -111,7 +127,8 @@ class ConnectionsProvider(Provider):
 			self.game = Game(puzzle, list(puzzle.words))   # a new day: a new game
 		return self.game
 
-	def slides(self, now: datetime, selected: list[str] | None = None, shake: bool = False) -> list[Slide]:
+	def slides(self, now: datetime, selected: list[str] | None = None, shake: bool = False,
+			new_group: int | None = None) -> list[Slide]:
 		game = self.todays_game(now)
 		if game is None:
 			return []
@@ -126,6 +143,7 @@ class ConnectionsProvider(Provider):
 			"finished": game.won or game.lost,
 			"selected": selected or [],
 			"shake": shake,
+			"new_group": new_group,   # just found: player.js animates it into place
 			"yesterday": yesterday,
 		})]
 
@@ -139,5 +157,6 @@ class ConnectionsProvider(Provider):
 			result = game.guess(values)
 		elif name == "shuffle":
 			random.shuffle(game.order)
-		slides = self.slides(now, selected=result.get("selected"), shake=result.get("shake", False))
+		slides = self.slides(now, selected=result.get("selected"), shake=result.get("shake", False),
+			new_group=result.get("new_group"))
 		return (slides[0] if slides else None), result.get("message")

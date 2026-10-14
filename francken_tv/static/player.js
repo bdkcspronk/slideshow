@@ -154,6 +154,8 @@ document.addEventListener("click", async (event) => {
 			}),
 		});
 		if (result.html) {
+			const effect = new DOMParser().parseFromString(result.html, "text/html").querySelector("[data-effect]");
+			if (effect && effects[effect.dataset.effect]) await effects[effect.dataset.effect](slide);
 			layers[front].innerHTML = result.html;
 			const resumeAfter = layers[front].querySelector("[data-resume-after]");
 			if (resumeAfter) keepPaused(parseFloat(resumeAfter.dataset.resumeAfter));   // e.g. game over
@@ -161,6 +163,38 @@ document.addEventListener("click", async (event) => {
 		if (result.message) showToast(result.message);
 	}
 });
+
+// Animations that play on the current slide before the redrawn one replaces it.
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const effects = {
+	// Connections, like the NYT page: the four tiles hop one after another, then swap into the
+	// top row (the server swaps the words the same way), which then becomes the coloured bar.
+	"solve-group": async (slide) => {
+		const tiles = [...slide.querySelectorAll(".connections-tile")];
+		const chosen = tiles.filter((tile) => tile.classList.contains("selected"));
+		chosen.forEach((tile, i) => {
+			tile.classList.remove("shake");
+			tile.style.animationDelay = `${i * 0.1}s`;
+			tile.classList.add("hop");
+		});
+		await wait(350 + chosen.length * 100);
+
+		const topRow = tiles.slice(0, 4);
+		const movingUp = chosen.filter((tile) => !topRow.includes(tile));
+		const makingRoom = topRow.filter((tile) => !chosen.includes(tile));
+		chosen.forEach((tile) => tile.classList.remove("hop"));
+		movingUp.forEach((up, i) => {
+			const down = makingRoom[i];
+			const a = up.getBoundingClientRect();
+			const b = down.getBoundingClientRect();
+			for (const [tile, x, y] of [[up, b.x - a.x, b.y - a.y], [down, a.x - b.x, a.y - b.y]]) {
+				tile.classList.add("moving");
+				tile.style.transform = `translate(${x}px, ${y}px)`;
+			}
+		});
+		await wait(movingUp.length ? 550 : 0);
+	},
+};
 
 function keepPaused(seconds) {
 	if (!interacting) {

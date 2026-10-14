@@ -4,7 +4,7 @@
 	ConnectionsProvider.action() in providers/connections.py, which returns the redrawn slide.
 #}
 <div class="slide connections-slide" data-interactive data-provider="connections" data-max-selected="4"
-	{% if finished %}data-resume-after="15"{% endif %}>
+	{% if finished %}data-resume-after="15"{% endif %} {% if new_group is not none %}data-effect="solve-group"{% endif %}>
 	<div class="connections-today">
 		<h1>Connections</h1>
 		<p class="connections-subtitle">
@@ -14,7 +14,7 @@
 
 		<div class="connections-board">
 			{% for level, title, group in groups %}
-			<div class="connections-group connections-group-{{ level + 1 }}">
+			<div class="connections-group connections-group-{{ level + 1 }}{{ ' appear' if level == new_group }}">
 				<strong>{{ title }}</strong>
 				<span>{{ group | join(", ") }}</span>
 			</div>
