@@ -7,9 +7,11 @@ slide (see connections.py), create it in app.py and add its name to puzzles.orde
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
+from pathlib import Path
 
 from ..slides import Provider, Slide
 
@@ -20,6 +22,28 @@ log = logging.getLogger(__name__)
 class PuzzleStatus:
 	state: str     # "new", "playing", "solved" or "lost"
 	text: str      # e.g. "2 of 4 groups"
+
+
+def load_state(path: Path | None, day: date) -> dict | None:
+	"""Today's saved game (see save_state), or None: nothing saved, saved on another day, or unreadable."""
+	if path is None or not path.exists():
+		return None
+	try:
+		state = json.loads(path.read_text(encoding="utf-8"))
+	except (OSError, ValueError) as error:
+		log.warning("Ignoring unreadable saved game %s: %s", path, error)
+		return None
+	return state if state.get("day") == day.isoformat() else None
+
+
+def save_state(path: Path | None, day: date, state: dict) -> None:
+	"""Save a game so it survives a restart of the slideshow (data/puzzles/<puzzle>.json)."""
+	if path is None:
+		return
+	path.parent.mkdir(parents=True, exist_ok=True)
+	temporary = path.with_suffix(".tmp")
+	temporary.write_text(json.dumps({"day": day.isoformat(), **state}), encoding="utf-8")
+	temporary.replace(path)   # in one go, so a restart while saving can't leave half a file
 
 
 class PuzzlesProvider(Provider):

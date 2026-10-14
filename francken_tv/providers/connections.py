@@ -13,11 +13,12 @@ import logging
 import random
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
+from pathlib import Path
 
 import requests
 
 from ..slides import Provider, Slide
-from .puzzles import PuzzleStatus
+from .puzzles import PuzzleStatus, load_state, save_state
 
 log = logging.getLogger(__name__)
 
@@ -100,7 +101,8 @@ class ConnectionsProvider(Provider):
 	name = "connections"
 	title = "Connections"
 
-	def __init__(self, settings: dict, default_seconds: float) -> None:
+	def __init__(self, settings: dict, default_seconds: float, state_path: Path | None = None) -> None:
+		self.state_path = state_path   # where today's game is saved, so it survives a restart
 		self.seconds = settings.get("seconds", default_seconds)
 		self.show_yesterday = settings.get("show_yesterday", True)
 		self.refresh_seconds = settings.get("refresh_minutes", 30) * 60
@@ -126,8 +128,17 @@ class ConnectionsProvider(Provider):
 		if puzzle is None:
 			return None
 		if self.game is None or self.game.puzzle is not puzzle:
-			self.game = Game(puzzle, list(puzzle.words))   # a new day: a new game
+			self.game = Game(puzzle, list(puzzle.words))   # a new day: a new game...
+			saved = load_state(self.state_path, puzzle.day)   # ...unless it was saved before a restart
+			if saved and sorted(saved["order"] + [w for i in saved["found"] for w in puzzle.groups[i][1]]) == sorted(puzzle.words):
+				self.game.order, self.game.found, self.game.mistakes = saved["order"], saved["found"], saved["mistakes"]
+				self.game.guesses = {frozenset(guess) for guess in saved["guesses"]}
 		return self.game
+
+	def save(self) -> None:
+		game = self.game
+		save_state(self.state_path, game.puzzle.day, {"order": game.order, "found": game.found,
+			"mistakes": game.mistakes, "guesses": [sorted(guess) for guess in game.guesses]})
 
 	def status(self, now: datetime) -> PuzzleStatus | None:
 		"""For the Daily puzzles slide. None if today's puzzle isn't available."""
@@ -172,6 +183,7 @@ class ConnectionsProvider(Provider):
 			result = game.guess(values)
 		elif name == "shuffle":
 			random.shuffle(game.order)
+		self.save()
 		slides = self.slides(now, selected=result.get("selected"), shake=result.get("shake", False),
 			new_group=result.get("new_group"))
 		return (slides[0] if slides else None), result.get("message")

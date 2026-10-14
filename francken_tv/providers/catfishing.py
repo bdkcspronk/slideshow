@@ -12,11 +12,12 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from pathlib import Path
 
 import requests
 
 from ..slides import Provider, Slide
-from .puzzles import PuzzleStatus
+from .puzzles import PuzzleStatus, load_state, save_state
 
 log = logging.getLogger(__name__)
 
@@ -171,7 +172,8 @@ class CatfishingProvider(Provider):
 	name = "catfishing"
 	title = "Catfishing"
 
-	def __init__(self, settings: dict, default_seconds: float) -> None:
+	def __init__(self, settings: dict, default_seconds: float, state_path: Path | None = None) -> None:
+		self.state_path = state_path   # where today's game is saved, so it survives a restart
 		self.seconds = settings.get("seconds", default_seconds)
 		self.refresh_seconds = settings.get("refresh_minutes", 30) * 60
 		self.games: dict[date, list[Article]] = {}
@@ -198,7 +200,11 @@ class CatfishingProvider(Provider):
 		if articles is None:
 			return None
 		if self.game is None or self.game.day != now.date():
-			self.game = Game(now.date(), articles)   # a new day: a new game
+			self.game = Game(now.date(), articles)   # a new day: a new game...
+			saved = load_state(self.state_path, now.date())   # ...unless it was saved before a restart
+			if saved and len(saved["answers"]) <= len(articles):
+				self.game.answers = [Answer(result, guess) for result, guess in saved["answers"]]
+				self.game.showing_answer = saved["showing_answer"] and bool(self.game.answers)
 		return self.game
 
 	def status(self, now: datetime) -> PuzzleStatus | None:
@@ -234,5 +240,7 @@ class CatfishingProvider(Provider):
 		if game is None:
 			return None, None
 		result = game.act(name, values)
+		save_state(self.state_path, game.day, {"answers": [[a.result, a.guess] for a in game.answers],
+			"showing_answer": game.showing_answer})
 		slides = self.slides(now, typed=result.get("typed", ""))
 		return (slides[0] if slides else None), result.get("message")

@@ -14,7 +14,7 @@ from pathlib import Path
 import requests
 
 from ..slides import Provider, Slide
-from .puzzles import PuzzleStatus
+from .puzzles import PuzzleStatus, load_state, save_state
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +98,8 @@ class WordleProvider(Provider):
 	name = "wordle"
 	title = "Wordle"
 
-	def __init__(self, settings: dict, default_seconds: float) -> None:
+	def __init__(self, settings: dict, default_seconds: float, state_path: Path | None = None) -> None:
+		self.state_path = state_path   # where today's game is saved, so it survives a restart
 		self.seconds = settings.get("seconds", default_seconds)
 		self.show_yesterday = settings.get("show_yesterday", True)
 		self.refresh_seconds = settings.get("refresh_minutes", 30) * 60
@@ -125,7 +126,10 @@ class WordleProvider(Provider):
 		if solution is None:
 			return None
 		if self.game is None or self.game.day != now.date():
-			self.game = Game(now.date(), solution)   # a new day: a new game
+			self.game = Game(now.date(), solution)   # a new day: a new game...
+			saved = load_state(self.state_path, now.date())   # ...unless it was saved before a restart
+			if saved:
+				self.game.guesses = [guess for guess in saved["guesses"] if len(guess) == 5][:MAX_GUESSES]
 		return self.game
 
 	def status(self, now: datetime) -> PuzzleStatus | None:
@@ -176,5 +180,6 @@ class WordleProvider(Provider):
 		if game is None:
 			return None, None
 		result = game.guess(values[0] if values else "", self.valid_words) if name == "submit" else {}
+		save_state(self.state_path, game.day, {"guesses": game.guesses})
 		slides = self.slides(now, typed=result.get("typed", ""), shake=result.get("shake", False), new_row=result.get("new_row"))
 		return (slides[0] if slides else None), result.get("message")

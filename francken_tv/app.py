@@ -76,9 +76,9 @@ def build_app(config: dict, clock: Clock) -> App:
 	# The puzzles are shown through the Daily puzzles slide, in the order of puzzles.order.
 	puzzle_settings = config.get("puzzles", {})
 	available_puzzles = {puzzle.name: puzzle for puzzle in [
-		ConnectionsProvider(config.get("connections", {}), seconds),
-		WordleProvider(config.get("wordle", {}), seconds),
-		CatfishingProvider(config.get("catfishing", {}), seconds),
+		ConnectionsProvider(config.get("connections", {}), seconds, DATA_DIR / "puzzles" / "connections.json"),
+		WordleProvider(config.get("wordle", {}), seconds, DATA_DIR / "puzzles" / "wordle.json"),
+		CatfishingProvider(config.get("catfishing", {}), seconds, DATA_DIR / "puzzles" / "catfishing.json"),
 	]}
 	puzzles = [available_puzzles[name] for name in puzzle_settings.get("order", list(available_puzzles))]
 
