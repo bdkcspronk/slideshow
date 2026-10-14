@@ -13,13 +13,17 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "event_photos", "presence", "puzzles", "leaderboard", "quote", "bieruur_countdown"]
+order = ["images", "brand", "activities", "event_photos", "presence", "puzzles", "leaderboard", "quote", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
 [images]
 folder = "media/slides"      # drop images here; new files are picked up automatically
 shuffle = false
+
+[brand]
+# Our name, logo and colours, animated.
+seconds = 10
 
 [activities]
 url = "https://professorfrancken.nl/association/activities"
