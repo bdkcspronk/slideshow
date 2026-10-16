@@ -41,6 +41,11 @@ class Provider:
 	def slides(self, now: datetime) -> list[Slide]:
 		raise NotImplementedError
 
+	def shortcut_slide(self, now: datetime) -> Slide | None:
+		"""The slide to show right away when its shortcut key is pressed; None if there's nothing to show."""
+		slides = self.slides(now)
+		return slides[0] if slides else None
+
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
 		"""For interactive slides: a data-action button was clicked, with the values of the
 		selected data-toggle elements. Return the redrawn slide and an optional message."""

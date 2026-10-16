@@ -3,7 +3,8 @@
 // this file only loads each slide, fades it in, and waits.
 //
 // Keys: right/down = next, left/up = previous, space = pause (or the slide's data-space-action,
-// e.g. pausing the music on the Spotify slide), m = read quotes aloud on/off.
+// e.g. pausing the music on the Spotify slide), m = read quotes aloud on/off,
+// number keys = jump to a slide type, e.g. 1 = Daily puzzles (see [shortcuts] in config.toml).
 // Interactive slides (the puzzle): clicking pauses the slideshow there; see "Interactive slides" below.
 // Messages from the server (e.g. Ctrl+M / Ctrl+R in the terminal) appear in the corner.
 
@@ -21,7 +22,7 @@ let lastNoticeId = null;
 let interacting = false;   // someone is playing an interactive slide
 let idleTimer = null;
 let takeoverTimer = null;
-const IDLE_SECONDS = 60;   // continue the slideshow after this long without clicks
+const IDLE_SECONDS = 240;   // continue the slideshow after this long without clicks (data-idle-seconds on a slide overrides it)
 let showCount = 0;       // every slide change gets a number; only the newest may touch the screen
 let loadedVersion = null;   // of style.css and player.js; when they change on disk, the page reloads
 
@@ -67,7 +68,9 @@ async function next() {
 		return showAgain(history[historyIndex]);
 	}
 	try {
+		const started = showCount;
 		const slide = await getJson("/api/next");
+		if (started !== showCount) return;   // another slide (e.g. a shortcut) was shown meanwhile
 		// style.css or player.js was edited: reload, so the slides get the new styles (this skips one slide).
 		if (loadedVersion !== null && slide.version !== loadedVersion) return location.reload();
 		loadedVersion = slide.version;
@@ -78,6 +81,27 @@ async function next() {
 	} catch (error) {
 		console.error(error);
 		nextTimer = setTimeout(next, 5000);   // server not reachable: keep the current slide, try again
+	}
+}
+
+// A shortcut key: the server draws that slide type now. An interactive one (puzzles, Spotify)
+// stays on screen like after a click, so people can use it.
+async function jumpTo(key) {
+	try {
+		const response = await fetch(`/api/shortcut/${key}`);
+		if (response.status === 404) return;   // not a shortcut
+		if (!response.ok) throw new Error(`shortcut ${key}: ${response.status}`);
+		const slide = await response.json();
+		if (slide.message) return showToast(slide.message);
+		history.splice(historyIndex + 1);   // jumping drops the slides ahead after going back
+		history.push(slide);
+		if (history.length > 30) history.shift();
+		historyIndex = history.length - 1;
+		await show(slide);
+		const shown = interactiveSlide();
+		if (shown) keepPaused(idleSeconds(shown));
+	} catch (error) {
+		console.error(error);
 	}
 }
 
@@ -155,7 +179,7 @@ document.addEventListener("click", async (event) => {
 	const slide = interactiveSlide();
 	if (!slide || !slide.contains(event.target)) return;
 	event.target.closest("button")?.blur();   // so Space/Enter later don't press it again
-	keepPaused(IDLE_SECONDS);
+	keepPaused(idleSeconds(slide));
 	const toggle = event.target.closest("[data-toggle]");
 	const action = event.target.closest("[data-action]");
 	const key = event.target.closest("[data-key]");
@@ -252,11 +276,16 @@ const effects = {
 	},
 };
 
+function idleSeconds(slide) {
+	return parseFloat(slide?.dataset.idleSeconds || IDLE_SECONDS);   // e.g. 4 minutes for the puzzles
+}
+
 function keepPaused(seconds) {
 	if (!interacting) {
 		interacting = true;
 		clearTimeout(nextTimer);
-		showToast("Paused: the slideshow continues after a minute without clicks");
+		const minutes = Math.round(seconds / 60);
+		showToast(`Paused: the slideshow continues after ${minutes === 1 ? "a minute" : minutes + " minutes"} without clicks`);
 		takeoverTimer = setInterval(checkTakeover, 5000);
 	}
 	clearTimeout(idleTimer);
@@ -292,16 +321,17 @@ document.addEventListener("keydown", async (event) => {
 		const key = event.key === "Enter" ? "ENTER" : event.key === "Backspace" ? "BACK" : event.key === " " ? "SPACE" : event.key;
 		if (key.length === 1 || ["ENTER", "BACK", "SPACE"].includes(key)) {
 			event.preventDefault();
-			keepPaused(IDLE_SECONDS);
+			keepPaused(idleSeconds(slide));
 			typeKey(slide, key);
 			return;
 		}
+		if (event.key.startsWith("Arrow")) return;   // while typing, the arrows don't change slides
 	}
 	if (slide && slide.querySelector("[data-input-cell]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		const key = event.key === "Enter" ? "ENTER" : event.key === "Backspace" ? "BACK" : event.key.toUpperCase();
 		if (key === "ENTER" || key === "BACK" || /^[A-Z]$/.test(key)) {
 			event.preventDefault();
-			keepPaused(IDLE_SECONDS);
+			keepPaused(idleSeconds(slide));
 			typeKey(slide, key);
 			return;
 		}
@@ -313,7 +343,7 @@ document.addEventListener("keydown", async (event) => {
 	} else if (event.key === " " && slide?.dataset.spaceAction) {
 		// e.g. Spotify: space pauses the music (data-space-action on the slide) instead of the slideshow
 		event.preventDefault();
-		keepPaused(IDLE_SECONDS);
+		keepPaused(idleSeconds(slide));
 		const button = slide.querySelector(`[data-action="${slide.dataset.spaceAction}"]`);
 		button?.classList.add("busy");
 		sendAction(slide, slide.dataset.spaceAction, []).finally(() => button?.classList.remove("busy"));
@@ -322,6 +352,8 @@ document.addEventListener("keydown", async (event) => {
 		showToast(paused ? "Paused" : "Playing");
 		if (paused) clearTimeout(nextTimer);
 		else if (current) nextTimer = setTimeout(next, current.seconds * 1000);
+	} else if (/^[0-9]$/.test(event.key) && !event.ctrlKey && !event.altKey && !event.metaKey) {
+		jumpTo(event.key);
 	} else if (event.key === "m") {
 		await getJson("/api/narration", { method: "POST" });
 		checkNotice();   // the server's confirmation shows up as a notice

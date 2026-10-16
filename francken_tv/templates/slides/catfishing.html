@@ -3,7 +3,7 @@
 	slideshow (data-interactive). Typing goes into data-input-text; Enter sends it to
 	CatfishingProvider.action() in providers/catfishing.py, which returns the redrawn slide.
 #}
-<div class="slide catfishing-slide" data-interactive data-provider="catfishing" data-submit-action="submit"
+<div class="slide catfishing-slide" data-interactive data-idle-seconds="240" data-provider="catfishing" data-submit-action="submit"
 	{% if game.done %}data-resume-after="15"{% endif %}>
 	<header class="catfishing-header">
 		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>

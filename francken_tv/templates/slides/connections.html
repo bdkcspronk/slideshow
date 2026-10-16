@@ -3,7 +3,7 @@
 	tiles with data-toggle can be selected, buttons with data-action are sent to
 	ConnectionsProvider.action() in providers/connections.py, which returns the redrawn slide.
 #}
-<div class="slide connections-slide" data-interactive data-provider="connections" data-max-selected="4"
+<div class="slide connections-slide" data-interactive data-idle-seconds="240" data-provider="connections" data-max-selected="4"
 	{% if finished %}data-resume-after="15"{% endif %} {% if new_group is not none %}data-effect="solve-group"{% endif %}>
 	<div class="connections-today">
 		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>

@@ -486,6 +486,10 @@ class SpotifyProvider(Provider):
 			return [self.now_playing()]
 		return []   # nothing playing (and show_when_idle is off): no slide
 
+	def shortcut_slide(self, now: datetime) -> Slide | None:
+		# Also when nothing plays: the shortcut is a quick way to start the music.
+		return self.now_playing() if self.connected else None
+
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
 		"""'playlists' shows the playlists, 'songs' one playlist's songs, 'search' finds songs;
 		'play' plays a playlist (values = [its uri]), 'play_song' a song, 'queue' adds one; 'back' returns;

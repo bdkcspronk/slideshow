@@ -5,7 +5,7 @@ create it in build_app() below, and add its name to rotation.order in config.tom
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .announcer import Announcer
 from .background import BackgroundRunner
@@ -42,6 +42,7 @@ class App:
 	scheduler: Scheduler
 	runner: BackgroundRunner
 	screen_size: tuple[int, int]
+	shortcuts: dict[str, str] = field(default_factory=dict)   # key in the browser -> provider name
 	notice_id: int = 0      # the latest on-screen notice, shown by the browser
 	notice_text: str = ""
 
@@ -101,6 +102,10 @@ def build_app(config: dict, clock: Clock) -> App:
 	if unknown:
 		raise SystemExit(f"Unknown slide types in rotation.order: {unknown}. Known: {list(providers)}")
 	enabled = [providers[name] for name in order]
+	shortcuts = {str(key): name for key, name in config.get("shortcuts", {}).items()}
+	unknown = [name for name in shortcuts.values() if name not in providers]
+	if unknown:
+		raise SystemExit(f"Unknown slide types in shortcuts: {unknown}. Known: {list(providers)}")
 
 	takeovers: list[Takeover] = [BieruurTakeover(bieruur), VrijmiboTakeover(config.get("vrijmibo", {}))]
 	jobs: list[Job] = [BieruurSong(bieruur, announcer)]
@@ -115,6 +120,9 @@ def build_app(config: dict, clock: Clock) -> App:
 		takeovers={takeover.name: takeover for takeover in takeovers},
 		jobs=jobs,
 		scheduler=Scheduler(enabled, takeovers, config.get("rotation", {}).get("fill_with", "images")),
-		runner=BackgroundRunner(clock, enabled, jobs),
+		# Slide types only reachable by a shortcut still need their downloads.
+		runner=BackgroundRunner(clock, enabled + [providers[name] for name in set(shortcuts.values())
+			if providers[name] not in enabled], jobs),
 		screen_size=(display.get("screen_width", 1920), display.get("screen_height", 1080)),
+		shortcuts=shortcuts,
 	)

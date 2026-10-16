@@ -2,7 +2,7 @@
 	The Daily puzzles slide: one half per puzzle. Tapping a half sends "open" to
 	PuzzlesProvider.action() in providers/puzzles.py, which returns that puzzle's slide.
 #}
-<div class="slide puzzles-slide" data-interactive data-provider="puzzles" style="--cards: {{ cards | length }}">
+<div class="slide puzzles-slide" data-interactive data-idle-seconds="240" data-provider="puzzles" style="--cards: {{ cards | length }}">
 	{% for card in cards %}
 	{% if not loop.first %}<div class="puzzles-divider"></div>{% endif %}
 	<button class="puzzle-card puzzle-{{ card.name }} status-{{ card.state }}" data-action="open" data-value="{{ card.name }}">

@@ -17,6 +17,13 @@ order = ["images", "activities", "event_photos", "presence", "puzzles", "spotify
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
+[shortcuts]
+# Number keys in the slideshow that jump straight to a slide type (while typing in a puzzle or
+# the Spotify search, numbers are typed instead). Any name from rotation.order works.
+"1" = "puzzles"
+"2" = "spotify"
+"3" = "presence"             # today's activity chart from the sniffer
+
 [images]
 folder = "media/slides"      # drop images here; new files are picked up automatically
 shuffle = false

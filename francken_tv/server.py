@@ -3,6 +3,7 @@
 	/               the slideshow (templates/player.html + static/player.js)
 	/api/next       the next slide as HTML, plus how long to show it
 	/api/current    the current slide re-rendered (for slides that update, like the countdown)
+	/api/shortcut/<key>  the slide for a shortcut key (see [shortcuts] in config.toml), right away
 	/api/slide/<n>  a recent slide again, freshly drawn (going back with the left arrow)
 	/api/narration  POST: toggle reading quotes aloud
 	/api/action     POST: a button on an interactive slide (the puzzle) was clicked
@@ -97,7 +98,26 @@ class SlideRenderer:
 		return {"html": self.render(slide), "seconds": slide.seconds, "refresh": slide.refresh_seconds}
 
 	def next_slide(self) -> dict:
-		slide = self.app.scheduler.next_slide(self.app.clock.now())
+		return self.start(self.app.scheduler.next_slide(self.app.clock.now()))
+
+	def shortcut(self, key: str) -> dict | None:
+		"""The slide of the provider under a shortcut key, drawn now; {"message": ...} if it has nothing
+		to show (e.g. nobody seen today), None if the key isn't a shortcut."""
+		name = self.app.shortcuts.get(key)
+		if name is None:
+			return None
+		provider = self.app.providers[name]
+		try:
+			slide = provider.shortcut_slide(self.app.clock.now())
+		except Exception:
+			log.exception("Shortcut to %s failed", name)
+			slide = None
+		if slide is None:
+			return {"message": f"Nothing to show for {name} right now"}
+		return self.start(slide)
+
+	def start(self, slide: Slide) -> dict:
+		"""Render a slide and make it the current one."""
 		try:
 			response = self.as_json(slide)
 		except Exception:
@@ -183,6 +203,12 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_html(renderer.templates.get_template("player.html").render())
 		elif path == "/api/next":
 			self.send_json(renderer.next_slide())
+		elif path.startswith("/api/shortcut/"):
+			slide = renderer.shortcut(path.removeprefix("/api/shortcut/"))
+			if slide is None:
+				self.send_error(HTTPStatus.NOT_FOUND)
+			else:
+				self.send_json(slide)
 		elif path == "/api/takeover":
 			now = self.server.app.clock.now()
 			due = any(t.interrupts_paused and t.due(now) for t in self.server.app.takeovers.values())

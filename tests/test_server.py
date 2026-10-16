@@ -65,5 +65,29 @@ class GoingBackTest(unittest.TestCase):
 		self.assertIsNone(renderer.again(99))
 
 
+class ShortcutTest(unittest.TestCase):
+	def test_a_shortcut_key_shows_that_slide_type_now(self):
+		from datetime import datetime
+		from francken_tv.slides import Provider, Slide
+		puzzles = Slide("empty.html", 20)
+
+		class Puzzles(Provider):
+			def slides(self, now):
+				return [puzzles]
+
+		class Chart(Provider):
+			def slides(self, now):
+				return []   # nobody seen yet today
+
+		app = SimpleNamespace(clock=SimpleNamespace(now=datetime.now), announcer=None,
+			providers={"puzzles": Puzzles(), "presence": Chart()}, shortcuts={"1": "puzzles", "3": "presence"})
+		renderer = server.SlideRenderer(app)
+		shown = renderer.shortcut("1")
+		self.assertEqual((shown["id"], shown["seconds"], renderer.current), (1, 20, puzzles))
+		self.assertEqual(renderer.again(1)["id"], 1)   # it's in the history, like any other slide
+		self.assertIn("message", renderer.shortcut("3"))
+		self.assertIsNone(renderer.shortcut("7"))
+
+
 if __name__ == "__main__":
 	unittest.main()
