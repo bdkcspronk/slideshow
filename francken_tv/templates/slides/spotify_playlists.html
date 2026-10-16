@@ -1,0 +1,27 @@
+{#
+	The account's Spotify playlists, 12 per page (SpotifyProvider.action() in providers/spotify.py):
+	tapping one shows its songs (spotify_songs.html). data-state never changes, so the once-a-second check
+	leaves this slide alone.
+#}
+<div class="slide spotify-slide spotify-pick-slide" data-state="playlists" data-interactive data-provider="spotify">
+	<div class="spotify-pick-header">
+		<button class="spotify-button" data-action="back">&larr; Back</button>
+		<h1>Playlists</h1>
+		<button class="spotify-button" data-action="search">Search a song</button>
+	</div>
+	<div class="spotify-playlists">
+		{% for playlist in playlists %}
+		<button class="spotify-playlist" data-action="songs" data-value="{{ playlist.uri }}">
+			{% if playlist.cover %}<img src="{{ playlist.cover }}" alt="">{% else %}<span class="spotify-playlist-blank"></span>{% endif %}
+			<span>{{ playlist.name }}</span>
+		</button>
+		{% endfor %}
+	</div>
+	{% if pages > 1 %}
+	<div class="spotify-pages">
+		<button class="spotify-button" data-action="playlists" data-value="{{ page - 1 }}"{% if page == 0 %} disabled{% endif %}>&larr;</button>
+		<span>Page {{ page + 1 }} of {{ pages }}</span>
+		<button class="spotify-button" data-action="playlists" data-value="{{ page + 1 }}"{% if page + 1 >= pages %} disabled{% endif %}>&rarr;</button>
+	</div>
+	{% endif %}
+</div>

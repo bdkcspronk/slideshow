@@ -46,5 +46,24 @@ class FittedPostersTest(unittest.TestCase):
 		self.assertTrue(copy.exists())
 
 
+
+class GoingBackTest(unittest.TestCase):
+	def test_a_recent_slide_is_drawn_again_and_becomes_current(self):
+		from datetime import datetime
+		from francken_tv.slides import Slide
+		volume = {"now": 40}
+		music = Slide("empty.html", 10, update=lambda now: {"volume": volume["now"]}, refresh_seconds=1)
+		poster = Slide("empty.html", 10)
+		slides = iter([music, poster])
+		app = SimpleNamespace(clock=SimpleNamespace(now=datetime.now), announcer=None,
+			scheduler=SimpleNamespace(next_slide=lambda now: next(slides)))
+		renderer = server.SlideRenderer(app)
+		first, second = renderer.next_slide(), renderer.next_slide()
+		self.assertEqual((first["id"], second["id"], renderer.current), (1, 2, poster))
+		again = renderer.again(1)   # the left arrow, back to the music slide
+		self.assertEqual((again["id"], again["refresh"], renderer.current), (1, 1, music))
+		self.assertIsNone(renderer.again(99))
+
+
 if __name__ == "__main__":
 	unittest.main()

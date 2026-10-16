@@ -32,14 +32,16 @@ class PresenceChartProvider(Provider):
 		self.store = store
 		self.devices = devices
 		self.seconds = settings.get("seconds", default_seconds)
+		self.day_starts_at = parse_time(settings.get("day_starts_at", "04:00"))
 		self.nyan_cat = None
 		if nyan_cat_path.is_file():
 			with Image.open(nyan_cat_path) as image:
 				self.nyan_cat = {"url": media_url(nyan_cat_path), "aspect": round(image.width / image.height, 3)}
 
 	def slides(self, now: datetime) -> list[Slide]:
-		midnight = datetime.combine(now.date(), time())
-		chart = chart_view(self.store.known_sightings(midnight, now), self.devices.by_mac(), now)
+		# The chart shows the whole day until day_starts_at (04:00), so a late night doesn't start over at midnight.
+		day_start = datetime.combine(greeting_day(now, self.day_starts_at), self.day_starts_at)
+		chart = chart_view(self.store.known_sightings(day_start, now), self.devices.by_mac(), now)
 		if chart is None:
 			return []   # nobody seen yet today
 		return [Slide("presence.html", self.seconds, {**chart, "nyan_cat": self.nyan_cat})]
@@ -81,7 +83,7 @@ class LeaderboardProvider(Provider):
 
 
 def greeting_day(now: datetime, day_starts_at: time) -> date:
-	"""Greetings reset at `day_starts_at` (04:00), not at midnight, so late nights count as one day."""
+	"""Greetings and the activity chart reset at `day_starts_at` (04:00), not at midnight, so late nights count as one day."""
 	return (now - timedelta(hours=day_starts_at.hour, minutes=day_starts_at.minute)).date()
 
 

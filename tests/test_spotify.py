@@ -7,11 +7,11 @@ from tempfile import TemporaryDirectory
 from unittest import mock
 from urllib.parse import parse_qs, urlparse
 
-from francken_tv.providers.spotify import SpotifyProvider, parse_playing
+from francken_tv.providers.spotify import SpotifyProvider, heard_volume, parse_embed_songs, parse_next, parse_playing, parse_playlist_songs, parse_playlists
 
 NOW = datetime(2026, 10, 14, 15, 0)
 TRACK = {
-	"is_playing": True, "progress_ms": 61_000,
+	"is_playing": True, "progress_ms": 61_000, "device": {"volume_percent": 40, "supports_volume": True},
 	"item": {"type": "track", "id": "abc", "name": "Live Is Life", "duration_ms": 250_000,
 		"artists": [{"name": "Opus"}], "album": {"name": "Up And Down", "images": [
 			{"url": "https://i.scdn.co/small.jpg", "width": 64}, {"url": "https://i.scdn.co/big.jpg", "width": 640}]}},
@@ -74,20 +74,220 @@ class SpotifyTest(unittest.TestCase):
 		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
 		token = FakeResponse(200, {"access_token": "a", "expires_in": 3600})
 		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=token), \
-				mock.patch("francken_tv.providers.spotify.requests.get", return_value=FakeResponse(200, TRACK)):
+				mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(200, TRACK), FakeResponse(204)]):
 			self.provider.refresh(NOW)
 		[slide] = self.provider.slides(NOW)
 		self.assertEqual((slide.data["title"], slide.data["elapsed"], slide.data["total"]), ("Live Is Life", "1:01", "4:10"))
 		self.assertEqual(slide.data["percent"], 24.4)
 		self.assertEqual(slide.refresh_seconds, 1)
 
-	def test_nothing_playing_means_no_slide(self):
+	def test_nothing_playing_shows_how_to_start_music(self):
 		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
 		token = FakeResponse(200, {"access_token": "a", "expires_in": 3600})
 		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=token), \
-				mock.patch("francken_tv.providers.spotify.requests.get", return_value=FakeResponse(204)):
+				mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)):
 			self.provider.refresh(NOW)
+		[slide] = self.provider.slides(NOW)
+		self.assertTrue(slide.data["idle"])
+		self.provider.show_when_idle = False
 		self.assertEqual(self.provider.slides(NOW), [])
+
+	def test_next_song_and_playlists(self):
+		self.assertEqual(parse_next({"queue": [TRACK["item"], EPISODE["item"]]}),
+			{"title": "Live Is Life", "artist": "Opus", "cover": "https://i.scdn.co/big.jpg"})
+		self.assertIsNone(parse_next({"queue": []}))
+		playlists = parse_playlists({"items": [{"name": "Borrel", "uri": "spotify:playlist:1", "images": None}, None]})
+		self.assertEqual(playlists, [{"name": "Borrel", "uri": "spotify:playlist:1", "cover": None}])
+
+	def connect(self):
+		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
+		token = FakeResponse(200, {"access_token": "a", "expires_in": 3600})
+		queue = FakeResponse(200, {"queue": [EPISODE["item"]]})
+		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=token), \
+				mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(200, TRACK), queue]):
+			self.provider.refresh(NOW)
+
+	def test_slide_shows_the_next_song(self):
+		self.connect()
+		[slide] = self.provider.slides(NOW)
+		self.assertEqual(slide.data["next"]["title"], "Episode 1")
+		self.assertEqual((slide.data["elapsed_seconds"], slide.data["total_seconds"]), (61, 250))
+		self.assertEqual(slide.data["volume"], 40)
+
+	def test_play_a_playlist(self):
+		self.connect()
+		self.provider.playlists = [{"name": "Borrel", "uri": "spotify:playlist:1", "cover": None}]
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(404)):
+			slide, message = self.provider.action("play", ["spotify:playlist:1"], NOW)
+		self.assertIsNone(slide)
+		self.assertIn("No Spotify player is active", message)
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request, \
+				mock.patch("francken_tv.providers.spotify.time.sleep"):
+			slide, message = self.provider.action("play", ["spotify:playlist:1"], NOW)
+		self.assertEqual(request.call_args_list[0].kwargs["json"], {"context_uri": "spotify:playlist:1"})
+		self.assertEqual((slide.template, message), ("spotify.html", "Playing Borrel"))
+
+	def test_skip_and_volume(self):
+		self.connect()
+		self.provider.playing.volume = 95
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request:
+			slide, message = self.provider.action("volume_up", [], NOW)
+		self.assertEqual(request.call_args.args[:2], ("PUT", "https://api.spotify.com/v1/me/player/volume?volume_percent=100"))
+		self.assertEqual((slide, message, self.provider.playing.volume), (None, None, 100))
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request, \
+				mock.patch.object(self.provider, "catch_up"):
+			slide, message = self.provider.action("skip", [], NOW)
+		self.assertEqual(request.call_args_list[0].args[:2], ("POST", "https://api.spotify.com/v1/me/player/next"))
+		self.assertEqual(slide.template, "spotify.html")   # the old song, until Spotify reports the new one
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(403)):
+			slide, message = self.provider.action("toggle", [], NOW)
+		self.assertIn("Premium", message)
+
+	def test_playlist_songs_old_and_new_format(self):
+		songs = parse_playlist_songs({"items": [{"item": TRACK["item"] | {"uri": "spotify:track:abc"}}, {"track": EPISODE["item"] | {"uri": "spotify:episode:1"}}, {"item": None}]})
+		self.assertEqual([(s["title"], s["artist"], s["length"]) for s in songs], [("Live Is Life", "Opus", "4:10"), ("Episode 1", "A Podcast", "30:00")])
+
+	def test_search_play_and_queue(self):
+		self.connect()
+		result = {"tracks": {"items": [TRACK["item"] | {"uri": "spotify:track:abc"}]}}
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, result)):
+			slide, _ = self.provider.action("search", ["live is life"], NOW)
+		self.assertEqual((slide.template, slide.data["songs"][0]["uri"]), ("spotify_search.html", "spotify:track:abc"))
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request, \
+				mock.patch("francken_tv.providers.spotify.time.sleep"):
+			self.provider.action("play_song", ["spotify:track:abc|spotify:playlist:1"], NOW)
+			self.assertEqual(request.call_args_list[0].kwargs["json"], {"context_uri": "spotify:playlist:1", "offset": {"uri": "spotify:track:abc"}})
+			_, message = self.provider.action("queue", ["spotify:track:abc"], NOW)
+			self.assertEqual(request.call_args.kwargs["params"], {"uri": "spotify:track:abc"})
+		self.assertEqual(message, "Added to the queue")
+
+	def test_playlists_without_permission_ask_for_a_new_login(self):
+		self.connect()
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(403)):
+			slide, message = self.provider.action("playlists", [], NOW)
+		self.assertIsNone(slide)
+		self.assertIn("/spotify/login", message)
+
+	def test_old_login_asks_to_allow_the_buttons(self):
+		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
+		token = FakeResponse(200, {"access_token": "a", "expires_in": 3600, "scope": "user-read-playback-state user-read-currently-playing"})
+		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=token), \
+				mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(200, TRACK), FakeResponse(204)]):
+			self.provider.refresh(NOW)
+		with mock.patch("francken_tv.providers.spotify.requests.request") as request:
+			slide, message = self.provider.action("skip", [], NOW)
+		request.assert_not_called()   # no use asking Spotify
+		self.assertIn("/spotify/login", message)
+
+	def test_play_on_the_tv_speaker_when_no_player_is_active(self):
+		self.connect()
+		devices = FakeResponse(200, {"devices": [{"id": "phone", "name": "Phone"}, {"id": "tv", "name": "Francken TV"}]})
+		with mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(404), devices, FakeResponse(204)]) as request, \
+				mock.patch.object(self.provider, "catch_up"):
+			slide, message = self.provider.action("play_song", ["spotify:track:abc"], NOW)
+		retry = request.call_args_list[2]
+		self.assertEqual((retry.args[1], retry.kwargs["params"], retry.kwargs["json"]), ("https://api.spotify.com/v1/me/player/play", {"device_id": "tv"}, {"uris": ["spotify:track:abc"]}))
+		with mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(404), FakeResponse(200, {"devices": []})]):
+			slide, message = self.provider.action("play_song", ["spotify:track:abc"], NOW)
+		self.assertIn("Francken TV speaker isn't running", message)
+
+	def test_songs_of_someone_elses_playlist_come_from_the_widget(self):
+		self.connect()
+		html = '<script id="__NEXT_DATA__" type="application/json">' + json.dumps({"props": {"pageProps": {"state": {"data": {"entity": {
+			"trackList": [{"uri": f"spotify:track:{i}", "title": f"Song {i}", "subtitle": "Band", "duration": 61_000} for i in range(20)]}}}}}}) + "</script>"
+		self.assertEqual(parse_embed_songs("<html>changed</html>"), [])
+		widget = FakeResponse(200)
+		widget.text = html
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(403)), \
+				mock.patch("francken_tv.providers.spotify.requests.get", return_value=widget):
+			slide, _ = self.provider.action("songs", ["spotify:playlist:p1|1"], NOW)
+		self.assertEqual((len(slide.data["songs"]), slide.data["songs"][0]["title"], slide.data["pages"]), (4, "Song 16", 2))
+
+	def test_playlists_in_pages(self):
+		self.connect()
+		page = {"items": [{"name": f"List {i}", "uri": f"spotify:playlist:{i}", "images": []} for i in range(12)], "total": 30}
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, page)) as request:
+			slide, _ = self.provider.action("playlists", ["2"], NOW)
+		self.assertEqual(request.call_args.kwargs["params"], {"limit": 12, "offset": 24})
+		self.assertEqual((slide.data["page"], slide.data["pages"]), (2, 3))
+
+	def test_catch_up_stops_as_soon_as_spotify_reports_the_change(self):
+		self.connect()
+		paused = TRACK | {"is_playing": False}
+		answers = [FakeResponse(200, TRACK), FakeResponse(200, paused), FakeResponse(200, paused)]
+		with mock.patch("francken_tv.providers.spotify.requests.request", side_effect=answers) as request, \
+				mock.patch("francken_tv.providers.spotify.time.sleep"):
+			self.provider.catch_up(NOW)
+		self.assertEqual(request.call_count, 2)   # still playing, then paused: done
+		self.assertFalse(self.provider.playing.is_playing)
+
+	def test_volume_on_our_speaker_goes_by_how_it_sounds(self):
+		self.connect()
+		self.provider.playing.device, self.provider.playing.volume = "Francken TV", 83   # sounds like 50%
+		self.assertEqual(self.provider.view()["volume"], heard_volume(83))
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request:
+			self.provider.action("volume_up", [], NOW)
+		self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/me/player/volume?volume_percent=88")   # 60% heard
+		self.assertAlmostEqual(self.provider.view()["volume"], 60, delta=1)
+
+	def test_search_finds_albums_and_opens_their_songs(self):
+		self.connect()
+		album = {"name": "ABBA Gold", "uri": "spotify:album:gold", "artists": [{"name": "ABBA"}], "release_date": "2008-11-10",
+			"images": [{"url": "big", "width": 640}, {"url": "mid", "width": 300}, {"url": "small", "width": 64}]}
+		found = {"tracks": {"items": [TRACK["item"] | {"uri": "spotify:track:abc"}]}, "albums": {"items": [album]}}
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, found)):
+			slide, _ = self.provider.action("search", ["abba"], NOW)
+		self.assertEqual(slide.data["albums"], [{"name": "ABBA Gold", "artist": "ABBA", "uri": "spotify:album:gold", "cover": "mid", "year": "2008"}])
+		songs = {"items": [TRACK["item"] | {"uri": "spotify:track:abc"}], "total": 19}
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, songs)) as request:
+			slide, _ = self.provider.action("songs", ["spotify:album:gold"], NOW)
+		self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/albums/gold/tracks")
+		self.assertEqual((slide.data["playlist"]["name"], slide.data["pages"], slide.data["back"]),
+			("ABBA Gold", 2, {"action": "search", "value": "abba", "label": "Search"}))
+
+	def test_music_starts_on_our_speaker_when_the_slideshow_starts(self):
+		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
+		provider = SpotifyProvider({"start_playlist": "spotify:playlist:borrel"}, self.path, 8)
+		token = FakeResponse(200, {"access_token": "a", "expires_in": 3600})
+		nothing, no_speaker = FakeResponse(204), FakeResponse(200, {"devices": []})
+		speaker = FakeResponse(200, {"devices": [{"id": "tv", "name": "Francken TV"}]})
+		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=token), \
+				mock.patch("francken_tv.providers.spotify.requests.request",
+					side_effect=[nothing, no_speaker, nothing, speaker, FakeResponse(204), nothing, speaker, FakeResponse(204), nothing]) as request:
+			provider.refresh(NOW)   # the speaker isn't there yet (spotifyd starts later)
+			provider.refresh(NOW)   # now it is: resume the last session there
+			provider.refresh(NOW)   # still nothing playing: the start playlist
+			provider.refresh(NOW)   # done: no more requests than this one
+		calls = [(c.args[0], c.args[1].rsplit("/v1", 1)[-1], c.kwargs.get("json")) for c in request.call_args_list]
+		self.assertEqual(calls[4], ("PUT", "/me/player", {"device_ids": ["tv"], "play": True}))
+		self.assertEqual(calls[7], ("PUT", "/me/player/play", {"context_uri": "spotify:playlist:borrel"}))
+		self.assertEqual(len(calls), 9)   # the last refresh only asked what's playing
+		self.assertIsNone(provider.start_step)
+
+	def test_music_playing_elsewhere_is_left_alone_on_start(self):
+		self.connect()   # TRACK is playing
+		self.assertIsNone(self.provider.start_step)
+
+	def test_paused_on_our_speaker_just_plays_on_start(self):
+		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
+		provider = SpotifyProvider({}, self.path, 8)
+		token = FakeResponse(200, {"access_token": "a", "expires_in": 3600})
+		paused_here = FakeResponse(200, TRACK | {"is_playing": False, "device": {"name": "Francken TV", "volume_percent": 80}})
+		speaker = FakeResponse(200, {"devices": [{"id": "tv", "name": "Francken TV"}]})
+		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=token), \
+				mock.patch("francken_tv.providers.spotify.requests.request",
+					side_effect=[paused_here, FakeResponse(200, {"queue": []}), speaker, FakeResponse(204)]) as request:
+			provider.refresh(NOW)
+		play = request.call_args_list[3]
+		self.assertEqual((play.args[0], play.args[1], play.kwargs["params"]), ("PUT", "https://api.spotify.com/v1/me/player/play", {"device_id": "tv"}))
+
+	def test_restarting_the_song_redraws_the_slide(self):
+		self.connect()   # TRACK at 1:01
+		state = self.provider.view()["state"]
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, TRACK | {"progress_ms": 0})):
+			self.provider.refresh(NOW)   # the ⏮ button restarted it
+		self.assertNotEqual(self.provider.view()["state"], state)
+		self.assertEqual(self.provider.view()["elapsed"], "0:00")
 
 
 if __name__ == "__main__":

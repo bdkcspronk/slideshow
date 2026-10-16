@@ -10,7 +10,7 @@ import logging
 import threading
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .clock import Clock
 from .slides import Job, Provider
@@ -18,6 +18,7 @@ from .slides import Job, Provider
 log = logging.getLogger(__name__)
 
 RETRY_AFTER_ERROR_SECONDS = 60
+AFTER_MIDNIGHT_SECONDS = 30   # every provider refreshes this soon after midnight: a new day's puzzles, ...
 
 
 @dataclass
@@ -62,8 +63,13 @@ class BackgroundRunner:
 				else:
 					status.last_success = self.clock.now()
 					status.last_error = None
-					status.next_due = time.monotonic() + provider.refresh_seconds
+					status.next_due = time.monotonic() + min(provider.refresh_seconds, self.seconds_until_midnight() + AFTER_MIDNIGHT_SECONDS)
 			self.stopped.wait(1)
+
+	def seconds_until_midnight(self) -> float:
+		now = self.clock.now()
+		midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
+		return (midnight - now).total_seconds()
 
 	def job_loop(self) -> None:
 		while not self.stopped.is_set():

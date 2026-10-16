@@ -66,15 +66,21 @@ class PuzzlesProvider(Provider):
 		if failed:
 			raise RuntimeError("; ".join(failed))
 
-	def slides(self, now: datetime) -> list[Slide]:
+	def cards(self, now: datetime) -> list[dict]:
 		cards = []
 		for puzzle in self.puzzles:
 			status = puzzle.status(now)
 			if status is not None:   # None: today's puzzle couldn't be downloaded
 				cards.append({"name": puzzle.name, "title": puzzle.title, "state": status.state, "status": status.text})
+		return cards
+
+	def slides(self, now: datetime) -> list[Slide]:
+		cards = self.cards(now)
 		if not cards:
 			return []
-		return [Slide("puzzles.html", self.seconds, {"cards": cards})]
+		# The round is planned ahead, so the cards are worked out again when the slide is shown:
+		# a puzzle solved (or a new day's puzzle downloaded) meanwhile shows up right away.
+		return [Slide("puzzles.html", self.seconds, {"cards": cards}, update=lambda now: {"cards": self.cards(now) or cards})]
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
 		"""'open' a puzzle (values = [its name]) or go 'back' to this overview."""

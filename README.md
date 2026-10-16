@@ -86,7 +86,10 @@ Copy these to the TV PC by hand:
 
 ## Spotify
 
-The Spotify slide shows what's playing (it only appears while something plays). One-time setup:
+The Spotify slide shows what's playing and the next song (it only appears while something plays).
+Its buttons skip songs, pause and change the volume; **Playlists** shows the account's playlists and
+their songs, and **Search** finds songs by typing. Tapping a song plays it. The buttons need Spotify
+Premium, and music already playing on some device. One-time setup:
 
 1. At https://developer.spotify.com/dashboard, log in and **Create app**. Any name and description;
    **Redirect URI**: `http://127.0.0.1:8080/spotify/callback` (exactly this; `127.0.0.1`, not
@@ -96,7 +99,16 @@ The Spotify slide shows what's playing (it only appears while something plays). 
    `{"client_id": "...", "client_secret": "..."}`
 3. Start the slideshow and open http://127.0.0.1:8080/spotify/login **on the TV PC**; log in with
    the Spotify account whose music should be shown. The slideshow adds a refresh token to that
-   file (no password is stored). It keeps working after restarts.
+   file (no password is stored). It keeps working after restarts. Connected before changing
+   playlists was possible? Log in once more, so Spotify allows it.
+4. So music plays from the TV PC itself (not from a Spotify tab somewhere): install
+   [spotifyd](https://github.com/Spotifyd/spotifyd/releases) as `~/.local/bin/spotifyd` (the
+   `linux-x86_64-default` build), log it in once with
+   `~/.local/bin/spotifyd authenticate --config-path deploy/spotifyd.conf --cache-path data/spotifyd`
+   (open the link it prints on the TV PC), then
+   `cp deploy/francken-tv-spotifyd.service ~/.config/systemd/user/ && systemctl --user enable --now francken-tv-spotifyd`.
+   The PC is then a Spotify speaker called "Francken TV"; when nothing plays, the slide starts music
+   there, and "Play on TV" moves music playing elsewhere to it.
 
 ## Updating a PC that ran the old slideshow
 

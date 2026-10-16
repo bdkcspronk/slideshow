@@ -3,6 +3,7 @@
 	/               the slideshow (templates/player.html + static/player.js)
 	/api/next       the next slide as HTML, plus how long to show it
 	/api/current    the current slide re-rendered (for slides that update, like the countdown)
+	/api/slide/<n>  a recent slide again, freshly drawn (going back with the left arrow)
 	/api/narration  POST: toggle reading quotes aloud
 	/api/action     POST: a button on an interactive slide (the puzzle) was clicked
 	/api/takeover   whether a takeover should interrupt a paused interactive slide
@@ -47,6 +48,12 @@ RESIZABLE = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 FITTED_DIR = CACHE_DIR / "fitted"
 FITTED_KEEP_SECONDS = 7 * 24 * 3600   # scaled copies not shown for a week are deleted
 HOUR = 3600
+RECENT_SLIDES = 30   # as many as player.js keeps for the left arrow
+
+
+def static_version() -> float:
+	"""Changes whenever style.css or player.js is edited; the player then reloads itself (see next() in player.js)."""
+	return max(file.stat().st_mtime for file in STATIC_DIR.iterdir() if file.is_file())
 
 
 def clean_fitted(folder: Path, keep_seconds: float = FITTED_KEEP_SECONDS) -> int:
@@ -77,6 +84,8 @@ class SlideRenderer:
 		self.app = app
 		self.templates = make_templates()
 		self.current: Slide | None = None
+		self.recent: dict[int, Slide] = {}   # the last RECENT_SLIDES slides by number, for going back (left arrow)
+		self.count = 0
 		self.fitted: dict[tuple[Path, float], Path] = {}
 		self.last_cleanup = 0.0
 
@@ -94,10 +103,24 @@ class SlideRenderer:
 		except Exception:
 			log.exception("Could not render %s", slide.template)
 			response = {"html": "", "seconds": 0.1, "refresh": None}   # skip it
+		response["version"] = static_version()
+		self.count += 1
+		response["id"] = self.count
+		self.recent[self.count] = slide
+		self.recent.pop(self.count - RECENT_SLIDES, None)
 		self.current = slide
 		if slide.announce:
 			self.app.announcer.say_quote(slide.announce)
 		return response
+
+	def again(self, number: int) -> dict | None:
+		"""A recent slide drawn again, now (e.g. going back to the Spotify slide): it becomes the
+		current slide, so its once-a-second updates work again. None if it's too long ago."""
+		slide = self.recent.get(number)
+		if slide is None:
+			return None
+		self.current = slide
+		return {**self.as_json(slide), "id": number}
 
 	def fitted_image(self, path: Path) -> Path:
 		"""A copy of `path` scaled down to the screen size, or `path` itself if it's small enough."""
@@ -166,6 +189,12 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_json({"due": due})
 		elif path == "/api/notice":
 			self.send_json({"id": self.server.app.notice_id, "text": self.server.app.notice_text})
+		elif path.startswith("/api/slide/") and path.removeprefix("/api/slide/").isdigit():
+			again = renderer.again(int(path.removeprefix("/api/slide/")))
+			if again is None:
+				self.send_error(HTTPStatus.NOT_FOUND)
+			else:
+				self.send_json(again)
 		elif path == "/api/current":
 			slide = renderer.current
 			self.send_json(renderer.as_json(slide) if slide else {"html": "", "seconds": 0, "refresh": None})
@@ -217,7 +246,9 @@ class Handler(BaseHTTPRequestHandler):
 			log.warning("Spotify login failed: %s", error)
 			self.send_html(f"<h1>Spotify</h1><p>Not connected: {error}. <a href='/spotify/login'>Try again</a>.</p>")
 			return
-		self.send_html("<h1>Spotify</h1><p>Connected! The slideshow now shows what's playing. You can close this tab.</p>")
+		# Back to the slideshow after a few seconds (handy when this was opened in the kiosk itself).
+		self.send_html("<meta http-equiv='refresh' content='3; url=/'><h1>Spotify</h1><p>Connected! The slideshow "
+			"now shows what's playing, and its buttons work. Back to the slideshow in 3 seconds...</p>")
 
 	def send_action(self) -> None:
 		"""{"provider": "connections", "action": "submit", "values": [...]} -> the redrawn slide."""

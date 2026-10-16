@@ -2,7 +2,8 @@
 // What is shown, and for how long, is decided in Python (francken_tv/scheduler.py);
 // this file only loads each slide, fades it in, and waits.
 //
-// Keys: right/down = next, left/up = previous, space = pause, m = read quotes aloud on/off.
+// Keys: right/down = next, left/up = previous, space = pause (or the slide's data-space-action,
+// e.g. pausing the music on the Spotify slide), m = read quotes aloud on/off.
 // Interactive slides (the puzzle): clicking pauses the slideshow there; see "Interactive slides" below.
 // Messages from the server (e.g. Ctrl+M / Ctrl+R in the terminal) appear in the corner.
 
@@ -22,6 +23,7 @@ let idleTimer = null;
 let takeoverTimer = null;
 const IDLE_SECONDS = 60;   // continue the slideshow after this long without clicks
 let showCount = 0;       // every slide change gets a number; only the newest may touch the screen
+let loadedVersion = null;   // of style.css and player.js; when they change on disk, the page reloads
 
 async function getJson(url, options) {
 	const response = await fetch(url, options);
@@ -62,10 +64,13 @@ async function show(slide, { canRefresh = true } = {}) {
 async function next() {
 	if (historyIndex < history.length - 1) {   // after going back, move forward through history first
 		historyIndex += 1;
-		return show(history[historyIndex], { canRefresh: false });
+		return showAgain(history[historyIndex]);
 	}
 	try {
 		const slide = await getJson("/api/next");
+		// style.css or player.js was edited: reload, so the slides get the new styles (this skips one slide).
+		if (loadedVersion !== null && slide.version !== loadedVersion) return location.reload();
+		loadedVersion = slide.version;
 		history.push(slide);
 		if (history.length > 30) history.shift();
 		historyIndex = history.length - 1;
@@ -79,7 +84,17 @@ async function next() {
 function previous() {
 	if (historyIndex <= 0) return;
 	historyIndex -= 1;
-	show(history[historyIndex], { canRefresh: false });
+	showAgain(history[historyIndex]);
+}
+
+// A slide from the history, drawn again by the server: it's up to date and keeps updating (e.g. the
+// Spotify slide follows the music). Too long ago, or the server is unreachable: the copy we have, as is.
+async function showAgain(slide) {
+	try {
+		return await show(await getJson(`/api/slide/${slide.id}`));
+	} catch (error) {
+		return show(slide, { canRefresh: false });
+	}
 }
 
 // Redraw the current slide (e.g. the ticking countdown). If the slide's data-state is unchanged,
@@ -154,7 +169,8 @@ document.addEventListener("click", async (event) => {
 		selected().forEach((element) => element.classList.remove("selected"));
 	} else if (action) {
 		const values = action.dataset.value ? [action.dataset.value] : selected().map((element) => element.dataset.value);
-		sendAction(slide, action.dataset.action, values, action.dataset.provider);
+		action.classList.add("busy");   // shows the tap was seen, until the answer is there (style.css)
+		sendAction(slide, action.dataset.action, values, action.dataset.provider).finally(() => action.classList.remove("busy"));
 	}
 });
 
@@ -198,6 +214,8 @@ async function sendAction(slide, action, values, provider = slide.dataset.provid
 		layers[front].innerHTML = result.html;
 		const resumeAfter = layers[front].querySelector("[data-resume-after]");
 		if (resumeAfter) keepPaused(parseFloat(resumeAfter.dataset.resumeAfter));   // e.g. game over
+	} else if (current && current.refresh) {
+		refresh();   // nothing redrawn (e.g. the volume): show the change now, not at the next check
 	}
 	if (result.message) setTimeout(() => showToast(result.message), messageDelay);   // e.g. after the tiles flip
 }
@@ -292,6 +310,13 @@ document.addEventListener("keydown", async (event) => {
 		next();
 	} else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
 		previous();
+	} else if (event.key === " " && slide?.dataset.spaceAction) {
+		// e.g. Spotify: space pauses the music (data-space-action on the slide) instead of the slideshow
+		event.preventDefault();
+		keepPaused(IDLE_SECONDS);
+		const button = slide.querySelector(`[data-action="${slide.dataset.spaceAction}"]`);
+		button?.classList.add("busy");
+		sendAction(slide, slide.dataset.spaceAction, []).finally(() => button?.classList.remove("busy"));
 	} else if (event.key === " ") {
 		paused = !paused;
 		showToast(paused ? "Paused" : "Playing");

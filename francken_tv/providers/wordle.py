@@ -141,7 +141,7 @@ class WordleProvider(Provider):
 		if game.won:
 			return PuzzleStatus("solved", f"Solved in {count} {'guess' if count == 1 else 'guesses'}")
 		if game.lost:
-			return PuzzleStatus("lost", "Not solved today")
+			return PuzzleStatus("lost", "Lost: out of guesses")
 		if count:
 			return PuzzleStatus("playing", f"{count} of {MAX_GUESSES} guesses used")
 		return PuzzleStatus("new", "Not tried yet")

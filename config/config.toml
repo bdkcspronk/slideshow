@@ -13,17 +13,13 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "brand", "activities", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "quote", "bieruur_countdown"]
+order = ["images", "activities", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "quote", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
 [images]
 folder = "media/slides"      # drop images here; new files are picked up automatically
 shuffle = false
-
-[brand]
-# Our name, logo and colours, animated.
-seconds = 10
 
 [activities]
 url = "https://professorfrancken.nl/association/activities"
@@ -46,12 +42,17 @@ database = "data/presence.sqlite3"
 devices = "config/devices.json"   # MAC address -> name, colours, chart style, greeting
 seconds = 15
 greet_arrivals = true
-day_starts_at = "04:00"           # everyone can be greeted again after this time
+day_starts_at = "04:00"           # a new day (new greetings, an empty activity chart) starts at this time
 
 [spotify]
-# What's playing on Spotify; only shown while something plays. Setup: README, section "Spotify".
+# What's playing on Spotify and the next song; tap to change the playlist. Only shown while something
+# plays. Setup: README, section "Spotify".
 credentials = "~/.config/slideshow/spotify.json"
 redirect_uri = "http://127.0.0.1:8080/spotify/callback"   # must match the app at developer.spotify.com
+speaker = "Francken TV"      # the TV PC's own Spotify speaker (spotifyd, deploy/spotifyd.conf)
+show_when_idle = true        # nothing playing: still show the slide, with Search and Playlists
+play_on_start = true         # when the slideshow starts and nothing plays: resume the last music on the speaker
+start_playlist = ""          # ...or, if there's nothing to resume, this one (a "spotify:playlist:..." uri)
 check_every_seconds = 5
 seconds = 15
 

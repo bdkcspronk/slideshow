@@ -1,0 +1,58 @@
+{#
+	Search Spotify for a song (SpotifyProvider.action() in providers/spotify.py). Typing (on the
+	screen or a real keyboard, see typeKey() in player.js) goes into data-input-text; Enter sends
+	it as "search". Tapping a song plays it; + adds it to the queue; tapping an album shows its songs.
+#}
+<div class="slide spotify-slide spotify-pick-slide" data-state="search" data-interactive data-provider="spotify" data-submit-action="search">
+	<div class="spotify-pick-header">
+		<button class="spotify-button" data-action="back">&larr; Back</button>
+		<h1>Search</h1>
+		<button class="spotify-button" data-action="playlists">Playlists</button>
+	</div>
+	<div class="spotify-search">
+		<div class="spotify-search-left">
+			<div class="spotify-search-input">
+				<div class="spotify-search-text" data-input-text>{{ query }}</div>
+				<button class="spotify-button primary" data-key="ENTER">Search</button>
+			</div>
+			<div class="spotify-keyboard">
+				{% for row in rows %}
+				<div class="spotify-keyboard-row">
+					{% for letter in row %}<button class="spotify-key" data-key="{{ letter }}">{{ letter }}</button>{% endfor %}
+					{% if loop.last %}<button class="spotify-key wide" data-key="BACK" aria-label="Delete">&#9003;</button>{% endif %}
+				</div>
+				{% endfor %}
+				<div class="spotify-keyboard-row">
+					<button class="spotify-key space" data-key="SPACE">space</button>
+				</div>
+			</div>
+		</div>
+		<div class="spotify-results-column">
+		{% if albums %}
+		<div class="spotify-albums">
+			{% for album in albums %}
+			<button class="spotify-album-card" data-action="songs" data-value="{{ album.uri }}">
+				{% if album.cover %}<img src="{{ album.cover }}" alt="">{% else %}<span class="spotify-playlist-blank"></span>{% endif %}
+				<b>{{ album.name }}</b>
+				<span>{{ album.artist }}{% if album.year %} &middot; {{ album.year }}{% endif %}</span>
+			</button>
+			{% endfor %}
+		</div>
+		{% endif %}
+		<ol class="spotify-songs spotify-results{{ ' with-albums' if albums }}">
+			{% for song in songs %}
+			<li>
+				<button class="spotify-song" data-action="play_song" data-value="{{ song.uri }}">
+					{% if song.cover %}<img src="{{ song.cover }}" alt="">{% else %}<span class="spotify-song-blank"></span>{% endif %}
+					<span class="spotify-song-text"><b>{{ song.title }}</b><span>{{ song.artist }}</span></span>
+					<span class="spotify-song-length">{{ song.length }}</span>
+				</button>
+				<button class="spotify-control" data-action="queue" data-value="{{ song.uri }}" aria-label="Add to the queue">+</button>
+			</li>
+			{% else %}
+			<li class="spotify-search-hint">{{ "Nothing found" if searched else "Type a song, album or artist, then tap Search" }}</li>
+			{% endfor %}
+		</ol>
+		</div>
+	</div>
+</div>

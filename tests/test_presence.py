@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 from francken_tv.activity_chart import chart_view, merge_into_blocks, parse_style, prepare, time_in_room
 from francken_tv.devices import DeviceList
 from francken_tv.presence_store import PresenceStore, Sighting
-from francken_tv.providers.presence import Greeter, greeting_day
+from francken_tv.providers.presence import Greeter, PresenceChartProvider, greeting_day
 from francken_tv.sniffer import parse_line
 
 DAY = datetime(2026, 10, 14)
@@ -133,6 +133,16 @@ class ChartTest(PresenceTestCase):
 		self.assertEqual(view["grid"][0]["left"], 0)        # the chart starts at 11:30 (12:40 minus an hour, on a quarter)
 		self.assertEqual(view["bars"][0]["left"], 38.889)   # 12:40 is 70 of 180 minutes into 11:30-14:30
 		self.assertIsNone(chart_view([], {}, at("11:00")))
+
+	def test_chart_keeps_the_day_after_midnight(self):
+		for sighting in (at("20:00"), at("23:50"), at("23:55") + timedelta(minutes=10)):   # the last one at 00:05
+			self.store.add_sighting(sighting, ALICE, "Alice", -50, 1)
+		self.store.add_sighting(at("03:00"), BOB, "Bob", -50, 1)   # last night: not part of today
+		provider = PresenceChartProvider({}, self.store, self.devices, self.dir / "no-cat.png", 8)
+		[slide] = provider.slides(at("00:30") + timedelta(days=1))
+		self.assertEqual(slide.data["names"], ["Alice"])
+		self.assertEqual(slide.data["ticks"][0]["label"], "19:00")   # an hour before the first arrival at 20:00
+		self.assertEqual(provider.slides(at("04:30") + timedelta(days=1)), [])   # a new day: nobody yet
 
 	def test_time_in_room(self):
 		sightings = [Sighting(at(t), ALICE, "Alice") for t in ("09:00", "09:05", "09:10", "13:00")]

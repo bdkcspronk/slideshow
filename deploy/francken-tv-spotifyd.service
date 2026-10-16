@@ -1,0 +1,13 @@
+# Spotify Connect speaker "Francken TV" (spotifyd). Install: see README.md ("Spotify").
+[Unit]
+Description=Francken TV Spotify speaker
+After=network-online.target sound.target
+
+[Service]
+WorkingDirectory=%h/slideshow
+ExecStart=%h/.local/bin/spotifyd --no-daemon --config-path %h/slideshow/deploy/spotifyd.conf --cache-path %h/slideshow/data/spotifyd
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

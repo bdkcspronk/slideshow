@@ -1,21 +1,77 @@
 {#
-	What's playing on Spotify (providers/spotify.py). Redrawn every second: the parts marked
-	data-live update in place; a new song (data-state changes) redraws the whole slide.
+	What's playing on Spotify (providers/spotify.py). The bar and the clock move on by themselves
+	(CSS, see "Spotify" in style.css). The server is asked every second: a new song or pausing
+	(data-state changes) redraws the slide; the volume bar is updated in place. The buttons send
+	actions to SpotifyProvider.action(); "Search" and "Playlists" open spotify_search.html and spotify_playlists.html.
+	Nothing playing ("idle"): just those two buttons, to start some music on the TV's own speaker.
+	The space bar pauses and resumes the music (data-space-action, see player.js).
 #}
-<div class="slide spotify-slide" data-state="{{ track }}">
+<div class="slide spotify-slide" data-state="{{ state }}" data-interactive data-provider="spotify"{% if not idle %} data-space-action="toggle"{% endif %}>
+	{% if idle %}
+	<div class="spotify-idle">
+		<div class="spotify-label"><span class="spotify-eq paused"><i></i><i></i><i></i><i></i></span> Spotify</div>
+		<h1 class="spotify-title">Nothing playing right now</h1>
+		<div class="spotify-artist">Pick a playlist or search a song: it plays on the {{ speaker }} speaker.</div>
+		<div class="spotify-buttons">
+			<button class="spotify-button primary" data-action="playlists">Playlists</button>
+			<button class="spotify-button" data-action="search">Search a song</button>
+		</div>
+	</div>
+	{% else %}
 	{% if cover %}<div class="spotify-backdrop" style="background-image: url('{{ cover }}')"></div>{% endif %}
 	<div class="spotify-content">
 		{% if cover %}<img class="spotify-cover" src="{{ cover }}" alt="">{% endif %}
 		<div class="spotify-info">
 			<div class="spotify-label">
-				<span class="spotify-eq{{ ' paused' if not is_playing }}" data-live="eq"><i></i><i></i><i></i><i></i></span>
-				Now playing on Spotify
+				<span class="spotify-eq{{ ' paused' if not is_playing }}"><i></i><i></i><i></i><i></i></span>
+				<span class="spotify-label-text">{% if device %}Spotify &middot; <span class="spotify-device">{{ device }}</span>{% else %}Now playing on Spotify{% endif %}</span>
+				{% if not on_speaker %}<button class="spotify-button small" data-action="here">Play on TV</button>{% endif %}
 			</div>
 			<h1 class="spotify-title">{{ title }}</h1>
 			<div class="spotify-artist">{{ artist }}</div>
 			<div class="spotify-album">{{ album }}</div>
-			<div class="spotify-progress"><div class="spotify-bar" data-live="bar" style="width: {{ percent }}%"></div></div>
-			<div class="spotify-times"><span data-live="elapsed">{{ elapsed }}</span><span>{{ total }}</span></div>
+			<div class="spotify-progress{{ ' paused' if not is_playing }}" style="--start: {{ elapsed_seconds }}; --total: {{ total_seconds }}; --percent: {{ percent }}%">
+				<div class="spotify-bar"></div>
+			</div>
+			<div class="spotify-times{{ ' paused' if not is_playing }}" style="--start: {{ elapsed_seconds }}; --total: {{ total_seconds }}">
+				<span class="spotify-elapsed"></span><span>{{ total }}</span>
+			</div>
+			<div class="spotify-controls">
+				<button class="spotify-control" data-action="previous" aria-label="Previous song">
+					<svg viewBox="0 0 24 24"><rect x="4" y="5" width="2.5" height="14" rx="1"/><path d="M20 5.5v13a1 1 0 0 1-1.5.9L8 12.9a1 1 0 0 1 0-1.8l10.5-6.5a1 1 0 0 1 1.5.9z"/></svg>
+				</button>
+				<button class="spotify-control big" data-action="toggle" aria-label="{{ 'Pause' if is_playing else 'Play' }}">
+					{% if is_playing %}<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+					{% else %}<svg viewBox="0 0 24 24"><path d="M7 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.8L8.5 4.6A1 1 0 0 0 7 5.5z"/></svg>{% endif %}
+				</button>
+				<button class="spotify-control" data-action="skip" aria-label="Next song">
+					<svg viewBox="0 0 24 24"><path d="M4 5.5v13a1 1 0 0 0 1.5.9L16 12.9a1 1 0 0 0 0-1.8L5.5 4.6A1 1 0 0 0 4 5.5z"/><rect x="17.5" y="5" width="2.5" height="14" rx="1"/></svg>
+				</button>
+				{% if volume is not none %}
+				<div class="spotify-volume">
+					<button class="spotify-control" data-action="volume_down" aria-label="Softer">&minus;</button>
+					<span class="spotify-volume-track"><span class="spotify-volume-level" data-live="volume" style="width: {{ volume }}%"></span></span>
+					<button class="spotify-control" data-action="volume_up" aria-label="Louder">+</button>
+				</div>
+				{% endif %}
+			</div>
+			<div class="spotify-bottom">
+				{% if next %}
+				<div class="spotify-next">
+					{% if next.cover %}<img src="{{ next.cover }}" alt="">{% endif %}
+					<div>
+						<div class="spotify-next-label">Up next</div>
+						<div class="spotify-next-title">{{ next.title }}</div>
+						<div class="spotify-next-artist">{{ next.artist }}</div>
+					</div>
+				</div>
+				{% endif %}
+				<div class="spotify-buttons">
+					<button class="spotify-button" data-action="search">Search</button>
+					<button class="spotify-button" data-action="playlists">Playlists</button>
+				</div>
+			</div>
 		</div>
 	</div>
+	{% endif %}
 </div>

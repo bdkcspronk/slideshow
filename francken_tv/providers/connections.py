@@ -148,7 +148,7 @@ class ConnectionsProvider(Provider):
 		if game.won:
 			return PuzzleStatus("solved", "Solved")
 		if game.lost:
-			return PuzzleStatus("lost", "Not solved today")
+			return PuzzleStatus("lost", f"Lost: {len(game.found)} of 4 groups found")
 		if game.found or game.mistakes:
 			return PuzzleStatus("playing", f"{len(game.found)} of 4 groups found")
 		return PuzzleStatus("new", "Not tried yet")

@@ -1,6 +1,3 @@
-# Add one word or phrase per line to prevent quote narration.
-# Matching is case-insensitive.
-kanker
 children
 kanker
 cancer
@@ -11,3 +8,4 @@ cunt
 alcohol-free
 sandboy
 really glad i am white
+sibren

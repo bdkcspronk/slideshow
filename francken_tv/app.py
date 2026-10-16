@@ -14,7 +14,6 @@ from .config import CACHE_DIR, DATA_DIR, project_path
 from .devices import DeviceList
 from .presence_store import PresenceStore
 from .providers.activities import ActivitiesProvider
-from .providers.brand import BrandProvider
 from .providers.catfishing import CatfishingProvider
 from .providers.connections import ConnectionsProvider
 from .providers.puzzles import PuzzlesProvider
@@ -85,7 +84,6 @@ def build_app(config: dict, clock: Clock) -> App:
 
 	all_providers: list[Provider] = [
 		ImagesProvider(config.get("images", {}), seconds),
-		BrandProvider(config.get("brand", {}), seconds),
 		ActivitiesProvider(config.get("activities", {}), seconds),
 		EventPhotosProvider(config.get("event_photos", {}), CACHE_DIR / "event_photos", seconds),
 		PresenceChartProvider(presence, store, devices, project_path("media/nyancat.png"), seconds),

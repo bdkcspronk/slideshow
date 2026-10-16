@@ -1,3 +1,4 @@
+import time
 import unittest
 from datetime import datetime
 from pathlib import Path
@@ -5,6 +6,8 @@ from tempfile import TemporaryDirectory
 
 from PIL import Image
 
+from francken_tv.background import BackgroundRunner
+from francken_tv.clock import Clock
 from francken_tv.config import DATA_DIR
 from francken_tv.providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurTakeover, countdown_data
 from francken_tv.providers.vrijmibo import VrijmiboTakeover
@@ -154,6 +157,22 @@ class VrijmiboTest(unittest.TestCase):
 	def test_vrijmibo_is_cut_short_when_bieruur_starts(self):
 		scheduler = Scheduler([], [BieruurTakeover(BieruurSettings()), self.takeover])
 		self.assertEqual(scheduler.next_slide(at(FRIDAY, "15:57:59")).seconds, 1.0)
+
+
+class BackgroundTest(unittest.TestCase):
+	def test_refresh_soon_after_midnight(self):
+		class Daily(Provider):
+			name, refresh_seconds, refreshed = "daily", 1800, 0
+			def refresh(self, now):
+				self.refreshed += 1
+		daily = Daily()
+		runner = BackgroundRunner(Clock(datetime(2026, 10, 14, 23, 59, 0)), [daily], [])
+		runner.stopped.wait = lambda seconds: runner.stopped.set()   # run the loop once
+		runner.refresh_loop()
+		due_in = runner.status["daily"].next_due - time.monotonic()
+		self.assertEqual(daily.refreshed, 1)
+		self.assertTrue(85 <= due_in <= 91, due_in)   # 00:00:30, not 00:29
+
 
 if __name__ == "__main__":
 	unittest.main()

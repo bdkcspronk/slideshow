@@ -52,6 +52,18 @@ class PuzzlesHubTest(unittest.TestCase):
 			hub.refresh(NOW)   # reported on /status ...
 		self.assertEqual(list(statuses(hub)), ["connections"])   # ... but Connections still works
 
+	def test_cards_are_up_to_date_when_the_slide_is_shown(self):
+		hub, connections, wordle = make_hub(wordle_works=False)
+		with self.assertRaises(RuntimeError), self.assertLogs("francken_tv.providers.puzzles", "WARNING"):
+			hub.refresh(NOW)
+		[slide] = hub.slides(NOW)   # planned while only Connections was there (like just after midnight)
+		connections.action("submit", group(0), NOW)   # then someone plays ...
+		wordle.fetch = lambda day: "CRANE"   # ... and the Wordle arrives
+		wordle.refresh(NOW)
+		wordle.action("submit", ["CRANE"], NOW)
+		cards = {card["name"]: card["state"] for card in slide.update(NOW)["cards"]}
+		self.assertEqual(cards, {"connections": "playing", "wordle": "solved"})
+
 
 if __name__ == "__main__":
 	unittest.main()

@@ -1,0 +1,50 @@
+{#
+	One playlist's (or album's, from the search) songs, a page at a time (SpotifyProvider.action() in
+	providers/spotify.py).
+	Tapping a song plays the playlist from that song; "Play all" plays it from the start.
+	Spotify only lets us list the songs of the account's own playlists; others can only be played.
+#}
+<div class="slide spotify-slide spotify-pick-slide" data-state="songs" data-interactive data-provider="spotify">
+	<div class="spotify-pick-header">
+		<button class="spotify-button" data-action="{{ back.action }}" data-value="{{ back.value }}">&larr; {{ back.label }}</button>
+		{% if playlist.cover %}<img class="spotify-pick-cover" src="{{ playlist.cover }}" alt="">{% endif %}
+		<h1>{{ playlist.name }}</h1>
+		{% if readable %}
+		<button class="spotify-button" data-action="shuffle" data-value="{{ playlist.uri }}">Shuffle</button>
+		<button class="spotify-button primary" data-action="play" data-value="{{ playlist.uri }}">&#9654; Play all</button>
+		{% endif %}
+	</div>
+	{% if not readable %}
+	<div class="spotify-locked">
+		{% if playlist.cover %}<img src="{{ playlist.cover }}" alt="">{% endif %}
+		<div>
+			<p>Spotify doesn't let the slideshow list the songs of playlists made by someone else.</p>
+			<p>You can still play it: once it plays, the slide shows what's next and you can skip songs.</p>
+			<div class="spotify-buttons">
+				<button class="spotify-button primary" data-action="play" data-value="{{ playlist.uri }}">&#9654; Play</button>
+				<button class="spotify-button" data-action="shuffle" data-value="{{ playlist.uri }}">Shuffle</button>
+			</div>
+		</div>
+	</div>
+	{% else %}
+	<ol class="spotify-songs" start="{{ first_number }}">
+		{% for song in songs %}
+		<li>
+			<button class="spotify-song" data-action="play_song" data-value="{{ song.uri }}|{{ playlist.uri }}">
+				<span class="spotify-song-number">{{ first_number + loop.index0 }}</span>
+				{% if song.cover %}<img src="{{ song.cover }}" alt="">{% endif %}
+				<span class="spotify-song-text"><b>{{ song.title }}</b><span>{{ song.artist }}</span></span>
+				<span class="spotify-song-length">{{ song.length }}</span>
+			</button>
+		</li>
+		{% endfor %}
+	</ol>
+	{% if pages > 1 %}
+	<div class="spotify-pages">
+		<button class="spotify-button" data-action="songs" data-value="{{ playlist.uri }}|{{ page - 1 }}"{% if page == 0 %} disabled{% endif %}>&larr;</button>
+		<span>Page {{ page + 1 }} of {{ pages }}</span>
+		<button class="spotify-button" data-action="songs" data-value="{{ playlist.uri }}|{{ page + 1 }}"{% if page + 1 >= pages %} disabled{% endif %}>&rarr;</button>
+	</div>
+	{% endif %}
+	{% endif %}
+</div>
