@@ -63,6 +63,16 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
 - Keys in the slideshow: →/↓ next, ←/↑ previous, space pause, `m` toggle reading quotes aloud,
   `1` Daily puzzles, `2` Spotify, `3` today's activity chart (change these under `[shortcuts]` in
   `config/config.toml`).
+- **Esc** opens the menu: live previews of those slide types (arrow keys + Enter, or click), plus
+  - **Settings**: mute all sound, read quotes aloud, greet people, volume, slide speed, which slide
+    types are shown, start one or all of today's puzzles over, reload `devices.json`. Volume and
+    mute are the TV PC's main sound output (Spotify too; needs `wpctl` or `pactl`, standard on
+    Ubuntu). The rest is saved in `data/settings.json`, which wins over `config.toml`; delete it to
+    go back to the config.
+  - **Power**: shut down or restart the TV PC (press twice). The commands are under `[power]` in
+    `config/config.toml`.
+
+  Esc again (or a minute without input) closes it and the slideshow continues.
 - Tapping a puzzle on the Daily puzzles slide opens it and pauses the slideshow so people can play
   (Wordle also takes the keyboard); it continues after 4 minutes without input, 15 seconds after the
   game ends, or when bieruur starts. One shared game per day for each puzzle. To add a puzzle, see

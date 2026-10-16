@@ -5,7 +5,10 @@ create it in build_app() below, and add its name to rotation.order in config.tom
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+import subprocess
+import threading
+from dataclasses import dataclass, field, replace
+from pathlib import Path
 
 from .announcer import Announcer
 from .background import BackgroundRunner
@@ -26,6 +29,8 @@ from .providers.presence import Greeter, LeaderboardProvider, PresenceChartProvi
 from .providers.quote import QuoteProvider
 from .providers.vrijmibo import VrijmiboTakeover
 from .scheduler import Scheduler
+from .settings import Settings, load_settings, save_settings
+from .system_volume import SystemVolume
 from .slides import Job, Provider, Takeover
 
 log = logging.getLogger(__name__)
@@ -43,6 +48,11 @@ class App:
 	runner: BackgroundRunner
 	screen_size: tuple[int, int]
 	shortcuts: dict[str, str] = field(default_factory=dict)   # key in the browser -> provider name
+	settings: Settings = field(default_factory=Settings)      # changed in the menu (Esc -> Settings)
+	settings_path: Path | None = None                         # where they're saved
+	power_commands: dict[str, list[str]] = field(default_factory=dict)   # "shutdown"/"restart" -> command
+	system_volume: SystemVolume | None = None   # the volume and mute in the settings, also for Spotify
+	settings_lock: threading.Lock = field(default_factory=threading.Lock)   # the server handles requests in parallel
 	notice_id: int = 0      # the latest on-screen notice, shown by the browser
 	notice_text: str = ""
 
@@ -52,8 +62,48 @@ class App:
 		self.notice_id += 1
 
 	def toggle_quotes(self) -> None:
-		enabled = self.announcer.toggle_quotes()
-		self.notify(f"Reading quotes aloud: {'on' if enabled else 'off'}")
+		self.change_settings({"quotes_aloud": not self.settings.quotes_aloud})
+		self.notify(f"Reading quotes aloud: {'on' if self.settings.quotes_aloud else 'off'}")
+
+	def change_settings(self, changes: dict) -> None:
+		"""Apply and save settings from the menu. Raises ValueError for a wrong value."""
+		with self.settings_lock:
+			self.settings = self.settings.changed(changes)
+			if self.system_volume and self.system_volume.available and ({"volume", "muted"} & changes.keys()):
+				self.system_volume.set(self.settings.volume, self.settings.muted)
+			self.apply_settings()
+			if self.settings_path is not None:
+				save_settings(self.settings_path, self.settings)
+
+	def apply_settings(self) -> None:
+		settings = self.settings
+		self.announcer.mute(settings.muted)
+		self.announcer.quotes_enabled = settings.quotes_aloud
+		self.announcer.greetings_enabled = settings.greetings
+		if not (self.system_volume and self.system_volume.available):
+			self.announcer.volume = settings.volume   # no main volume to change: at least the slideshow's own sounds
+		self.scheduler.speed = settings.speed
+		self.scheduler.hide(set(settings.hidden))
+
+	def read_sound(self) -> None:
+		"""Take the volume and mute from the TV PC's sound output: it remembers them itself (also over
+		a restart), and they may have been changed with the keyboard's volume keys."""
+		state = self.system_volume.get() if self.system_volume else None
+		if state is not None:
+			with self.settings_lock:
+				self.settings = replace(self.settings, volume=state[0], muted=state[1])
+				self.announcer.mute(state[1])
+
+	def power(self, action: str) -> None:
+		"""Shut down or restart the TV PC (the commands are in config.toml, [power])."""
+		command = self.power_commands.get(action)
+		if not command:
+			raise ValueError(f"no command for {action!r} in config.toml [power]")
+		log.warning("Power: %s (%s)", action, " ".join(command))
+		try:
+			subprocess.Popen(command)
+		except OSError as error:
+			raise ValueError(f"could not run {command[0]}: {error}") from error
 
 	def reload_devices(self) -> None:
 		count = len(self.devices.reload())   # the activity chart uses it the next time it's shown
@@ -109,10 +159,15 @@ def build_app(config: dict, clock: Clock) -> App:
 
 	takeovers: list[Takeover] = [BieruurTakeover(bieruur), VrijmiboTakeover(config.get("vrijmibo", {}))]
 	jobs: list[Job] = [BieruurSong(bieruur, announcer)]
-	if presence.get("greet_arrivals", True):
-		jobs.append(Greeter(presence, store, devices, announcer))
+	jobs.append(Greeter(presence, store, devices, announcer))   # quiet if greetings are off in the settings
 
-	return App(
+	power = config.get("power", {})
+	defaults = Settings(
+		quotes_aloud=config.get("quote", {}).get("narrate", False),
+		greetings=presence.get("greet_arrivals", True),
+		volume=config.get("announcer", {}).get("volume", 100),
+	)
+	app = App(
 		clock=clock,
 		announcer=announcer,
 		devices=devices,
@@ -125,4 +180,12 @@ def build_app(config: dict, clock: Clock) -> App:
 			if providers[name] not in enabled], jobs),
 		screen_size=(display.get("screen_width", 1920), display.get("screen_height", 1080)),
 		shortcuts=shortcuts,
+		settings=load_settings(DATA_DIR / "settings.json", defaults),
+		settings_path=DATA_DIR / "settings.json",
+		power_commands={"shutdown": power.get("shutdown", ["systemctl", "poweroff"]),
+			"restart": power.get("restart", ["systemctl", "reboot"])},
+		system_volume=SystemVolume(),
 	)
+	app.read_sound()
+	app.apply_settings()
+	return app

@@ -1,6 +1,9 @@
 # Francken TV configuration.
 # Times are 24-hour "HH:MM". Relative paths are relative to the project folder.
 # Restart the slideshow after changing this file.
+# Sound, quotes aloud, greetings, volume, slide speed and which slide types are shown can also be
+# changed on the TV (Esc -> Settings); those choices are saved in data/settings.json and win over
+# the values here. Delete that file to go back to these.
 
 [display]
 seconds_per_slide = 8        # default for slides that don't set their own "seconds"
@@ -18,11 +21,17 @@ order = ["images", "activities", "event_photos", "presence", "puzzles", "spotify
 fill_with = "images"
 
 [shortcuts]
-# Number keys in the slideshow that jump straight to a slide type (while typing in a puzzle or
-# the Spotify search, numbers are typed instead). Any name from rotation.order works.
+# Number keys in the slideshow that jump straight to a slide type; these slide types are also the
+# previews in the menu (Esc). While typing in a puzzle or the Spotify search, numbers are typed
+# instead. Any name from rotation.order works.
 "1" = "puzzles"
 "2" = "spotify"
 "3" = "presence"             # today's activity chart from the sniffer
+
+[power]
+# The Power button in the menu (Esc). Ubuntu lets the logged-in desktop user do these without a password.
+shutdown = ["systemctl", "poweroff"]
+restart = ["systemctl", "reboot"]
 
 [images]
 folder = "media/slides"      # drop images here; new files are picked up automatically
@@ -72,7 +81,7 @@ seconds = 12
 sheet_id = "12hadm3_zdeU7e3q-YHFfcNSDocQdzjWKnn7lzZLqhI4"   # Google Sheet with "Quote" and "name" columns
 background = "media/quote_background.png"
 blocked_words = "config/quote_filter.txt"   # quotes containing these words are shown but not read aloud
-narrate = false                             # read quotes aloud at startup? Toggle while running: Ctrl+M in the terminal, "m" in the browser
+narrate = false                             # read quotes aloud? Also: Ctrl+M in the terminal, "m" or Esc -> Settings in the browser
 letter_ms = 45                              # the quote is typed letter by letter at this speed...
 max_typing_seconds = 8                      # ...but long quotes type faster, to finish within this time
 seconds = 6                                 # reading time after the quote is typed and the author shown

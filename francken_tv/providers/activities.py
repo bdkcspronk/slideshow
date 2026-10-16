@@ -54,6 +54,7 @@ def parse_activities(html: str) -> list[Activity]:
 
 class ActivitiesProvider(Provider):
 	name = "activities"
+	title = "Activities"
 
 	def __init__(self, settings: dict, default_seconds: float) -> None:
 		self.url = settings.get("url", "https://professorfrancken.nl/association/activities")

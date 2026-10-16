@@ -119,6 +119,7 @@ class BieruurCountdownProvider(Provider):
 	"""Shows the countdown for a few seconds every round, until the takeover starts."""
 
 	name = "bieruur_countdown"
+	title = "Bieruur countdown"
 
 	def __init__(self, settings: BieruurSettings) -> None:
 		self.settings = settings

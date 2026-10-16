@@ -27,6 +27,8 @@ class Scheduler:
 		self.fill_with = fill_with
 		self.takeovers = takeovers
 		self.round: deque[Slide] = deque()
+		self.speed = 1.0                 # 2 = every slide is shown half as long (the menu's Settings)
+		self.hidden: set[str] = set()    # slide types left out of the rounds (the menu's Settings)
 		self.lock = threading.Lock()
 
 	def next_slide(self, now: datetime) -> Slide:
@@ -43,12 +45,23 @@ class Scheduler:
 			if not self.round:
 				self.round.extend(self.build_round(now))
 			slide = self.round.popleft() if self.round else EMPTY_SLIDE
+			if self.speed != 1.0:
+				slide = replace(slide, seconds=slide.seconds / self.speed)
 			return self.cut_short_before_takeover(slide, now)
+
+	def hide(self, names: set[str]) -> None:
+		"""Leave these slide types out, starting with a new round right away."""
+		with self.lock:
+			if names != self.hidden:
+				self.hidden = set(names)
+				self.round.clear()
 
 	def build_round(self, now: datetime) -> list[Slide]:
 		filler: list[Slide] = []
 		special: list[Slide] = []
 		for provider in self.providers:
+			if provider.name in self.hidden:
+				continue
 			try:
 				slides = provider.slides(now)
 			except Exception:

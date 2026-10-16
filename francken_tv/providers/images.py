@@ -12,6 +12,7 @@ from ..slides import Provider, Slide, media_url
 
 class ImagesProvider(Provider):
 	name = "images"
+	title = "Posters"
 
 	def __init__(self, settings: dict, default_seconds: float) -> None:
 		self.folder = project_path(settings.get("folder", "media/slides"))

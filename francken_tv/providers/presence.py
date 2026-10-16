@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 from PIL import Image
 
-from ..activity_chart import MarkerStyle, chart_view, css_colour, generate_bright_color, parse_style, time_in_room
+from ..activity_chart import MarkerStyle, bar_look, chart_view, generate_bright_color, parse_style, time_in_room
 from ..announcer import Announcer
 from ..config import parse_time
 from ..devices import DeviceList
@@ -26,6 +27,8 @@ class PresenceChartProvider(Provider):
 	"""Today's activity chart, drawn by templates/slides/presence.html (see activity_chart.py)."""
 
 	name = "presence"
+	title = "Activity chart"
+	nothing_to_show = "Nobody seen yet today"
 
 	def __init__(self, settings: dict, store: PresenceStore, devices: DeviceList, nyan_cat_path: Path,
 			default_seconds: float) -> None:
@@ -51,6 +54,7 @@ class LeaderboardProvider(Provider):
 	"""Who spent the most time in the room this week (since Monday)."""
 
 	name = "leaderboard"
+	title = "Leaderboard"
 
 	def __init__(self, settings: dict, store: PresenceStore, devices: DeviceList, default_seconds: float) -> None:
 		self.store = store
@@ -71,13 +75,15 @@ class LeaderboardProvider(Provider):
 		for place, (name, (total, days)) in enumerate(ranking, start=1):
 			device = self.devices.get(mac_of[name])
 			style = parse_style(device.options) if device else MarkerStyle()
-			colour = style.color or generate_bright_color(mac_of[name] or name)
+			style = replace(style, color=style.color or generate_bright_color(mac_of[name] or name),
+				shape="rainbow" if style.shape == "nyan cat" else style.shape)   # the same bars as the chart, without pictures
+			width = round(total.total_seconds() / longest * 100, 1)
 			minutes = round(total.total_seconds() / 60)
 			rows.append({
+				**bar_look(style, width, seed=name),
 				"place": place, "name": name, "days": len(days),
 				"time": f"{minutes // 60} h {minutes % 60:02d} min" if minutes >= 60 else f"{minutes} min",
-				"width": round(total.total_seconds() / longest * 100, 1),
-				"background": css_colour(colour),
+				"width": width,
 			})
 		return [Slide("leaderboard.html", self.seconds, {"rows": rows})]
 

@@ -66,6 +66,7 @@ def most_recent_albums(entries: list[Entry], today: date, count: int) -> list[Al
 
 class EventPhotosProvider(Provider):
 	name = "event_photos"
+	title = "Event photos"
 
 	def __init__(self, settings: dict, cache_folder: Path, default_seconds: float) -> None:
 		self.settings = settings

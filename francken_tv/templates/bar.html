@@ -1,0 +1,16 @@
+{#
+	One person's bar, the same in the activity chart (slides/presence.html) and the leaderboard
+	(slides/leaderboard.html). `look` comes from bar_look() in activity_chart.py; the looks are under
+	"Activity chart" in style.css. `style` adds where the bar goes and when it grows.
+#}
+{% macro bar(look, style="") -%}
+<div class="bar {{ look.shape }}{{ ' glow' if look.glow }}" style="{{ style }} background: {{ look.background }};
+	{%- if look.gradient_size %} background-size: {{ look.gradient_size }}% 100%; background-position: {{ look.gradient_position }}% 0;{% endif %}
+	{%- if look.glow_colour %} --glow: {{ look.glow_colour }};{% endif %}">
+	{% if look.stripes %}<span class="bar-stripes" style="background: {{ look.stripes }};{% if look.stripe_width %} --stripe: {{ look.stripe_width }};{% endif %}"></span>{% endif %}
+	{% if look.bubbles %}
+	<span class="beer-foam" style="width: {{ look.foam }}"></span>
+	{% for bubble in look.bubbles %}<i class="beer-bubble" style="top: {{ bubble.y }}%; --foam: {{ look.foam }}; --size: {{ bubble.size }}%; --duration: {{ bubble.duration }}s; --wait: {{ bubble.wait }}s"></i>{% endfor %}
+	{% endif %}
+</div>
+{%- endmacro %}

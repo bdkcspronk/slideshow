@@ -6,6 +6,7 @@
 	/api/shortcut/<key>  the slide for a shortcut key (see [shortcuts] in config.toml), right away
 	/api/slide/<n>  a recent slide again, freshly drawn (going back with the left arrow)
 	/api/narration  POST: toggle reading quotes aloud
+	/api/menu       the menu (Esc): GET what it shows, POST a choice (see menu.py)
 	/api/action     POST: a button on an interactive slide (the puzzle) was clicked
 	/api/takeover   whether a takeover should interrupt a paused interactive slide
 	/api/notice     the latest short message to show in the corner of the screen
@@ -34,6 +35,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
 
+from . import menu
 from .config import CACHE_DIR, PROJECT_DIR
 from .slides import Slide
 
@@ -113,7 +115,7 @@ class SlideRenderer:
 			log.exception("Shortcut to %s failed", name)
 			slide = None
 		if slide is None:
-			return {"message": f"Nothing to show for {name} right now"}
+			return {"message": f"{provider.title or name}: {provider.nothing_to_show}"}
 		return self.start(slide)
 
 	def start(self, slide: Slide) -> dict:
@@ -209,6 +211,8 @@ class Handler(BaseHTTPRequestHandler):
 				self.send_error(HTTPStatus.NOT_FOUND)
 			else:
 				self.send_json(slide)
+		elif path == "/api/menu":
+			self.send_json(menu.menu_data(self.server.app))
 		elif path == "/api/takeover":
 			now = self.server.app.clock.now()
 			due = any(t.interrupts_paused and t.due(now) for t in self.server.app.takeovers.values())
@@ -240,6 +244,8 @@ class Handler(BaseHTTPRequestHandler):
 	def post(self) -> None:
 		if urlparse(self.path).path == "/api/action":
 			self.send_action()
+		elif urlparse(self.path).path == "/api/menu":
+			self.send_menu_command()
 		elif urlparse(self.path).path == "/api/narration":
 			self.server.app.toggle_quotes()
 			self.send_json({"quotes_enabled": self.server.app.announcer.quotes_enabled})
@@ -276,10 +282,27 @@ class Handler(BaseHTTPRequestHandler):
 		self.send_html("<meta http-equiv='refresh' content='3; url=/'><h1>Spotify</h1><p>Connected! The slideshow "
 			"now shows what's playing, and its buttons work. Back to the slideshow in 3 seconds...</p>")
 
+	def read_json(self) -> dict:
+		request = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+		if not isinstance(request, dict):
+			raise ValueError("expected a JSON object")
+		return request
+
+	def send_menu_command(self) -> None:
+		"""{"command": "settings", "value": {"muted": true}} -> the menu again, and a message."""
+		app = self.server.app
+		try:
+			request = self.read_json()
+			message = menu.command(app, str(request.get("command", "")), request.get("value"))
+		except ValueError as error:
+			self.send_error(HTTPStatus.BAD_REQUEST, str(error))
+			return
+		self.send_json({"menu": menu.menu_data(app), "message": message})
+
 	def send_action(self) -> None:
 		"""{"provider": "connections", "action": "submit", "values": [...]} -> the redrawn slide."""
 		try:
-			request = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+			request = self.read_json()
 			name, action, values = str(request.get("provider", "")), str(request.get("action", "")), request.get("values", [])
 			if not isinstance(values, list):
 				raise ValueError("values must be a list")
@@ -304,8 +327,7 @@ class Handler(BaseHTTPRequestHandler):
 		now = app.clock.now()
 		slide = None
 		if name in app.providers:
-			slides = app.providers[name].slides(now)
-			slide = slides[0] if slides else None
+			slide = app.providers[name].shortcut_slide(now)   # e.g. Spotify also when nothing plays
 		elif name in app.takeovers:
 			slide = app.takeovers[name].slide(now)
 		if slide is None:

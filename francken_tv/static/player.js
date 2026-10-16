@@ -4,7 +4,8 @@
 //
 // Keys: right/down = next, left/up = previous, space = pause (or the slide's data-space-action,
 // e.g. pausing the music on the Spotify slide), m = read quotes aloud on/off,
-// number keys = jump to a slide type, e.g. 1 = Daily puzzles (see [shortcuts] in config.toml).
+// number keys = jump to a slide type, e.g. 1 = Daily puzzles (see [shortcuts] in config.toml),
+// Esc = the menu: previews of those slide types, Settings and Power (see "The menu" below).
 // Interactive slides (the puzzle): clicking pauses the slideshow there; see "Interactive slides" below.
 // Messages from the server (e.g. Ctrl+M / Ctrl+R in the terminal) appear in the corner.
 
@@ -34,6 +35,7 @@ async function getJson(url, options) {
 
 async function show(slide, { canRefresh = true } = {}) {
 	const mine = ++showCount;
+	closeMenu(false);   // e.g. bieruur starts while the menu is open
 	stopInteracting();
 	clearTimeout(nextTimer);
 	clearInterval(refreshTimer);
@@ -315,6 +317,8 @@ document.addEventListener("mousemove", () => {
 });
 
 document.addEventListener("keydown", async (event) => {
+	if (menuIsOpen()) return menuKey(event);
+	if (event.key === "Escape") return openMenu();
 	// On a slide you can type on, keys go to the game instead of the shortcuts below.
 	const slide = interactiveSlide();
 	if (slide && slide.querySelector("[data-input-text]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
@@ -359,6 +363,279 @@ document.addEventListener("keydown", async (event) => {
 		checkNotice();   // the server's confirmation shows up as a notice
 	}
 });
+
+// ---- The menu --------------------------------------------------------------------------------
+// Esc opens it: previews of the slide types in [shortcuts] (config.toml), Settings and Power.
+// What it shows comes from the server (francken_tv/menu.py), and choices go back there.
+// While it's open the slideshow waits; Esc again (or a minute without input) continues it.
+
+const menu = document.getElementById("menu");
+const MENU_IDLE_SECONDS = 60;
+let menuData = null;
+let menuPage = "overview";
+let menuIdleTimer = null;
+let menuTakeoverTimer = null;
+let confirming = null;     // a button that needs a second press (start a puzzle over, shut down)
+let confirmTimer = null;
+
+const ICONS = {
+	settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>',
+	power: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>',
+	restart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+};
+
+const escapeHtml = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function menuIsOpen() {
+	return !menu.hidden;
+}
+
+async function openMenu() {
+	try {
+		menuData = await getJson("/api/menu");
+	} catch (error) {
+		console.error(error);
+		return showToast("The menu is not available right now");
+	}
+	showCount += 1;   // a slide that is still loading doesn't appear (and close the menu)
+	clearTimeout(nextTimer);
+	clearTimeout(idleTimer);
+	clearInterval(menuTakeoverTimer);
+	menuTakeoverTimer = setInterval(checkTakeover, 5000);   // bieruur still starts on time
+	menu.hidden = false;
+	showMenuPage("overview");
+}
+
+// resume = false when a slide was chosen in the menu: that slide sets its own timer.
+function closeMenu(resume = true) {
+	if (!menuIsOpen()) return;
+	menu.hidden = true;
+	menu.innerHTML = "";   // also stops the previews
+	clearTimeout(menuIdleTimer);
+	clearInterval(menuTakeoverTimer);
+	if (!resume) return;
+	const slide = interactiveSlide();
+	if (interacting && slide) keepPaused(idleSeconds(slide));
+	else if (!paused && current) nextTimer = setTimeout(next, current.seconds * 1000);
+}
+
+function menuActivity() {
+	clearTimeout(menuIdleTimer);
+	menuIdleTimer = setTimeout(() => closeMenu(), MENU_IDLE_SECONDS * 1000);
+}
+
+// focus: the data-focus of the element to select, e.g. the button that was just pressed.
+function showMenuPage(page, focus) {
+	const entering = page !== menuPage || !menu.firstElementChild;   // a new page zooms in; a redraw after a change doesn't
+	menuPage = page;
+	confirming = null;
+	menu.innerHTML = `<div class="menu-panel menu-page-${page}${entering ? " menu-enter" : ""}">${menuPages[page](menuData)}</div>`;
+	const target = (focus && menu.querySelector(`[data-focus="${focus}"]:not([disabled])`))
+		|| menu.querySelector("[data-focus]:not([disabled]):not(.menu-back)");
+	target?.focus();
+	menuActivity();
+}
+
+const menuPages = {
+	overview: (data) => `
+		<div class="menu-cards">${data.previews.map((preview) => `
+			<button class="menu-card" data-focus="slide-${escapeHtml(preview.key)}" data-menu="jump"
+				data-value="${escapeHtml(preview.key)}"${preview.available ? "" : " disabled"}>
+				<span class="menu-preview">${preview.available
+					? `<iframe src="/preview/${encodeURIComponent(preview.name)}" tabindex="-1"></iframe>`
+					: `<span>${escapeHtml(preview.empty)}</span>`}</span>
+				<span class="menu-card-title"><kbd>${escapeHtml(preview.key)}</kbd>${escapeHtml(preview.title)}</span>
+			</button>`).join("")}
+		</div>
+		<div class="menu-actions">
+			<button class="menu-button" data-focus="settings" data-menu="page" data-value="settings">${ICONS.settings}Settings</button>
+			${data.power.length ? `<button class="menu-button" data-focus="power" data-menu="page" data-value="power">${ICONS.power}Power</button>` : ""}
+		</div>
+		<p class="menu-hint">Arrow keys to choose &middot; Enter to open &middot; Esc to close</p>`,
+
+	settings: (data) => {
+		const settings = data.settings;
+		const toggle = (name, label, note = "") => `
+			<button class="menu-row menu-toggle" role="switch" aria-checked="${settings[name]}" data-focus="${name}"
+				data-menu="toggle" data-value="${name}">
+				<span>${label}${note && `<small>${note}</small>`}</span><span class="menu-switch"></span>
+			</button>`;
+		return `
+		<header class="menu-header">
+			<button class="menu-back" data-focus="back" data-menu="page" data-value="overview">&larr; Back</button>
+			<h1>Settings</h1>
+		</header>
+		<div class="menu-settings">
+			<div class="menu-column">
+				<section>
+					<h2>Sound</h2>
+					${toggle("muted", "Mute all sound", "Everything on the TV PC: Spotify, greetings, quotes and the bieruur song")}
+					${toggle("quotes_aloud", "Read quotes aloud")}
+					${toggle("greetings", "Greet people who walk in")}
+					<div class="menu-row">
+						<span>Volume<small>Of everything, Spotify too</small></span>
+						<span class="menu-stepper">
+							<button data-focus="volume-down" data-menu="volume" data-value="-10" aria-label="Quieter"${settings.volume <= 0 ? " disabled" : ""}>&minus;</button>
+							<output>${settings.volume}%</output>
+							<button data-focus="volume-up" data-menu="volume" data-value="10" aria-label="Louder"${settings.volume >= 100 ? " disabled" : ""}>+</button>
+						</span>
+					</div>
+				</section>
+				<section>
+					<h2>Today's puzzles</h2>
+					${data.puzzles.map((puzzle) => `
+					<div class="menu-row">
+						<span>${escapeHtml(puzzle.title)}<small>${escapeHtml(puzzle.status)}</small></span>
+						<button class="menu-small-button" data-focus="reset-${puzzle.name}" data-menu="reset" data-value="${puzzle.name}"
+							data-confirm="Sure?"${puzzle.state === "new" ? " disabled" : ""}>Start over</button>
+					</div>`).join("") || '<p class="menu-note">No puzzles today (yet).</p>'}
+					${data.puzzles.length > 1 ? `<button class="menu-small-button menu-wide" data-focus="reset-all" data-menu="reset" data-value=""
+						data-confirm="Sure? All of them?"${data.puzzles.every((puzzle) => puzzle.state === "new") ? " disabled" : ""}>Start all puzzles over</button>` : ""}
+				</section>
+			</div>
+			<div class="menu-column">
+				<section>
+					<h2>Slides</h2>
+					<div class="menu-row">
+						<span>Speed</span>
+						<span class="menu-choices">${data.speeds.map((speed) => `
+							<button data-focus="speed-${speed}" data-menu="speed" data-value="${speed}" aria-pressed="${speed === settings.speed}">${speed}&times;</button>`).join("")}
+						</span>
+					</div>
+					<p class="menu-note">2&times; = every slide is shown half as long</p>
+					<h3>Shown in the slideshow</h3>
+					<div class="menu-chips">${data.slide_types.map((type) => `
+						<button class="menu-chip" data-focus="type-${type.name}" data-menu="slide_type" data-value="${type.name}"
+							aria-pressed="${!settings.hidden.includes(type.name)}">${escapeHtml(type.title)}</button>`).join("")}
+					</div>
+				</section>
+				<section>
+					<h2>Other</h2>
+					<button class="menu-row menu-row-button" data-focus="reload-devices" data-menu="reload_devices">
+						<span>Reload devices.json<small>After adding someone's phone, so the chart and greetings know them</small></span>
+					</button>
+				</section>
+			</div>
+		</div>`;
+	},
+
+	power: () => `
+		<header class="menu-header">
+			<button class="menu-back" data-focus="back" data-menu="page" data-value="overview">&larr; Back</button>
+			<h1>Power</h1>
+		</header>
+		<div class="menu-power">
+			<button class="menu-power-button" data-focus="shutdown" data-menu="power" data-value="shutdown" data-confirm="Press again to shut down">${ICONS.power}<span>Shut down</span></button>
+			<button class="menu-power-button" data-focus="restart" data-menu="power" data-value="restart" data-confirm="Press again to restart">${ICONS.restart}<span>Restart</span></button>
+		</div>
+		<p class="menu-hint">Shuts down or restarts the TV PC</p>`,
+};
+
+async function menuChoose(button) {
+	menuActivity();
+	const { menu: action, value } = button.dataset;
+	if (button.dataset.confirm && confirming !== button) {   // the first press only asks "sure?"
+		confirming?.classList.remove("confirming");
+		confirming = button;
+		button.classList.add("confirming");
+		clearTimeout(confirmTimer);
+		confirmTimer = setTimeout(() => {
+			button.classList.remove("confirming");
+			if (confirming === button) confirming = null;
+		}, 4000);
+		return;
+	}
+	const settings = menuData.settings;
+	if (action === "jump") {
+		closeMenu(false);
+		jumpTo(value);
+	} else if (action === "page") {
+		showMenuPage(value, menuPage);   // back to the overview: select the button of the page we came from
+	} else if (action === "toggle") {
+		sendMenu(button, "settings", { [value]: !settings[value] });
+	} else if (action === "volume") {
+		sendMenu(button, "settings", { volume: settings.volume + Number(value) });
+	} else if (action === "speed") {
+		sendMenu(button, "settings", { speed: Number(value) });
+	} else if (action === "slide_type") {
+		const hidden = settings.hidden.includes(value) ? settings.hidden.filter((name) => name !== value) : [...settings.hidden, value];
+		sendMenu(button, "settings", { hidden });
+	} else if (action === "reset") {
+		sendMenu(button, "reset_puzzle", value || null);
+	} else if (action === "reload_devices" || action === "power") {
+		sendMenu(button, action, value ?? null);
+	}
+}
+
+async function sendMenu(button, command, value) {
+	button.classList.add("busy");
+	try {
+		const answer = await getJson("/api/menu", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ command, value }),
+		});
+		menuData = answer.menu;
+		if (menuIsOpen() && menuPage !== "overview") showMenuPage(menuPage, button.dataset.focus);
+		if (answer.message) showToast(answer.message);
+	} catch (error) {
+		console.error(error);
+		showToast("That didn't work, sorry");
+	} finally {
+		button.classList.remove("busy");
+	}
+}
+
+function menuKey(event) {
+	menuActivity();
+	if (event.key === "Escape") {
+		event.preventDefault();
+		if (menuPage === "overview") closeMenu();
+		else showMenuPage("overview", menuPage);
+	} else if (event.key.startsWith("Arrow")) {
+		event.preventDefault();
+		moveMenuFocus(event.key);
+	} else if (menuPage === "overview" && /^[0-9]$/.test(event.key)) {
+		closeMenu(false);
+		jumpTo(event.key);
+	} else if (!["Enter", " ", "Tab"].includes(event.key)) {
+		event.preventDefault();   // Enter and space press the selected button; other keys do nothing here
+	}
+}
+
+// The arrow keys select the nearest button in that direction, like a TV remote.
+function moveMenuFocus(key) {
+	const items = [...menu.querySelectorAll("[data-focus]:not([disabled])")];
+	const from = items.includes(document.activeElement) ? document.activeElement : null;
+	if (!from) return items[0]?.focus();
+	const [dx, dy] = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key];
+	const a = from.getBoundingClientRect();
+	let best = null;
+	let bestScore = Infinity;
+	for (const item of items) {
+		const b = item.getBoundingClientRect();
+		const x = b.left + b.width / 2 - (a.left + a.width / 2);
+		const y = b.top + b.height / 2 - (a.top + a.height / 2);
+		const along = x * dx + y * dy;              // how far in the arrow's direction
+		if (item === from || along <= 1) continue;
+		const score = along + 2 * Math.abs(x * dy + y * dx);   // ...and how far off to the side
+		if (score < bestScore) {
+			best = item;
+			bestScore = score;
+		}
+	}
+	if (best) {
+		best.focus();
+		best.scrollIntoView({ block: "nearest" });
+	}
+}
+
+menu.addEventListener("click", (event) => {
+	if (event.target === menu) return closeMenu();   // a click next to the menu
+	const button = event.target.closest("[data-menu]");
+	if (button && !button.disabled) menuChoose(button);
+});
+menu.addEventListener("mousemove", menuActivity);
 
 next();
 checkNotice();

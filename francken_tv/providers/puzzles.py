@@ -3,6 +3,8 @@
 Tapping a half opens that puzzle on the spot; its "All puzzles" button comes back here.
 To add a puzzle: write a provider with a `title`, a `status(now)` method and an interactive
 slide (see connections.py), create it in app.py and add its name to puzzles.order in config.toml.
+Like the others, it keeps today's game in `self.game` and saves it at `self.state_path`, so it can
+be reset from the menu (Esc -> Settings).
 """
 
 from __future__ import annotations
@@ -48,6 +50,7 @@ def save_state(path: Path | None, day: date, state: dict) -> None:
 
 class PuzzlesProvider(Provider):
 	name = "puzzles"
+	title = "Daily puzzles"
 
 	def __init__(self, settings: dict, puzzles: list[Provider], default_seconds: float) -> None:
 		self.puzzles = puzzles
@@ -81,6 +84,18 @@ class PuzzlesProvider(Provider):
 		# The round is planned ahead, so the cards are worked out again when the slide is shown:
 		# a puzzle solved (or a new day's puzzle downloaded) meanwhile shows up right away.
 		return [Slide("puzzles.html", self.seconds, {"cards": cards}, update=lambda now: {"cards": self.cards(now) or cards})]
+
+	def reset(self, name: str | None = None) -> list[str]:
+		"""Start today's game of one puzzle (or of all of them, name=None) over. Returns their titles."""
+		reset = []
+		for puzzle in self.puzzles:
+			if name is None or puzzle.name == name:
+				puzzle.game = None   # todays_game() makes a new one...
+				if puzzle.state_path is not None:
+					puzzle.state_path.unlink(missing_ok=True)   # ...without the saved game
+				reset.append(puzzle.title)
+				log.info("Reset today's %s", puzzle.name)
+		return reset
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
 		"""'open' a puzzle (values = [its name]) or go 'back' to this overview."""

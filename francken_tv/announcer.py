@@ -34,6 +34,8 @@ class Announcer:
 		self.cache_folder = cache_folder
 		self.cache_folder.mkdir(parents=True, exist_ok=True)
 		self.quotes_enabled = False   # QuoteProvider sets this from quote.narrate in config.toml
+		self.greetings_enabled = True
+		self.muted = False            # no sound at all (the menu: Esc -> Settings)
 		self.speech_queue: queue.Queue[tuple[str, bool]] = queue.Queue()
 		self.synthesize_lock = threading.Lock()
 		self.preparer = ThreadPoolExecutor(max_workers=1, thread_name_prefix="tts-prepare")
@@ -52,10 +54,11 @@ class Announcer:
 	# Public API -------------------------------------------------------------
 
 	def greet(self, text: str) -> None:
-		self.speech_queue.put((text, False))
+		if self.greetings_enabled and not self.muted:
+			self.speech_queue.put((text, False))
 
 	def say_quote(self, text: str) -> None:
-		if self.quotes_enabled:
+		if self.quotes_enabled and not self.muted:
 			self.speech_queue.put((text, True))
 
 	def prepare(self, text: str) -> None:
@@ -67,8 +70,13 @@ class Announcer:
 		log.info("Reading quotes aloud %s", "enabled" if self.quotes_enabled else "disabled")
 		return self.quotes_enabled
 
+	def mute(self, muted: bool) -> None:
+		self.muted = muted
+		if muted:
+			self.stop_music()
+
 	def play_music(self, path: Path) -> None:
-		if self.player is None:
+		if self.player is None or self.muted:
 			return
 		self.stop_music()
 		log.info("Playing %s", path.name)
@@ -83,6 +91,9 @@ class Announcer:
 	def speech_loop(self) -> None:
 		while True:
 			text, is_quote = self.speech_queue.get()
+			if self.muted:   # muted while it was waiting its turn
+				self.speech_queue.task_done()
+				continue
 			log.info("Saying: %s", text)
 			try:
 				path = self.synthesize(text)

@@ -47,6 +47,7 @@ def read_quotes(csv_text: str) -> list[dict[str, str]]:
 
 class QuoteProvider(Provider):
 	name = "quote"
+	title = "Quotes"
 
 	def __init__(self, settings: dict, csv_path: Path, announcer: Announcer, default_seconds: float) -> None:
 		self.sheet_id = settings.get("sheet_id")

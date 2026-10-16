@@ -1,4 +1,8 @@
-{# Who spent the most time in the room this week. The bars grow in one after another. #}
+{#
+	Who spent the most time in the room this week. The bars look like each person's bar in the
+	activity chart (templates/bar.html), without pictures, and grow in one after another.
+#}
+{% from "bar.html" import bar as draw_bar %}
 <div class="slide leaderboard-slide">
 	<h1>This week in the Francken room</h1>
 	<ol>
@@ -6,7 +10,9 @@
 		<li class="place-{{ row.place }}" style="--i: {{ loop.index0 }}">
 			<span class="leaderboard-place">{{ row.place }}</span>
 			<span class="leaderboard-name">{{ row.name }}</span>
-			<span class="leaderboard-track"><span class="leaderboard-bar" style="width: {{ row.width }}%; background: {{ row.background }}"></span></span>
+			<div class="leaderboard-track">
+				{{ draw_bar(row, "width: %s%%; --delay: %.2fs; --grow: 1.4s;" | format(row.width, 0.9 + loop.index0 * 0.15)) }}
+			</div>
 			<span class="leaderboard-time">{{ row.time }}</span>
 			<span class="leaderboard-days">{{ row.days }} {{ "day" if row.days == 1 else "days" }}</span>
 		</li>

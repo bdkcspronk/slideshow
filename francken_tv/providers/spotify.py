@@ -201,6 +201,8 @@ def minutes(ms: int) -> str:
 
 class SpotifyProvider(Provider):
 	name = "spotify"
+	title = "Spotify"
+	nothing_to_show = "Spotify is not connected (see README.md)"
 
 	def __init__(self, settings: dict, credentials_path: Path, default_seconds: float) -> None:
 		self.credentials_path = credentials_path

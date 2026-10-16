@@ -33,6 +33,8 @@ class Provider:
 	"""Contributes zero or more slides to every round of the slideshow."""
 
 	name = ""
+	title = ""                             # shown in the menu (Esc); the name if empty
+	nothing_to_show = "Nothing to show right now"   # in the menu and after a shortcut, when slides() is empty
 	refresh_seconds: float | None = None   # how often refresh() runs; None = never
 
 	def refresh(self, now: datetime) -> None:

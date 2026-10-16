@@ -163,6 +163,30 @@ def css_colour(colour: str | list) -> str:
 	return colour if isinstance(colour, str) else f"linear-gradient(90deg, {', '.join(colour)})"
 
 
+def bar_look(style: MarkerStyle, width: float, seed: str) -> dict:
+	"""How a person's bar looks (templates/slides/bar.html): its shape, colour, stripes, glow and beer.
+	Shared by the activity chart and the leaderboard. width: in % of the chart, for the bubbles."""
+	look = {"shape": style.shape.replace(" ", "-"), "glow": style.glow, "background": css_colour(style.color)}
+	if style.glow:
+		look["glow_colour"] = style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color
+	if style.shape in ("striped", "board"):
+		look["stripes"] = "#0057B8" if style.shape == "board" else css_colour(style.stripe_color)
+		look["stripe_width"] = f"{max(4, style.stripe_thickness * 1.5):.1f}px" if style.stripe_thickness else None
+	if style.shape == "beer":
+		look["foam"] = f"min(28%, {style.beer_foam_max_width:.0f}px)" if style.beer_foam_max_width else "28%"
+		rng = random.Random(seed)   # the same bubbles every time this bar is drawn
+		# Bubbles drift from the left towards the foam on the right, at roughly the same speed in
+		# every bar (so longer bars take longer). The negative wait starts each one somewhere along
+		# the way, so the bar is full of bubbles straight away.
+		travel = max(1.5, width * 0.13)
+		look["bubbles"] = []
+		for _ in range(max(2, min(14, round(width * 1.5)))):
+			duration = round(travel * rng.uniform(0.8, 1.25), 2)
+			look["bubbles"].append({"y": round(rng.uniform(12, 72), 1), "size": round(rng.uniform(0.7, 1.0) * 24, 1),
+				"duration": duration, "wait": round(-rng.uniform(0, duration), 2)})
+	return look
+
+
 def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datetime) -> dict | None:
 	"""Everything templates/slides/presence.html needs, or None if nobody was seen today."""
 	data = prepare(sightings, devices)
@@ -188,8 +212,8 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 		style = bar.style
 		left, width = percent(bar.start), max(percent(bar.end) - percent(bar.start), 0.2)
 		view = {
-			"row": bar.row, "left": left, "width": width, "shape": style.shape.replace(" ", "-"),
-			"glow": style.glow, "background": css_colour(style.color),
+			**bar_look(style, width, seed=f"{bar.row}-{bar.start}"),
+			"row": bar.row, "left": left, "width": width,
 			# Grow at a steady speed from left to right, like time playing back.
 			"delay": round(GROW_STARTS + left / 100 * GROW_SECONDS, 2),
 			"grow": round(max(width / 100 * GROW_SECONDS, 0.25), 2),
@@ -200,23 +224,6 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			group_width = max(group_right - group_left, width)
 			view["gradient_size"] = round(group_width / width * 100, 2)
 			view["gradient_position"] = round((left - group_left) / (group_width - width) * 100, 2) if group_width > width else 0
-		if style.glow:
-			view["glow_colour"] = style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color
-		if style.shape in ("striped", "board"):
-			view["stripes"] = "#0057B8" if style.shape == "board" else css_colour(style.stripe_color)
-			view["stripe_width"] = f"{max(4, style.stripe_thickness * 1.5):.1f}px" if style.stripe_thickness else None
-		if style.shape == "beer":
-			view["foam"] = f"min(28%, {style.beer_foam_max_width:.0f}px)" if style.beer_foam_max_width else "28%"
-			rng = random.Random(f"{bar.row}-{bar.start}")   # the same bubbles every time this bar is drawn
-			# Bubbles drift from the left towards the foam on the right, at roughly the same speed in
-			# every bar (so longer bars take longer). The negative wait starts each one somewhere along
-			# the way, so the bar is full of bubbles straight away.
-			travel = max(1.5, width * 0.13)
-			view["bubbles"] = []
-			for _ in range(max(2, min(14, round(width * 1.5)))):
-				duration = round(travel * rng.uniform(0.8, 1.25), 2)
-				view["bubbles"].append({"y": round(rng.uniform(12, 72), 1), "size": round(rng.uniform(0.7, 1.0) * 24, 1),
-					"duration": duration, "wait": round(-rng.uniform(0, duration), 2)})
 		bars.append(view)
 
 	hour = start.replace(minute=0, second=0, microsecond=0)
