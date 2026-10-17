@@ -113,14 +113,13 @@ Premium, and music already playing on some device. One-time setup:
    the Spotify account whose music should be shown. The slideshow adds a refresh token to that
    file (no password is stored). It keeps working after restarts. Connected before changing
    playlists was possible? Log in once more, so Spotify allows it.
-4. So music plays from the TV PC itself (not from a Spotify tab somewhere): install
-   [spotifyd](https://github.com/Spotifyd/spotifyd/releases) as `~/.local/bin/spotifyd` (the
-   `linux-x86_64-default` build), log it in once with
-   `~/.local/bin/spotifyd authenticate --config-path deploy/spotifyd.conf --cache-path data/spotifyd`
-   (open the link it prints on the TV PC), then
-   `cp deploy/francken-tv-spotifyd.service ~/.config/systemd/user/ && systemctl --user enable --now francken-tv-spotifyd`.
-   The PC is then a Spotify speaker called "Francken TV"; when nothing plays, the slide starts music
-   there, and "Play on TV" moves music playing elsewhere to it.
+4. So music plays from the PC itself (not from a Spotify tab somewhere): `deploy/install_spotifyd.sh`
+   installs [spotifyd](https://github.com/Spotifyd/spotifyd) as `~/.local/bin/spotifyd` and logs it
+   in once (open the link it prints on that PC; `--login` logs in again). The TV PC runs it with
+   `francken-tv-spotifyd.service` (see "Running on the TV PC"); elsewhere `start.sh` starts it (log:
+   `data/spotifyd.log`). The PC is then a Spotify speaker called "Francken TV"; when nothing plays,
+   the slide starts music there, and "Play on TV" moves music playing elsewhere to it. Without it,
+   songs only play when a Spotify app somewhere is already playing.
 
 ## Updating a PC that ran the old slideshow
 
@@ -139,9 +138,10 @@ sudo usermod -aG dialout $USER                      # serial port access for the
 git clone <this repo> ~/slideshow && cd ~/slideshow
 python3 -m venv --system-site-packages .venv        # uses the apt packages above
 .venv/bin/pip install piper-tts tomli               # text-to-speech; tomli is only needed on Python 3.10
+deploy/install_spotifyd.sh                          # the "Francken TV" Spotify speaker; open the login link it prints
 mkdir -p ~/.config/systemd/user && cp deploy/*.service ~/.config/systemd/user/
 systemctl --user daemon-reload
-systemctl --user enable --now francken-tv francken-tv-sniffer francken-tv-kiosk
+systemctl --user enable --now francken-tv francken-tv-sniffer francken-tv-kiosk francken-tv-spotifyd
 sudo loginctl enable-linger $USER                   # keep running without anyone logged in
 ```
 

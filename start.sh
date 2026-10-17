@@ -41,6 +41,17 @@ else
 	echo "No sniffer on $SERIAL_PORT: skipping presence tracking and greetings."
 fi
 
+# The "Francken TV" Spotify speaker, unless its service already runs it (TV PC).
+SPOTIFYD="$HOME/.local/bin/spotifyd"
+if systemctl --user is-active --quiet francken-tv-spotifyd 2>/dev/null; then
+	:
+elif [ -x "$SPOTIFYD" ] && [ -s data/spotifyd/oauth/credentials.json ]; then
+	"$SPOTIFYD" --no-daemon --config-path deploy/spotifyd.conf --cache-path data/spotifyd >data/spotifyd.log 2>&1 &
+	pids+=($!)
+else
+	echo "No Spotify speaker: songs only play on a Spotify app that's already playing. Install it with deploy/install_spotifyd.sh."
+fi
+
 case "$browser" in
 	kiosk)
 		deploy/kiosk.sh "$URL" &
