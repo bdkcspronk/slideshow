@@ -7,3 +7,4 @@ config/devices.json
 media/
 firmware/.pio/
 .venv/
+*.csv
