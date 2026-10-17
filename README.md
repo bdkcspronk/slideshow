@@ -9,6 +9,7 @@ The slideshow on the TV in the Francken room. It shows:
 | A photo from one of the last 3 events | Nextcloud `images/albums/` | `providers/event_photos.py` |
 | Who was in the room today (animated chart) | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
 | This week's leaderboard: most time in the room | the ESP32 sniffer | `providers/presence.py` |
+| Second-hand books for sale: three at a time, as 3D books flying onto a shelf, with title and price | professorfrancken.nl/study/books, covers from openlibrary.org | `providers/books.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing, with today's status; tap one to play it | nytimes.com, catfishing.net | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py` |

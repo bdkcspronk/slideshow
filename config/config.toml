@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "quote", "bieruur_countdown"]
+order = ["images", "activities", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
@@ -42,6 +42,13 @@ url = "https://professorfrancken.nl/association/activities"
 max_events = 10
 refresh_minutes = 30
 seconds = 15
+
+[books]
+# Second-hand books for sale on the website: a few per slide, the next few in the next round.
+url = "https://professorfrancken.nl/study/books"
+books_per_slide = 3
+seconds = 15
+refresh_hours = 6
 
 [event_photos]
 server = "https://nextcloud.professorfrancken.nl"

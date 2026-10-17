@@ -1,0 +1,39 @@
+<div class="slide books-slide">
+	<h1>Second Hand Books</h1>
+	{# The books slide in from the right one just after the other (--i), turning, and land on the
+	   shelf with their title and price below it. #}
+	<div class="books-row">
+		{% for book in books %}
+		<div class="book-card" style="--i: {{ loop.index0 }}; --hue: {{ book.hue }}">
+			<div class="book-stage">
+				<div class="book-sway">
+					<div class="book-3d">
+						<div class="book-front">
+							{% if book.cover %}<img src="{{ book.cover }}" alt="">{% else %}
+							<div class="book-drawn">
+								<span class="book-drawn-title">{{ book.title }}</span>
+								<span class="book-drawn-authors">{{ book.authors }}</span>
+							</div>
+							{% endif %}
+						</div>
+						<div class="book-back"></div>
+						<div class="book-spine"></div>
+						<div class="book-pages"></div>
+						<div class="book-top"></div>
+					</div>
+				</div>
+				<div class="book-shadow"></div>
+			</div>
+			<div class="book-text">
+				<div class="book-title">{{ book.title }}</div>
+				{% if book.authors %}<div class="book-authors">{{ book.authors }}</div>{% endif %}
+				<div class="book-price">
+					<span>{% if book.copies > 1 %}<small>from</small> {% endif %}{{ book.price }}</span>
+					{% if book.copies > 1 %}<small>{{ book.copies }} copies</small>{% endif %}
+				</div>
+			</div>
+		</div>
+		{% endfor %}
+		<div class="books-shelf"></div>
+	</div>
+</div>
