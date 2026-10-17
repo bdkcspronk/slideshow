@@ -133,7 +133,7 @@ Then follow the steps below (venv, piper) and start it with `./start.sh --fullsc
 ## Running on the TV PC
 
 ```sh
-sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial python3-venv ffmpeg chromium
+sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial python3-venv ffmpeg firefox
 sudo usermod -aG dialout $USER                      # serial port access for the sniffer; log in again after
 git clone <this repo> ~/slideshow && cd ~/slideshow
 python3 -m venv --system-site-packages .venv        # uses the apt packages above
@@ -148,7 +148,8 @@ sudo loginctl enable-linger $USER                   # keep running without anyon
 Logs: `journalctl --user -u francken-tv -f` (or `-u francken-tv-sniffer`).
 After changing `config.toml`: `systemctl --user restart francken-tv`.
 Closed the full-screen slideshow with Alt+F4? It stays closed; bring it back with `systemctl --user start francken-tv-kiosk`
-(`stop` to close it from a terminal).
+(`stop` to close it from a terminal). Starting `francken-tv` also opens it, and starts the Spotify speaker
+(`francken-tv-spotifyd`); stopping `francken-tv` stops the speaker too.
 
 To import the logs of the old sniffer: `python3 -m francken_tv.sniffer --import filtered_output.jsonl`.
 

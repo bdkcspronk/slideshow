@@ -24,6 +24,13 @@ for arg in "$@"; do
 	esac
 done
 
+if systemctl --user is-active --quiet francken-tv 2>/dev/null; then
+	echo "The slideshow already runs as a service (francken-tv, TV PC): open $URL,"
+	echo "or 'systemctl --user start francken-tv-kiosk' for full screen. To run it from here instead:"
+	echo "  systemctl --user stop francken-tv francken-tv-sniffer"
+	exit 1
+fi
+
 pids=()
 stop() {
 	echo
