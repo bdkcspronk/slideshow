@@ -1,0 +1,33 @@
+{#
+	catfishing.net's archive as a month calendar (CatfishingProvider.archive_slide() in
+	providers/catfishing.py): every day since July 2024, marked done (with the score) or started, from
+	the history of every day played on this TV. Tapping a day plays it; the arrows change the month.
+#}
+<div class="slide catfishing-slide catfishing-archive" data-interactive data-idle-seconds="240" data-provider="catfishing">
+	<header class="catfishing-header">
+		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
+		<h1>Catfishing archive</h1>
+		<button class="puzzle-back" data-action="today">Today's game</button>
+		<div class="catfishing-archive-totals"><b>{{ done }}</b> of {{ days }} days played{% if started %} &middot; <b>{{ started }}</b> started{% endif %}</div>
+	</header>
+	<div class="catfishing-month">
+		<button class="puzzle-back" data-action="archive" data-value="{{ previous }}"{% if not previous %} disabled{% endif %} aria-label="Previous month">&lsaquo;</button>
+		<h2>{{ month.strftime("%B %Y") }}</h2>
+		<button class="puzzle-back" data-action="archive" data-value="{{ next }}"{% if not next %} disabled{% endif %} aria-label="Next month">&rsaquo;</button>
+	</div>
+	{% if error %}<p class="catfishing-archive-error">{{ error }}</p>{% endif %}
+	<div class="catfishing-calendar">
+		{% for name in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] %}<span class="catfishing-weekday">{{ name }}</span>{% endfor %}
+		{% for week in weeks %}{% for day in week %}
+		{% if day.in_month and day.playable %}
+		<button class="catfishing-day {{ day.state }}{{ ' today' if day.today }}" data-action="open_day" data-value="{{ day.date.isoformat() }}">
+			<b>{{ day.date.day }}</b>
+			<span>{% if day.state == "done" %}&#10003; {{ day.text }}{% elif day.state == "playing" %}{{ day.text }}{% elif day.today %}today{% endif %}</span>
+		</button>
+		{% else %}
+		<span class="catfishing-day empty{{ ' outside' if not day.in_month }}">{% if day.in_month %}<b>{{ day.date.day }}</b>{% endif %}</span>
+		{% endif %}
+		{% endfor %}{% endfor %}
+	</div>
+	<p class="catfishing-credit footer">Daily game from catfishing.net &middot; &#10003; done, with the score &middot; 3/10: started</p>
+</div>

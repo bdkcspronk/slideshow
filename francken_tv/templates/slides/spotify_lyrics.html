@@ -1,0 +1,50 @@
+{#
+	The playing song's lyrics (SpotifyProvider.lyrics_view() in providers/spotify.py, from LRCLIB via
+	lyrics.py). Synced lyrics: widgets.js lights up the line being sung and keeps it in view, counting on
+	from progress_seconds; the server redraws the slide when the song changes, pauses or jumps
+	(data-state). Plain lyrics just scroll (touch, mouse wheel, up/down: data-scroll). The buttons send
+	"lyrics" along, so the slide stays this view; "Song" goes back to the normal Spotify slide.
+#}
+<div class="slide spotify-slide spotify-lyrics-slide" data-state="{{ state }}" data-interactive data-provider="spotify"{% if not idle %} data-space-action="toggle"{% endif %}>
+	{% if idle %}
+	<div class="spotify-idle">
+		<h1 class="spotify-title">Nothing playing right now</h1>
+		<div class="spotify-buttons"><button class="spotify-button primary" data-action="back">&larr; Spotify</button></div>
+	</div>
+	{% else %}
+	{% if cover %}<div class="spotify-backdrop" style="background-image: url('{{ cover }}')"></div>{% endif %}
+	<div class="spotify-content">
+		<div class="spotify-lyrics-song">
+			{% if cover %}<img class="spotify-lyrics-cover" src="{{ cover }}" alt="">{% endif %}
+			<h1>{{ title }}</h1>
+			<div class="spotify-artist">{{ artist }}</div>
+			<div class="spotify-controls">
+				<button class="spotify-control" data-action="previous" data-value="lyrics" aria-label="Previous song">
+					<svg viewBox="0 0 24 24"><rect x="4" y="5" width="2.5" height="14" rx="1"/><path d="M20 5.5v13a1 1 0 0 1-1.5.9L8 12.9a1 1 0 0 1 0-1.8l10.5-6.5a1 1 0 0 1 1.5.9z"/></svg>
+				</button>
+				<button class="spotify-control big" data-action="toggle" data-value="lyrics" aria-label="{{ 'Pause' if is_playing else 'Play' }}">
+					{% if is_playing %}<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+					{% else %}<svg viewBox="0 0 24 24"><path d="M7 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.8L8.5 4.6A1 1 0 0 0 7 5.5z"/></svg>{% endif %}
+				</button>
+				<button class="spotify-control" data-action="skip" data-value="lyrics" aria-label="Next song">
+					<svg viewBox="0 0 24 24"><path d="M4 5.5v13a1 1 0 0 0 1.5.9L16 12.9a1 1 0 0 0 0-1.8L5.5 4.6A1 1 0 0 0 4 5.5z"/><rect x="17.5" y="5" width="2.5" height="14" rx="1"/></svg>
+				</button>
+			</div>
+			<button class="spotify-button" data-action="back">&larr; Song</button>
+		</div>
+		{% if lyrics and lyrics.lines %}
+		<div class="spotify-lyrics{{ ' synced' if lyrics.synced }}" data-scroll
+			{%- if lyrics.synced %} data-lyrics data-start="{{ progress_seconds }}"{% if is_playing %} data-playing{% endif %}{% endif %}>
+			{% for line in lyrics.lines %}<p{% if line.time is not none %} data-time="{{ line.time }}"{% endif %}>{{ line.text or "&#9834;" | safe }}</p>{% endfor %}
+		</div>
+		{% else %}
+		<div class="spotify-lyrics-none">
+			{% if lyrics_error %}The lyrics can't be fetched right now; they're tried again in a moment.
+			{% elif lyrics and lyrics.instrumental %}&#9834; Instrumental &#9834;
+			{% else %}No lyrics found for this song.{% endif %}
+		</div>
+		{% endif %}
+	</div>
+	{% endif %}
+	<p class="spotify-lyrics-credit">Lyrics from lrclib.net</p>
+</div>

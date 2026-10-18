@@ -2,7 +2,8 @@
 	What's playing on Spotify (providers/spotify.py). The bar and the clock move on by themselves
 	(CSS, see "Spotify" in style.css). The server is asked every second: a new song or pausing
 	(data-state changes) redraws the slide; the volume bar is updated in place. The buttons send
-	actions to SpotifyProvider.action(); "Search" and "Playlists" open spotify_search.html and spotify_playlists.html.
+	actions to SpotifyProvider.action(); "Lyrics", "Search" and "Playlists" open spotify_lyrics.html,
+	spotify_search.html and spotify_playlists.html.
 	Nothing playing ("idle"): just those two buttons, to start some music on the TV's own speaker.
 	The space bar pauses and resumes the music (data-space-action, see player.js).
 #}
@@ -27,9 +28,9 @@
 				<span class="spotify-label-text">{% if device %}Spotify &middot; <span class="spotify-device">{{ device }}</span>{% else %}Now playing on Spotify{% endif %}</span>
 				{% if not on_speaker %}<button class="spotify-button small" data-action="here">Play on TV</button>{% endif %}
 			</div>
-			<h1 class="spotify-title">{{ title }}</h1>
-			<div class="spotify-artist">{{ artist }}</div>
-			<div class="spotify-album">{{ album }}</div>
+			<h1 class="spotify-title" data-marquee>{{ title }}</h1>
+			<div class="spotify-artist" data-marquee>{{ artist }}</div>
+			<div class="spotify-album" data-marquee>{{ album }}</div>
 			<div class="spotify-progress{{ ' paused' if not is_playing }}" style="--start: {{ elapsed_seconds }}; --total: {{ total_seconds }}; --percent: {{ percent }}%">
 				<div class="spotify-bar"></div>
 			</div>
@@ -61,12 +62,13 @@
 					{% if next.cover %}<img src="{{ next.cover }}" alt="">{% endif %}
 					<div>
 						<div class="spotify-next-label">Up next</div>
-						<div class="spotify-next-title">{{ next.title }}</div>
-						<div class="spotify-next-artist">{{ next.artist }}</div>
+						<div class="spotify-next-title" data-marquee>{{ next.title }}</div>
+						<div class="spotify-next-artist" data-marquee>{{ next.artist }}</div>
 					</div>
 				</div>
 				{% endif %}
 				<div class="spotify-buttons">
+					<button class="spotify-button" data-action="lyrics">Lyrics</button>
 					<button class="spotify-button" data-action="search">Search</button>
 					<button class="spotify-button" data-action="playlists">Playlists</button>
 				</div>

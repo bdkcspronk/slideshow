@@ -10,7 +10,6 @@
 // Messages from the server (e.g. Ctrl+M / Ctrl+R in the terminal) appear in the corner.
 
 const layers = [document.getElementById("layer-a"), document.getElementById("layer-b")];
-const toast = document.getElementById("toast");
 let front = 0;
 let nextTimer = null;
 let refreshTimer = null;
@@ -18,8 +17,6 @@ let paused = false;
 let current = null;
 const history = [];      // recently shown slides, for the left arrow key
 let historyIndex = -1;
-let toastTimer = null;
-let lastNoticeId = null;
 let interacting = false;   // someone is playing an interactive slide
 let idleTimer = null;
 let takeoverTimer = null;
@@ -95,7 +92,7 @@ async function jumpTo(key) {
 		if (response.status === 404) return;   // not a shortcut
 		if (!response.ok) throw new Error(`shortcut ${key}: ${response.status}`);
 		const slide = await response.json();
-		if (slide.message) return showToast(slide.message);
+		if (slide.message) return;   // nothing to show for that key right now
 		history.splice(historyIndex + 1);   // jumping drops the slides ahead after going back
 		history.push(slide);
 		if (history.length > 30) history.shift();
@@ -152,22 +149,6 @@ async function refresh() {
 	}
 }
 
-function showToast(text) {
-	toast.textContent = text;
-	toast.classList.add("visible");
-	clearTimeout(toastTimer);
-	toastTimer = setTimeout(() => toast.classList.remove("visible"), 3000);
-}
-
-async function checkNotice() {
-	try {
-		const notice = await getJson("/api/notice");
-		if (lastNoticeId !== null && notice.id !== lastNoticeId) showToast(notice.text);
-		lastNoticeId = notice.id;   // the first check only remembers, so old messages don't pop up on load
-	} catch (error) {
-		// server not reachable; next() already handles that
-	}
-}
 
 // ---- Interactive slides -----------------------------------------------------------------
 // A slide with data-interactive pauses the slideshow when clicked or typed on.
@@ -286,12 +267,10 @@ async function sendAction(slide, action, values, provider = slide.dataset.provid
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ provider, action, values }),
 	});
-	let messageDelay = 0;
 	if (result.html) {
 		const fresh = new DOMParser().parseFromString(result.html, "text/html");
 		const effect = fresh.querySelector("[data-effect]");
 		if (effect && effects[effect.dataset.effect]) await effects[effect.dataset.effect](slide);
-		messageDelay = parseInt(fresh.querySelector("[data-message-delay]")?.dataset.messageDelay || "0", 10);
 		layers[front].innerHTML = result.html;
 		setupWidgets(layers[front]);
 		const resumeAfter = layers[front].querySelector("[data-resume-after]");
@@ -299,7 +278,6 @@ async function sendAction(slide, action, values, provider = slide.dataset.provid
 	} else if (current && current.refresh) {
 		refresh();   // nothing redrawn (e.g. the volume): show the change now, not at the next check
 	}
-	if (result.message) setTimeout(() => showToast(result.message), messageDelay);   // e.g. after the tiles flip
 }
 
 // Animations that play on the current slide before the redrawn one replaces it.
@@ -342,8 +320,6 @@ function keepPaused(seconds) {
 	if (!interacting) {
 		interacting = true;
 		clearTimeout(nextTimer);
-		const minutes = Math.round(seconds / 60);
-		showToast(`Paused: the slideshow continues after ${minutes === 1 ? "a minute" : minutes + " minutes"} without clicks`);
 		takeoverTimer = setInterval(checkTakeover, 5000);
 	}
 	clearTimeout(idleTimer);
@@ -417,17 +393,16 @@ document.addEventListener("keydown", async (event) => {
 		keepPaused(idleSeconds(slide));
 		const button = slide.querySelector(`[data-action="${slide.dataset.spaceAction}"]`);
 		button?.classList.add("busy");
-		sendAction(slide, slide.dataset.spaceAction, []).finally(() => button?.classList.remove("busy"));
+		const values = button?.dataset.value ? [button.dataset.value] : [];   // what the button sends, e.g. "lyrics" to stay in that view
+		sendAction(slide, slide.dataset.spaceAction, values).finally(() => button?.classList.remove("busy"));
 	} else if (event.key === " ") {
 		paused = !paused;
-		showToast(paused ? "Paused" : "Playing");
 		if (paused) clearTimeout(nextTimer);
 		else if (current) nextTimer = setTimeout(next, current.seconds * 1000);
 	} else if (/^[0-9]$/.test(event.key) && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		jumpTo(event.key);
 	} else if (event.key === "m") {
 		await getJson("/api/narration", { method: "POST" });
-		checkNotice();   // the server's confirmation shows up as a notice
 	}
 });
 
@@ -462,7 +437,7 @@ async function openMenu() {
 		menuData = await getJson("/api/menu");
 	} catch (error) {
 		console.error(error);
-		return showToast("The menu is not available right now");
+		return;   // the menu isn't available right now
 	}
 	showCount += 1;   // a slide that is still loading doesn't appear (and close the menu)
 	clearTimeout(nextTimer);
@@ -644,10 +619,8 @@ async function sendMenu(button, command, value) {
 		});
 		menuData = answer.menu;
 		if (menuIsOpen() && menuPage !== "overview") showMenuPage(menuPage, button.dataset.focus);
-		if (answer.message) showToast(answer.message);
 	} catch (error) {
 		console.error(error);
-		showToast("That didn't work, sorry");
 	} finally {
 		button.classList.remove("busy");
 	}
@@ -705,5 +678,3 @@ menu.addEventListener("click", (event) => {
 menu.addEventListener("mousemove", menuActivity);
 
 next();
-checkNotice();
-setInterval(checkNotice, 1000);

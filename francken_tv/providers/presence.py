@@ -75,8 +75,8 @@ class LeaderboardProvider(Provider):
 		for place, (name, (total, days)) in enumerate(ranking, start=1):
 			device = self.devices.get(mac_of[name])
 			style = parse_style(device.options) if device else MarkerStyle()
-			style = replace(style, color=style.color or generate_bright_color(mac_of[name] or name),
-				shape="rainbow" if style.shape == "nyan cat" else style.shape)   # the same bars as the chart, without pictures
+			# The same bars as the chart (a nyan cat's pixel rainbow too, only without the cat).
+			style = replace(style, color=style.color or generate_bright_color(mac_of[name] or name))
 			width = round(total.total_seconds() / longest * 100, 1)
 			minutes = round(total.total_seconds() / 60)
 			rows.append({

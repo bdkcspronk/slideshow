@@ -7,6 +7,13 @@
 //   map's pin, or an <input type="range">. [data-field-output="name"] shows a field's value,
 //   data-nudge="name" buttons change a range by data-by, and data-needs-fields buttons stay
 //   disabled until every field has a value.
+// - data-marquee: a one-line text that scrolls round and round like a ticker when it's too long to
+//   fit (e.g. Spotify's song, artist and album); one that fits stays put.
+// - data-marquee-up: a list too tall for its box (e.g. a full day in the timetable) slowly scrolls down
+//   to its end, waits, and scrolls back up, over and over; one that fits stays put.
+// - data-lyrics: synced lyrics (Spotify): lines with data-time (seconds into the song). The line being
+//   sung gets .current (lines before it .past) and is kept in view, counting on from data-start
+//   while data-playing is set. The server redraws the slide when the song changes, pauses or jumps.
 
 const maps = new Set();
 
@@ -18,6 +25,9 @@ function setupWidgets(root) {
 		}
 	}
 	root.querySelectorAll("[data-map]").forEach(setupMap);
+	root.querySelectorAll("[data-lyrics]").forEach(setupLyrics);
+	root.querySelectorAll("[data-marquee]").forEach(setupMarquee);
+	root.querySelectorAll("[data-marquee-up]").forEach(setupMarqueeUp);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
 		input.addEventListener("input", () => fieldChanged(input));
 		fieldChanged(input);
@@ -48,6 +58,92 @@ function setupMap(element) {
 		element.dataset.value = `${at.lat.toFixed(6)},${at.lng.toFixed(6)}`;
 		fieldChanged(element);
 	});
+}
+
+function setupMarquee(element) {
+	// <span.marquee-inner><span.marquee-copy><span.marquee-text>the text</span></span>(a second copy)</span>:
+	// the copies scroll left together, and when the first has gone by the second is where it began,
+	// so the loop has no seam. The gap between them is the copies' padding (style.css).
+	const text = document.createElement("span");
+	text.className = "marquee-text";
+	text.append(...element.childNodes);
+	const copy = document.createElement("span");
+	copy.className = "marquee-copy";
+	copy.append(text);
+	const inner = document.createElement("span");
+	inner.className = "marquee-inner";
+	inner.append(copy);
+	element.append(inner);
+	let second = null;
+	const measure = () => {
+		const sliding = text.offsetWidth > element.clientWidth + 2;   // the text doesn't fit
+		element.classList.toggle("marquee", sliding);
+		if (!sliding) {
+			second?.remove();
+			second = null;
+			return;
+		}
+		if (!second) {
+			second = copy.cloneNode(true);
+			second.setAttribute("aria-hidden", "true");
+			inner.append(second);
+		}
+		const distance = copy.offsetWidth;   // one copy and its gap
+		if (element.style.getPropertyValue("--marquee-distance") === `${-distance}px`) return;   // already right
+		element.style.setProperty("--marquee-distance", `${-distance}px`);
+		element.style.setProperty("--marquee-seconds", `${distance / 40}s`);   // 40 px a second
+	};
+	// Measured now, and again once the slide has settled (it's drawn in a hidden layer, and pictures
+	// and fonts can still change the layout).
+	measure();
+	setTimeout(measure, 500);
+	setTimeout(measure, 2000);
+}
+
+function setupMarqueeUp(element) {
+	// <div.marquee-up-inner><div.marquee-up-copy>the list</div></div>, moved up by as much as doesn't fit.
+	const copy = document.createElement("div");
+	copy.className = "marquee-up-copy";
+	copy.append(...element.childNodes);
+	const inner = document.createElement("div");
+	inner.className = "marquee-up-inner";
+	inner.append(copy);
+	element.append(inner);
+	const measure = () => {
+		const hidden = copy.offsetHeight - element.clientHeight;   // how much doesn't fit
+		const sliding = hidden > 2;
+		element.classList.toggle("marquee-up", sliding);
+		if (!sliding || element.style.getPropertyValue("--marquee-distance") === `${-hidden}px`) return;   // nothing to do / already right
+		element.style.setProperty("--marquee-distance", `${-hidden}px`);
+		// 20 px a second while moving (slow, to read along); the waits at both ends are 15% of the time each.
+		element.style.setProperty("--marquee-seconds", `${hidden / 20 / 0.7}s`);
+	};
+	measure();
+	setTimeout(measure, 500);
+	setTimeout(measure, 2000);
+}
+
+function setupLyrics(element) {
+	const lines = [...element.querySelectorAll("[data-time]")];
+	const start = parseFloat(element.dataset.start || "0");
+	const playing = element.hasAttribute("data-playing");
+	const shownAt = performance.now();
+	let current = null;
+	const follow = () => {
+		if (!document.contains(element)) return clearInterval(timer);   // the slide is gone
+		const seconds = start + (playing ? (performance.now() - shownAt) / 1000 : 0);
+		const index = lines.findLastIndex((line) => parseFloat(line.dataset.time) <= seconds + 0.15);
+		const line = lines[index] || null;
+		if (line === current) return;
+		current = line;
+		lines.forEach((other, i) => {
+			other.classList.toggle("current", i === index);
+			other.classList.toggle("past", i < index);
+		});
+		if (line) element.scrollTo({ top: line.offsetTop - element.clientHeight * 0.4, behavior: "smooth" });
+	};
+	const timer = setInterval(follow, 200);
+	follow();
 }
 
 function mapPin(latlng, kind) {

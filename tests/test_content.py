@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from francken_tv.nextcloud import Entry
 from francken_tv.providers.bieruur import BieruurSettings, BieruurSong
 from francken_tv.providers.event_photos import most_recent_albums
-from francken_tv.providers.quote import contains_blocked_word, read_quotes
+from francken_tv.providers.quote import clean_quote, contains_blocked_word, read_quotes
 
 
 class AlbumsTest(unittest.TestCase):
@@ -31,6 +31,16 @@ class QuotesTest(unittest.TestCase):
 	def test_read_quotes_skips_empty_rows(self):
 		quotes = read_quotes('﻿Quote,name\n"Physics is fun",Alice\n,Bob\n')
 		self.assertEqual(quotes, [{"quote": "Physics is fun", "author": "Alice"}])
+
+	def test_quotation_marks_from_the_sheet_are_removed(self):
+		# The slide adds its own quotation marks; people sometimes type them into the sheet too.
+		self.assertEqual(clean_quote('"Physics is fun"'), "Physics is fun")
+		self.assertEqual(clean_quote("“Het is bieruur”"), "Het is bieruur")
+		self.assertEqual(clean_quote('He said "hi" to me'), "He said hi to me")
+		self.assertEqual(clean_quote("'it's fine'"), "it's fine")   # single quotes only around the whole quote
+		self.assertEqual(clean_quote("it's fine"), "it's fine")
+		quotes = read_quotes('﻿Quote,name\n"""Physics is fun""",Alice\n"""""",Bob\n')
+		self.assertEqual(quotes, [{"quote": "Physics is fun", "author": "Alice"}])   # only marks: skipped
 
 	def test_blocked_words_match_whole_words_only(self):
 		self.assertTrue(contains_blocked_word("What the Heck", ["heck"]))

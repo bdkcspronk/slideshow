@@ -62,11 +62,13 @@ class WeatherTest(unittest.TestCase):
 		weather = parse_weather({
 			"current": {"temperature_2m": 11.5, "apparent_temperature": 9.2, "weather_code": 0, "wind_speed_10m": 16.6,
 				"wind_direction_10m": 85, "is_day": 0},
-			"hourly": {"time": ["2026-10-18T20:00"], "temperature_2m": [11.0], "weather_code": [61],
-				"precipitation_probability": [40], "is_day": [0]},
+			"daily": {"time": ["2026-10-18", "2026-10-19"], "temperature_2m_max": [14.2, 12.0], "temperature_2m_min": [6.8, 5.1],
+				"weather_code": [61, 0], "precipitation_probability_max": [40, None]},
 		})
 		self.assertEqual((weather.text, weather.icon, weather.wind_from), ("Clear sky", "🌙", "E"))   # clear at night: a moon
-		self.assertEqual((weather.hours[0].icon, weather.hours[0].rain_chance), ("🌦️", 40))
+		today, tomorrow = weather.days
+		self.assertEqual((today.icon, today.high, today.low, today.rain_chance), ("🌦️", 14.2, 6.8, 40))
+		self.assertEqual((tomorrow.icon, tomorrow.rain_chance), ("☀️", 0))   # the days always get the daytime icon
 
 	def test_rain(self):
 		rain = parse_rain("000|19:10\n077|19:15\n109|19:20\n\n")
@@ -116,6 +118,11 @@ class TimetableTest(unittest.TestCase):
 		self.assertEqual((thermal.kind, thermal.rooms), ("Tutorial", ["5161.0289", "5113.0202 ALC"]))   # two groups: one row
 		self.assertEqual(timetable["BSc 2"][1].course, "Calculus 1")   # shared by both years
 
+	def test_kinds_in_colour_groups(self):
+		group = lambda kind: Lecture(None, None, "", kind, []).group
+		self.assertEqual([group(kind) for kind in ["Lecture", "Tutorial", "Computer practical", "Resit digital", "Group meeting", "Something new"]],
+			["lecture", "tutorial", "practical", "exam", "other", "other"])
+
 	def test_room_label(self):
 		self.assertEqual(room_label({"code": "5161.0289", "displayNameEn": "Collegezaal"}), "5161.0289")
 		self.assertEqual(room_label({"code": "5115.0016", "displayNameEn": "Max Gruberzaal"}), "5115.0016 Max Gruberzaal")
@@ -137,6 +144,11 @@ class InfoProviderTest(unittest.TestCase):
 	def test_parts_take_turns(self):
 		templates = [self.provider.slides(SUNDAY_EVENING)[0].template for _ in range(5)]
 		self.assertEqual(templates, ["info_news.html", "info_weather.html", "info_buses.html", "info_timetable.html", "info_news.html"])
+
+	def test_the_timetable_stays_longer(self):
+		self.provider.turn = 3
+		self.assertEqual(self.provider.slides(SUNDAY_EVENING)[0].seconds, 25)
+		self.assertEqual(self.provider.slides(SUNDAY_EVENING)[0].seconds, 15)   # news
 
 	def test_empty_parts_are_skipped(self):
 		self.provider.departures = []

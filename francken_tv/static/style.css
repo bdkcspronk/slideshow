@@ -45,21 +45,6 @@ body.show-cursor button { cursor: pointer; }
 	box-sizing: border-box;
 }
 
-#toast {
-	position: fixed;
-	right: 2vw;
-	bottom: 2vh;
-	padding: 1.5vh 2vw;
-	border-radius: 0.6vw;
-	background: var(--blue);
-	color: white;
-	font-size: 3.5vh;
-	z-index: 10;
-	opacity: 0;
-	pointer-events: none;   /* also when invisible it sits on top: taps must go through to the buttons below */
-	transition: opacity 0.3s;
-}
-#toast.visible { opacity: 1; }
 /* A tapped button, while its answer is on the way (player.js). */
 [data-action].busy { opacity: 0.55; transform: scale(0.95); transition: opacity 0.1s, transform 0.1s; }
 
@@ -253,7 +238,7 @@ body.show-cursor button { cursor: pointer; }
 .article-text p { margin: 0 0 1.8vh; }
 .article-more { color: var(--red-dark); font-style: italic; }
 
-/* Weather: now on the left, the rain chart on the right, the next hours below. */
+/* Weather: now on the left, the rain chart on the right, the next days below. */
 .weather-main { display: flex; gap: 4vw; align-items: stretch; }
 .weather-now { flex: 1; display: flex; align-items: center; gap: 2.5vw; padding: 3vh 2vw; border-radius: 0.6vw; background: var(--card); border: 0.15vh solid var(--card-border); box-shadow: var(--shadow); }
 .weather-icon { font-size: 16vh; line-height: 1; }
@@ -283,23 +268,24 @@ body.show-cursor button { cursor: pointer; }
 }
 @keyframes rain-grow { from { transform: scaleY(0); } }
 .rain-chart span { grid-row: 2; justify-self: start; margin-top: 1vh; font-size: 2vh; color: var(--muted); white-space: nowrap; }
-.weather-hours { margin-top: 3.5vh; display: grid; grid-template-columns: repeat(6, 1fr); gap: 1.5vw; }
-.weather-hours div {
+.weather-days { margin-top: 3.5vh; display: grid; grid-template-columns: repeat(6, 1fr); gap: 1.5vw; }
+.weather-days div {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 0.5vh;
-	padding: 2vh 0;
+	gap: 1.2vh;
+	padding: 3.5vh 0;
 	border-radius: 0.6vw;
 	background: var(--card);
 	border: 0.15vh solid var(--card-border);
 	box-shadow: var(--shadow);
 	animation: info-in 0.7s ease-out calc(0.8s + var(--i) * 0.12s) both;
 }
-.weather-hours span { font-size: 2.2vh; color: var(--muted); }
-.weather-hours b { font-size: 6vh; line-height: 1.1; }
-.weather-hours strong { font-size: 3.6vh; }
-.weather-hours small { font-size: 1.9vh; color: var(--blue-light); }
+.weather-days span { font-size: 2.6vh; color: var(--muted); }
+.weather-days b { font-size: 11vh; line-height: 1.1; }
+.weather-days strong { font-size: 4.2vh; }
+.weather-days strong em { font-style: normal; font-weight: normal; color: var(--muted); }   /* the low, after the high */
+.weather-days small { font-size: 2.2vh; color: var(--blue-light); }
 
 /* Buses: one row per departure. */
 .bus-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1.4vh; }
@@ -329,22 +315,35 @@ body.show-cursor button { cursor: pointer; }
 .timetable-columns { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); gap: 2vw; }
 .timetable-columns section { display: flex; flex-direction: column; gap: 1.2vh; min-height: 0; animation: info-in 0.8s ease-out calc(0.4s + var(--i) * 0.2s) both; }
 .timetable-columns h2 { margin: 0 0 0.8vh; padding-bottom: 1vh; font-size: 3.4vh; color: var(--blue); border-bottom: 0.4vh solid var(--red); }
-/* A row per lecture: the time on the left; the course (up to two lines) and where on the right. */
+/* A row per activity: the time on the left; the course (up to two lines), its kind and the rooms on
+   the right (a long list of rooms scrolls, data-marquee). The kind and the left edge have the colour of
+   its group. A column too full for the screen slowly scrolls down and back up (data-marquee-up). */
+.timetable-list { flex: 1; min-height: 0; overflow: hidden; }
+.timetable-list .marquee-up-copy { display: flex; flex-direction: column; gap: 1.2vh; padding: 0.4vh 0.3vh 0; }   /* room for the shadows */
+.timetable-list.marquee-up .marquee-up-copy { padding-bottom: 0.8vh; }   /* room for the last one's shadow */
+.marquee-up .marquee-up-inner { animation: marquee-up var(--marquee-seconds) ease-in-out infinite alternate; }
+@keyframes marquee-up { 0%, 15% { transform: translateY(0); } 85%, 100% { transform: translateY(var(--marquee-distance)); } }
 .lecture {
+	--kind: var(--blue-light);
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr);
-	grid-template-rows: auto auto;
+	grid-template-rows: auto auto auto;
 	column-gap: 1vw;
-	row-gap: 0.3vh;
-	padding: 1vh 1vw;
+	row-gap: 0.2vh;
+	padding: 0.9vh 1vw;
 	border-radius: 0.6vw;
 	background: var(--card);
 	border: 0.15vh solid var(--card-border);
 	box-shadow: var(--shadow);
-	border-left: 0.6vh solid var(--blue);
+	border-left: 0.6vh solid var(--kind);
 }
-.lecture-time { grid-row: span 2; align-self: center; font-size: 2vh; font-weight: bold; line-height: 1.3; color: var(--blue-light); font-variant-numeric: tabular-nums; }
-.lecture b { font-size: 2.3vh; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.kind-tutorial { --kind: #2a9d8f; }
+.kind-practical { --kind: #e07a1f; }
+.kind-exam { --kind: #7b4fa0; }
+.kind-other { --kind: var(--faint); }
+.lecture-time { grid-row: span 3; align-self: center; font-size: 2vh; font-weight: bold; line-height: 1.3; color: var(--blue-light); font-variant-numeric: tabular-nums; }
+.lecture b { font-size: 2.3vh; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }   /* up to two lines */
+.lecture-kind { font-size: 1.8vh; font-weight: bold; color: var(--kind); }
 .lecture-details { font-size: 1.8vh; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lecture.past { opacity: 0.45; }
 .lecture.current { border-left-color: var(--red); outline: 0.3vh solid var(--red); }
@@ -545,7 +544,13 @@ body.show-cursor button { cursor: pointer; }
 .bar.square-corners { border-radius: 0; }
 .bar.glow { filter: drop-shadow(0 0 1.2vh var(--glow)) drop-shadow(0 0 0.4vh var(--glow)); }   /* outside the bar, which stays clipped */
 .bar.board { background: #D62828 !important; }
-.bar.nyan-cat, .bar.rainbow { background: linear-gradient(#E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787) !important; }
+.bar.rainbow { background: linear-gradient(#E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787) !important; }
+/* The nyan cat's rainbow, like the meme's pixel trail: six stripes in its colours, in blocks that
+   step up and down (an SVG tile two blocks wide, as tall as the bar), with square ends. */
+.bar.nyan-cat {
+	border-radius: 0;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 19' preserveAspectRatio='none' shape-rendering='crispEdges'%3E%3Crect x='0' y='0' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='8' y='1' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='0' y='3' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='8' y='4' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='0' y='6' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='8' y='7' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='0' y='9' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='8' y='10' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='0' y='12' width='8' height='3' fill='%230099ff'/%3E%3Crect x='8' y='13' width='8' height='3' fill='%230099ff'/%3E%3Crect x='0' y='15' width='8' height='3' fill='%236633ff'/%3E%3Crect x='8' y='16' width='8' height='3' fill='%236633ff'/%3E%3C/svg%3E") 0 0 / auto 100% repeat-x !important;
+}
 .bar.beer { background: linear-gradient(90deg, #F3B01F, #F5C340) !important; }
 /* Stripes: the stripe colour (or gradient), cut into diagonal stripes by a mask. */
 .bar-stripes {
@@ -860,17 +865,18 @@ body.show-cursor button { cursor: pointer; }
 @keyframes spotify-cover-in { from { opacity: 0; transform: translateY(3vh) scale(0.96); } }
 .spotify-info { flex: 1; min-width: 0; }
 .spotify-label { display: flex; align-items: center; gap: 1.2vw; font-size: 2.6vh; font-weight: bold; color: #1db954; letter-spacing: 0.2vh; text-transform: uppercase; }
-.spotify-title {
+.spotify-title {   /* one line; a long title slides (data-marquee, widgets.js) */
 	margin: 2vh 0 1.5vh;
 	font-size: 7vh;
 	line-height: 1.1;
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	-webkit-box-orient: vertical;
+	white-space: nowrap;
 	overflow: hidden;
+	text-overflow: ellipsis;
 }
 .spotify-artist { font-size: 4vh; font-weight: bold; opacity: 0.9; }
 .spotify-album { margin-top: 0.8vh; font-size: 2.8vh; opacity: 0.6; }
+/* The playing song's artist and album: one line each, sliding when too long (data-marquee); the title too (above). */
+.spotify-info > .spotify-artist, .spotify-info > .spotify-album { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .spotify-progress { margin-top: 4vh; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
 .spotify-times { display: flex; justify-content: space-between; margin-top: 1.2vh; font-size: 2.4vh; opacity: 0.75; font-variant-numeric: tabular-nums; }
 /* The bar and the elapsed time run on by themselves from --start to --total seconds (set by the
@@ -924,7 +930,11 @@ body.show-cursor button { cursor: pointer; }
 .spotify-volume-track { width: 14vw; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
 .spotify-volume-level { display: block; height: 100%; background: #ffffff; transition: width 0.3s; }
 /* Up next, and the button to pick another playlist. */
-.spotify-bottom { display: flex; align-items: center; gap: 3vw; margin-top: 4vh; }
+/* Up next, with the buttons (Lyrics, Search, Playlists) on a row of their own below it, so the next
+   song's title keeps the whole width. */
+.spotify-bottom { display: flex; flex-direction: column; align-items: flex-start; gap: 2.5vh; margin-top: 3.5vh; }
+.spotify-bottom .spotify-next { width: 100%; }
+.spotify-bottom .spotify-buttons { margin-left: 0; }
 .spotify-next { flex: 1; min-width: 0; display: flex; align-items: center; gap: 1.5vw; }
 .spotify-next img { height: 9vh; aspect-ratio: 1; object-fit: cover; border-radius: 0.8vh; }
 .spotify-next > div { min-width: 0; }
@@ -1082,31 +1092,78 @@ body.show-cursor button { cursor: pointer; }
 .spotify-eq.paused i { animation-play-state: paused; }
 @keyframes eq { from { transform: scaleY(0.25); } to { transform: scaleY(1); } }
 
-/* Daily puzzles: one half per puzzle, tap to play. */
+/* A text too long for its line scrolls round and round like a ticker: two copies with a gap between
+   them, moving left by one copy per cycle so the loop is seamless (data-marquee, widgets.js). */
+.marquee-inner { display: inline-block; white-space: nowrap; }
+.marquee { text-overflow: clip !important; }
+.marquee .marquee-copy { display: inline-block; padding-right: 2.5em; }
+.marquee .marquee-inner { animation: marquee var(--marquee-seconds) linear infinite; }
+@keyframes marquee { to { transform: translateX(var(--marquee-distance)); } }
+
+/* Lyrics (spotify_lyrics.html): the song on the left, the lyrics on the right. Synced lyrics: the
+   line being sung is bright and a little bigger, sung lines dimmer, the rest dim (widgets.js keeps the
+   current line in view). The text fades out at the top and bottom edge. */
+.spotify-lyrics-slide .spotify-content { gap: 5vw; padding: 0 6vw; }
+.spotify-lyrics-song { flex: 0 0 26vw; display: flex; flex-direction: column; align-items: flex-start; gap: 1.5vh; }
+.spotify-lyrics-cover { width: 22vw; aspect-ratio: 1; object-fit: cover; border-radius: 1.2vh; box-shadow: 0 2vh 5vh rgba(0, 0, 0, 0.5); }
+.spotify-lyrics-song h1 { margin: 1vh 0 0; font-size: 4.2vh; line-height: 1.15; }
+.spotify-lyrics-song .spotify-artist { font-size: 3vh; }
+.spotify-lyrics-song .spotify-controls { margin-top: 1.5vh; }
+.spotify-lyrics-song .spotify-button { margin: 1.5vh 0 0; }
+.spotify-lyrics {
+	position: relative;   /* the lines' offsetTop is measured from here (widgets.js) */
+	flex: 1;
+	min-width: 0;
+	height: 82vh;
+	overflow-y: auto;
+	scrollbar-width: none;
+	padding: 30vh 0;
+	box-sizing: border-box;
+	-webkit-mask: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+	mask: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+}
+.spotify-lyrics p { max-width: 93%; margin: 0 0 2.2vh; font-size: 4.2vh; font-weight: bold; line-height: 1.3; transition: color 0.3s, transform 0.3s; transform-origin: left center; }   /* narrower: still fits when the current line grows 6% */
+.spotify-lyrics:not(.synced) p { color: rgba(255, 255, 255, 0.9); font-size: 3.6vh; }
+.spotify-lyrics.synced p { color: rgba(255, 255, 255, 0.35); }
+.spotify-lyrics.synced p.past { color: rgba(255, 255, 255, 0.6); }
+.spotify-lyrics.synced p.current { color: #ffffff; transform: scale(1.06); }
+.spotify-lyrics-none { flex: 1; font-size: 4vh; font-weight: bold; opacity: 0.75; }
+.spotify-lyrics-credit { position: absolute; right: 3vw; bottom: 2vh; margin: 0; font-size: 1.8vh; opacity: 0.5; }
+
+/* Daily puzzles: a card per puzzle, two by two, tap one to play. Each card has the game's picture on
+   the left and its name, today's status and Play on the right. */
 .puzzles-slide {
-	display: flex;
-	align-items: stretch;
-	padding: 8vh 4vw 12vh;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-auto-rows: 1fr;
+	gap: 3vh 2.5vw;
+	padding: 6vh 5vw;   /* the same space below the cards as above them */
 	background: var(--bg);
 	color: var(--blue);
 	position: relative;
 }
-.puzzles-divider { width: 0.3vw; margin: 6vh 0; background: var(--line); border-radius: 1vw; }
 .puzzle-card {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
+	display: grid;
+	grid-template-columns: 28vh minmax(0, 1fr);
+	grid-template-rows: 1fr auto auto auto 1fr;   /* the text centred next to the picture */
 	align-items: center;
-	justify-content: center;
-	gap: 2.5vh;
-	margin: 0 2vw;
-	border: none;
-	border-radius: 2vh;
-	background: transparent;
+	justify-items: start;
+	column-gap: 2.5vw;
+	row-gap: 1.5vh;
+	padding: 2vh 2vw;
+	border: 0.15vh solid var(--card-border);
+	border-radius: 1.2vw;
+	background: var(--card);
+	box-shadow: var(--shadow);
 	color: inherit;
 	font-family: inherit;
+	text-align: left;
 	transition: background 0.2s, transform 0.1s;
 }
+.puzzle-card .puzzle-icon { grid-row: 1 / -1; justify-self: center; }
+.puzzle-card .puzzle-title { grid-row: 2; align-self: end; }
+.puzzle-card .puzzle-status { grid-row: 3; }
+.puzzle-card .puzzle-play { grid-row: 4; }
 .puzzle-card:active { transform: scale(0.98); background: var(--blue-faint); }
 .puzzle-icon { display: grid; gap: 0.6vh; height: 23vh; align-content: center; }   /* same height, so the titles line up */
 .puzzle-connections .puzzle-icon { grid-template-columns: repeat(4, 5vh); }
@@ -1129,23 +1186,18 @@ body.show-cursor button { cursor: pointer; }
 	width: 20vh;
 	height: 13vh;
 	border-radius: 0.8vh;
-	background: linear-gradient(160deg, transparent 55%, #7a9a5b 55%), linear-gradient(200deg, transparent 50%, #5e7f45 50%), #9cc3e0;
+	/* The hills' edges change colour over a pixel: a hard gradient edge isn't smoothed and looks jagged. */
+	background:
+		linear-gradient(160deg, transparent calc(55% - 0.6px), #7a9a5b calc(55% + 0.6px)),
+		linear-gradient(200deg, transparent calc(50% - 0.6px), #5e7f45 calc(50% + 0.6px)),
+		#9cc3e0;
 }
-.puzzle-icon .photo::after {
-	content: "";
-	position: absolute;
-	left: 55%;
-	top: 30%;
-	width: 3vh;
-	height: 3vh;
-	border-radius: 50% 50% 50% 0;
-	transform: rotate(-45deg);
-	background: var(--red);
-	border: 0.4vh solid white;
-}
+/* The map pin on the photo: an SVG (puzzles.html), so its point and outline stay clean. */
+.puzzle-icon .photo .pin { position: absolute; left: 48%; top: 14%; width: 4.2vh; height: 5.6vh; overflow: visible; }
+.puzzle-icon .photo .pin path { fill: var(--red); stroke: #ffffff; stroke-width: 2.2; stroke-linejoin: round; }
+.puzzle-icon .photo .pin circle { fill: #ffffff; }
 .puzzle-icon .year { height: auto; padding: 0.4vh 1.6vh; border-radius: 2vh; background: var(--blue); color: white; font-style: normal; font-weight: bold; font-size: 2.6vh; }
-/* Smaller titles when there are more puzzles side by side (--cards is set on the slide). */
-.puzzle-title { font-size: min(8vh, calc(52vw / var(--cards, 2) / 6.5)); font-weight: bold; letter-spacing: 0.3vh; text-transform: uppercase; }
+.puzzle-title { font-size: 4.2vh; font-weight: bold; letter-spacing: 0.2vh; text-transform: uppercase; }
 .puzzle-status { font-size: 3.4vh; color: var(--muted); }
 .status-solved .puzzle-status { color: var(--blue-light); font-weight: bold; }
 .status-playing .puzzle-status { color: var(--red-dark); font-weight: bold; }
@@ -1158,16 +1210,6 @@ body.show-cursor button { cursor: pointer; }
 	color: #ffffff;
 	font-size: 2.8vh;
 	font-weight: bold;
-}
-.puzzles-footer {
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: 5vh;
-	margin: 0;
-	text-align: center;
-	font-size: 2.4vh;
-	color: var(--faint);
 }
 .puzzle-back {
 	margin-bottom: 1.5vh;
@@ -1387,6 +1429,40 @@ body.show-cursor button { cursor: pointer; }
 .catfishing-credit { font-size: 2.2vh; color: var(--faint); }
 .catfishing-credit.footer { position: absolute; bottom: 2vh; left: 0; right: 0; margin: 0; text-align: center; }
 
+/* Catfishing on an earlier day: its date after the name. The archive: a month calendar (catfishing_archive.html). */
+.catfishing-header h1 span { margin-left: 1vw; font-size: 3vh; font-weight: normal; color: var(--muted); white-space: nowrap; }
+.catfishing-header .puzzle-back, .catfishing-progress span { white-space: nowrap; }
+.catfishing-archive-totals { margin-left: auto; font-size: 2.6vh; color: var(--muted); }
+.catfishing-archive-totals b { color: var(--blue); }
+.catfishing-month { display: flex; align-items: center; justify-content: center; gap: 2vw; }
+.catfishing-month h2 { margin: 0; min-width: 28vw; text-align: center; font-size: 4vh; }
+.catfishing-month .puzzle-back { margin: 0; padding: 0.4vh 1.6vw; font-size: 4vh; line-height: 1; }
+.catfishing-month .puzzle-back:disabled { opacity: 0.3; }
+.catfishing-archive-error { margin: 0; text-align: center; font-size: 2.4vh; color: var(--red-dark); }
+.catfishing-calendar { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: auto; grid-auto-rows: 1fr; gap: 1vh 0.8vw; margin-bottom: 3vh; }
+.catfishing-weekday { align-self: end; text-align: center; font-size: 2.2vh; font-weight: bold; color: var(--muted); }
+.catfishing-day {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.3vh;
+	border: 0.2vh solid var(--card-border);
+	border-radius: 1vh;
+	background: var(--card);
+	color: var(--blue);
+	font-family: inherit;
+}
+.catfishing-day b { font-size: 3vh; }
+.catfishing-day span { min-height: 2.2vh; font-size: 1.9vh; font-weight: bold; }
+.catfishing-day.done { background: var(--blue); border-color: var(--blue); color: #ffffff; }
+.catfishing-day.playing { border: 0.35vh solid var(--red); }
+.catfishing-day.playing span { color: var(--red-dark); }
+.catfishing-day.today { outline: 0.35vh solid var(--red); outline-offset: 0.3vh; }
+.catfishing-day:active { transform: scale(0.96); }
+.catfishing-day.empty { background: transparent; border-color: transparent; color: var(--faint); }
+.catfishing-day.outside { visibility: hidden; }
+
 /* NYT Connections: today's grid on the left, yesterday's answers on the right. */
 .connections-slide {
 	display: flex;
@@ -1599,7 +1675,6 @@ body.show-cursor button { cursor: pointer; }
 }
 #menu[hidden] { display: none; }
 @keyframes menu-in { from { opacity: 0; } }
-#toast { z-index: 30; }   /* messages also show on top of the menu */
 :where(#menu button) {
 	font: inherit;
 	color: inherit;
@@ -1635,14 +1710,15 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .menu-hint { margin: 4vh 0 0; color: var(--menu-muted); font-size: 2.2vh; }
 
 /* The overview: one card per slide type, like the window overview on Ubuntu. */
-.menu-cards { display: flex; gap: 3vw; }
-.menu-card { display: flex; flex-direction: column; align-items: center; gap: 2.2vh; }
+/* One row; the cards are 27vw wide but share the screen's width when there are more of them. */
+.menu-cards { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 27vw); gap: 2.5vw; max-width: 94vw; }
+.menu-card { display: flex; flex-direction: column; align-items: center; gap: 2.2vh; min-width: 0; }
 .menu-preview {
 	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 27vw;
+	width: 100%;
 	aspect-ratio: 16 / 9;
 	overflow: hidden;
 	border-radius: 1.4vh;

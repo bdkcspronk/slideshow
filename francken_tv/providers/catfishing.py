@@ -7,11 +7,12 @@ below copies the site's rules (normalising, "Did you mean ...?" for typos, "clos
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import unicodedata
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import requests
@@ -23,6 +24,8 @@ log = logging.getLogger(__name__)
 
 GAME_URL = "https://catfishing.net/app/game"
 FIRST_DAY = date(2024, 6, 23)   # day 0 of catfishing.net
+ARCHIVE_START = date(2024, 7, 1)   # the first day catfishing.net still has (day 8)
+ARCHIVE_DAYS_KEPT = 5            # downloaded days kept in memory
 POINTS = {"correct": 2, "close": 1, "incorrect": 0, "skipped": 0}
 # How many typos still count as "Did you mean ...?", by the length of the name (as on the site).
 TYPO_LIMITS = [(18, 4), (12, 3), (7, 2), (4, 1)]
@@ -169,15 +172,25 @@ class Game:
 
 
 class CatfishingProvider(Provider):
+	"""Today's game, plus any earlier day from catfishing.net's archive ("Archive": a month calendar).
+	Every day played is kept in history_path, so the calendar shows which days are done (and their
+	score) or started, and an archive day can be finished later. Today's game also has its own save
+	file (state_path), which "start over" in the menu removes."""
+
 	name = "catfishing"
 	title = "Catfishing"
 
-	def __init__(self, settings: dict, default_seconds: float, state_path: Path | None = None) -> None:
+	def __init__(self, settings: dict, default_seconds: float, state_path: Path | None = None,
+			history_path: Path | None = None) -> None:
 		self.state_path = state_path   # where today's game is saved, so it survives a restart
+		self.history_path = history_path
 		self.seconds = settings.get("seconds", default_seconds)
 		self.refresh_seconds = settings.get("refresh_minutes", 30) * 60
-		self.games: dict[date, list[Article]] = {}
-		self.game: Game | None = None
+		self.games: dict[date, list[Article]] = {}   # downloaded days (today, and archive days opened)
+		self.game: Game | None = None                # today's
+		self.archive_game: Game | None = None        # an earlier day being played
+		self.day_shown: date | None = None           # whose game the buttons act on
+		self.history = self.load_history()
 
 	@staticmethod
 	def day_number(day: date) -> int:
@@ -189,23 +202,66 @@ class CatfishingProvider(Provider):
 		response.raise_for_status()
 		return parse_game(response.json())
 
+	def articles(self, day: date) -> list[Article]:
+		"""A day's articles, downloaded once (raises if catfishing.net can't be reached)."""
+		if day not in self.games:
+			self.games[day] = self.fetch(day)
+			for old in sorted(self.games)[:-ARCHIVE_DAYS_KEPT]:   # only the last few days opened
+				del self.games[old]
+		return self.games[day]
+
 	def refresh(self, now: datetime) -> None:
 		"""Download today's ten articles once; afterwards this does nothing until tomorrow."""
 		if now.date() not in self.games:
-			self.games = {now.date(): self.fetch(now.date())}
+			self.articles(now.date())
 			log.info("Loaded the catfishing game of %s", now.date())
+
+	# -- history: every day played --
+
+	def load_history(self) -> dict[str, dict]:
+		if self.history_path is None or not self.history_path.exists():
+			return {}
+		try:
+			return json.loads(self.history_path.read_text(encoding="utf-8"))
+		except (OSError, ValueError) as error:
+			log.warning("Ignoring unreadable catfishing history %s: %s", self.history_path, error)
+			return {}
+
+	def record(self, game: Game) -> None:
+		self.history[game.day.isoformat()] = {"answers": [[a.result, a.guess] for a in game.answers],
+			"showing_answer": game.showing_answer, "total": len(game.articles), "score": game.score}
+		if self.history_path is None:
+			return
+		self.history_path.parent.mkdir(parents=True, exist_ok=True)
+		temporary = self.history_path.with_suffix(".tmp")
+		temporary.write_text(json.dumps(self.history, indent=1, sort_keys=True), encoding="utf-8")
+		temporary.replace(self.history_path)   # in one go, so a restart while saving can't leave half a file
+
+	def restore(self, game: Game, saved: dict | None) -> Game:
+		if saved and len(saved["answers"]) <= len(game.articles):
+			game.answers = [Answer(result, guess) for result, guess in saved["answers"]]
+			game.showing_answer = saved["showing_answer"] and bool(game.answers)
+		return game
 
 	def todays_game(self, now: datetime) -> Game | None:
 		articles = self.games.get(now.date())
 		if articles is None:
 			return None
 		if self.game is None or self.game.day != now.date():
-			self.game = Game(now.date(), articles)   # a new day: a new game...
-			saved = load_state(self.state_path, now.date())   # ...unless it was saved before a restart
-			if saved and len(saved["answers"]) <= len(articles):
-				self.game.answers = [Answer(result, guess) for result, guess in saved["answers"]]
-				self.game.showing_answer = saved["showing_answer"] and bool(self.game.answers)
+			saved = load_state(self.state_path, now.date())   # saved before a restart
+			if saved is None and self.history.pop(now.date().isoformat(), None) is not None:
+				self.record_removed()   # today was started over (menu): it's not played any more
+			self.game = self.restore(Game(now.date(), articles), saved)   # a new day: a new game
 		return self.game
+
+	def record_removed(self) -> None:
+		if self.history_path is not None and self.history_path.exists():
+			self.history_path.write_text(json.dumps(self.history, indent=1, sort_keys=True), encoding="utf-8")
+
+	def shown_game(self, now: datetime) -> Game | None:
+		if self.day_shown is not None and self.day_shown != now.date() and self.archive_game and self.archive_game.day == self.day_shown:
+			return self.archive_game
+		return self.todays_game(now)
 
 	def status(self, now: datetime) -> PuzzleStatus | None:
 		game = self.todays_game(now)
@@ -219,12 +275,18 @@ class CatfishingProvider(Provider):
 			return PuzzleStatus("playing", f"{len(game.answers)} of {len(game.articles)} answered · {game.score} {points}")
 		return PuzzleStatus("new", "Not tried yet")
 
+	# -- slides --
+
 	def slides(self, now: datetime, typed: str = "") -> list[Slide]:
 		game = self.todays_game(now)
 		if game is None:
 			return []
+		self.day_shown = now.date()
+		return [self.game_slide(game, now, typed)]
+
+	def game_slide(self, game: Game, now: datetime, typed: str = "") -> Slide:
 		number = len(game.answers) + (0 if game.showing_answer else 1)
-		return [Slide("catfishing.html", self.seconds, {
+		return Slide("catfishing.html", self.seconds, {
 			"game": game,
 			"article": game.article,
 			"number": min(number, len(game.articles)),
@@ -233,14 +295,80 @@ class CatfishingProvider(Provider):
 			"total_points": 2 * len(game.articles),
 			"results": [answer.result for answer in game.answers] + ["open"] * (len(game.articles) - len(game.answers)),
 			"summary": list(zip(game.articles, game.answers)) if game.done else [],
-		})]
+			"today": game.day == now.date(),
+			"day_label": game.day.strftime("%-d %b %Y"),
+		})
+
+	def day_status(self, day: date, now: datetime) -> dict:
+		"""How far a day got: {"state": "done"/"playing"/"new", "text": "14/20" or "3/10"}."""
+		saved = self.history.get(day.isoformat())
+		if not saved or not saved["answers"]:
+			return {"state": "new", "text": ""}
+		total = saved.get("total", 10)
+		if len(saved["answers"]) == total and not saved["showing_answer"]:
+			return {"state": "done", "text": f"{saved.get('score', 0)}/{2 * total}"}
+		return {"state": "playing", "text": f"{len(saved['answers'])}/{total}"}
+
+	def archive_slide(self, month: date, now: datetime, error: str = "") -> Slide:
+		"""A month calendar of catfishing.net's days: done (with the score), started, or not played."""
+		month = max(min(month.replace(day=1), now.date().replace(day=1)), ARCHIVE_START.replace(day=1))
+		first = month - timedelta(days=month.weekday())   # the Monday the calendar starts on
+		next_month = (month + timedelta(days=32)).replace(day=1)
+		weeks = []
+		day = first
+		while day < next_month:
+			week = []
+			for _ in range(7):
+				playable = ARCHIVE_START <= day <= now.date()
+				week.append({"date": day, "in_month": day.month == month.month, "playable": playable,
+					"today": day == now.date(), **(self.day_status(day, now) if playable else {"state": "", "text": ""})})
+				day += timedelta(days=1)
+			weeks.append(week)
+		statuses = [self.day_status(date.fromisoformat(iso), now)["state"] for iso in self.history]
+		previous_month = (month - timedelta(days=1)).replace(day=1)
+		return Slide("catfishing_archive.html", self.seconds, {
+			"month": month, "weeks": weeks, "error": error,
+			"previous": previous_month.strftime("%Y-%m") if previous_month >= ARCHIVE_START.replace(day=1) else None,
+			"next": next_month.strftime("%Y-%m") if next_month <= now.date() else None,
+			"done": statuses.count("done"), "started": statuses.count("playing"),
+			"days": (now.date() - ARCHIVE_START).days + 1,
+		})
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
-		game = self.todays_game(now)
+		"""'archive' shows a month (values: ["2026-09"]), 'open_day' plays a day (["2026-09-14"]),
+		'today' goes back to today's game; the rest are moves in the game on screen (Game.act)."""
+		if name == "archive":
+			try:
+				month = date.fromisoformat(values[0] + "-01")
+			except (IndexError, ValueError):
+				month = self.day_shown or now.date()
+			return self.archive_slide(month, now), None
+		if name == "open_day" and values:
+			try:
+				day = date.fromisoformat(values[0])
+			except ValueError:
+				return None, None
+			if day == now.date() or not ARCHIVE_START <= day < now.date():
+				return self.action("today", [], now)
+			try:
+				articles = self.articles(day)
+			except requests.RequestException as error:
+				log.warning("Could not load the catfishing game of %s: %s", day, error)
+				return self.archive_slide(day, now, error=f"The game of {day:%-d %B} can't be loaded right now."), None
+			if not (self.archive_game and self.archive_game.day == day):
+				self.archive_game = self.restore(Game(day, articles), self.history.get(day.isoformat()))
+			self.day_shown = day
+			return self.game_slide(self.archive_game, now), None
+		if name == "today":
+			slides = self.slides(now)
+			return (slides[0] if slides else None), None
+		game = self.shown_game(now)
 		if game is None:
 			return None, None
 		result = game.act(name, values)
-		save_state(self.state_path, game.day, {"answers": [[a.result, a.guess] for a in game.answers],
-			"showing_answer": game.showing_answer})
-		slides = self.slides(now, typed=result.get("typed", ""))
-		return (slides[0] if slides else None), result.get("message")
+		if game.day == now.date():
+			save_state(self.state_path, game.day, {"answers": [[a.result, a.guess] for a in game.answers],
+				"showing_answer": game.showing_answer})
+		if game.answers or game.day.isoformat() in self.history:
+			self.record(game)
+		return self.game_slide(game, now, typed=result.get("typed", "")), result.get("message")

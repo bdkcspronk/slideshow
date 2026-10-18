@@ -1,7 +1,7 @@
 {# Info slide, weather part (providers/info.py): now, the rain in the next two hours (a bar per
-   5 minutes, from Buienradar) and the next hours. #}
+   5 minutes, from Buienradar) and the next days. #}
 <div class="slide info-slide info-weather">
-	<h1>Weather at {{ place }}</h1>
+	<h1>Weather</h1>
 	<div class="weather-main">
 		<div class="weather-now">
 			<span class="weather-icon">{{ weather.icon }}</span>
@@ -21,13 +21,13 @@
 			{% endif %}
 		</div>
 	</div>
-	<div class="weather-hours">
-		{% for hour in hours %}
-		<div style="--i: {{ loop.index0 }}">
-			<span>{{ hour.time.strftime("%H:%M") }}</span>
-			<b>{{ hour.icon }}</b>
-			<strong>{{ hour.temperature | round | int }}&deg;</strong>
-			<small>{{ hour.rain_chance }}% rain</small>
+	<div class="weather-days">
+		{% for day in days %}
+		<div style="--i: {{ loop.index0 }}" title="{{ day.text }}">
+			<span>{{ "Today" if day.day == today else day.day.strftime("%A") }}</span>
+			<b>{{ day.icon }}</b>
+			<strong>{{ day.high | round | int }}&deg; <em>/ {{ day.low | round | int }}&deg;</em></strong>
+			<small>{{ day.rain_chance }}% rain</small>
 		</div>
 		{% endfor %}
 	</div>

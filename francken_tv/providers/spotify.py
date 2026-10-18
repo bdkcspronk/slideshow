@@ -2,7 +2,8 @@
 (templates/slides/spotify.html), with buttons for the previous/next song, pause and the volume.
 "Playlists" shows the account's playlists (templates/slides/spotify_playlists.html), tapping one
 shows its songs (spotify_songs.html); "Search" finds songs by typing (spotify_search.html).
-Tapping a song plays it. The buttons need Spotify Premium.
+Tapping a song plays it. "Lyrics" shows the song's lyrics, the line being sung lit up when LRCLIB
+has them synced (spotify_lyrics.html, lyrics.py). The buttons need Spotify Premium.
 
 Uses Spotify's Web API. One-time setup (see README, "Spotify"):
 1. Create an app at https://developer.spotify.com/dashboard with redirect URI
@@ -31,6 +32,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from ..lyrics import Lyrics, find_lyrics
 from ..slides import Provider, Slide
 
 log = logging.getLogger(__name__)
@@ -229,6 +231,8 @@ class SpotifyProvider(Provider):
 		self.volume_set: tuple[int, float] | None = None   # (volume, time.monotonic()) of the last volume button
 		self.volume_lock = threading.Lock()
 		self.jumps = 0   # how often the song jumped to another position (restart, seek): part of the slide's state
+		self.lyrics: dict[str, Lyrics | None] = {}   # by song id; None: LRCLIB doesn't have them
+		self.lyrics_lock = threading.Lock()   # the slide is redrawn every second: one lookup per song
 
 	# ---- credentials and login ------------------------------------------------------------------
 
@@ -437,6 +441,33 @@ class SpotifyProvider(Provider):
 		return Slide("spotify.html", self.seconds, self.current_view(),
 			update=lambda now: self.current_view(), refresh_seconds=1)
 
+	def song_lyrics(self, playing: NowPlaying) -> Lyrics | None | str:
+		"""The playing song's lyrics (looked up once per song), None if there are none, or "error"
+		when LRCLIB can't be reached (tried again when the view is drawn again)."""
+		with self.lyrics_lock:
+			if playing.id not in self.lyrics:
+				try:
+					self.lyrics[playing.id] = find_lyrics(playing.title, playing.artist, playing.album, playing.duration_ms // 1000)
+				except requests.RequestException as error:
+					log.warning("Could not get the lyrics of %s: %s", playing.title, error)
+					return "error"
+				if len(self.lyrics) > 50:   # only recent songs
+					del self.lyrics[next(iter(self.lyrics))]
+			return self.lyrics[playing.id]
+
+	def lyrics_view(self) -> dict:
+		if not self.playing:
+			return {"state": "lyrics idle", "idle": True}
+		lyrics = self.song_lyrics(self.playing)
+		return {**self.view(), "state": "lyrics " + self.view()["state"],
+			"lyrics": None if lyrics == "error" else lyrics, "lyrics_error": lyrics == "error",
+			"progress_seconds": round(self.playing.progress() / 1000, 2)}
+
+	def lyrics_slide(self) -> Slide:
+		# Redrawn when the song changes, pauses or jumps (data-state); the lit-up line moves on by
+		# itself in between (widgets.js).
+		return Slide("spotify_lyrics.html", self.seconds, self.lyrics_view(), update=lambda now: self.lyrics_view(), refresh_seconds=1)
+
 	def speaker_id(self) -> str | None:
 		"""The Spotify Connect id of the TV PC's own speaker (spotifyd), if it's running."""
 		response = self.api("GET", DEVICES_URL)
@@ -493,7 +524,7 @@ class SpotifyProvider(Provider):
 		return self.now_playing() if self.connected else None
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
-		"""'playlists' shows the playlists, 'songs' one playlist's songs, 'search' finds songs;
+		"""'playlists' shows the playlists, 'songs' one playlist's songs, 'search' finds songs, 'lyrics' the lyrics;
 		'play' plays a playlist (values = [its uri]), 'play_song' a song, 'queue' adds one; 'back' returns;
 		'previous', 'skip', 'toggle' (pause/play), 'volume_up' and 'volume_down' control the music."""
 		if name == "playlists":
@@ -585,6 +616,8 @@ class SpotifyProvider(Provider):
 				return None, error
 			self.catch_up(now)
 			return self.now_playing(), f"Playing on {self.speaker}"
+		if name == "lyrics":
+			return self.lyrics_slide(), None
 		if name in ("previous", "skip", "toggle") and self.playing:
 			if name == "toggle":
 				error = self.command("PUT", PAUSE_URL if self.playing.is_playing else PLAY_URL, start=True)
@@ -593,7 +626,8 @@ class SpotifyProvider(Provider):
 			if error:
 				return None, error
 			self.catch_up(now)
-			return self.now_playing(), None
+			# The lyrics view's buttons send "lyrics" along, so it stays the lyrics view.
+			return (self.lyrics_slide() if values[:1] == ["lyrics"] else self.now_playing()), None
 		if name in ("volume_up", "volume_down") and self.playing and self.playing.volume is not None:
 			step = VOLUME_STEP if name == "volume_up" else -VOLUME_STEP
 			with self.volume_lock:   # quick taps arrive together: one after another, each from the last one

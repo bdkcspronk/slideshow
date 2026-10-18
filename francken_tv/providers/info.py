@@ -8,7 +8,7 @@ doesn't stop the others (the last error shows on /status):
   article's page (BBC), else the feed's summary (NU.nl's pages are behind a cookie wall). The
   slideshow downloads each headline's picture itself (data/cache/news): one that can't be fetched
   is left out, instead of a broken image making the player skip the slide.
-- weather: open-meteo.com for the weather now and the next hours; Buienradar's rain forecast for
+- weather: open-meteo.com for the weather now and the next days; Buienradar's rain forecast for
   the next two hours (the same as their app)
 - buses: live departures from OVapi (v0.ovapi.nl, the same national real-time data 9292 shows);
   the stop is a list of timing point codes (from the national stop list, GTFS stops.txt)
@@ -159,11 +159,13 @@ def weather_look(code: int, is_day: bool = True) -> tuple[str, str]:
 
 
 @dataclass
-class Hour:
-	time: datetime
-	temperature: float
+class Day:
+	day: date
+	high: float
+	low: float
+	text: str
 	icon: str
-	rain_chance: int   # %
+	rain_chance: int   # %, the highest of the day
 
 
 @dataclass
@@ -174,7 +176,7 @@ class Weather:
 	icon: str
 	wind_kmh: float
 	wind_from: str     # "NE"
-	hours: list[Hour] = field(default_factory=list)
+	days: list[Day] = field(default_factory=list)   # today first
 	rain: list[tuple[str, float]] = field(default_factory=list)   # ("14:35", mm/h) per 5 minutes, two hours ahead
 
 	@property
@@ -185,10 +187,10 @@ class Weather:
 def parse_weather(data: dict) -> Weather:
 	current = data["current"]
 	text, icon = weather_look(current["weather_code"], bool(current.get("is_day", 1)))
-	hourly = data["hourly"]
-	hours = [Hour(datetime.fromisoformat(time), temperature, weather_look(code, bool(day))[1], chance or 0)
-		for time, temperature, code, chance, day in zip(hourly["time"], hourly["temperature_2m"], hourly["weather_code"],
-			hourly["precipitation_probability"], hourly["is_day"])]
+	daily = data["daily"]
+	days = [Day(date.fromisoformat(day), high, low, *weather_look(code), chance or 0)
+		for day, high, low, code, chance in zip(daily["time"], daily["temperature_2m_max"], daily["temperature_2m_min"],
+			daily["weather_code"], daily["precipitation_probability_max"])]
 	return Weather(
 		temperature=current["temperature_2m"],
 		feels_like=current["apparent_temperature"],
@@ -196,7 +198,7 @@ def parse_weather(data: dict) -> Weather:
 		icon=icon,
 		wind_kmh=current["wind_speed_10m"],
 		wind_from=WIND_DIRECTIONS[round(current["wind_direction_10m"] / 45) % 8],
-		hours=hours,
+		days=days,
 	)
 
 
@@ -276,7 +278,20 @@ class Lecture:
 	kind: str           # "Lecture", "Tutorial", ...
 	rooms: list[str]
 
+	@property
+	def group(self) -> str:
+		"""The colour group of the kind: "lecture", "tutorial", "practical", "exam" or "other"."""
+		return KIND_GROUPS.get(self.kind.lower(), "other")
 
+
+# rooster.rug.nl's kinds of activity, in colour groups (the timetable slide colours them; see style.css).
+KIND_GROUPS = {
+	"lecture": "lecture",
+	"tutorial": "tutorial", "workshop": "tutorial", "q&a": "tutorial",
+	"practical": "practical", "computer practical": "practical", "lab session": "practical", "projects": "practical",
+	"exam": "exam", "exam digital": "exam", "midterm": "exam", "midterm digital": "exam",
+	"resit": "exam", "resit digital": "exam", "inspection": "exam",
+}
 GENERIC_ROOM_NAMES = {"", "-", "collegezaal", "werkcollegezaal", "zaal", "lecture hall"}
 
 
@@ -326,6 +341,7 @@ class InfoProvider(Provider):
 	def __init__(self, settings: dict, default_seconds: float, image_folder: Path | None = None) -> None:
 		self.image_folder = image_folder   # the news pictures; None: no pictures
 		self.seconds = settings.get("seconds", default_seconds)
+		self.part_seconds = {"timetable": settings.get("timetable_seconds", 25)}   # parts that need longer to read
 		self.parts = settings.get("show", PARTS)
 		self.news_feeds = settings.get("news_feeds", NEWS_FEEDS)
 		self.headlines_per_feed = settings.get("headlines_per_feed", 3)
@@ -411,9 +427,9 @@ class InfoProvider(Provider):
 	def fetch_weather(self, now: datetime) -> None:
 		lat, lon = self.location
 		response = requests.get(WEATHER_URL, headers=HEADERS, timeout=20, params={
-			"latitude": lat, "longitude": lon, "timezone": "Europe/Amsterdam", "forecast_hours": 12,
+			"latitude": lat, "longitude": lon, "timezone": "Europe/Amsterdam", "forecast_days": 7,
 			"current": "temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,is_day",
-			"hourly": "temperature_2m,weather_code,precipitation_probability,is_day",
+			"daily": "temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max",
 		})
 		response.raise_for_status()
 		weather = parse_weather(response.json())
@@ -463,7 +479,7 @@ class InfoProvider(Provider):
 			if data is not None:
 				self.turn = (self.turn + step + 1) % len(self.parts)
 				# Worked out again when shown: the round is planned ahead, and buses leave meanwhile.
-				return [Slide(f"info_{part}.html", self.seconds, data, update=lambda when, part=part: self.data(part, when) or data)]
+				return [Slide(f"info_{part}.html", self.part_seconds.get(part, self.seconds), data, update=lambda when, part=part: self.data(part, when) or data)]
 		return []
 
 	def data(self, part: str, now: datetime) -> dict | None:
@@ -507,10 +523,10 @@ class InfoProvider(Provider):
 	def weather_data(self, now: datetime) -> dict | None:
 		if self.weather is None:
 			return None
-		hours = [hour for hour in self.weather.hours if hour.time > now][:6]
+		days = [day for day in self.weather.days if day.day >= now.date()][:6]   # today and the next five
 		top = max([mm for _, mm in self.weather.rain] + [2.0])   # the chart's top: at least 2 mm/h
 		rain = [{"time": time, "mm": mm, "height": 0 if mm <= 0 else max(4, round(100 * math.sqrt(mm / top)))} for time, mm in self.weather.rain]
-		return {"weather": self.weather, "place": self.place, "hours": hours, "rain": rain}
+		return {"weather": self.weather, "place": self.place, "days": days, "today": now.date(), "rain": rain}
 
 	def buses_data(self, now: datetime) -> dict | None:
 		upcoming = [departure for departure in self.departures if departure.expected >= now - timedelta(seconds=30)]

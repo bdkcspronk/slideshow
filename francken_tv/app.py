@@ -58,17 +58,9 @@ class App:
 	system_volume: SystemVolume | None = None   # the volume and mute in the settings, also for Spotify
 	tiles: TileCache | None = None              # map tiles for maps in slides (/tiles/..., maptiles.py)
 	settings_lock: threading.Lock = field(default_factory=threading.Lock)   # the server handles requests in parallel
-	notice_id: int = 0      # the latest on-screen notice, shown by the browser
-	notice_text: str = ""
-
-	def notify(self, text: str) -> None:
-		"""Show a short message in the corner of the TV screen."""
-		self.notice_text = text
-		self.notice_id += 1
-
 	def toggle_quotes(self) -> None:
 		self.change_settings({"quotes_aloud": not self.settings.quotes_aloud})
-		self.notify(f"Reading quotes aloud: {'on' if self.settings.quotes_aloud else 'off'}")
+		log.info("Reading quotes aloud: %s", "on" if self.settings.quotes_aloud else "off")
 
 	def change_settings(self, changes: dict) -> None:
 		"""Apply and save settings from the menu. Raises ValueError for a wrong value."""
@@ -112,7 +104,7 @@ class App:
 
 	def reload_devices(self) -> None:
 		count = len(self.devices.reload())   # the activity chart uses it the next time it's shown
-		self.notify(f"Reloaded {count} devices")
+		log.info("Reloaded %d devices", count)
 
 
 def build_app(config: dict, clock: Clock) -> App:
@@ -134,7 +126,8 @@ def build_app(config: dict, clock: Clock) -> App:
 	available_puzzles = {puzzle.name: puzzle for puzzle in [
 		ConnectionsProvider(config.get("connections", {}), seconds, DATA_DIR / "puzzles" / "connections.json"),
 		WordleProvider(config.get("wordle", {}), seconds, DATA_DIR / "puzzles" / "wordle.json"),
-		CatfishingProvider(config.get("catfishing", {}), seconds, DATA_DIR / "puzzles" / "catfishing.json"),
+		CatfishingProvider(config.get("catfishing", {}), seconds, DATA_DIR / "puzzles" / "catfishing.json",
+			DATA_DIR / "puzzles" / "catfishing_history.json"),
 		TimeGuessrProvider(config.get("timeguessr", {}), seconds, CACHE_DIR / "timeguessr", DATA_DIR / "puzzles" / "timeguessr.json",
 			attribution=config.get("maps", {}).get("attribution", ATTRIBUTION)),
 	]}

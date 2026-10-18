@@ -36,13 +36,22 @@ def contains_blocked_word(text: str, blocked_words: list[str]) -> bool:
 	return any(re.search(rf"(?<!\w){re.escape(word)}(?!\w)", text, re.IGNORECASE) for word in blocked_words)
 
 
+DOUBLE_QUOTES = re.compile(r'["\u201c\u201d\u201e\u201f\u00ab\u00bb]')
+WRAPPING_SINGLE_QUOTES = re.compile(r"^['\u2018\u2019](.*)['\u2018\u2019]$", re.S)
+
+
+def clean_quote(text: str) -> str:
+	"""The quote without the quotation marks people sometimes type into the sheet (the slide adds its
+	own): all double ones, and single ones around the whole quote (inside it they're apostrophes)."""
+	text = DOUBLE_QUOTES.sub("", text).strip()
+	text = WRAPPING_SINGLE_QUOTES.sub(r"\1", text).strip()
+	return re.sub(r"\s{2,}", " ", text)
+
+
 def read_quotes(csv_text: str) -> list[dict[str, str]]:
 	rows = csv.DictReader(io.StringIO(csv_text.lstrip("﻿")))
-	return [
-		{"quote": row["Quote"].strip(), "author": row.get("name", "").strip()}
-		for row in rows
-		if row.get("Quote", "").strip()
-	]
+	quotes = [{"quote": clean_quote(row.get("Quote") or ""), "author": (row.get("name") or "").strip()} for row in rows]
+	return [quote for quote in quotes if quote["quote"]]
 
 
 class QuoteProvider(Provider):

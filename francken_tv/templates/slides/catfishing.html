@@ -2,12 +2,16 @@
 	catfishing.net: guess the Wikipedia article from its categories. Clicking or typing pauses the
 	slideshow (data-interactive). Typing goes into data-input-text; Enter sends it to
 	CatfishingProvider.action() in providers/catfishing.py, which returns the redrawn slide.
+	"Archive" shows a calendar of earlier days (catfishing_archive.html); on an earlier day the header
+	shows its date and "Today" goes back to today's game.
 #}
 <div class="slide catfishing-slide" data-interactive data-idle-seconds="240" data-provider="catfishing" data-submit-action="submit"
 	{% if game.done %}data-resume-after="15"{% endif %}>
 	<header class="catfishing-header">
 		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
-		<h1>Catfishing</h1>
+		<h1>Catfishing{% if not today %} <span>{{ day_label }}</span>{% endif %}</h1>
+		{% if not today %}<button class="puzzle-back" data-action="today">Today</button>{% endif %}
+		<button class="puzzle-back" data-action="archive">Archive</button>
 		<div class="catfishing-progress">
 			{% for result in results %}<i class="{{ result }}"></i>{% endfor %}
 			<span>{{ game.score }} / {{ total_points }} points</span>
@@ -23,7 +27,7 @@
 			<li class="{{ answer.result }}"><b>{{ article.title }}</b>{% if answer.guess and answer.result != "correct" %} <span>you said: {{ answer.guess }}</span>{% endif %}</li>
 			{% endfor %}
 		</ol>
-		<p class="catfishing-credit">See you tomorrow for ten new articles!</p>
+		<p class="catfishing-credit">{% if today %}See you tomorrow for ten new articles!{% else %}Pick another day in the archive, or play today's.{% endif %}</p>
 	</div>
 
 	{% elif game.showing_answer %}
