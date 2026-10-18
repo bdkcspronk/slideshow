@@ -1,0 +1,22 @@
+{# Info slide, timetable part (providers/info.py): the lectures per year of study, from rooster.rug.nl.
+   Lectures that are over are faded, the ones going on now stand out. #}
+<div class="slide info-slide info-timetable">
+	<h1>{{ name }} <span>{{ day }}</span></h1>
+	<div class="timetable-columns" style="--columns: {{ columns | length }}">
+		{% for column, lectures in columns.items() %}
+		<section style="--i: {{ loop.index0 }}">
+			<h2>{{ column }}</h2>
+			{% for lecture in lectures %}
+			<div class="lecture{{ ' past' if lecture.end <= now }}{{ ' current' if lecture.start <= now < lecture.end }}">
+				<span class="lecture-time">{{ lecture.start.strftime("%H:%M") }}<br>{{ lecture.end.strftime("%H:%M") }}</span>
+				<b>{{ lecture.course }}</b>
+				<span class="lecture-details">{{ lecture.kind }}{% if lecture.rooms %} &middot; {{ lecture.rooms | join(", ") }}{% endif %}</span>
+			</div>
+			{% else %}
+			<p class="no-lectures">No lectures</p>
+			{% endfor %}
+		</section>
+		{% endfor %}
+	</div>
+	<p class="info-source">From rooster.rug.nl</p>
+</div>

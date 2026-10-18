@@ -33,7 +33,7 @@ function setupMap(element) {
 	if (pins) {
 		const guess = L.latLng(pins.guess);
 		const answer = L.latLng(pins.answer);
-		L.polyline([guess, answer], { color: "#16324f", weight: 3, dashArray: "8 8", interactive: false }).addTo(map);
+		L.polyline([guess, answer], { color: "#173249", weight: 3, dashArray: "8 8", interactive: false }).addTo(map);   // Francken blue (--blue in style.css)
 		mapPin(guess, "guess").addTo(map);
 		mapPin(answer, "answer").addTo(map);
 		map.fitBounds(L.latLngBounds([guess, answer]), { padding: [60, 60], maxZoom: 13 });

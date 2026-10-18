@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "bieruur_countdown"]
+order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
@@ -27,6 +27,7 @@ fill_with = "images"
 "1" = "puzzles"
 "2" = "spotify"
 "3" = "presence"             # today's activity chart from the sniffer
+"4" = "info"                 # news, weather, buses or the timetable (the next one each press)
 
 [power]
 # The Power button in the menu (Esc). Ubuntu lets the logged-in desktop user do these without a password.
@@ -42,6 +43,25 @@ url = "https://professorfrancken.nl/association/activities"
 max_events = 10
 refresh_minutes = 30
 seconds = 15
+
+[info]
+# One slide per round with, in turn: news, the weather, the next buses and the timetable.
+show = ["news", "weather", "buses", "timetable"]
+seconds = 15
+news_feeds = [
+	["NOS", "https://feeds.nos.nl/nosnieuwsalgemeen"],
+	["NU.nl", "https://www.nu.nl/rss/Algemeen"],
+	["BBC World", "https://feeds.bbci.co.uk/news/world/rss.xml"],
+]
+headlines_per_feed = 3          # the first with its picture
+weather_place = "Zernike campus"
+weather_location = [53.2406, 6.5364]
+bus_stop_name = "Nijenborgh"
+bus_stop_codes = ["10004130"]   # timing point codes: the side towards the city centre (Hoofdstation); the other side is 10004140 (stop_ifopt in the national GTFS stops.txt)
+departures_shown = 8
+timetable_name = "Applied Physics"
+timetable = [["BSc Applied Physics", 1], ["BSc Applied Physics", 2], ["BSc Applied Physics", 3], ["MSc Applied Physics", 1]]
+timetable_next_day_from_hour = 18   # from this hour on, the next day's timetable
 
 [books]
 # Second-hand books for sale on the website: a few per slide, the next few in the next round.

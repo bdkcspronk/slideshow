@@ -1,0 +1,34 @@
+{# Info slide, weather part (providers/info.py): now, the rain in the next two hours (a bar per
+   5 minutes, from Buienradar) and the next hours. #}
+<div class="slide info-slide info-weather">
+	<h1>Weather at {{ place }}</h1>
+	<div class="weather-main">
+		<div class="weather-now">
+			<span class="weather-icon">{{ weather.icon }}</span>
+			<div>
+				<div class="weather-temperature">{{ weather.temperature | round | int }}&deg;</div>
+				<div class="weather-text">{{ weather.text }}</div>
+				<div class="weather-details">Feels like {{ weather.feels_like | round | int }}&deg; &middot; wind {{ weather.wind_kmh | round | int }} km/h {{ weather.wind_from }}</div>
+			</div>
+		</div>
+		<div class="weather-rain">
+			<h2>{{ weather.rain_summary }}</h2>
+			{% if rain %}
+			<div class="rain-chart" style="--bars: {{ rain | length }}">
+				{% for bar in rain %}<i style="--height: {{ bar.height }}%; --k: {{ loop.index0 }}"></i>{% endfor %}
+				{% for bar in rain %}{% if loop.index0 % 6 == 0 %}<span style="grid-column: {{ loop.index }}">{{ bar.time }}</span>{% endif %}{% endfor %}
+			</div>
+			{% endif %}
+		</div>
+	</div>
+	<div class="weather-hours">
+		{% for hour in hours %}
+		<div style="--i: {{ loop.index0 }}">
+			<span>{{ hour.time.strftime("%H:%M") }}</span>
+			<b>{{ hour.icon }}</b>
+			<strong>{{ hour.temperature | round | int }}&deg;</strong>
+			<small>{{ hour.rain_chance }}% rain</small>
+		</div>
+		{% endfor %}
+	</div>
+</div>

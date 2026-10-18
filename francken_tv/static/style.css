@@ -1,10 +1,29 @@
 /* Francken TV styles. Sizes use vw/vh (% of screen width/height) so every screen size works. */
 
+/* The theme: Francken blue (the main colour: text, titles, buttons) and red (accents) on white, as on
+   professorfrancken.nl. Change these to restyle every slide; game colours (Wordle, Connections), photos,
+   the chart colours from devices.json, the Spotify slide (dark, with the blurred album cover) and the
+   sniffer slides (activity chart and leaderboard, dark) are left as they are. */
+:root {
+	--blue: #173249;          /* Francken blue */
+	--blue-light: #2d5f8a;    /* secondary text in blue, dates, times */
+	--blue-faint: #e8eef4;    /* blue-tinted backgrounds: tags, tracks, pressed buttons */
+	--red: #dc3545;           /* Francken red: accents, highlights, "now" */
+	--red-dark: #b02a37;      /* red text on white (easier to read) */
+	--bg: #ffffff;
+	--card: #ffffff;
+	--card-border: #dfe5ec;
+	--shadow: 0 0.3vh 1.2vh rgba(23, 50, 73, 0.10);
+	--muted: #5f6f80;         /* small print */
+	--faint: #8a97a5;         /* even smaller print, sources */
+	--line: #dfe5ec;          /* dividers, chart lines */
+}
+
 html, body {
 	margin: 0;
 	height: 100%;
 	overflow: hidden;
-	background: black;
+	background: var(--bg);
 	cursor: none;
 	font-family: "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
 }
@@ -32,7 +51,7 @@ body.show-cursor button { cursor: pointer; }
 	bottom: 2vh;
 	padding: 1.5vh 2vw;
 	border-radius: 0.6vw;
-	background: rgba(0, 0, 0, 0.8);
+	background: var(--blue);
 	color: white;
 	font-size: 3.5vh;
 	z-index: 10;
@@ -67,7 +86,7 @@ body.show-cursor button { cursor: pointer; }
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: black;
+	background: var(--bg);
 	position: relative;
 }
 .image-slide img {
@@ -84,8 +103,9 @@ body.show-cursor button { cursor: pointer; }
 	bottom: 4vh;
 	padding: 1.5vh 2vw;
 	border-radius: 0.6vw;
-	background: rgba(0, 0, 0, 0.6);
+	background: rgba(23, 50, 73, 0.85);
 	color: white;
+	border-left: 0.6vh solid var(--red);
 	display: flex;
 	flex-direction: column;
 	gap: 0.5vh;
@@ -97,10 +117,9 @@ body.show-cursor button { cursor: pointer; }
 .activities-slide {
 	display: flex;
 	flex-direction: column;
-	justify-content: center;   /* the title and list together, with equal space above and below */
-	background: #f4f6fa;
-	color: #10213f;
-	padding: 0 6vw;
+	background: var(--bg);
+	color: var(--blue);
+	padding: 6vh 5vw 5vh;   /* the title in the same place as on the info slides */
 }
 .activities-slide h1 {
 	margin: 0 0 4vh;
@@ -119,12 +138,13 @@ body.show-cursor button { cursor: pointer; }
 	display: flex;
 	align-items: center;
 	gap: 1.5vw;
-	background: white;
+	background: var(--card);
+	border: 0.15vh solid var(--card-border);
 	border-radius: 0.6vw;
 	padding: 1.8vh 1.5vw;
-	box-shadow: 0 0.3vh 1vh rgba(16, 33, 63, 0.08);
+	box-shadow: var(--shadow);
 }
-.activities-slide li.today { outline: 0.4vh solid #f3b01f; }
+.activities-slide li.today { outline: 0.4vh solid var(--red); }
 .activities-slide li.from-left { animation: slide-from-left 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.6s + var(--i) * 0.5s) both; }
 .activities-slide li.from-right { animation: slide-from-right 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.6s + var(--i) * 0.5s) both; }
 @keyframes slide-from-left { from { transform: translateX(-60vw); opacity: 0; } }
@@ -134,10 +154,10 @@ body.show-cursor button { cursor: pointer; }
 	flex-direction: column;
 	align-items: center;
 	min-width: 6vw;
-	color: #1f4a8f;
+	color: var(--blue-light);
 }
 .activity-date .day { font-size: 5vh; font-weight: bold; line-height: 1; }
-.activity-date .month { font-size: 2.4vh; text-transform: uppercase; }
+.activity-date .month { font-size: 2.4vh; text-transform: uppercase; color: var(--red-dark); }
 .activity-text { min-width: 0; }   /* lets long titles shrink instead of widening the card */
 .activity-title {
 	font-size: 3.2vh;
@@ -146,20 +166,202 @@ body.show-cursor button { cursor: pointer; }
 	overflow: hidden;
 	text-overflow: ellipsis;   /* long names end in "..." on one line */
 }
-.activity-details { font-size: 2.4vh; color: #5a6880; margin-top: 0.6vh; }
+.activity-details { font-size: 2.4vh; color: var(--muted); margin-top: 0.6vh; }
 
-/* Quotes: black text on the quote background, like the old slide. */
+/* Info slide (providers/info.py): news, weather, buses or the timetable, in the activities slide's
+   look. Items slide in one after another (--i, --j). */
+.info-slide {
+	display: flex;
+	flex-direction: column;
+	padding: 6vh 5vw 5vh;
+	background: var(--bg);
+	color: var(--blue);
+	position: relative;
+}
+.info-slide h1 { margin: 0 0 4vh; font-size: 6.5vh; }
+.info-slide h1 span { color: var(--red); font-weight: normal; }
+.info-source { position: absolute; bottom: 2.5vh; right: 5vw; margin: 0; font-size: 1.9vh; color: var(--faint); }
+@keyframes info-in { from { opacity: 0; transform: translateY(2vh); } }
+
+/* News: a column per feed. */
+.news-columns { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--feeds), minmax(0, 1fr)); gap: 2.5vw; }
+.news-columns h2 { margin: 0 0 2vh; padding-bottom: 1vh; font-size: 3.4vh; color: var(--blue); border-bottom: 0.4vh solid var(--red); }
+.news-columns ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1.6vh; }
+.news-columns li { animation: info-in 0.8s ease-out calc(0.4s + var(--i) * 0.25s + var(--j) * 0.12s) both; }
+.news-columns button {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 0.6vh;
+	padding: 1.5vh 1.2vw;
+	border: 0.15vh solid var(--card-border);
+	border-radius: 0.6vw;
+	background: var(--card);
+	box-shadow: var(--shadow);
+	color: inherit;
+	font-family: inherit;
+	text-align: left;
+	overflow: hidden;
+}
+.news-columns button:active { background: var(--blue-faint); }
+/* The first headline of each feed, with its picture across the top of the card. */
+.news-columns button img {
+	width: calc(100% + 2.4vw);
+	margin: -1.5vh -1.2vw 0.6vh;
+	height: 18vh;
+	object-fit: cover;
+	border-radius: 0.6vw 0.6vw 0 0;
+}
+.news-columns li b {
+	font-size: 2.6vh;
+	line-height: 1.25;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	overflow: hidden;
+}
+.news-columns li span { font-size: 1.9vh; color: var(--muted); }
+
+/* A news article: the title, then the text in one column (lines short enough to read) that scrolls when it's long. */
+.article-header { display: flex; align-items: center; gap: 2vw; margin-bottom: 3vh; font-size: 2.4vh; color: var(--muted); }
+.article-back {
+	padding: 1vh 1.6vw;
+	border: 0.2vh solid var(--blue);
+	border-radius: 4vh;
+	background: var(--card);
+	color: var(--blue);
+	font-family: inherit;
+	font-size: 2.4vh;
+	font-weight: bold;
+}
+.info-article h1 { font-size: 5vh; line-height: 1.2; }
+.article-body { flex: 1; min-height: 0; display: flex; gap: 3vw; align-items: flex-start; }
+.article-image { flex: none; width: 32vw; height: auto; max-height: 60vh; object-fit: cover; border-radius: 0.6vw; box-shadow: var(--shadow); }
+.article-text {
+	flex: 1;
+	align-self: stretch;
+	min-width: 0;
+	min-height: 0;
+	max-width: 72vw;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: var(--line) transparent;
+	padding-right: 2vw;
+	font-size: 2.9vh;
+	line-height: 1.55;
+}
+.article-text p { margin: 0 0 1.8vh; }
+.article-more { color: var(--red-dark); font-style: italic; }
+
+/* Weather: now on the left, the rain chart on the right, the next hours below. */
+.weather-main { display: flex; gap: 4vw; align-items: stretch; }
+.weather-now { flex: 1; display: flex; align-items: center; gap: 2.5vw; padding: 3vh 2vw; border-radius: 0.6vw; background: var(--card); border: 0.15vh solid var(--card-border); box-shadow: var(--shadow); }
+.weather-icon { font-size: 16vh; line-height: 1; }
+.weather-temperature { font-size: 13vh; font-weight: bold; line-height: 1; }
+.weather-text { margin-top: 1vh; font-size: 4vh; }
+.weather-details { margin-top: 1vh; font-size: 2.4vh; color: var(--muted); }
+.weather-rain { flex: 1.2; display: flex; flex-direction: column; padding: 3vh 2vw; border-radius: 0.6vw; background: var(--card); border: 0.15vh solid var(--card-border); box-shadow: var(--shadow); }
+.weather-rain h2 { margin: 0 0 2vh; font-size: 3.6vh; }
+.rain-chart {
+	flex: 1;
+	min-height: 18vh;
+	display: grid;
+	grid-template-columns: repeat(var(--bars), minmax(0, 1fr));   /* all equally wide: the time labels may stick out of theirs */
+	grid-template-rows: 1fr auto;
+	column-gap: 0.25vw;
+	align-items: end;
+	border-bottom: 0.3vh solid var(--line);
+}
+.rain-chart i {
+	grid-row: 1;
+	height: var(--height);
+	min-height: 0.4vh;   /* a dry five minutes still shows as a sliver */
+	border-radius: 0.4vh 0.4vh 0 0;
+	background: var(--blue-light);
+	transform-origin: bottom;
+	animation: rain-grow 0.6s ease-out calc(0.5s + var(--k) * 0.03s) both;
+}
+@keyframes rain-grow { from { transform: scaleY(0); } }
+.rain-chart span { grid-row: 2; justify-self: start; margin-top: 1vh; font-size: 2vh; color: var(--muted); white-space: nowrap; }
+.weather-hours { margin-top: 3.5vh; display: grid; grid-template-columns: repeat(6, 1fr); gap: 1.5vw; }
+.weather-hours div {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5vh;
+	padding: 2vh 0;
+	border-radius: 0.6vw;
+	background: var(--card);
+	border: 0.15vh solid var(--card-border);
+	box-shadow: var(--shadow);
+	animation: info-in 0.7s ease-out calc(0.8s + var(--i) * 0.12s) both;
+}
+.weather-hours span { font-size: 2.2vh; color: var(--muted); }
+.weather-hours b { font-size: 6vh; line-height: 1.1; }
+.weather-hours strong { font-size: 3.6vh; }
+.weather-hours small { font-size: 1.9vh; color: var(--blue-light); }
+
+/* Buses: one row per departure. */
+.bus-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1.4vh; }
+.bus-list li {
+	display: grid;
+	grid-template-columns: 9vh 1fr 16vh 14vh;
+	align-items: center;
+	gap: 2vw;
+	padding: 1.4vh 1.5vw;
+	border-radius: 0.6vw;
+	background: var(--card);
+	border: 0.15vh solid var(--card-border);
+	box-shadow: var(--shadow);
+	font-size: 3.6vh;
+	animation: info-in 0.7s ease-out calc(0.4s + var(--i) * 0.1s) both;
+}
+.bus-line { padding: 0.6vh 0; border-radius: 0.6vh; background: var(--blue); color: white; text-align: center; font-weight: bold; }
+.bus-destination { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bus-time { font-variant-numeric: tabular-nums; }
+.bus-time small { margin-left: 0.6vw; font-size: 2.6vh; font-weight: bold; color: var(--red); }
+.bus-minutes { justify-self: end; font-weight: bold; color: var(--red-dark); }
+.bus-list li.cancelled { opacity: 0.6; }
+.bus-list li.cancelled .bus-destination, .bus-list li.cancelled .bus-time { text-decoration: line-through; }
+.bus-list li.cancelled .bus-minutes { color: var(--red); }
+
+/* Timetable: a column per year of study. */
+.timetable-columns { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); gap: 2vw; }
+.timetable-columns section { display: flex; flex-direction: column; gap: 1.2vh; min-height: 0; animation: info-in 0.8s ease-out calc(0.4s + var(--i) * 0.2s) both; }
+.timetable-columns h2 { margin: 0 0 0.8vh; padding-bottom: 1vh; font-size: 3.4vh; color: var(--blue); border-bottom: 0.4vh solid var(--red); }
+/* A row per lecture: the time on the left; the course (up to two lines) and where on the right. */
+.lecture {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	grid-template-rows: auto auto;
+	column-gap: 1vw;
+	row-gap: 0.3vh;
+	padding: 1vh 1vw;
+	border-radius: 0.6vw;
+	background: var(--card);
+	border: 0.15vh solid var(--card-border);
+	box-shadow: var(--shadow);
+	border-left: 0.6vh solid var(--blue);
+}
+.lecture-time { grid-row: span 2; align-self: center; font-size: 2vh; font-weight: bold; line-height: 1.3; color: var(--blue-light); font-variant-numeric: tabular-nums; }
+.lecture b { font-size: 2.3vh; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.lecture-details { font-size: 1.8vh; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lecture.past { opacity: 0.45; }
+.lecture.current { border-left-color: var(--red); outline: 0.3vh solid var(--red); }
+.no-lectures { margin: 0; font-size: 2.4vh; color: var(--faint); }
+
+/* Quotes: blue text on white, or on the quote background picture if there is one. */
 .quote-slide {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: white center / cover no-repeat;
+	background: var(--bg) center / cover no-repeat;
 }
 .quote-slide blockquote {
 	width: 80%;
 	margin: 0;
 	text-align: center;
-	color: black;
+	color: var(--blue);
 	font-size: 7.4vh;
 	font-style: italic;
 	font-weight: 200;
@@ -179,12 +381,13 @@ body.show-cursor button { cursor: pointer; }
 		quote-cursor-blink 0.9s steps(1, end) calc(800ms + var(--i) * var(--letter)) 3;
 }
 @keyframes quote-letter { to { opacity: 1; } }
-@keyframes quote-cursor { from { box-shadow: 0.08em 0 0 #000; } }
-@keyframes quote-cursor-blink { 0% { box-shadow: 0.08em 0 0 #000; } 50% { box-shadow: none; } }
+@keyframes quote-cursor { from { box-shadow: 0.08em 0 0 var(--red); } }
+@keyframes quote-cursor-blink { 0% { box-shadow: 0.08em 0 0 var(--red); } 50% { box-shadow: none; } }
 .quote-slide footer { margin-top: 2vh; opacity: 0; animation: quote-author 1.2s ease var(--typed) forwards; }
 @keyframes quote-author { from { opacity: 0; transform: translateY(1vh); } to { opacity: 1; transform: none; } }
 
-/* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. */
+/* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. Blue and red on white;
+   the beer stays beer-coloured. */
 .bieruur-slide {
 	display: flex;
 	align-items: center;
@@ -193,33 +396,33 @@ body.show-cursor button { cursor: pointer; }
 	padding: 0 3vw;
 	position: relative;
 	overflow: hidden;
-	background: radial-gradient(circle at 30% 40%, #4a2c12 0%, #24150a 55%, #120a04 100%);
-	color: #fff4dc;
+	background: var(--bg);
+	color: var(--blue);
 }
 .bieruur-clock { height: 72vh; max-width: 38vw; flex: none; }
-.clock-face { fill: #fffaf0; stroke: #f3b01f; stroke-width: 4; }
-.clock-wedge { fill: #f3b01f; opacity: 0.35; }
-.clock-tick { stroke: #8a6a4a; stroke-width: 1; }
-.clock-tick-hour { stroke: #3a2410; stroke-width: 2.5; }
+.clock-face { fill: #ffffff; stroke: var(--blue); stroke-width: 4; }
+.clock-wedge { fill: var(--red); opacity: 0.25; }
+.clock-tick { stroke: var(--faint); stroke-width: 1; }
+.clock-tick-hour { stroke: var(--blue); stroke-width: 2.5; }
 .clock-number {
-	fill: #3a2410;
+	fill: var(--blue);
 	font-size: 15px;
 	font-weight: bold;
 	text-anchor: middle;
 	dominant-baseline: central;
 }
-.clock-bieruur-badge { fill: #f3b01f; stroke: #fffaf0; stroke-width: 2; }
+.clock-bieruur-badge { fill: var(--red); stroke: #ffffff; stroke-width: 2; }
 .clock-bieruur-number {
-	fill: #3a2410;
+	fill: #ffffff;
 	font-size: 12px;
 	font-weight: bold;
 	text-anchor: middle;
 	dominant-baseline: central;
 }
-.clock-hand-hour { stroke: #3a2410; stroke-width: 6; stroke-linecap: round; }
-.clock-hand-minute { stroke: #3a2410; stroke-width: 4; stroke-linecap: round; }
-.clock-hand-second { stroke: #d62828; stroke-width: 1.5; stroke-linecap: round; }
-.clock-centre { fill: #d62828; }
+.clock-hand-hour { stroke: var(--blue); stroke-width: 6; stroke-linecap: round; }
+.clock-hand-minute { stroke: var(--blue); stroke-width: 4; stroke-linecap: round; }
+.clock-hand-second { stroke: var(--red); stroke-width: 1.5; stroke-linecap: round; }
+.clock-centre { fill: var(--red); }
 
 .bieruur-info { text-align: center; flex: 1; min-width: 0; }
 .bieruur-label {
@@ -227,7 +430,7 @@ body.show-cursor button { cursor: pointer; }
 	font-weight: bold;
 	letter-spacing: 0.4vh;
 	text-transform: uppercase;
-	color: #f3b01f;
+	color: var(--red);
 }
 .bieruur-countdown {
 	font-size: min(16vh, 8.5vw);
@@ -275,25 +478,26 @@ body.show-cursor button { cursor: pointer; }
 	50% { transform: translateX(0.6vh); }
 	to { bottom: 100%; opacity: 0.4; transform: translateX(-0.4vh); }
 }
-/* Once the beer is behind the countdown, the text turns dark to stay readable. */
-.bieruur-info.on-beer { color: #3a2410; }
-.bieruur-info.on-beer .bieruur-label { color: #7a3d00; }
+/* Once the beer is behind the countdown, the text stays blue, the label turns dark red to stay readable. */
+.bieruur-info.on-beer { color: var(--blue); }
+.bieruur-info.on-beer .bieruur-label { color: var(--red-dark); }
 
 /* The last two minutes: the countdown pulses. */
-.bieruur-final .bieruur-countdown { color: #ffd45c; animation: pulse 1s ease-in-out infinite; }
-.bieruur-final .on-beer .bieruur-countdown { color: #3a2410; }
+.bieruur-final .bieruur-countdown { color: var(--red); animation: pulse 1s ease-in-out infinite; }
+.bieruur-final .on-beer .bieruur-countdown { color: var(--blue); }
 @keyframes pulse {
 	50% { transform: scale(1.06); }
 }
 
 /* Bieruur itself: a screen full of beer. */
-.bieruur-party { justify-content: center; color: #3a2410; }
+.bieruur-party { justify-content: center; color: var(--blue); }
 .bieruur-party .beer-head { bottom: calc(100% - 6vh); }
 .party-text { text-align: center; }
 .party-title { font-size: 14vh; font-weight: bold; line-height: 1; }
 .party-subtitle { font-size: 7vh; margin-top: 3vh; }
 
-/* Activity chart (activity_chart.py + templates/slides/presence.html). Rows are 1/--rows of the
+/* Activity chart (activity_chart.py + templates/slides/presence.html), dark like the leaderboard (an
+   exception to the blue and red theme). Rows are 1/--rows of the
    chart height; bars grow from left to right (a clip that opens), like time playing back. */
 .presence-slide {
 	display: flex;
@@ -321,10 +525,10 @@ body.show-cursor button { cursor: pointer; }
 	font-size: min(2.6vh, calc(55vh / var(--rows)));
 }
 .chart-plot { position: relative; }
-.chart-grid { position: absolute; top: 0; bottom: 0; border-left: 0.1vh solid rgba(38, 50, 56, 0.5); }
-.chart-grid.half { border-left: 0.15vh solid rgba(38, 50, 56, 0.75); }
-.chart-grid.hour { border-left: 0.2vh solid rgba(38, 50, 56, 0.9); }
-.chart-row { position: absolute; left: 0; right: 0; top: calc((var(--row) + 0.5) * 100% / var(--rows)); border-top: 0.1vh solid rgba(38, 50, 56, 0.3); }
+/* Vertical lines: every quarter hour thin, half hours thicker, hours thickest (centred on their time). */
+.chart-grid { position: absolute; top: 0; bottom: 0; width: 0.1vh; transform: translateX(-50%); background: rgba(38, 50, 56, 0.5); }
+.chart-grid.half { width: 0.28vh; background: rgba(38, 50, 56, 0.75); }
+.chart-grid.hour { width: 0.48vh; background: rgba(38, 50, 56, 0.9); }
 .chart-hours { grid-column: 2; position: relative; }
 .chart-hours span { position: absolute; top: 1vh; transform: translateX(-50%); font-size: 2.4vh; }
 .bar {
@@ -429,7 +633,7 @@ body.show-cursor button { cursor: pointer; }
 .leaderboard-time { text-align: right; font-weight: bold; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .leaderboard-days { color: #8a9aa3; font-size: 2.4vh; }
 
-/* Books for sale (providers/books.py): a bookshop shelf on warm paper. The books slide in from the
+/* Books for sale (providers/books.py): a wooden bookshop shelf. The books slide in from the
    right one just after the other (--i), turning, and land on the shelf; their title, authors and
    price appear below it. Each book is a 3D box (front cover, spine, pages, top, back); --hue colours
    the spine and the cloth of books without a cover. */
@@ -437,21 +641,19 @@ body.show-cursor button { cursor: pointer; }
 	--w: 34vh;   /* a book: width, height, thickness */
 	--h: 48vh;
 	--d: 5vh;
-	--shelf-top: 56vh;   /* where the books stand, from the top of .books-row */
-	--ink: #2a2420;
-	--muted: #8b7e6e;
+	--shelf-top: 63vh;   /* where the books stand, from the top of .books-row (leaves room under the title) */
+	--shelf-surface: 4vh;   /* the top of the plank the books stand on (seen from a little above) */
+	--shelf-edge: 4.5vh;    /* the plank's front edge */
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	padding: 6vh 6vw 0;
-	background:
-		radial-gradient(ellipse 70% 55% at 50% 40%, rgba(255, 252, 245, 0.9), transparent 70%),
-		linear-gradient(#f3ede3, #e6ddcf);
-	color: var(--ink);
+	padding: 6vh 5vw 0;   /* the title in the same place as on the info slides */
+	background: var(--bg);
+	color: var(--blue);
 }
 .books-slide h1 {
 	margin: 0;
-	font-size: 6.5vh;   /* as on the activities slide */
+	font-size: 6.5vh;   /* as on the activities and info slides */
 }
 
 .books-row {
@@ -461,14 +663,17 @@ body.show-cursor button { cursor: pointer; }
 	justify-content: space-around;
 	padding-top: calc(var(--shelf-top) - var(--h));
 }
+/* A thick wooden plank: its top surface, on which the books stand halfway back, and its front edge. */
 .books-shelf {
 	position: absolute;
-	left: -6vw;
-	right: -6vw;
-	top: var(--shelf-top);
-	height: 2.2vh;
-	background: linear-gradient(#b48a62, #8e6643 60%, #6f4e33);
-	box-shadow: 0 1.6vh 2.5vh -0.8vh rgba(60, 40, 20, 0.45);
+	left: -5vw;   /* to the edges of the screen, past the slide's padding */
+	right: -5vw;
+	top: calc(var(--shelf-top) - var(--shelf-surface) / 2);
+	height: calc(var(--shelf-surface) + var(--shelf-edge));
+	background:
+		linear-gradient(#c9a07a, #b88d66) top / 100% var(--shelf-surface) no-repeat,
+		linear-gradient(#94693f, #7a5432 70%, #5f4127);
+	box-shadow: 0 2vh 3vh -1vh rgba(60, 40, 20, 0.45);
 	z-index: 0;
 }
 .book-card {
@@ -483,15 +688,17 @@ body.show-cursor button { cursor: pointer; }
 
 .book-stage {
 	position: relative;
+	z-index: 0;   /* its own layer, so the shadow can go behind the book */
 	perspective: 140vh;
 	perspective-origin: 50% 30%;
 }
-/* Standing on the shelf: only a slow sway, each book out of step with the others. */
+/* Hovering over the shelf: a slow bob up and down and a little sway, each book out of step with the
+   others; its shadow stays on the shelf and shrinks as the book rises (book-shadow-hover, same timing). */
 .book-sway {
 	transform-style: preserve-3d;
 	animation: book-sway 5s ease-in-out calc(var(--i) * -1.7s) infinite alternate;
 }
-@keyframes book-sway { from { transform: rotateY(-4deg); } to { transform: rotateY(5deg); } }
+@keyframes book-sway { from { transform: translateY(-4vh) rotateY(-4deg); } to { transform: translateY(-6.5vh) rotateY(5deg); } }
 .book-3d {
 	position: relative;
 	width: var(--w);
@@ -555,19 +762,25 @@ body.show-cursor button { cursor: pointer; }
 	transform: rotateX(90deg) translateZ(calc(var(--h) / 2 - 0.3vh));
 	background: repeating-linear-gradient(0deg, #f7f2e8 0 0.3vh, #ddd3c2 0.3vh 0.4vh);
 }
-/* Where the book touches the shelf. */
+/* The book's shadow on the shelf's surface, below the hovering book. It slides in with the book (the
+   same timing as book-arrive, using translate) and shrinks and fades as the book bobs up (using scale
+   and opacity, so the two animations don't overwrite each other). */
 .book-shadow {
 	position: absolute;
-	left: 8%;
-	right: 4%;
-	bottom: -0.8vh;
-	height: 1.6vh;
+	z-index: -1;
+	left: 6%;
+	right: 2%;
+	bottom: -1.2vh;
+	height: 2.2vh;
 	border-radius: 50%;
 	background: rgba(40, 25, 10, 0.5);
 	filter: blur(0.8vh);
-	animation: book-shadow-in 0.6s ease-out calc(1.5s + var(--i) * 0.3s) both;
+	animation:
+		book-shadow-arrive 1.8s cubic-bezier(0.22, 0.8, 0.3, 1) calc(0.4s + var(--i) * 0.3s) both,
+		book-shadow-hover 5s ease-in-out calc(var(--i) * -1.7s) infinite alternate;
 }
-@keyframes book-shadow-in { from { opacity: 0; transform: scaleX(0.3); } }
+@keyframes book-shadow-arrive { 0% { translate: 100vw 0; } 80%, 100% { translate: 0 0; } }   /* in place at 80%, like the book */
+@keyframes book-shadow-hover { from { scale: 0.95; opacity: 0.9; } to { scale: 0.8; opacity: 0.6; } }   /* low, then high */
 
 /* Books without a cover on Open Library: a cloth-bound hardcover with a gold title. */
 .book-drawn {
@@ -597,40 +810,21 @@ body.show-cursor button { cursor: pointer; }
 /* Below the shelf: title, authors, price. */
 .book-text {
 	width: 100%;
-	margin-top: 4.5vh;
+	margin-top: calc(var(--shelf-surface) / 2 + var(--shelf-edge) + 2.5vh);   /* below the shelf */
 	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(1.6s + var(--i) * 0.3s) both;
 }
 @keyframes book-text-in { from { opacity: 0; transform: translateY(2vh); } }
-.book-title {
-	font-weight: bold;
-	font-size: 2.6vh;
-	line-height: 1.25;
-	min-height: 2.5em;   /* always two lines, so the prices line up */
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 2;
-	overflow: hidden;
-}
-.book-authors {
-	margin-top: 0.8vh;
-	font-size: 1.9vh;
-	color: var(--muted);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
 .book-price {
 	display: flex;
 	justify-content: center;
 	align-items: baseline;
 	gap: 1vw;
-	margin-top: 2vh;
 }
 .book-price > span {
 	padding: 0.7vh 1.4vw;
 	border-radius: 0.6vh;
-	background: var(--ink);
-	color: #f3ede3;
+	background: var(--red);
+	color: #ffffff;
 	font-size: 3.6vh;
 	font-weight: bold;
 }
@@ -638,7 +832,7 @@ body.show-cursor button { cursor: pointer; }
 .book-price > small { font-size: 2vh; color: var(--muted); }
 
 /* Spotify: the album cover, blurred, as the background; the cover itself, title, progress and the
-   next song on top. */
+   next song on top. Dark, in Spotify's own colours (an exception to the blue and red theme). */
 .spotify-slide { position: relative; overflow: hidden; background: #121212; color: #ffffff; }
 .spotify-backdrop {
 	position: absolute;
@@ -893,11 +1087,11 @@ body.show-cursor button { cursor: pointer; }
 	display: flex;
 	align-items: stretch;
 	padding: 8vh 4vw 12vh;
-	background: #ffffff;
-	color: #121212;
+	background: var(--bg);
+	color: var(--blue);
 	position: relative;
 }
-.puzzles-divider { width: 0.3vw; margin: 6vh 0; background: #d3d6da; border-radius: 1vw; }
+.puzzles-divider { width: 0.3vw; margin: 6vh 0; background: var(--line); border-radius: 1vw; }
 .puzzle-card {
 	flex: 1;
 	display: flex;
@@ -913,7 +1107,7 @@ body.show-cursor button { cursor: pointer; }
 	font-family: inherit;
 	transition: background 0.2s, transform 0.1s;
 }
-.puzzle-card:active { transform: scale(0.98); background: #f4f4f0; }
+.puzzle-card:active { transform: scale(0.98); background: var(--blue-faint); }
 .puzzle-icon { display: grid; gap: 0.6vh; height: 23vh; align-content: center; }   /* same height, so the titles line up */
 .puzzle-connections .puzzle-icon { grid-template-columns: repeat(4, 5vh); }
 .puzzle-wordle .puzzle-icon { grid-template-columns: repeat(5, 5vh); }
@@ -926,7 +1120,7 @@ body.show-cursor button { cursor: pointer; }
 .puzzle-icon .present { background: #c9b458; border-radius: 0; }
 .puzzle-icon .absent { background: #787c7e; border-radius: 0; }
 .puzzle-catfishing .puzzle-icon { grid-template-columns: auto; justify-items: center; }
-.puzzle-icon .tag { height: 4.2vh; border-radius: 2.1vh; background: #e3f1ec; border: 0.3vh solid #2f8f72; }
+.puzzle-icon .tag { height: 4.2vh; border-radius: 2.1vh; background: var(--blue-faint); border: 0.3vh solid var(--blue); }
 .puzzle-icon .tag.w1 { width: 22vh; } .puzzle-icon .tag.w2 { width: 16vh; } .puzzle-icon .tag.w3 { width: 19vh; }
 /* TimeGuessr: a photo (hills under a sky) with a pin on it, and a year. */
 .puzzle-timeguessr .puzzle-icon { grid-template-columns: auto; justify-items: center; }
@@ -946,21 +1140,21 @@ body.show-cursor button { cursor: pointer; }
 	height: 3vh;
 	border-radius: 50% 50% 50% 0;
 	transform: rotate(-45deg);
-	background: #e07a1f;
+	background: var(--red);
 	border: 0.4vh solid white;
 }
-.puzzle-icon .year { height: auto; padding: 0.4vh 1.6vh; border-radius: 2vh; background: #16324f; color: white; font-style: normal; font-weight: bold; font-size: 2.6vh; }
+.puzzle-icon .year { height: auto; padding: 0.4vh 1.6vh; border-radius: 2vh; background: var(--blue); color: white; font-style: normal; font-weight: bold; font-size: 2.6vh; }
 /* Smaller titles when there are more puzzles side by side (--cards is set on the slide). */
 .puzzle-title { font-size: min(8vh, calc(52vw / var(--cards, 2) / 6.5)); font-weight: bold; letter-spacing: 0.3vh; text-transform: uppercase; }
-.puzzle-status { font-size: 3.4vh; color: #5a5a5a; }
-.status-solved .puzzle-status { color: #3a8a3a; font-weight: bold; }
-.status-playing .puzzle-status { color: #b08a00; font-weight: bold; }
-.status-lost .puzzle-status { color: #b84a3a; font-weight: bold; }
+.puzzle-status { font-size: 3.4vh; color: var(--muted); }
+.status-solved .puzzle-status { color: var(--blue-light); font-weight: bold; }
+.status-playing .puzzle-status { color: var(--red-dark); font-weight: bold; }
+.status-lost .puzzle-status { color: var(--muted); font-weight: bold; }
 .puzzle-play {
 	margin-top: 1vh;
 	padding: 1.4vh 3vw;
 	border-radius: 4vh;
-	background: #121212;
+	background: var(--blue);
 	color: #ffffff;
 	font-size: 2.8vh;
 	font-weight: bold;
@@ -973,15 +1167,15 @@ body.show-cursor button { cursor: pointer; }
 	margin: 0;
 	text-align: center;
 	font-size: 2.4vh;
-	color: #8a8a8a;
+	color: var(--faint);
 }
 .puzzle-back {
 	margin-bottom: 1.5vh;
 	padding: 0.8vh 1.4vw;
-	border: 0.2vh solid #d3d6da;
+	border: 0.2vh solid var(--blue);
 	border-radius: 4vh;
-	background: #ffffff;
-	color: #121212;
+	background: var(--card);
+	color: var(--blue);
 	font-family: inherit;
 	font-size: 2.2vh;
 	font-weight: bold;
@@ -994,17 +1188,17 @@ body.show-cursor button { cursor: pointer; }
 	flex-direction: column;
 	padding: 4vh 4vw 6vh;
 	gap: 2.5vh;
-	background: #fbfaf6;
-	color: #16324f;
+	background: var(--bg);
+	color: var(--blue);
 	position: relative;
 }
 .timeguessr-header { display: flex; align-items: center; gap: 2vw; }
 .timeguessr-header .puzzle-back { margin: 0; }
 .timeguessr-header h1 { margin: 0; font-size: 5vh; }
 .timeguessr-progress { margin-left: auto; display: flex; align-items: center; gap: 0.6vw; font-size: 2.6vh; font-weight: bold; }
-.timeguessr-progress span:first-child { margin-right: 1vw; font-weight: normal; color: #4d5f72; }
-.timeguessr-progress i { width: 2.2vh; height: 2.2vh; border-radius: 50%; background: #d8dcd5; }
-.timeguessr-progress i.done { background: #e07a1f; }
+.timeguessr-progress span:first-child { margin-right: 1vw; font-weight: normal; color: var(--muted); }
+.timeguessr-progress i { width: 2.2vh; height: 2.2vh; border-radius: 50%; background: var(--line); }
+.timeguessr-progress i.done { background: var(--red); }
 .timeguessr-progress span:last-child { margin-left: 1vw; }
 
 .timeguessr-round { flex: 1; display: flex; gap: 2.5vw; min-height: 0; }
@@ -1028,7 +1222,7 @@ body.show-cursor button { cursor: pointer; }
 	flex: 1;
 	min-height: 0;
 	border-radius: 1.2vh;
-	border: 0.2vh solid #d8dcd5;
+	border: 0.2vh solid var(--card-border);
 	background: #aad3df;   /* the sea, while the tiles load */
 	font-family: inherit;
 }
@@ -1040,35 +1234,35 @@ body.show-cursor button { cursor: pointer; }
 	z-index: 1000;   /* above Leaflet's panes */
 	padding: 0.8vh 1.4vw;
 	border-radius: 3vh;
-	background: rgba(22, 50, 79, 0.85);
+	background: rgba(23, 50, 73, 0.88);
 	color: white;
 	font-size: 2.2vh;
 	white-space: nowrap;
 	pointer-events: none;
 }
 .timeguessr-map[data-value] .timeguessr-map-hint { display: none; }
-/* Pins (widgets.js): your guess dark blue, the answer orange. */
+/* Pins (widgets.js): your guess blue, the answer red. */
 .map-pin { border-radius: 50%; border: 0.45vh solid white; box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.45); box-sizing: border-box; }
-.map-pin-guess { background: #16324f; }
-.map-pin-answer { background: #e07a1f; }
+.map-pin-guess { background: var(--blue); }
+.map-pin-answer { background: var(--red); }
 
 .timeguessr-year { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 1vh 1.5vw; }
 .timeguessr-year output { grid-row: span 2; font-size: 7vh; font-weight: bold; font-variant-numeric: tabular-nums; }
-.timeguessr-year input { width: 100%; height: 4vh; accent-color: #e07a1f; }
+.timeguessr-year input { width: 100%; height: 4vh; accent-color: var(--red); }
 .timeguessr-nudges { display: flex; gap: 0.8vw; }
 .timeguessr-nudges button, .timeguessr-button {
 	padding: 1vh 1.4vw;
-	border: 0.2vh solid #16324f;
+	border: 0.2vh solid var(--blue);
 	border-radius: 4vh;
-	background: #ffffff;
-	color: #16324f;
+	background: var(--card);
+	color: var(--blue);
 	font-family: inherit;
 	font-size: 2.4vh;
 	font-weight: bold;
 }
 .timeguessr-nudges button { flex: 1; }
 .timeguessr-button { padding: 1.6vh 2vw; font-size: 2.8vh; }
-.timeguessr-button.primary { background: #16324f; color: #ffffff; }
+.timeguessr-button.primary { background: var(--blue); color: #ffffff; }
 .timeguessr-button:disabled { opacity: 0.35; }
 
 .timeguessr-scores { display: flex; flex-direction: column; gap: 1vh; }
@@ -1079,14 +1273,14 @@ body.show-cursor button { cursor: pointer; }
 	gap: 0 1vw;
 	padding: 1.2vh 1.2vw;
 	border-radius: 1vh;
-	background: #ffffff;
-	border: 0.2vh solid #e4e6e0;
+	background: var(--card);
+	border: 0.2vh solid var(--card-border);
 }
-.timeguessr-score span { color: #4d5f72; font-size: 2.2vh; }
+.timeguessr-score span { color: var(--muted); font-size: 2.2vh; }
 .timeguessr-score b { font-size: 3.4vh; }
-.timeguessr-score small { grid-column: 2; font-size: 2vh; color: #4d5f72; }
-.timeguessr-score strong { grid-column: 3; grid-row: 1 / span 2; align-self: center; font-size: 3.6vh; color: #e07a1f; }
-.timeguessr-description { margin: 0; font-size: 2.2vh; line-height: 1.4; color: #34465a; }
+.timeguessr-score small { grid-column: 2; font-size: 2vh; color: var(--muted); }
+.timeguessr-score strong { grid-column: 3; grid-row: 1 / span 2; align-self: center; font-size: 3.6vh; color: var(--red); }
+.timeguessr-description { margin: 0; font-size: 2.2vh; line-height: 1.4; color: var(--blue-light); }
 
 .timeguessr-summary { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; }
 .timeguessr-summary h2 { margin: 0 0 3vh; font-size: 6vh; }
@@ -1097,16 +1291,16 @@ body.show-cursor button { cursor: pointer; }
 	gap: 1.5vw;
 	padding: 1vh 1.2vw;
 	border-radius: 1vh;
-	background: #ffffff;
-	border: 0.2vh solid #e4e6e0;
+	background: var(--card);
+	border: 0.2vh solid var(--card-border);
 }
 .timeguessr-summary img { width: 12vh; height: 8vh; object-fit: cover; border-radius: 0.6vh; }
 .timeguessr-summary li div { flex: 1; display: flex; flex-direction: column; }
 .timeguessr-summary li b { font-size: 3vh; }
-.timeguessr-summary li span { font-size: 2.2vh; color: #4d5f72; }
-.timeguessr-summary li strong { font-size: 3.6vh; color: #e07a1f; }
-.timeguessr-summary p { margin-top: 3vh; font-size: 2.6vh; color: #4d5f72; }
-.timeguessr-credit { position: absolute; bottom: 1.8vh; left: 0; right: 0; margin: 0; text-align: center; font-size: 1.8vh; color: #8a96a3; }
+.timeguessr-summary li span { font-size: 2.2vh; color: var(--muted); }
+.timeguessr-summary li strong { font-size: 3.6vh; color: var(--red); }
+.timeguessr-summary p { margin-top: 3vh; font-size: 2.6vh; color: var(--muted); }
+.timeguessr-credit { position: absolute; bottom: 1.8vh; left: 0; right: 0; margin: 0; text-align: center; font-size: 1.8vh; color: var(--faint); }
 
 /* Catfishing: categories on the left, the guess and a keyboard on the right. */
 .catfishing-slide {
@@ -1114,29 +1308,29 @@ body.show-cursor button { cursor: pointer; }
 	flex-direction: column;
 	padding: 4vh 4vw 6vh;
 	gap: 2.5vh;
-	background: #fbfaf6;
-	color: #1d2b26;
+	background: var(--bg);
+	color: var(--blue);
 	position: relative;
 }
 .catfishing-header { display: flex; align-items: center; gap: 2vw; }
 .catfishing-header .puzzle-back { margin: 0; }
 .catfishing-header h1 { margin: 0; font-size: 5vh; }
 .catfishing-progress { margin-left: auto; display: flex; align-items: center; gap: 0.6vw; font-size: 2.6vh; font-weight: bold; }
-.catfishing-progress i { width: 2.2vh; height: 2.2vh; border-radius: 50%; background: #d8dcd5; }
-.catfishing-progress i.correct { background: #2f8f72; }
+.catfishing-progress i { width: 2.2vh; height: 2.2vh; border-radius: 50%; background: var(--line); }
+.catfishing-progress i.correct { background: var(--blue); }
 .catfishing-progress i.close { background: #e0b23a; }
-.catfishing-progress i.incorrect, .catfishing-progress i.skipped { background: #b84a3a; }
+.catfishing-progress i.incorrect, .catfishing-progress i.skipped { background: var(--red); }
 .catfishing-progress span { margin-left: 1vw; }
 .catfishing-question { flex: 1; display: flex; flex-direction: column; gap: 2.5vh; min-height: 0; }
 .catfishing-categories { flex: 1; min-height: 0; }
-.catfishing-categories h2 { margin: 0 0 2vh; font-size: 2.8vh; color: #4d5c56; font-weight: normal; }
+.catfishing-categories h2 { margin: 0 0 2vh; font-size: 2.8vh; color: var(--muted); font-weight: normal; }
 .catfishing-categories ul { margin: 0; padding: 0; list-style: none; columns: 3; column-gap: 2vw; }
 .catfishing-categories li {
 	break-inside: avoid;
 	margin-bottom: 1.2vh;
 	padding: 0.8vh 1vw;
 	border-radius: 1vh;
-	background: #e3f1ec;
+	background: var(--blue-faint);
 	font-size: 3vh;
 }
 .catfishing-categories.short ul { columns: 2; }
@@ -1149,48 +1343,48 @@ body.show-cursor button { cursor: pointer; }
 .catfishing-guess {
 	flex: 1;
 	padding: 1.4vh 1.2vw;
-	border: 0.3vh solid #2f8f72;
+	border: 0.3vh solid var(--blue);
 	border-radius: 1vh;
-	background: #ffffff;
+	background: var(--card);
 	font-size: 3.6vh;
 	white-space: pre;   /* one line, and every space shows (the cursor can be after one) */
 	overflow: hidden;
-	--caret: #2f8f72;
+	--caret: var(--red);
 }
-.catfishing-guess:empty::after { content: "Type your guess\2026"; color: #9aa59f; }
+.catfishing-guess:empty::after { content: "Type your guess\2026"; color: var(--faint); }
 .catfishing-did-you-mean { flex: 1; font-size: 3.6vh; }
 .catfishing-buttons { display: flex; gap: 1vw; }
 .catfishing-buttons button, .catfishing-input button {
 	padding: 1.4vh 2vw;
-	border: 0.2vh solid #1d2b26;
+	border: 0.2vh solid var(--blue);
 	border-radius: 4vh;
-	background: #ffffff;
-	color: #1d2b26;
+	background: var(--card);
+	color: var(--blue);
 	font-family: inherit;
 	font-size: 2.6vh;
 	font-weight: bold;
 }
-.catfishing-buttons button.primary, .catfishing-input button.primary { background: #1d2b26; color: #ffffff; }
+.catfishing-buttons button.primary, .catfishing-input button.primary { background: var(--blue); color: #ffffff; }
 .catfishing-reveal { flex: 1; display: flex; gap: 4vw; align-items: center; min-height: 0; }
 .catfishing-reveal-text { flex: 3; }
 .catfishing-verdict { font-size: 4vh; font-weight: bold; }
-.catfishing-verdict span { margin-left: 1vw; font-size: 2.6vh; font-weight: normal; color: #4d5c56; }
-.result-correct .catfishing-verdict { color: #2f8f72; }
+.catfishing-verdict span { margin-left: 1vw; font-size: 2.6vh; font-weight: normal; color: var(--muted); }
+.result-correct .catfishing-verdict { color: var(--blue-light); }
 .result-close .catfishing-verdict { color: #b8860b; }
-.result-incorrect .catfishing-verdict, .result-skipped .catfishing-verdict { color: #b84a3a; }
+.result-incorrect .catfishing-verdict, .result-skipped .catfishing-verdict { color: var(--red-dark); }
 .catfishing-reveal h2 { margin: 1.5vh 0; font-size: 6vh; }
-.catfishing-extract { font-size: 2.6vh; line-height: 1.45; color: #34433d; }
+.catfishing-extract { font-size: 2.6vh; line-height: 1.45; color: var(--blue-light); }
 .catfishing-reveal .catfishing-buttons { justify-content: flex-start; margin-top: 3vh; }
 .catfishing-reveal figure { flex: 2; margin: 0; text-align: center; }
 .catfishing-reveal img { max-width: 100%; max-height: 60vh; border-radius: 1vh; }
-.catfishing-reveal figcaption { font-size: 1.6vh; color: #7a857f; }
+.catfishing-reveal figcaption { font-size: 1.6vh; color: var(--faint); }
 .catfishing-summary h2 { margin: 0 0 2vh; font-size: 5vh; }
 .catfishing-summary ol { margin: 0; padding-left: 3vw; columns: 2; font-size: 2.8vh; line-height: 1.8; }
-.catfishing-summary li.correct b { color: #2f8f72; }
+.catfishing-summary li.correct b { color: var(--blue-light); }
 .catfishing-summary li.close b { color: #b8860b; }
-.catfishing-summary li.incorrect b, .catfishing-summary li.skipped b { color: #b84a3a; }
-.catfishing-summary li span { font-size: 2.2vh; color: #7a857f; }
-.catfishing-credit { font-size: 2.2vh; color: #7a857f; }
+.catfishing-summary li.incorrect b, .catfishing-summary li.skipped b { color: var(--red-dark); }
+.catfishing-summary li span { font-size: 2.2vh; color: var(--faint); }
+.catfishing-credit { font-size: 2.2vh; color: var(--faint); }
 .catfishing-credit.footer { position: absolute; bottom: 2vh; left: 0; right: 0; margin: 0; text-align: center; }
 
 /* NYT Connections: today's grid on the left, yesterday's answers on the right. */
@@ -1199,12 +1393,12 @@ body.show-cursor button { cursor: pointer; }
 	align-items: center;
 	gap: 4vw;
 	padding: 0 5vw;
-	background: #ffffff;
-	color: #121212;
+	background: var(--bg);
+	color: var(--blue);
 }
 .connections-today { flex: 3; min-width: 0; }
 .connections-today h1 { margin: 0; font-size: 6vh; }
-.connections-subtitle { margin: 1vh 0 2.5vh; font-size: 2.6vh; color: #5a5a5a; }
+.connections-subtitle { margin: 1vh 0 2.5vh; font-size: 2.6vh; color: var(--muted); }
 .connections-grid {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1249,7 +1443,7 @@ body.show-cursor button { cursor: pointer; }
 	gap: 1vw;
 	margin-top: 2.5vh;
 }
-.connections-mistakes { flex: 1; font-size: 2.4vh; color: #5a5a5a; }
+.connections-mistakes { flex: 1; font-size: 2.4vh; color: var(--muted); }
 .connections-mistakes i {
 	display: inline-block;
 	width: 1.6vh;
@@ -1260,15 +1454,15 @@ body.show-cursor button { cursor: pointer; }
 }
 .connections-controls button {
 	padding: 1.2vh 1.6vw;
-	border: 0.2vh solid #121212;
+	border: 0.2vh solid var(--blue);
 	border-radius: 4vh;
-	background: #ffffff;
-	color: #121212;
+	background: var(--card);
+	color: var(--blue);
 	font-family: inherit;
 	font-size: 2.4vh;
 	font-weight: bold;
 }
-.connections-controls button.primary { background: #121212; color: #ffffff; }
+.connections-controls button.primary { background: var(--blue); color: #ffffff; }
 .connections-tile.long { font-size: 2.4vh; }
 .connections-tile.very-long { font-size: 1.9vh; }
 .connections-yesterday { flex: 2; min-width: 0; }
@@ -1300,11 +1494,11 @@ body.show-cursor button { cursor: pointer; }
 	align-items: center;
 	justify-content: center;
 	gap: 6vw;
-	background: #ffffff;
-	color: #121212;
+	background: var(--bg);
+	color: var(--blue);
 }
 .wordle-left h1 { margin: 0; font-size: 6vh; }
-.wordle-subtitle { margin: 1vh 0 2.5vh; font-size: 2.6vh; color: #5a5a5a; max-width: 45vw; }
+.wordle-subtitle { margin: 1vh 0 2.5vh; font-size: 2.6vh; color: var(--muted); max-width: 45vw; }
 .wordle-grid { display: flex; flex-direction: column; gap: 0.8vh; align-items: flex-start; }
 .wordle-row { display: flex; gap: 0.8vh; }
 .wordle-row.shake { animation: shake 0.4s; }
@@ -1369,8 +1563,8 @@ body.show-cursor button { cursor: pointer; }
 .was-blank { --was-bg: var(--blank-key); --was-fg: #121212; }
 .was-present { --was-bg: var(--present); --was-fg: #ffffff; }
 .was-absent { --was-bg: var(--absent); --was-fg: #ffffff; }
-.wordle-yesterday { margin-top: 4vh; text-align: center; font-size: 2.8vh; color: #5a5a5a; }
-.wordle-yesterday strong { color: #121212; letter-spacing: 0.3vh; }
+.wordle-yesterday { margin-top: 4vh; text-align: center; font-size: 2.8vh; color: var(--muted); }
+.wordle-yesterday strong { color: var(--blue); letter-spacing: 0.3vh; }
 
 /* Shown when there is nothing else to show. */
 .empty-slide {
@@ -1378,20 +1572,20 @@ body.show-cursor button { cursor: pointer; }
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	color: #888;
+	color: var(--faint);
 	font-size: 6vh;
 }
 .empty-slide small { font-size: 2.5vh; }
 
 /* ---- The menu (Esc): previews, settings, power. See "The menu" in player.js. ---- */
 #menu {
-	--menu-bg: rgba(14, 15, 19, 0.78);
-	--menu-panel: #1d1f25;
-	--menu-raised: #2a2d35;
-	--menu-text: #f4f4f2;
-	--menu-muted: #a3a6ae;
-	--menu-accent: #f2b84b;   /* beer gold */
-	--menu-danger: #e0604f;
+	--menu-bg: rgba(10, 29, 45, 0.8);   /* Francken blue, darker */
+	--menu-panel: #0e283e;
+	--menu-raised: #1f4060;
+	--menu-text: #f4f6f9;
+	--menu-muted: #a9b8c6;
+	--menu-accent: var(--red);
+	--menu-danger: var(--red);
 	position: fixed;
 	inset: 0;
 	z-index: 20;
@@ -1532,7 +1726,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	width: 6vh;
 	height: 3.4vh;
 	border-radius: 99vh;
-	background: #4a4d56;
+	background: #3a5672;
 	transition: background 0.15s;
 }
 .menu-switch::after {
@@ -1556,12 +1750,12 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	min-width: 5vh;
 	padding: 0.8vh 1vw;
 	border-radius: 0.9vh;
-	background: #3a3d46;
+	background: #2c4d6e;
 	font-size: 2.3vh;
 	font-weight: bold;
 }
 .menu-stepper button { font-size: 3vh; padding: 0.2vh 1vw; }
-.menu-choices button[aria-pressed="true"], .menu-chip[aria-pressed="true"] { background: var(--menu-accent); color: #1d1f25; }
+.menu-choices button[aria-pressed="true"], .menu-chip[aria-pressed="true"] { background: var(--menu-accent); color: #ffffff; }
 .menu-chip[aria-pressed="false"] { color: var(--menu-muted); text-decoration: line-through; }
 .menu-chips { display: flex; flex-wrap: wrap; gap: 0.8vh 0.6vw; }
 .menu-stepper button:focus, .menu-choices button:focus, .menu-chip:focus, .menu-small-button:focus,

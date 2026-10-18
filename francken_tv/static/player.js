@@ -399,6 +399,14 @@ document.addEventListener("keydown", async (event) => {
 		}
 	}
 	if (event.key.startsWith("Arrow") && event.target.closest?.("input, .leaflet-container")) return;   // they move the slider or map
+	// Up and down scroll a text that's longer than the screen (data-scroll, e.g. a news article).
+	const scroller = slide?.querySelector("[data-scroll]");
+	if (scroller && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+		event.preventDefault();
+		keepPaused(idleSeconds(slide));
+		scroller.scrollBy({ top: (event.key === "ArrowDown" ? 0.6 : -0.6) * scroller.clientHeight, behavior: "smooth" });
+		return;
+	}
 	if (event.key === "ArrowRight" || event.key === "ArrowDown") {
 		next();
 	} else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {

@@ -1,0 +1,15 @@
+{# Info slide, buses part (providers/info.py): the next departures, live from OVapi. #}
+<div class="slide info-slide info-buses">
+	<h1>Buses from {{ stop }}</h1>
+	<ol class="bus-list">
+		{% for row in departures %}{% set departure = row.departure %}
+		<li class="{{ 'cancelled' if departure.cancelled }}" style="--i: {{ loop.index0 }}">
+			<span class="bus-line">{{ departure.line }}</span>
+			<span class="bus-destination">{{ departure.destination }}</span>
+			<span class="bus-time">{{ departure.expected.strftime("%H:%M") }}{% if departure.delay %}<small>+{{ departure.delay }}</small>{% endif %}</span>
+			<span class="bus-minutes">{% if departure.cancelled %}cancelled{% elif row.minutes == 0 %}now{% else %}{{ row.minutes }} min{% endif %}</span>
+		</li>
+		{% endfor %}
+	</ol>
+	<p class="info-source">Live times from OVapie</p>
+</div>

@@ -28,6 +28,7 @@ from .providers.wordle import WordleProvider
 from .providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
 from .providers.event_photos import EventPhotosProvider
 from .providers.images import ImagesProvider
+from .providers.info import InfoProvider
 from .providers.presence import Greeter, LeaderboardProvider, PresenceChartProvider
 from .providers.quote import QuoteProvider
 from .providers.vrijmibo import VrijmiboTakeover
@@ -142,6 +143,7 @@ def build_app(config: dict, clock: Clock) -> App:
 	all_providers: list[Provider] = [
 		ImagesProvider(config.get("images", {}), seconds),
 		ActivitiesProvider(config.get("activities", {}), seconds),
+		InfoProvider(config.get("info", {}), seconds, CACHE_DIR / "news"),
 		BooksProvider(config.get("books", {}), CACHE_DIR / "books"),
 		EventPhotosProvider(config.get("event_photos", {}), CACHE_DIR / "event_photos", seconds),
 		PresenceChartProvider(presence, store, devices, project_path("media/nyancat.png"), seconds),

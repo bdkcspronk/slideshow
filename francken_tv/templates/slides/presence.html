@@ -12,7 +12,6 @@
 		</div>
 		<div class="chart-plot">
 			{% for line in grid %}<i class="chart-grid {{ line.kind }}" style="left: {{ line.left }}%"></i>{% endfor %}
-			{% for name in names %}<i class="chart-row" style="--row: {{ loop.index0 }}"></i>{% endfor %}
 
 			{% for bar in bars %}
 			{{ draw_bar(bar, "--row: %s; left: %s%%; width: %s%%; --delay: %ss; --grow: %ss;" | format(bar.row, bar.left, bar.width, bar.delay, bar.grow)) }}
