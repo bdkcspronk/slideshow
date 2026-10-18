@@ -96,7 +96,7 @@ refresh_hours = 6
 
 [puzzles]
 # The Daily puzzles slide: one half per puzzle, tap one to play it.
-order = ["connections", "wordle", "catfishing"]
+order = ["connections", "wordle", "catfishing", "timeguessr"]
 seconds = 20
 
 [connections]
@@ -106,6 +106,16 @@ show_yesterday = true         # also show yesterday's answers next to today's pu
 [wordle]
 # The New York Times Wordle of the day.
 show_yesterday = true         # also show yesterday's word
+
+[timeguessr]
+# The timeguessr.com daily challenge: five photos, guess where (on the map) and when (the year).
+first_year = 1900             # the year slider runs from here to this year, as on the site
+
+[maps]
+# Map tiles for maps in slides (TimeGuessr). The slideshow fetches each tile once and keeps it in
+# data/cache/tiles, as OpenStreetMap's tile policy asks.
+tiles = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+attribution = "&copy; OpenStreetMap contributors"
 
 [bieruur]
 time = "16:00"

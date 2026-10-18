@@ -44,6 +44,24 @@ body.show-cursor button { cursor: pointer; }
 /* A tapped button, while its answer is on the way (player.js). */
 [data-action].busy { opacity: 0.55; transform: scale(0.95); transition: opacity 0.1s, transform 0.1s; }
 
+/* The blinking cursor of a free-text field (data-input-text, player.js), in the field's --caret
+   colour: at the start when it's empty (before the placeholder, which each field puts in its
+   :empty::after and which goes away once the field is clicked), after the text, or, once the arrow
+   keys or a click moved it, at its .input-caret span. In the text it's a zero-width mark, so the
+   letters don't move. */
+[data-input-text]:empty::before {
+	content: "|";
+	position: absolute;   /* takes no room: the placeholder starts right after the cursor */
+	transform: translateX(-90%);
+	color: var(--caret);
+	animation: caret 1s steps(1) infinite;
+}
+[data-input-text].editing:empty::after { content: "\200b"; }   /* no placeholder; an invisible character keeps the line's height */
+[data-input-text]:not(:empty):not(:has(.input-caret))::after { content: "|"; color: var(--caret); animation: caret 1s steps(1) infinite; }
+.input-caret { display: inline-block; width: 0; }
+.input-caret::after { content: "|"; display: inline-block; transform: translateX(-50%); color: var(--caret); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+
 /* Images, posters and GIFs: scaled to fill the screen without cropping. */
 .image-slide {
 	display: flex;
@@ -814,11 +832,11 @@ body.show-cursor button { cursor: pointer; }
 	border-radius: 1vh;
 	background: rgba(255, 255, 255, 0.08);
 	font-size: 3.4vh;
-	white-space: nowrap;
+	white-space: pre;   /* one line, and every space shows (the cursor can be after one) */
 	overflow: hidden;
+	--caret: #1db954;
 }
-.spotify-search-text:empty::before { content: "Song, album or artist\2026"; opacity: 0.5; }
-.spotify-search-text::after { content: "|"; color: #1db954; animation: caret 1s steps(1) infinite; }
+.spotify-search-text:empty::after { content: "Song, album or artist\2026"; opacity: 0.5; }
 .spotify-keyboard { display: flex; flex-direction: column; gap: 1vh; }
 .spotify-keyboard-row { display: flex; justify-content: center; gap: 0.5vw; }
 .spotify-key {
@@ -910,6 +928,28 @@ body.show-cursor button { cursor: pointer; }
 .puzzle-catfishing .puzzle-icon { grid-template-columns: auto; justify-items: center; }
 .puzzle-icon .tag { height: 4.2vh; border-radius: 2.1vh; background: #e3f1ec; border: 0.3vh solid #2f8f72; }
 .puzzle-icon .tag.w1 { width: 22vh; } .puzzle-icon .tag.w2 { width: 16vh; } .puzzle-icon .tag.w3 { width: 19vh; }
+/* TimeGuessr: a photo (hills under a sky) with a pin on it, and a year. */
+.puzzle-timeguessr .puzzle-icon { grid-template-columns: auto; justify-items: center; }
+.puzzle-icon .photo {
+	position: relative;
+	width: 20vh;
+	height: 13vh;
+	border-radius: 0.8vh;
+	background: linear-gradient(160deg, transparent 55%, #7a9a5b 55%), linear-gradient(200deg, transparent 50%, #5e7f45 50%), #9cc3e0;
+}
+.puzzle-icon .photo::after {
+	content: "";
+	position: absolute;
+	left: 55%;
+	top: 30%;
+	width: 3vh;
+	height: 3vh;
+	border-radius: 50% 50% 50% 0;
+	transform: rotate(-45deg);
+	background: #e07a1f;
+	border: 0.4vh solid white;
+}
+.puzzle-icon .year { height: auto; padding: 0.4vh 1.6vh; border-radius: 2vh; background: #16324f; color: white; font-style: normal; font-weight: bold; font-size: 2.6vh; }
 /* Smaller titles when there are more puzzles side by side (--cards is set on the slide). */
 .puzzle-title { font-size: min(8vh, calc(52vw / var(--cards, 2) / 6.5)); font-weight: bold; letter-spacing: 0.3vh; text-transform: uppercase; }
 .puzzle-status { font-size: 3.4vh; color: #5a5a5a; }
@@ -946,6 +986,127 @@ body.show-cursor button { cursor: pointer; }
 	font-size: 2.2vh;
 	font-weight: bold;
 }
+
+/* TimeGuessr (providers/timeguessr.py): the photo on the left; the map, the year and Guess on the
+   right; after a guess both pins on the map and the points. Same look as the other puzzles. */
+.timeguessr-slide {
+	display: flex;
+	flex-direction: column;
+	padding: 4vh 4vw 6vh;
+	gap: 2.5vh;
+	background: #fbfaf6;
+	color: #16324f;
+	position: relative;
+}
+.timeguessr-header { display: flex; align-items: center; gap: 2vw; }
+.timeguessr-header .puzzle-back { margin: 0; }
+.timeguessr-header h1 { margin: 0; font-size: 5vh; }
+.timeguessr-progress { margin-left: auto; display: flex; align-items: center; gap: 0.6vw; font-size: 2.6vh; font-weight: bold; }
+.timeguessr-progress span:first-child { margin-right: 1vw; font-weight: normal; color: #4d5f72; }
+.timeguessr-progress i { width: 2.2vh; height: 2.2vh; border-radius: 50%; background: #d8dcd5; }
+.timeguessr-progress i.done { background: #e07a1f; }
+.timeguessr-progress span:last-child { margin-left: 1vw; }
+
+.timeguessr-round { flex: 1; display: flex; gap: 2.5vw; min-height: 0; }
+.timeguessr-photo {
+	flex: 1.4;
+	margin: 0;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	border-radius: 1.2vh;
+	overflow: hidden;
+	background: #1b1b1b;
+}
+.timeguessr-photo img { flex: 1; min-height: 0; width: 100%; object-fit: contain; }
+.timeguessr-photo figcaption { padding: 0.8vh 1vw; font-size: 1.7vh; color: #b9b9b9; }
+/* Tapped: the photo fills the screen; tapping again shrinks it. */
+.timeguessr-photo.selected { position: absolute; inset: 0; z-index: 5; border-radius: 0; }
+
+.timeguessr-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2vh; }
+.timeguessr-map {
+	flex: 1;
+	min-height: 0;
+	border-radius: 1.2vh;
+	border: 0.2vh solid #d8dcd5;
+	background: #aad3df;   /* the sea, while the tiles load */
+	font-family: inherit;
+}
+.timeguessr-map-hint {
+	position: absolute;
+	top: 1.5vh;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1000;   /* above Leaflet's panes */
+	padding: 0.8vh 1.4vw;
+	border-radius: 3vh;
+	background: rgba(22, 50, 79, 0.85);
+	color: white;
+	font-size: 2.2vh;
+	white-space: nowrap;
+	pointer-events: none;
+}
+.timeguessr-map[data-value] .timeguessr-map-hint { display: none; }
+/* Pins (widgets.js): your guess dark blue, the answer orange. */
+.map-pin { border-radius: 50%; border: 0.45vh solid white; box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.45); box-sizing: border-box; }
+.map-pin-guess { background: #16324f; }
+.map-pin-answer { background: #e07a1f; }
+
+.timeguessr-year { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 1vh 1.5vw; }
+.timeguessr-year output { grid-row: span 2; font-size: 7vh; font-weight: bold; font-variant-numeric: tabular-nums; }
+.timeguessr-year input { width: 100%; height: 4vh; accent-color: #e07a1f; }
+.timeguessr-nudges { display: flex; gap: 0.8vw; }
+.timeguessr-nudges button, .timeguessr-button {
+	padding: 1vh 1.4vw;
+	border: 0.2vh solid #16324f;
+	border-radius: 4vh;
+	background: #ffffff;
+	color: #16324f;
+	font-family: inherit;
+	font-size: 2.4vh;
+	font-weight: bold;
+}
+.timeguessr-nudges button { flex: 1; }
+.timeguessr-button { padding: 1.6vh 2vw; font-size: 2.8vh; }
+.timeguessr-button.primary { background: #16324f; color: #ffffff; }
+.timeguessr-button:disabled { opacity: 0.35; }
+
+.timeguessr-scores { display: flex; flex-direction: column; gap: 1vh; }
+.timeguessr-score {
+	display: grid;
+	grid-template-columns: 8vw 1fr auto;
+	align-items: baseline;
+	gap: 0 1vw;
+	padding: 1.2vh 1.2vw;
+	border-radius: 1vh;
+	background: #ffffff;
+	border: 0.2vh solid #e4e6e0;
+}
+.timeguessr-score span { color: #4d5f72; font-size: 2.2vh; }
+.timeguessr-score b { font-size: 3.4vh; }
+.timeguessr-score small { grid-column: 2; font-size: 2vh; color: #4d5f72; }
+.timeguessr-score strong { grid-column: 3; grid-row: 1 / span 2; align-self: center; font-size: 3.6vh; color: #e07a1f; }
+.timeguessr-description { margin: 0; font-size: 2.2vh; line-height: 1.4; color: #34465a; }
+
+.timeguessr-summary { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; }
+.timeguessr-summary h2 { margin: 0 0 3vh; font-size: 6vh; }
+.timeguessr-summary ol { margin: 0; padding: 0; list-style: none; width: min(80vw, 120vh); display: flex; flex-direction: column; gap: 1.2vh; }
+.timeguessr-summary li {
+	display: flex;
+	align-items: center;
+	gap: 1.5vw;
+	padding: 1vh 1.2vw;
+	border-radius: 1vh;
+	background: #ffffff;
+	border: 0.2vh solid #e4e6e0;
+}
+.timeguessr-summary img { width: 12vh; height: 8vh; object-fit: cover; border-radius: 0.6vh; }
+.timeguessr-summary li div { flex: 1; display: flex; flex-direction: column; }
+.timeguessr-summary li b { font-size: 3vh; }
+.timeguessr-summary li span { font-size: 2.2vh; color: #4d5f72; }
+.timeguessr-summary li strong { font-size: 3.6vh; color: #e07a1f; }
+.timeguessr-summary p { margin-top: 3vh; font-size: 2.6vh; color: #4d5f72; }
+.timeguessr-credit { position: absolute; bottom: 1.8vh; left: 0; right: 0; margin: 0; text-align: center; font-size: 1.8vh; color: #8a96a3; }
 
 /* Catfishing: categories on the left, the guess and a keyboard on the right. */
 .catfishing-slide {
@@ -992,12 +1153,11 @@ body.show-cursor button { cursor: pointer; }
 	border-radius: 1vh;
 	background: #ffffff;
 	font-size: 3.6vh;
-	white-space: nowrap;
+	white-space: pre;   /* one line, and every space shows (the cursor can be after one) */
 	overflow: hidden;
+	--caret: #2f8f72;
 }
-.catfishing-guess:empty::before { content: "Type your guess\2026"; color: #9aa59f; }
-.catfishing-guess::after { content: "|"; color: #2f8f72; animation: caret 1s steps(1) infinite; }
-@keyframes caret { 50% { opacity: 0; } }
+.catfishing-guess:empty::after { content: "Type your guess\2026"; color: #9aa59f; }
 .catfishing-did-you-mean { flex: 1; font-size: 3.6vh; }
 .catfishing-buttons { display: flex; gap: 1vw; }
 .catfishing-buttons button, .catfishing-input button {

@@ -14,6 +14,7 @@ from .announcer import Announcer
 from .background import BackgroundRunner
 from .clock import Clock
 from .config import CACHE_DIR, DATA_DIR, project_path
+from .maptiles import ATTRIBUTION, TILES, TileCache
 from .devices import DeviceList
 from .presence_store import PresenceStore
 from .providers.activities import ActivitiesProvider
@@ -22,6 +23,7 @@ from .providers.catfishing import CatfishingProvider
 from .providers.connections import ConnectionsProvider
 from .providers.puzzles import PuzzlesProvider
 from .providers.spotify import SpotifyProvider
+from .providers.timeguessr import TimeGuessrProvider
 from .providers.wordle import WordleProvider
 from .providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
 from .providers.event_photos import EventPhotosProvider
@@ -53,6 +55,7 @@ class App:
 	settings_path: Path | None = None                         # where they're saved
 	power_commands: dict[str, list[str]] = field(default_factory=dict)   # "shutdown"/"restart" -> command
 	system_volume: SystemVolume | None = None   # the volume and mute in the settings, also for Spotify
+	tiles: TileCache | None = None              # map tiles for maps in slides (/tiles/..., maptiles.py)
 	settings_lock: threading.Lock = field(default_factory=threading.Lock)   # the server handles requests in parallel
 	notice_id: int = 0      # the latest on-screen notice, shown by the browser
 	notice_text: str = ""
@@ -131,6 +134,8 @@ def build_app(config: dict, clock: Clock) -> App:
 		ConnectionsProvider(config.get("connections", {}), seconds, DATA_DIR / "puzzles" / "connections.json"),
 		WordleProvider(config.get("wordle", {}), seconds, DATA_DIR / "puzzles" / "wordle.json"),
 		CatfishingProvider(config.get("catfishing", {}), seconds, DATA_DIR / "puzzles" / "catfishing.json"),
+		TimeGuessrProvider(config.get("timeguessr", {}), seconds, CACHE_DIR / "timeguessr", DATA_DIR / "puzzles" / "timeguessr.json",
+			attribution=config.get("maps", {}).get("attribution", ATTRIBUTION)),
 	]}
 	puzzles = [available_puzzles[name] for name in puzzle_settings.get("order", list(available_puzzles))]
 
@@ -187,6 +192,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		power_commands={"shutdown": power.get("shutdown", ["systemctl", "poweroff"]),
 			"restart": power.get("restart", ["systemctl", "reboot"])},
 		system_volume=SystemVolume(),
+		tiles=TileCache(CACHE_DIR / "tiles", config.get("maps", {}).get("tiles", TILES)),
 	)
 	app.read_sound()
 	app.apply_settings()

@@ -14,6 +14,7 @@
 	/status         what every provider is doing, and the last error
 	/spotify/login  connect the slideshow to a Spotify account (once; see providers/spotify.py)
 	/files/...      images from media/ and data/cache/ (large images are scaled down)
+	/tiles/<z>/<x>/<y>.png  a map tile, fetched once and kept (maptiles.py)
 """
 
 from __future__ import annotations
@@ -238,6 +239,8 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_file(STATIC_DIR / path.removeprefix("/static/"), [STATIC_DIR], cache="no-cache")
 		elif path.startswith("/files/"):
 			self.send_file(PROJECT_DIR / path.removeprefix("/files/"), SERVED_FOLDERS, fit=True)
+		elif path.startswith("/tiles/"):
+			self.send_tile(path.removeprefix("/tiles/"))
 		else:
 			self.send_error(HTTPStatus.NOT_FOUND)
 
@@ -335,6 +338,19 @@ class Handler(BaseHTTPRequestHandler):
 			return
 		html = self.server.renderer.render(slide)
 		self.send_html(self.server.renderer.templates.get_template("preview.html").render(slide_html=html))
+
+	def send_tile(self, path: str) -> None:
+		try:
+			z, x, y = (int(part) for part in path.removesuffix(".png").split("/"))
+		except ValueError:
+			self.send_error(HTTPStatus.NOT_FOUND)
+			return
+		tiles = self.server.app.tiles
+		tile = tiles.get(z, x, y) if tiles else None
+		if tile is None:
+			self.send_error(HTTPStatus.NOT_FOUND)
+			return
+		self.send_file(tile, [tiles.folder], cache="max-age=604800")
 
 	def send_file(self, path: Path, allowed_folders: list[Path], fit: bool = False, cache: str = "max-age=86400") -> None:
 		"""cache: media URLs change when the file changes (?v=...), so they can be cached;
