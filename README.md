@@ -122,15 +122,6 @@ Premium, and music already playing on some device. One-time setup:
    the slide starts music there, and "Play on TV" moves music playing elsewhere to it. Without it,
    songs only play when a Spotify app somewhere is already playing.
 
-## Updating a PC that ran the old slideshow
-
-```sh
-git pull
-deploy/migrate_from_old_layout.sh   # moves slides/, audio/, Sniffer/filter.json, ... to the new places
-```
-
-Then follow the steps below (venv, piper) and start it with `./start.sh --fullscreen`.
-
 ## Running on the TV PC
 
 ```sh
@@ -151,7 +142,5 @@ After changing `config.toml`: `systemctl --user restart francken-tv`.
 Closed the full-screen slideshow with Alt+F4? It stays closed; bring it back with `systemctl --user start francken-tv-kiosk`
 (`stop` to close it from a terminal). Starting `francken-tv` also opens it, and starts the Spotify speaker
 (`francken-tv-spotifyd`); stopping `francken-tv` stops the speaker too.
-
-To import the logs of the old sniffer: `python3 -m francken_tv.sniffer --import filtered_output.jsonl`.
 
 The sniffer firmware lives in `firmware/` (PlatformIO).
