@@ -1,7 +1,10 @@
 {#
-	Search Spotify for a song (SpotifyProvider.action() in providers/spotify.py). Typing (on the
-	screen or a real keyboard, see typeKey() in player.js) goes into data-input-text; Enter sends
-	it as "search". Tapping a song plays it; + adds it to the queue; tapping an album shows its songs.
+	Search Spotify for songs, playlists and albums (SpotifyProvider.action() in providers/spotify.py).
+	Typing (on the screen or a real keyboard, see typeKey() in player.js) goes into data-input-text;
+	Enter sends it as "search". The chips (All, Songs, Playlists, Albums) search again for just that,
+	as in the desktop app. Tapping a song plays it; + adds it to the queue; tapping an album or
+	playlist shows its songs. After +, the page comes back with a popup ("Added ... to the queue")
+	and a tick on the song.
 #}
 <div class="slide spotify-slide spotify-pick-slide" data-state="search" data-interactive data-provider="spotify" data-submit-action="search">
 	<div class="spotify-pick-header">
@@ -28,18 +31,24 @@
 			</div>
 		</div>
 		<div class="spotify-results-column">
-		{% if albums %}
+		<div class="spotify-chips">
+			{% for value, label in kinds %}
+			<button class="spotify-chip" data-action="search_kind" data-value="{{ value }}" aria-pressed="{{ 'true' if value == kind else 'false' }}">{{ label }}</button>
+			{% endfor %}
+		</div>
+		{% if cards %}
 		<div class="spotify-albums">
-			{% for album in albums %}
-			<button class="spotify-album-card" data-action="songs" data-value="{{ album.uri }}">
-				{% if album.cover %}<img src="{{ album.cover }}" alt="">{% else %}<span class="spotify-playlist-blank"></span>{% endif %}
-				<b>{{ album.name }}</b>
-				<span>{{ album.artist }}{% if album.year %} &middot; {{ album.year }}{% endif %}</span>
+			{% for card in cards %}
+			<button class="spotify-album-card" data-action="songs" data-value="{{ card.uri }}">
+				{% if card.cover %}<img src="{{ card.cover }}" alt="">{% else %}<span class="spotify-playlist-blank"></span>{% endif %}
+				<b>{{ card.name }}</b>
+				<span>{% if kind == "all" %}{{ card.kind }}{% if card.subtitle %} &middot; {% endif %}{% endif %}{{ card.subtitle }}</span>
 			</button>
 			{% endfor %}
 		</div>
 		{% endif %}
-		<ol class="spotify-songs spotify-results{{ ' with-albums' if albums }}">
+		{% if kind in ("all", "songs") %}
+		<ol class="spotify-songs spotify-results{{ ' with-albums' if cards }}">
 			{% for song in songs %}
 			<li>
 				<button class="spotify-song" data-action="play_song" data-value="{{ song.uri }}">
@@ -47,12 +56,20 @@
 					<span class="spotify-song-text"><b>{{ song.title }}</b><span>{{ song.artist }}</span></span>
 					<span class="spotify-song-length">{{ song.length }}</span>
 				</button>
+				{% if song.uri in queued %}
+				<span class="spotify-control queued" aria-label="In the queue">&#10003;</span>
+				{% else %}
 				<button class="spotify-control" data-action="queue" data-value="{{ song.uri }}" aria-label="Add to the queue">+</button>
+				{% endif %}
 			</li>
 			{% else %}
-			<li class="spotify-search-hint">{{ "Nothing found" if searched else "Type a song, album or artist, then tap Search" }}</li>
+			<li class="spotify-search-hint">{{ "Nothing found" if searched else "Type a song, playlist, album or artist, then tap Search" }}</li>
 			{% endfor %}
 		</ol>
+		{% elif not cards %}
+		<p class="spotify-search-hint">{{ "Nothing found" if searched else "Type a song, playlist, album or artist, then tap Search" }}</p>
+		{% endif %}
 		</div>
 	</div>
+	{% if message %}<div class="spotify-message">{{ message }}</div>{% endif %}
 </div>

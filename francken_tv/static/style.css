@@ -1082,7 +1082,7 @@ body.show-cursor button { cursor: pointer; }
 	overflow: hidden;
 	--caret: #1db954;
 }
-.spotify-search-text:empty::after { content: "Song, album or artist\2026"; opacity: 0.5; }
+.spotify-search-text:empty::after { content: "What do you want to play?"; opacity: 0.5; }
 .spotify-keyboard { display: flex; flex-direction: column; gap: 1vh; }
 .spotify-keyboard-row { display: flex; justify-content: center; gap: 0.5vw; }
 .spotify-key {
@@ -1102,8 +1102,21 @@ body.show-cursor button { cursor: pointer; }
 .spotify-key.space { width: 60%; }
 .spotify-results-column { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2vh; }
 .spotify-results { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(10, 6.6vh); gap: 0.8vh; }
-.spotify-results.with-albums { grid-template-rows: repeat(6, 6.6vh); }
-.spotify-results.with-albums li:nth-child(n + 7) { display: none; }   /* room for the albums above */
+.spotify-results.with-albums { grid-template-rows: repeat(5, 6.6vh); }
+.spotify-results.with-albums li:nth-child(n + 6) { display: none; }   /* room for the chips and cards above */
+/* All / Songs / Playlists / Albums, as in the desktop app. */
+.spotify-chips { display: flex; gap: 0.8vw; }
+.spotify-chip {
+	padding: 1vh 1.6vw;
+	border: none;
+	border-radius: 4vh;
+	background: rgba(255, 255, 255, 0.12);
+	color: #ffffff;
+	font-family: inherit;
+	font-size: 2.4vh;
+}
+.spotify-chip[aria-pressed="true"] { background: #ffffff; color: #121212; }
+.spotify-chip.busy { opacity: 0.55; }
 .spotify-albums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5vw; }
 .spotify-album-card {
 	display: flex;
@@ -1125,6 +1138,32 @@ body.show-cursor button { cursor: pointer; }
 .spotify-results .spotify-song img, .spotify-results .spotify-song-blank { height: 5vh; }
 .spotify-results .spotify-control { width: 6vh; height: 6vh; flex: none; }
 .spotify-search-hint { font-size: 2.6vh; opacity: 0.6; }
+.spotify-control.queued { display: flex; align-items: center; justify-content: center; background: #1db954; color: #121212; font-weight: bold; }
+/* "Added ... to the queue": pops up at the bottom for a moment (like the Connections one). */
+.spotify-message {
+	position: absolute;
+	bottom: 4vh;
+	left: 50%;
+	max-width: 60vw;
+	padding: 1.6vh 2.4vw;
+	border-radius: 1vh;
+	background: #ffffff;
+	color: #121212;
+	font-size: 2.8vh;
+	font-weight: bold;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.4);
+	z-index: 2;
+	pointer-events: none;   /* taps go through to the buttons below */
+	animation: spotify-message 2.5s ease-in forwards;
+}
+@keyframes spotify-message {
+	0% { opacity: 0; transform: translate(-50%, 1vh); }
+	8%, 80% { opacity: 1; transform: translate(-50%, 0); }
+	100% { opacity: 0; transform: translate(-50%, 0); }
+}
 /* Four little bars bouncing like an equaliser (still when paused). */
 .spotify-eq { display: inline-flex; align-items: flex-end; gap: 0.35vh; height: 2.6vh; }
 .spotify-eq i { width: 0.6vh; height: 100%; background: #1db954; border-radius: 0.2vh; transform-origin: bottom; animation: eq 0.9s ease-in-out infinite alternate; }

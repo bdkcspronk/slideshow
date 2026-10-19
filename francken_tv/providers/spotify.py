@@ -1,7 +1,8 @@
 """What's playing on Spotify: title, artist, album cover, progress and the next song
 (templates/slides/spotify.html), with buttons for the previous/next song, pause and the volume.
 "Playlists" shows the account's playlists (templates/slides/spotify_playlists.html), tapping one
-shows its songs (spotify_songs.html); "Search" finds songs by typing (spotify_search.html).
+shows its songs (spotify_songs.html); "Search" finds songs, playlists and albums by typing, with
+All / Songs / Playlists / Albums chips like the desktop app (spotify_search.html).
 Tapping a song plays it. "Lyrics" shows the song's lyrics, the line being sung lit up when LRCLIB
 has them synced (spotify_lyrics.html, lyrics.py). The buttons need Spotify Premium.
 
@@ -68,7 +69,9 @@ PLAYLISTS_PER_PAGE = 12       # as many as fit on the screen
 SONGS_PER_PAGE = 16
 SEARCH_URL = API + "/search"
 SEARCH_RESULTS = 10           # Spotify's maximum for apps in development mode
-SEARCH_ALBUMS = 4             # albums shown above the songs
+SEARCH_CARDS = 4              # "All": albums and playlists shown above the songs
+SEARCH_CARDS_ONLY = 8         # "Albums" or "Playlists": two rows of them
+SEARCH_KINDS = {"all": "track,album,playlist", "songs": "track", "playlists": "playlist", "albums": "album"}   # the chips
 QUEUE_ADD_URL = API + "/me/player/queue"
 
 
@@ -146,12 +149,28 @@ def parse_song(item: dict | None) -> dict | None:
 		"uri": item["uri"], "length": minutes(item.get("duration_ms") or 0)}
 
 
+def card_image(images: list[dict]) -> str | None:
+	"""The image closest to 300 pixels wide: sharp enough for a card, not too big to load."""
+	images = sorted(images, key=lambda image: abs((image.get("width") or 300) - 300))
+	return images[0]["url"] if images else None
+
+
 def parse_album(item: dict | None) -> dict | None:
 	if not item or not item.get("uri"):
 		return None
-	images = sorted(item.get("images") or [], key=lambda image: abs((image.get("width") or 300) - 300))
-	return {"name": item.get("name", ""), "artist": ", ".join(a["name"] for a in item.get("artists", [])),
-		"uri": item["uri"], "cover": images[0]["url"] if images else None, "year": (item.get("release_date") or "")[:4]}
+	year = (item.get("release_date") or "")[:4]
+	artist = ", ".join(a["name"] for a in item.get("artists", []))
+	return {"name": item.get("name", ""), "subtitle": " \u00b7 ".join(part for part in (year, artist) if part),
+		"uri": item["uri"], "cover": card_image(item.get("images") or []), "kind": "Album"}
+
+
+def parse_found_playlist(item: dict | None) -> dict | None:
+	"""A playlist from the search (Spotify leaves gaps in that list: None)."""
+	if not item or not item.get("uri"):
+		return None
+	owner = (item.get("owner") or {}).get("display_name") or ""
+	return {"name": item.get("name", ""), "subtitle": f"By {owner}" if owner else "", "uri": item["uri"],
+		"cover": card_image(item.get("images") or []), "kind": "Playlist"}
 
 
 def parse_playlist_songs(data: dict) -> list[dict]:
@@ -222,8 +241,10 @@ class SpotifyProvider(Provider):
 		self.playlists: list[dict] = []           # every playlist seen, to look up names
 		self.playlist_pages: dict[int, tuple[float, list[dict], int]] = {}   # page -> (fetched, playlists, total)
 		self.embed_songs: dict[str, list[dict]] = {}   # playlist id -> songs, for playlists by others
-		self.albums: dict[str, dict] = {}   # albums found by searching, by uri
-		self.last_query = ""                # for "back to the search" from an album
+		self.found: dict[str, dict] = {}    # albums and playlists found by searching, by uri
+		self.last_query = ""                # for "back to the search" from an album or playlist
+		self.search_kind = "all"            # the chip chosen in the search: a key of SEARCH_KINDS
+		self.search_view: dict = {}         # what the search page shows, to redraw it after adding to the queue
 		self.access_token: str | None = None
 		self.token_expires = 0.0
 		self.login_state: str | None = None
@@ -394,16 +415,23 @@ class SpotifyProvider(Provider):
 		data = response.json()
 		return parse_playlist_songs(data), data.get("total", 0)
 
-	def search(self, query: str) -> tuple[list[dict], list[dict]]:
-		"""Songs and albums matching the query."""
-		response = self.api("GET", SEARCH_URL, params={"q": query, "type": "track,album", "limit": SEARCH_RESULTS})
+	def search(self, query: str, kind: str = "all") -> tuple[list[dict], list[dict]]:
+		"""Songs, and cards (albums and playlists), matching the query, for one of the chips (SEARCH_KINDS)."""
+		response = self.api("GET", SEARCH_URL, params={"q": query, "type": SEARCH_KINDS[kind], "limit": SEARCH_RESULTS})
 		if response.status_code >= 400:
 			raise PermissionError("search failed")
 		data = response.json()
-		songs = [song for song in map(parse_song, data.get("tracks", {}).get("items") or []) if song]
-		albums = [album for album in map(parse_album, data.get("albums", {}).get("items") or []) if album][:SEARCH_ALBUMS]
-		self.albums.update({album["uri"]: album for album in albums})
-		return songs, albums
+		songs = [song for song in map(parse_song, (data.get("tracks") or {}).get("items") or []) if song]
+		albums = [album for album in map(parse_album, (data.get("albums") or {}).get("items") or []) if album]
+		playlists = [playlist for playlist in map(parse_found_playlist, (data.get("playlists") or {}).get("items") or []) if playlist]
+		if kind == "all":   # like the desktop app: a few of each; if there are few playlists, more albums
+			half = SEARCH_CARDS // 2
+			cards = albums[:max(half, SEARCH_CARDS - len(playlists))] + playlists
+			cards = cards[:SEARCH_CARDS]
+		else:
+			cards = (albums + playlists)[:SEARCH_CARDS_ONLY]
+		self.found.update({card["uri"]: card for card in cards})
+		return songs, cards
 
 	def view(self) -> dict:
 		playing = self.playing
@@ -423,8 +451,8 @@ class SpotifyProvider(Provider):
 
 	def collection_name(self, uri: str) -> str:
 		"""The name of a playlist or album we've shown, for messages like "Playing ..."."""
-		if uri in self.albums:
-			return self.albums[uri]["name"]
+		if uri in self.found:
+			return self.found[uri]["name"]
 		return next((p["name"] for p in self.playlists if p["uri"] == uri), "the playlist")
 
 	def shown_volume(self, playing: NowPlaying) -> int:
@@ -524,7 +552,8 @@ class SpotifyProvider(Provider):
 		return self.now_playing() if self.connected else None
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
-		"""'playlists' shows the playlists, 'songs' one playlist's songs, 'search' finds songs, 'lyrics' the lyrics;
+		"""'playlists' shows the playlists, 'songs' one playlist's songs, 'search' finds songs, playlists and
+		albums ('search_kind' picks a chip: all, songs, playlists or albums), 'lyrics' the lyrics;
 		'play' plays a playlist (values = [its uri]), 'play_song' a song, 'queue' adds one; 'back' returns;
 		'previous', 'skip', 'toggle' (pause/play), 'volume_up' and 'volume_down' control the music."""
 		if name == "playlists":
@@ -554,8 +583,8 @@ class SpotifyProvider(Provider):
 			except requests.RequestException as error:
 				log.warning("Could not get the songs of %s: %s", uri, error)
 				return None, "Spotify can't be reached right now"
-			if uri in self.albums:
-				playlist = self.albums[uri]
+			if uri in self.found:   # from the search: back to it
+				playlist = self.found[uri]
 				back = {"action": "search", "value": self.last_query, "label": "Search"}
 			else:
 				playlist = next((p for p in self.playlists if p["uri"] == uri), {"name": "Playlist", "uri": uri, "cover": None})
@@ -563,19 +592,26 @@ class SpotifyProvider(Provider):
 			pages = max(1, -(-total // SONGS_PER_PAGE))
 			return Slide("spotify_songs.html", self.seconds, {"playlist": playlist, "songs": songs, "readable": readable,
 				"back": back, "page": page, "pages": pages, "first_number": page * SONGS_PER_PAGE + 1}), None
-		if name == "search":   # values = [typed text]; empty: just the keyboard
-			query = values[0].strip() if values else ""
+		if name in ("search", "search_kind"):   # search: values = [typed text], empty: just the keyboard;
+			if name == "search_kind":           # search_kind: values = [a chip], the last search again
+				self.search_kind = values[0] if values and values[0] in SEARCH_KINDS else "all"
+				query = self.last_query
+			else:
+				query = values[0].strip() if values else ""
+			kind = self.search_kind
 			songs: list[dict] = []
-			albums: list[dict] = []
+			cards: list[dict] = []
 			self.last_query = query
 			if query:
 				try:
-					songs, albums = self.search(query)
+					songs, cards = self.search(query, kind)
 				except (PermissionError, requests.RequestException) as error:
 					log.warning("Spotify search for %r failed: %s", query, error)
 					return None, "Searching Spotify failed, try again"
-			return Slide("spotify_search.html", self.seconds, {"query": query, "songs": songs, "albums": albums, "searched": bool(query),
-				"rows": [list("QWERTYUIOP"), list("ASDFGHJKL"), list("ZXCVBNM")]}), None
+			self.search_view = {"query": query, "songs": songs, "cards": cards, "searched": bool(query),
+				"kind": kind, "kinds": [("all", "All"), ("songs", "Songs"), ("playlists", "Playlists"), ("albums", "Albums")],
+				"rows": [list("QWERTYUIOP"), list("ASDFGHJKL"), list("ZXCVBNM")], "queued": set()}
+			return Slide("spotify_search.html", self.seconds, self.search_view), None
 		if name == "play_song" and values:   # value: "song uri" or "song uri|playlist uri" (to go on with the playlist)
 			song, _, playlist = values[0].partition("|")
 			body = {"context_uri": playlist, "offset": {"uri": song}} if playlist else {"uris": [song]}
@@ -584,12 +620,16 @@ class SpotifyProvider(Provider):
 				return None, error
 			self.catch_up(now)
 			return self.now_playing(), None
-		if name == "queue" and values:
+		if name == "queue" and values:   # from the search page: it's redrawn with a popup, and a tick on the song
 			error = self.command("POST", QUEUE_ADD_URL, params={"uri": values[0]})
-			if error:
-				return None, error
-			self.next_fetched = (None, 0.0)   # the next song may have changed
-			return None, "Added to the queue"
+			if not error:
+				self.next_fetched = (None, 0.0)   # the next song may have changed
+				self.search_view.setdefault("queued", set()).add(values[0])
+			song = next((song for song in self.search_view.get("songs", []) if song["uri"] == values[0]), None)
+			message = error or (f"Added {song['title']} to the queue" if song else "Added to the queue")
+			if not self.search_view:
+				return None, message
+			return Slide("spotify_search.html", self.seconds, self.search_view | {"message": message}), message
 		if name == "shuffle" and values:   # a playlist in random order, starting at a random song
 			error = self.command("PUT", PLAY_URL, start=True, json={"context_uri": values[0]})
 			error = error or self.command("PUT", SHUFFLE_URL, params={"state": "true"})

@@ -157,9 +157,10 @@ class SpotifyTest(unittest.TestCase):
 				mock.patch("francken_tv.providers.spotify.time.sleep"):
 			self.provider.action("play_song", ["spotify:track:abc|spotify:playlist:1"], NOW)
 			self.assertEqual(request.call_args_list[0].kwargs["json"], {"context_uri": "spotify:playlist:1", "offset": {"uri": "spotify:track:abc"}})
-			_, message = self.provider.action("queue", ["spotify:track:abc"], NOW)
+			slide, message = self.provider.action("queue", ["spotify:track:abc"], NOW)
 			self.assertEqual(request.call_args.kwargs["params"], {"uri": "spotify:track:abc"})
-		self.assertEqual(message, "Added to the queue")
+		self.assertEqual(message, f"Added {slide.data['songs'][0]['title']} to the queue")
+		self.assertEqual((slide.template, slide.data["message"], slide.data["queued"]), ("spotify_search.html", message, {"spotify:track:abc"}))   # the popup and the tick
 
 	def test_playlists_without_permission_ask_for_a_new_login(self):
 		self.connect()
@@ -237,13 +238,45 @@ class SpotifyTest(unittest.TestCase):
 		found = {"tracks": {"items": [TRACK["item"] | {"uri": "spotify:track:abc"}]}, "albums": {"items": [album]}}
 		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, found)):
 			slide, _ = self.provider.action("search", ["abba"], NOW)
-		self.assertEqual(slide.data["albums"], [{"name": "ABBA Gold", "artist": "ABBA", "uri": "spotify:album:gold", "cover": "mid", "year": "2008"}])
+		self.assertEqual(slide.data["cards"], [{"name": "ABBA Gold", "subtitle": "2008 \u00b7 ABBA", "uri": "spotify:album:gold", "cover": "mid", "kind": "Album"}])
 		songs = {"items": [TRACK["item"] | {"uri": "spotify:track:abc"}], "total": 19}
 		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, songs)) as request:
 			slide, _ = self.provider.action("songs", ["spotify:album:gold"], NOW)
 		self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/albums/gold/tracks")
 		self.assertEqual((slide.data["playlist"]["name"], slide.data["pages"], slide.data["back"]),
 			("ABBA Gold", 2, {"action": "search", "value": "abba", "label": "Search"}))
+
+	def test_search_for_playlists_with_the_chips(self):
+		self.connect()
+		playlist = {"name": "Borrel Hits", "uri": "spotify:playlist:borrel", "owner": {"display_name": "Francken"}, "images": []}
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, {})):
+			self.provider.action("search", ["borrel"], NOW)
+		found = {"playlists": {"items": [None, playlist]}}   # Spotify leaves gaps in the list
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, found)) as request:
+			slide, _ = self.provider.action("search_kind", ["playlists"], NOW)   # the last search, just playlists
+		self.assertEqual(request.call_args.kwargs["params"], {"q": "borrel", "type": "playlist", "limit": 10})
+		self.assertEqual((slide.data["kind"], slide.data["cards"]), ("playlists", [{"name": "Borrel Hits", "subtitle": "By Francken",
+			"uri": "spotify:playlist:borrel", "cover": None, "kind": "Playlist"}]))
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, found)) as request:
+			slide, _ = self.provider.action("search", ["party"], NOW)   # a new search keeps the chip
+		self.assertEqual(request.call_args.kwargs["params"]["type"], "playlist")
+		songs = {"items": [TRACK["item"] | {"uri": "spotify:track:abc"}], "total": 1}
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, songs)):
+			slide, _ = self.provider.action("songs", ["spotify:playlist:borrel"], NOW)
+		self.assertEqual((slide.data["playlist"]["name"], slide.data["back"]), ("Borrel Hits", {"action": "search", "value": "party", "label": "Search"}))
+
+	def test_all_shows_albums_and_playlists(self):
+		self.connect()
+		albums = [{"name": f"Album {i}", "uri": f"spotify:album:{i}"} for i in range(5)]
+		playlists = [{"name": f"List {i}", "uri": f"spotify:playlist:{i}"} for i in range(5)]
+		found = {"albums": {"items": albums}, "playlists": {"items": playlists[:1]}}
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, found)):
+			slide, _ = self.provider.action("search", ["x"], NOW)
+		self.assertEqual([card["name"] for card in slide.data["cards"]], ["Album 0", "Album 1", "Album 2", "List 0"])   # few playlists: more albums
+		found["playlists"]["items"] = playlists
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, found)):
+			slide, _ = self.provider.action("search", ["x"], NOW)
+		self.assertEqual([card["name"] for card in slide.data["cards"]], ["Album 0", "Album 1", "List 0", "List 1"])
 
 	def test_music_starts_on_our_speaker_when_the_slideshow_starts(self):
 		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
