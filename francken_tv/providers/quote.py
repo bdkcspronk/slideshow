@@ -89,15 +89,15 @@ class QuoteProvider(Provider):
 			self.quotes = read_quotes(self.csv_path.read_text(encoding="utf-8"))
 
 	def slides(self, now: datetime) -> list[Slide]:
-		if not self.quotes:
+		blocked_words = load_blocked_words(self.blocked_words_path)   # read every time: edits apply at once
+		allowed = [quote for quote in self.quotes if not contains_blocked_word(quote["quote"], blocked_words)]
+		if not allowed:
 			return []
-		choices = [quote for quote in self.quotes if quote != self.last_quote] or self.quotes
+		choices = [quote for quote in allowed if quote != self.last_quote] or allowed
 		quote = self.last_quote = random.choice(choices)   # never the same quote twice in a row
-		announce = None
-		if not contains_blocked_word(quote["quote"], load_blocked_words(self.blocked_words_path)):
-			announce = quote["quote"]
-			if self.announcer.quotes_enabled:
-				self.announcer.prepare(announce)
+		announce = quote["quote"]
+		if self.announcer.quotes_enabled:
+			self.announcer.prepare(announce)
 		letters = len(quote["quote"]) + 2   # with the quotation marks
 		letter_ms = min(self.letter_ms, self.max_typing_seconds * 1000 / letters)
 		typing_ms = TYPING_STARTS_MS + letters * letter_ms

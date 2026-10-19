@@ -3,9 +3,10 @@
 One info slide per round, the next part each time; a part with nothing to show is skipped. All
 sources are free and need no key; each part is fetched on its own schedule, and one that fails
 doesn't stop the others (the last error shows on /status):
-- news: RSS feeds (NOS, NU.nl, BBC World by default; [info] news_feeds in config.toml). Tapping a
-  headline opens the article: from the feed when it has the whole text (NOS), else from the
-  article's page (BBC), else the feed's summary (NU.nl's pages are behind a cookie wall). The
+- news: RSS feeds (Dagblad van het Noorden, NU.nl, BBC World by default; [info] news_feeds in
+  config.toml). Tapping a headline opens the article: from the feed when it has the whole text,
+  else from the article's page (BBC), else the feed's summary (NU.nl and DvhN block fetching
+  their pages). The
   slideshow downloads each headline's picture itself (data/cache/news): one that can't be fetched
   is left out, instead of a broken image making the player skip the slide.
 - weather: open-meteo.com for the weather now and the next days; Buienradar's rain forecast for
@@ -37,10 +38,11 @@ log = logging.getLogger(__name__)
 
 HEADERS = {"User-Agent": "FranckenTV-slideshow/1.0 (the TV in the T.F.V. 'Professor Francken' room)"}
 NEWS_FEEDS = [
-	["NOS", "https://feeds.nos.nl/nosnieuwsalgemeen"],
+	["Dagblad van het Noorden", "https://www.dvhn.nl/rss"],
 	["NU.nl", "https://www.nu.nl/rss/Algemeen"],
 	["BBC World", "https://feeds.bbci.co.uk/news/world/rss.xml"],
 ]
+ADS = re.compile(r"commerci[eë]le[ -]content|advertorial|sponsored|gesponsord|partnercontent", re.IGNORECASE)
 ZERNIKE = (53.2406, 6.5364)
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 RAIN_URL = "https://gpsgadget.buienradar.nl/data/raintext"
@@ -65,12 +67,18 @@ class Headline:
 	image: str = ""       # the downloaded copy, as a /files/ url; "" if there's none
 
 
+def is_ad(item: ElementTree.Element) -> bool:
+	"""Whether a feed item is sponsored content: by its category or link (DvhN's "Commerciële content")."""
+	text = " ".join([item.findtext("link") or ""] + [category.text or "" for category in item.iter("category")])
+	return bool(ADS.search(text))
+
+
 def parse_feed(xml: bytes | str) -> list[Headline]:
-	"""The items of an RSS feed, newest first."""
+	"""The items of an RSS feed, newest first, without the ads."""
 	headlines = []
 	for item in ElementTree.fromstring(xml).iter("item"):
 		title = (item.findtext("title") or "").strip()
-		if not title:
+		if not title or is_ad(item):
 			continue
 		try:
 			time = parsedate_to_datetime(item.findtext("pubDate") or "").astimezone().replace(tzinfo=None)
@@ -507,7 +515,7 @@ class InfoProvider(Provider):
 
 	def article_text(self, headline: Headline) -> tuple[list[str], bool]:
 		"""The article's paragraphs, and whether that's the whole article (not only a summary)."""
-		if len(headline.paragraphs) >= 3:   # the feed has the whole article (NOS)
+		if len(headline.paragraphs) >= 3:   # the feed has the whole article
 			return headline.paragraphs, True
 		if headline.link not in self.articles:
 			try:

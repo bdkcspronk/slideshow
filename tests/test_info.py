@@ -23,6 +23,8 @@ RSS = """<?xml version="1.0"?><rss><channel>
 <item><title>BBC style</title><pubDate>Sun, 18 Oct 2026 10:00:00 GMT</pubDate>
 <media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" width="240" url="https://ichef.bbci.co.uk/ace/standard/240/x.jpg"/></item>
 <item><title></title></item>
+<item><title>An ad</title><category><![CDATA[Commerciële content]]></category><pubDate>Sun, 18 Oct 2026 19:20:00 +0200</pubDate></item>
+<item><title>Another ad</title><link>https://www.dvhn.nl/commerciele-content/x/1.html</link></item>
 </channel></rss>"""
 
 
