@@ -14,6 +14,7 @@
 		</p>
 
 		<div class="connections-board">
+			{% if message %}<div class="connections-message">{{ message }}</div>{% endif %}
 			{% for level, title, group in groups %}
 			<div class="connections-group connections-group-{{ level + 1 }}{{ ' appear' if level == new_group }}">
 				<strong>{{ title }}</strong>

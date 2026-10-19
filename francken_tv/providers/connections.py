@@ -154,7 +154,7 @@ class ConnectionsProvider(Provider):
 		return PuzzleStatus("new", "Not tried yet")
 
 	def slides(self, now: datetime, selected: list[str] | None = None, shake: bool = False,
-			new_group: int | None = None) -> list[Slide]:
+			new_group: int | None = None, message: str | None = None) -> list[Slide]:
 		game = self.todays_game(now)
 		if game is None:
 			return []
@@ -170,6 +170,7 @@ class ConnectionsProvider(Provider):
 			"selected": selected or [],
 			"shake": shake,
 			"new_group": new_group,   # just found: player.js animates it into place
+			"message": message,       # e.g. "One away...": pops up over the board for a moment
 			"yesterday": yesterday,
 		})]
 
@@ -185,5 +186,5 @@ class ConnectionsProvider(Provider):
 			random.shuffle(game.order)
 		self.save()
 		slides = self.slides(now, selected=result.get("selected"), shake=result.get("shake", False),
-			new_group=result.get("new_group"))
+			new_group=result.get("new_group"), message=result.get("message"))
 		return (slides[0] if slides else None), result.get("message")

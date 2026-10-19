@@ -80,6 +80,7 @@ class GameTest(unittest.TestCase):
 		data, message = self.submit(guess)
 		self.assertEqual(message, "One away...")
 		self.assertEqual((data["selected"], data["shake"], data["mistakes_left"]), (guess, True, 3))
+		self.assertEqual(data["message"], "One away...")   # shown as a popup over the board
 
 	def test_same_wrong_guess_twice_costs_no_extra_mistake(self):
 		guess = group(0)[:2] + group(1)[:2]

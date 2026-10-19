@@ -1490,7 +1490,29 @@ body.show-cursor button { cursor: pointer; }
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 1.2vh;
 }
-.connections-board { display: flex; flex-direction: column; gap: 1.2vh; }
+.connections-board { position: relative; display: flex; flex-direction: column; gap: 1.2vh; }
+/* "One away...", "Already guessed!", "Perfect!": pops up over the board like on the NYT page, then fades. */
+.connections-message {
+	position: absolute;
+	top: -1.5vh;
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 1.4vh 2vw;
+	border-radius: 0.8vh;
+	background: #121212;
+	color: #ffffff;
+	font-size: 3vh;
+	font-weight: bold;
+	white-space: nowrap;
+	z-index: 2;
+	pointer-events: none;   /* taps go through to the tiles below */
+	animation: connections-message 2.5s ease-in forwards;
+}
+@keyframes connections-message {
+	0% { opacity: 0; transform: translate(-50%, 1vh); }
+	8%, 80% { opacity: 1; transform: translate(-50%, 0); }
+	100% { opacity: 0; transform: translate(-50%, 0); }
+}
 .connections-board .connections-group { height: 14vh; margin: 0; justify-content: center; box-sizing: border-box; }
 .connections-board .connections-group strong { font-size: 3vh; }
 .connections-board .connections-group span { font-size: 2.6vh; }
