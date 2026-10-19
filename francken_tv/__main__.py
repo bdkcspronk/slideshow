@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import signal
 import sys
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -42,7 +44,14 @@ def main() -> None:
 	app.runner.start()
 	signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))   # systemd stop: shut down cleanly below
 	log.info("Slideshow running on http://%s:%d (status: /status)", host, port)
-	restore_terminal = keyboard.listen(app)
+	restarting = threading.Event()
+
+	def restart() -> None:   # Ctrl+R: stop serving; below, everything is shut down and started again
+		log.info("Restarting the slideshow")
+		restarting.set()
+		threading.Thread(target=server.shutdown, daemon=True).start()
+
+	restore_terminal = keyboard.listen(app, restart)
 	try:
 		server.serve_forever()
 	except KeyboardInterrupt:
@@ -52,6 +61,11 @@ def main() -> None:
 		app.runner.stop()
 		app.announcer.stop_music()
 		server.server_close()
+	if restarting.is_set():
+		# The same command again (same options), as a fresh program: new code and config are read.
+		# The browser keeps trying until the server is back. Same process, so start.sh still stops it.
+		sys.stdout.flush()
+		os.execv(sys.executable, [sys.executable, *sys.orig_argv[1:]])
 
 
 if __name__ == "__main__":

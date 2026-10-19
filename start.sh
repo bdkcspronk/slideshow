@@ -1,6 +1,6 @@
 #!/bin/bash
 # Start the Francken TV slideshow: server, sniffer (if the ESP32 is plugged in) and a browser window.
-# Press Ctrl+C here to stop everything. Ctrl+M = read quotes aloud on/off, Ctrl+R = reload devices.json.
+# Press Ctrl+C here to stop everything. Ctrl+M = read quotes aloud on/off, Ctrl+R = restart the slideshow.
 #
 #   ./start.sh                                   normal start, in a browser window
 #   ./start.sh --fullscreen                      full screen (kiosk), as on the TV

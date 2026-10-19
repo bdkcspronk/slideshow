@@ -57,8 +57,9 @@ Each slide type is one Python file plus one small HTML template in `francken_tv/
 ./start.sh --fake-time "2026-10-16 15:57:30"  # pretend it's Friday just before bieruur
 ```
 
-In the terminal: **Ctrl+M** (or Enter) turns reading quotes aloud on/off, **Ctrl+R** reloads
-`config/devices.json`, **Ctrl+C** stops everything.
+In the terminal: **Ctrl+M** (or Enter) turns reading quotes aloud on/off, **Ctrl+R** restarts the
+slideshow (reads new code and `config.toml` again, e.g. after a `git pull`), **Ctrl+C** stops everything.
+`config/devices.json` is reloaded under Esc -> Settings.
 Alt+F4 closes the full-screen browser.
 Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
 
