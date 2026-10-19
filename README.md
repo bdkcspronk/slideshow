@@ -60,7 +60,7 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
 
 - http://127.0.0.1:8080/status shows each slide type, when it last refreshed, and its last error.
 - http://127.0.0.1:8080/preview/activities shows one slide (also `quote`, `presence`, `bieruur_countdown`, ...).
-- Keys in the slideshow: →/↓ next, ←/↑ previous, space pause, `m` toggle reading quotes aloud,
+- Keys in the slideshow: →/↓ next, ←/↑ previous, space pause, `m` mute/unmute all sound,
   `1` Daily puzzles, `2` Spotify, `3` today's activity chart (change these under `[shortcuts]` in
   `config/config.toml`).
 - **Esc** opens the menu: live previews of those slide types (arrow keys + Enter, or click), plus

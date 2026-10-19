@@ -65,6 +65,12 @@ class App:
 		self.change_settings({"quotes_aloud": not self.settings.quotes_aloud})
 		self.notify(f"Reading quotes aloud: {'on' if self.settings.quotes_aloud else 'off'}")
 
+	def toggle_mute(self) -> None:
+		"""All sound on/off, like "Mute all sound" in the menu's Settings (the m key in the slideshow)."""
+		self.read_sound()   # the volume keys may have (un)muted it in the meantime
+		self.change_settings({"muted": not self.settings.muted})
+		self.notify("Sound muted" if self.settings.muted else "Sound on")
+
 	def change_settings(self, changes: dict) -> None:
 		"""Apply and save settings from the menu. Raises ValueError for a wrong value."""
 		with self.settings_lock:

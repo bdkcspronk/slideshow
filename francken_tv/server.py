@@ -5,7 +5,7 @@
 	/api/current    the current slide re-rendered (for slides that update, like the countdown)
 	/api/shortcut/<key>  the slide for a shortcut key (see [shortcuts] in config.toml), right away
 	/api/slide/<n>  a recent slide again, freshly drawn (going back with the left arrow)
-	/api/narration  POST: toggle reading quotes aloud
+	/api/mute       POST: toggle muting all sound (the m key)
 	/api/menu       the menu (Esc): GET what it shows, POST a choice (see menu.py)
 	/api/action     POST: a button on an interactive slide (the puzzle) was clicked
 	/api/takeover   whether a takeover should interrupt a paused interactive slide
@@ -246,9 +246,9 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_action()
 		elif urlparse(self.path).path == "/api/menu":
 			self.send_menu_command()
-		elif urlparse(self.path).path == "/api/narration":
-			self.server.app.toggle_quotes()
-			self.send_json({"quotes_enabled": self.server.app.announcer.quotes_enabled})
+		elif urlparse(self.path).path == "/api/mute":
+			self.server.app.toggle_mute()
+			self.send_json({"muted": self.server.app.settings.muted})
 		else:
 			self.send_error(HTTPStatus.NOT_FOUND)
 

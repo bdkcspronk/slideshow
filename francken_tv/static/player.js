@@ -359,7 +359,7 @@ document.addEventListener("keydown", async (event) => {
 	} else if (/^[0-9]$/.test(event.key) && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		jumpTo(event.key);
 	} else if (event.key === "m") {
-		await getJson("/api/narration", { method: "POST" });
+		await getJson("/api/mute", { method: "POST" });
 		checkNotice();   // the server's confirmation shows up as a notice
 	}
 });
