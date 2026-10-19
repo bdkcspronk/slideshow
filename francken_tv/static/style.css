@@ -488,9 +488,9 @@ body.show-cursor button { cursor: pointer; }
 	50% { transform: scale(1.06); }
 }
 
-/* Bieruur itself: a screen full of beer. */
+/* Bieruur itself: a screen full of beer, without the foam. */
 .bieruur-party { justify-content: center; color: var(--blue); }
-.bieruur-party .beer-head { bottom: calc(100% - 6vh); }
+.bieruur-party .beer-head { display: none; }
 .party-text { text-align: center; }
 .party-title { font-size: 14vh; font-weight: bold; line-height: 1; }
 .party-subtitle { font-size: 7vh; margin-top: 3vh; }

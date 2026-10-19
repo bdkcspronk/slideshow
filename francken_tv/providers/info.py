@@ -48,6 +48,15 @@ WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 RAIN_URL = "https://gpsgadget.buienradar.nl/data/raintext"
 OVAPI_URL = "http://v0.ovapi.nl/tpc/{codes}"
 NIJENBORGH = ["10004130"]   # Groningen, Nijenborgh: the side towards the city centre (10004140 is the other side)
+# Qbuzz's colours for the Groningen city lines (Qlink), as on their site and the buses: [background, text].
+# From route_color/route_text_color in the national GTFS (gtfs.ovapi.nl/nl, routes.txt); the regional lines
+# (107, 109, 171, ...) have none there and keep the slide's blue.
+BUS_LINE_COLORS = {
+	"1": ["#00be46", "#000000"], "2": ["#8cdc32", "#000000"], "3": ["#1078be", "#ffffff"],
+	"4": ["#00bcf2", "#000000"], "5": ["#b400be", "#ffffff"], "6": ["#c85aff", "#ffffff"],
+	"9": ["#ff00ff", "#ffffff"], "11": ["#00be46", "#000000"], "15": ["#ff5f00", "#000000"],
+	"18": ["#99c200", "#000000"],
+}
 ROOSTER_URL = "https://rooster.rug.nl/maat/api/{year}"
 TIMETABLE = [["BSc Applied Physics", 1], ["BSc Applied Physics", 2], ["BSc Applied Physics", 3], ["MSc Applied Physics", 1]]
 PARTS = ["news", "weather", "buses", "timetable"]
@@ -358,6 +367,7 @@ class InfoProvider(Provider):
 		self.stop_name = settings.get("bus_stop_name", "Nijenborgh")
 		self.stop_codes = settings.get("bus_stop_codes", NIJENBORGH)
 		self.departures_shown = settings.get("departures_shown", 8)
+		self.line_colors = settings.get("bus_line_colors", BUS_LINE_COLORS)
 		self.timetable_name = settings.get("timetable_name", "Applied Physics")
 		self.timetable_programmes = settings.get("timetable", TIMETABLE)
 		self.next_day_from = settings.get("timetable_next_day_from_hour", 18)
@@ -543,7 +553,7 @@ class InfoProvider(Provider):
 		shown = []
 		for departure in upcoming[: self.departures_shown]:
 			minutes = int((departure.expected - now).total_seconds() // 60)
-			shown.append({"departure": departure, "minutes": max(0, minutes)})
+			shown.append({"departure": departure, "minutes": max(0, minutes), "colors": self.line_colors.get(departure.line)})
 		return {"stop": self.stop_name, "departures": shown}
 
 	def timetable_data(self, now: datetime) -> dict | None:

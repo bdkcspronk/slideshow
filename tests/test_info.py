@@ -147,6 +147,11 @@ class InfoProviderTest(unittest.TestCase):
 		templates = [self.provider.slides(SUNDAY_EVENING)[0].template for _ in range(5)]
 		self.assertEqual(templates, ["info_news.html", "info_weather.html", "info_buses.html", "info_timetable.html", "info_news.html"])
 
+	def test_buses_in_their_line_colours(self):
+		self.provider.departures.append(Departure("171", "Veendam", datetime(2026, 10, 18, 19, 40), datetime(2026, 10, 18, 19, 40)))
+		rows = self.provider.buses_data(SUNDAY_EVENING)["departures"]
+		self.assertEqual([row["colors"] for row in rows], [["#00be46", "#000000"], None])   # a regional line: the slide's blue
+
 	def test_the_timetable_stays_longer(self):
 		self.provider.turn = 3
 		self.assertEqual(self.provider.slides(SUNDAY_EVENING)[0].seconds, 25)

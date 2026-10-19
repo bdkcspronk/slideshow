@@ -4,7 +4,7 @@
 	<ol class="bus-list">
 		{% for row in departures %}{% set departure = row.departure %}
 		<li class="{{ 'cancelled' if departure.cancelled }}" style="--i: {{ loop.index0 }}">
-			<span class="bus-line">{{ departure.line }}</span>
+			<span class="bus-line"{% if row.colors %} style="background: {{ row.colors[0] }}; color: {{ row.colors[1] }}"{% endif %}>{{ departure.line }}</span>
 			<span class="bus-destination">{{ departure.destination }}</span>
 			<span class="bus-time">{{ departure.expected.strftime("%H:%M") }}{% if departure.delay %}<small>+{{ departure.delay }}</small>{% endif %}</span>
 			<span class="bus-minutes">{% if departure.cancelled %}cancelled{% elif row.minutes == 0 %}now{% else %}{{ row.minutes }} min{% endif %}</span>
