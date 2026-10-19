@@ -12,6 +12,7 @@ The slideshow on the TV in the Francken room. It shows:
 | Second-hand books for sale: three at a time, as 3D books flying onto a shelf, with title and price | professorfrancken.nl/study/books, covers from openlibrary.org | `providers/books.py` |
 | Info, in turn: news (Dagblad van het Noorden, NU.nl, BBC World), weather and rain at Zernike, buses from Nijenborgh, today's Applied Physics timetable | RSS feeds, open-meteo.com, Buienradar, OVapi, rooster.rug.nl | `providers/info.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
+| The commandment of the week by Jeff de Hosson, our honorary member (the next one each Monday) | `config/commandments.txt` | `providers/commandments.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing \| TimeGuessr, with today's status; tap one to play it | nytimes.com, catfishing.net, timeguessr.com (map: OpenStreetMap) | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py`, `timeguessr.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song | | `providers/bieruur.py` |

@@ -20,6 +20,7 @@ from .presence_store import PresenceStore
 from .providers.activities import ActivitiesProvider
 from .providers.books import BooksProvider
 from .providers.catfishing import CatfishingProvider
+from .providers.commandments import CommandmentsProvider
 from .providers.connections import ConnectionsProvider
 from .providers.puzzles import PuzzlesProvider
 from .providers.spotify import SpotifyProvider
@@ -148,6 +149,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		PresenceChartProvider(presence, store, devices, project_path("media/nyancat.png"), seconds),
 		LeaderboardProvider(config.get("leaderboard", {}), store, devices, seconds),
 		QuoteProvider(config.get("quote", {}), DATA_DIR / "quotes.csv", announcer, seconds),
+		CommandmentsProvider(config.get("commandments", {}), seconds),
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),
 		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),

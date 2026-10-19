@@ -395,6 +395,39 @@ body.show-cursor button { cursor: pointer; }
 .quote-slide footer { margin-top: 2vh; opacity: 0; animation: quote-author 1.2s ease var(--typed) forwards; }
 @keyframes quote-author { from { opacity: 0; transform: translateY(1vh); } to { opacity: 1; transform: none; } }
 
+/* Jeff de Hosson's commandment of the week: a big Roman numeral above the commandment, like a stone tablet. */
+.commandments-slide {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 0 10vw;
+	background: var(--bg);
+	color: var(--blue);
+	text-align: center;
+}
+.commandments-heading { margin: 0; font-size: 3vh; letter-spacing: 0.3vh; text-transform: uppercase; color: var(--muted); }
+.commandments-number {
+	margin: 3vh 0 2vh;
+	font-family: Georgia, "DejaVu Serif", serif;
+	font-size: 16vh;
+	font-weight: bold;
+	line-height: 1;
+	color: var(--red);
+	animation: commandments-in 0.9s ease-out 0.4s both;
+}
+.commandments-text {
+	margin: 0;
+	max-width: 70vw;
+	font-family: Georgia, "DejaVu Serif", serif;
+	font-size: 6.4vh;
+	line-height: 1.2;
+	animation: commandments-in 0.9s ease-out 0.9s both;
+}
+.commandments-text.long { font-size: 5vh; }   /* e.g. X, so it still fits */
+.commandments-week { margin: 4vh 0 0; font-size: 2.4vh; color: var(--faint); }
+@keyframes commandments-in { from { opacity: 0; transform: translateY(2vh); } }
+
 /* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. White and red on dark
    Francken blue (no white background); the beer stays beer-coloured, with blue text on it. */
 .bieruur-slide {

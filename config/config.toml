@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "bieruur_countdown"]
+order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
@@ -115,6 +115,11 @@ letter_ms = 45                              # the quote is typed letter by lette
 max_typing_seconds = 8                      # ...but long quotes type faster, to finish within this time
 seconds = 6                                 # reading time after the quote is typed and the author shown
 refresh_hours = 6
+
+[commandments]
+# Jeff de Hosson's commandment of the week: the next one from the file every Monday, in order.
+file = "config/commandments.txt"   # one commandment per line
+seconds = 12
 
 [puzzles]
 # The Daily puzzles slide: one half per puzzle, tap one to play it.
