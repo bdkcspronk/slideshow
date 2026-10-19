@@ -61,6 +61,23 @@ class QuoteProviderTest(unittest.TestCase):
 		shown = [provider.slides(datetime(2026, 10, 14))[0].data["quote"] for _ in range(20)]
 		self.assertTrue(all(first != second for first, second in zip(shown, shown[1:])))
 
+	def test_quotes_with_blocked_words_are_never_shown(self):
+		from francken_tv.providers.quote import QuoteProvider
+
+		class SilentAnnouncer:
+			quotes_enabled = False
+
+			def prepare(self, text):
+				pass
+		with TemporaryDirectory() as folder:
+			blocked = Path(folder) / "filter.txt"
+			blocked.write_text("# a comment\nheck\n", encoding="utf-8")
+			provider = QuoteProvider({"blocked_words": str(blocked)}, Path("unused.csv"), SilentAnnouncer(), 8)
+			provider.quotes = [{"quote": "Oh heck", "author": "x"}, {"quote": "Fine", "author": "y"}]
+			self.assertEqual({provider.slides(datetime(2026, 10, 14))[0].data["quote"] for _ in range(10)}, {"Fine"})
+			provider.quotes = [{"quote": "Oh heck", "author": "x"}]
+			self.assertEqual(provider.slides(datetime(2026, 10, 14)), [])   # nothing left: no quote slide
+
 
 class PortraitPairTest(unittest.TestCase):
 	def test_portrait_photo_is_paired_with_one_from_the_same_event(self):

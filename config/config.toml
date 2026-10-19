@@ -50,7 +50,7 @@ show = ["news", "weather", "buses", "timetable"]
 seconds = 15
 timetable_seconds = 25        # the timetable has the most to read
 news_feeds = [
-	["NOS", "https://feeds.nos.nl/nosnieuwsalgemeen"],
+	["Dagblad van het Noorden", "https://www.dvhn.nl/rss"],
 	["NU.nl", "https://www.nu.nl/rss/Algemeen"],
 	["BBC World", "https://feeds.bbci.co.uk/news/world/rss.xml"],
 ]
@@ -108,7 +108,7 @@ seconds = 12
 [quote]
 sheet_id = "12hadm3_zdeU7e3q-YHFfcNSDocQdzjWKnn7lzZLqhI4"   # Google Sheet with "Quote" and "name" columns
 background = "media/quote_background.png"
-blocked_words = "config/quote_filter.txt"   # quotes containing these words are shown but not read aloud
+blocked_words = "config/quote_filter.txt"   # quotes containing these words are never shown
 narrate = false                             # read quotes aloud? Also: Ctrl+M in the terminal, "m" or Esc -> Settings in the browser
 letter_ms = 45                              # the quote is typed letter by letter at this speed...
 max_typing_seconds = 8                      # ...but long quotes type faster, to finish within this time
