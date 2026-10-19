@@ -77,8 +77,8 @@ server = "https://nextcloud.professorfrancken.nl"
 credentials = "~/.config/slideshow/nextcloud.credentials.json"
 albums_folder = "images/albums"   # contains <year>/<YYYY-MM-DD>-<event name>/ folders
 recent_events = 3                 # pick photos from this many most recent events
-photos_to_download = 15           # photos kept locally, re-picked every refresh
-photos_per_round = 1              # photos shown per round of the slideshow
+photos_per_event = 20             # photos downloaded from each event every refresh (fewer if it has fewer; the others make up the rest)
+photos_per_round = 1              # photos shown per round of the slideshow; all of a batch are shown before any comes back
 refresh_minutes = 60
 seconds = 10
 

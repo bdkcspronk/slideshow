@@ -1,4 +1,6 @@
-"""Random photos from the most recent events, from the Francken Nextcloud.
+"""Random photos from the most recent events, from the Francken Nextcloud: as many from each event
+(a big album doesn't crowd out a small one). Every refresh downloads a new batch; the slides go
+through it in a shuffled order, so no photo comes back before all the others have been shown.
 
 Albums live in <albums_folder>/<year>/<YYYY-MM-DD>-<event name>/. A year folder can contain
 albums from the previous year, so albums are sorted by the date in their name.
@@ -23,6 +25,18 @@ from ..slides import Provider, Slide, media_url
 log = logging.getLogger(__name__)
 
 ALBUM_NAME = re.compile(r"^(\d{4}-\d{2}-\d{2})[-_ ]*(.*)$")
+
+
+def pick_evenly(groups: list[list], total: int) -> list:
+	"""`total` random items, taken in turn from each group: an equal share from every group, and when
+	a group runs out the others make up the rest."""
+	shuffled = [random.sample(group, len(group)) for group in groups]
+	picked: list = []
+	while len(picked) < total and any(shuffled):
+		for group in shuffled:
+			if group and len(picked) < total:
+				picked.append(group.pop())
+	return picked
 
 
 @dataclass
@@ -73,11 +87,12 @@ class EventPhotosProvider(Provider):
 		self.cache_folder = cache_folder
 		self.albums_folder = settings.get("albums_folder", "images/albums").strip("/") + "/"
 		self.recent_events = settings.get("recent_events", 3)
-		self.photos_to_download = settings.get("photos_to_download", 15)
+		self.photos_per_event = settings.get("photos_per_event", 20)
 		self.photos_per_round = settings.get("photos_per_round", 1)
 		self.seconds = settings.get("seconds", default_seconds)
 		self.refresh_seconds = settings.get("refresh_minutes", 60) * 60
 		self.photos: list[Photo] = []
+		self.queue: list[Photo] = []   # the photos of this batch not shown yet, in random order
 		self.client: Nextcloud | None = None
 
 	def connect(self) -> Nextcloud:
@@ -91,13 +106,12 @@ class EventPhotosProvider(Provider):
 		years = sorted((e for e in client.list_folder(self.albums_folder) if e.is_folder), key=lambda e: e.name, reverse=True)
 		album_entries = [entry for year in years[:2] for entry in client.list_folder(year.path)]
 		albums = most_recent_albums(album_entries, now.date(), self.recent_events)
-		candidates = [
-			(album, entry)
+		per_album = [
+			[(album, entry) for entry in client.list_folder(album.path)
+				if not entry.is_folder and Path(entry.name).suffix.lower() in IMAGE_EXTENSIONS]
 			for album in albums
-			for entry in client.list_folder(album.path)
-			if not entry.is_folder and Path(entry.name).suffix.lower() in IMAGE_EXTENSIONS
 		]
-		chosen = random.sample(candidates, min(self.photos_to_download, len(candidates)))
+		chosen = pick_evenly(per_album, self.photos_per_event * len(albums))
 
 		self.cache_folder.mkdir(parents=True, exist_ok=True)
 		photos = []
@@ -112,12 +126,23 @@ class EventPhotosProvider(Provider):
 			if old not in keep:
 				old.unlink()
 		self.photos = photos
+		self.queue = []   # a new batch: a new order
 		log.info("Event photos from: %s", ", ".join(album.title for album in albums))
+
+	def next_photos(self, photos: list[Photo]) -> list[Photo]:
+		"""The next photos_per_round photos of the shuffled batch; once all are shown, a new shuffle."""
+		self.queue = [photo for photo in self.queue if photo in photos]
+		chosen = []
+		for _ in range(min(self.photos_per_round, len(photos))):
+			if not self.queue:
+				self.queue = random.sample(photos, len(photos))
+			chosen.append(self.queue.pop())
+		return chosen
 
 	def slides(self, now: datetime) -> list[Slide]:
 		photos = [photo for photo in self.photos if photo.path.exists()]
 		slides = []
-		for photo in random.sample(photos, min(self.photos_per_round, len(photos))):
+		for photo in self.next_photos(photos):
 			shown = [photo]
 			if photo.portrait:
 				# A portrait photo alone leaves half the screen black: pair it with another one from

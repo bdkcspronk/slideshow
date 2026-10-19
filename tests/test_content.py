@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 from francken_tv.nextcloud import Entry
 from francken_tv.providers.bieruur import BieruurSettings, BieruurSong
-from francken_tv.providers.event_photos import most_recent_albums
+from francken_tv.providers.event_photos import most_recent_albums, pick_evenly
 from francken_tv.providers.quote import clean_quote, contains_blocked_word, read_quotes
 
 
@@ -25,6 +25,16 @@ class AlbumsTest(unittest.TestCase):
 		albums = most_recent_albums(entries, date(2026, 10, 14), 3)
 		self.assertEqual([a.title for a in albums], ["Dies Natalis", "Bowling", "Karaoke Borrel"])
 		self.assertEqual(albums[0].day, date(2026, 10, 12))
+
+
+class PickEvenlyTest(unittest.TestCase):
+	def test_as_many_from_each_event(self):
+		big, medium, small = [("big", i) for i in range(300)], [("medium", i) for i in range(40)], [("small", i) for i in range(3)]
+		picked = pick_evenly([big, medium, small], 15)
+		counts = {name: sum(1 for group, _ in picked if group == name) for name in ("big", "medium", "small")}
+		self.assertEqual(counts, {"big": 6, "medium": 6, "small": 3})   # the small event has only 3: the others make up the rest
+		self.assertEqual(len(set(picked)), 15)
+		self.assertEqual(len(pick_evenly([small], 15)), 3)
 
 
 class QuotesTest(unittest.TestCase):
@@ -99,6 +109,22 @@ class PortraitPairTest(unittest.TestCase):
 			self.assertEqual(len(slides["2.jpg"]), 1)   # portrait, but no other photo from that event
 
 
+class PhotoOrderTest(unittest.TestCase):
+	def test_every_photo_is_shown_before_any_comes_back(self):
+		from francken_tv.config import DATA_DIR
+		from francken_tv.providers.event_photos import Album, EventPhotosProvider, Photo
+		DATA_DIR.mkdir(exist_ok=True)
+		with TemporaryDirectory(dir=DATA_DIR) as folder:
+			album = Album("a", date(2026, 10, 9), "Bowling")
+			provider = EventPhotosProvider({}, Path(folder), 8)
+			for i in range(10):
+				(Path(folder) / f"{i}.jpg").write_bytes(b"")
+			provider.photos = [Photo(Path(folder) / f"{i}.jpg", album) for i in range(10)]
+			shown = [provider.slides(datetime(2026, 10, 14))[0].data["urls"][0] for _ in range(20)]
+			self.assertEqual(len(set(shown[:10])), 10)   # the first ten rounds: all different
+			self.assertEqual(set(shown[10:]), set(shown[:10]))   # then all again, in a new order
+
+
 class FakeNextcloud:
 	"""Two years, one album, and twenty photos; downloads write a small file."""
 
@@ -117,7 +143,7 @@ class EventPhotoRefreshTest(unittest.TestCase):
 	def test_previous_batch_is_kept_for_one_refresh(self):
 		from francken_tv.providers.event_photos import EventPhotosProvider
 		with TemporaryDirectory() as folder:
-			provider = EventPhotosProvider({"photos_to_download": 5}, Path(folder), 8)
+			provider = EventPhotosProvider({"photos_per_event": 5}, Path(folder), 8)
 			provider.client = FakeNextcloud()
 			now = datetime(2026, 10, 14, 12, 0)
 			provider.refresh(now)
