@@ -38,6 +38,21 @@ class PuzzlesHubTest(unittest.TestCase):
 		wordle.action("submit", ["CRANE"], NOW)
 		self.assertEqual(statuses(hub)["wordle"], ("solved", "Solved in 2 guesses"))
 
+	def test_out_of_the_rotation_when_all_are_done(self):
+		hub, connections, wordle = make_hub()
+		hub.refresh(NOW)
+		for number in range(4):
+			connections.action("submit", group(number), NOW)   # solved
+		self.assertEqual(len(hub.slides(NOW)), 1)   # Wordle still to do
+		for word in ["SLATE", "PIANO", "MOUSE", "LIGHT", "BRICK", "DWARF"]:
+			wordle.action("submit", [word], NOW)   # lost: done too
+		self.assertEqual(hub.slides(NOW), [])
+		self.assertEqual(hub.shortcut_slide(NOW).template, "puzzles.html")   # the shortcut and the menu still show it
+		self.assertEqual(hub.action("back", [], NOW)[0].template, "puzzles.html")   # "All puzzles" from a finished puzzle
+		tomorrow = NOW.replace(day=15)
+		hub.refresh(tomorrow)
+		self.assertEqual(len(hub.slides(tomorrow)), 1)   # new puzzles: back in the rotation
+
 	def test_open_a_puzzle_and_go_back(self):
 		hub, _, _ = make_hub()
 		hub.refresh(NOW)

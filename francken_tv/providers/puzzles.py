@@ -2,6 +2,8 @@
 today's status.
 
 Tapping a card opens that puzzle on the spot; its "All puzzles" button comes back here.
+Once every puzzle of the day is done (solved or lost), the slide leaves the rotation until the
+next day's puzzles; the shortcut key and the menu (Esc) still show it.
 To add a puzzle: write a provider with a `title`, a `status(now)` method and an interactive
 slide (see connections.py), create it in app.py and add its name to puzzles.order in config.toml.
 Like the others, it keeps today's game in `self.game` and saves it at `self.state_path`, so it can
@@ -52,6 +54,7 @@ def save_state(path: Path | None, day: date, state: dict) -> None:
 class PuzzlesProvider(Provider):
 	name = "puzzles"
 	title = "Daily puzzles"
+	nothing_to_show = "Today's puzzles couldn't be downloaded"
 
 	def __init__(self, settings: dict, puzzles: list[Provider], default_seconds: float) -> None:
 		self.puzzles = puzzles
@@ -78,13 +81,23 @@ class PuzzlesProvider(Provider):
 				cards.append({"name": puzzle.name, "title": puzzle.title, "state": status.state, "status": status.text})
 		return cards
 
-	def slides(self, now: datetime) -> list[Slide]:
+	def overview(self, now: datetime) -> Slide | None:
 		cards = self.cards(now)
 		if not cards:
-			return []
+			return None
 		# The round is planned ahead, so the cards are worked out again when the slide is shown:
 		# a puzzle solved (or a new day's puzzle downloaded) meanwhile shows up right away.
-		return [Slide("puzzles.html", self.seconds, {"cards": cards}, update=lambda now: {"cards": self.cards(now) or cards})]
+		return Slide("puzzles.html", self.seconds, {"cards": cards}, update=lambda now: {"cards": self.cards(now) or cards})
+
+	def slides(self, now: datetime) -> list[Slide]:
+		"""The overview, unless every puzzle is done for today: then nothing is left to play."""
+		slide = self.overview(now)
+		if slide is None or all(card["state"] in ("solved", "lost") for card in slide.data["cards"]):
+			return []
+		return [slide]
+
+	def shortcut_slide(self, now: datetime) -> Slide | None:
+		return self.overview(now)   # also when all are done, to see how it went
 
 	def reset(self, name: str | None = None) -> list[str]:
 		"""Start today's game of one puzzle (or of all of them, name=None) over. Returns their titles."""
@@ -105,5 +118,4 @@ class PuzzlesProvider(Provider):
 			slides = puzzle.slides(now) if puzzle else []
 			if slides:
 				return slides[0], None
-		slides = self.slides(now)
-		return (slides[0] if slides else None), None
+		return self.overview(now), None
