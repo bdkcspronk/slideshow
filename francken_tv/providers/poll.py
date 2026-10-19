@@ -115,7 +115,7 @@ def count_form_votes(csv_text: str, week_start: date, day_first: bool = True, di
 class PollProvider(Provider):
 	name = "poll"
 	title = "Weekly dilemma"
-	nothing_to_show = "No dilemmas in config/dilemmas.txt"
+	nothing_to_show = "No dilemmas in config/dilemmas.txt, or the form's votes aren't read yet"
 
 	def __init__(self, settings: dict, default_seconds: float, state_path: Path | None = None) -> None:
 		self.path = project_path(settings.get("file", "config/dilemmas.txt"))
@@ -126,6 +126,7 @@ class PollProvider(Provider):
 		self.refresh_seconds = settings.get("refresh_minutes", 2) * 60 if self.sheet_id else None
 		self.state_path = state_path   # every week's dilemma and votes (data/poll.json), for last week's outcome
 		self.weeks: dict[str, dict] | None = None   # Monday "2026-10-19" -> {"question", "a", "b", "tv": {...}, "form": {...}}
+		self.form_read = not self.sheet_id   # with a form: no slide until its votes have been read (after a start)
 		self.last_tap = 0.0
 		self.lock = threading.Lock()   # votes arrive from the web server's threads, the form's from refresh()
 
@@ -180,6 +181,7 @@ class PollProvider(Provider):
 					dilemma = Dilemma(entry["question"], entry["a"], entry["b"])
 					entry["form"] = count_form_votes(sheet, start, self.day_first, dilemma)
 			self.save()
+			self.form_read = True
 
 	@staticmethod
 	def results(entry: dict) -> tuple[dict[str, int], int]:
@@ -213,6 +215,8 @@ class PollProvider(Provider):
 			"form_url": self.form_url, "voted": voted, "last_week": self.last_week(now)})
 
 	def slides(self, now: datetime) -> list[Slide]:
+		if not self.form_read:   # just started: the votes on the form would be missing
+			return []
 		slide = self.slide(now)
 		return [slide] if slide else []
 

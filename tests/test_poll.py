@@ -78,6 +78,18 @@ class PollTest(unittest.TestCase):
 			slide, _ = self.provider.action("vote", ["a"], MONDAY)
 		self.assertEqual(slide.data["total"], 1)
 
+	def test_with_a_form_no_slide_until_its_votes_are_read(self):
+		provider = PollProvider({"file": str(self.path), "sheet_id": "sheet"}, 8, self.state)
+		self.assertEqual(provider.slides(MONDAY), [])   # just started
+		with mock.patch("francken_tv.providers.poll.requests.get", side_effect=OSError("offline")):
+			with self.assertRaises(OSError):
+				provider.refresh(MONDAY)
+		self.assertEqual(provider.slides(MONDAY), [])   # reading failed: still not
+		response = mock.Mock(content=b"Timestamp,Answer\n", raise_for_status=lambda: None)
+		with mock.patch("francken_tv.providers.poll.requests.get", return_value=response):
+			provider.refresh(MONDAY)
+		self.assertEqual(len(provider.slides(MONDAY)), 1)
+
 	def test_form_votes_of_this_week_are_added(self):
 		sheet = "Timestamp,Which one?\n18-10-2026 23:59:00,A\n19-10-2026 09:00:00,A: tea\n20-10-2026 10:00:00,B\n21-10-2026 10:00:00,\n26-10-2026 00:00:00,B\n"
 		response = mock.Mock(content=sheet.encode(), raise_for_status=lambda: None)
