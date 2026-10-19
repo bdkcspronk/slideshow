@@ -74,10 +74,20 @@ body.show-cursor button { cursor: pointer; }
 	background: var(--bg);
 	position: relative;
 }
+.image-slide { overflow: hidden; }
 .image-slide img {
+	position: relative;
 	width: 100%;
 	height: 100%;
 	object-fit: contain;
+}
+/* Posters: the image itself, zoomed in and blurred, fills the bars beside it (like the Spotify slide).
+   Not for event photos or the vrijmibo GIF. */
+.image-backdrop {
+	position: absolute;
+	inset: -10%;
+	background: center / cover no-repeat;
+	filter: blur(6vh) brightness(0.6) saturate(1.2);
 }
 
 /* Event photos: caption in the bottom-left corner; two portrait photos side by side. */
@@ -385,8 +395,8 @@ body.show-cursor button { cursor: pointer; }
 .quote-slide footer { margin-top: 2vh; opacity: 0; animation: quote-author 1.2s ease var(--typed) forwards; }
 @keyframes quote-author { from { opacity: 0; transform: translateY(1vh); } to { opacity: 1; transform: none; } }
 
-/* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. Blue and red on white;
-   the beer stays beer-coloured. */
+/* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. White and red on dark
+   Francken blue (no white background); the beer stays beer-coloured, with blue text on it. */
 .bieruur-slide {
 	display: flex;
 	align-items: center;
@@ -395,22 +405,22 @@ body.show-cursor button { cursor: pointer; }
 	padding: 0 3vw;
 	position: relative;
 	overflow: hidden;
-	background: var(--bg);
-	color: var(--blue);
+	background: radial-gradient(ellipse at 50% 35%, #21445f, var(--blue) 70%);
+	color: #ffffff;
 }
 .bieruur-clock { height: 72vh; max-width: 38vw; flex: none; }
-.clock-face { fill: #ffffff; stroke: var(--blue); stroke-width: 4; }
-.clock-wedge { fill: var(--red); opacity: 0.25; }
-.clock-tick { stroke: var(--faint); stroke-width: 1; }
-.clock-tick-hour { stroke: var(--blue); stroke-width: 2.5; }
+.clock-face { fill: #10263a; stroke: #ffffff; stroke-width: 4; }
+.clock-wedge { fill: var(--red); opacity: 0.4; }
+.clock-tick { stroke: rgba(255, 255, 255, 0.4); stroke-width: 1; }
+.clock-tick-hour { stroke: #ffffff; stroke-width: 2.5; }
 .clock-number {
-	fill: var(--blue);
+	fill: #ffffff;
 	font-size: 15px;
 	font-weight: bold;
 	text-anchor: middle;
 	dominant-baseline: central;
 }
-.clock-bieruur-badge { fill: var(--red); stroke: #ffffff; stroke-width: 2; }
+.clock-bieruur-badge { fill: var(--red); stroke: #10263a; stroke-width: 2; }
 .clock-bieruur-number {
 	fill: #ffffff;
 	font-size: 12px;
@@ -418,8 +428,8 @@ body.show-cursor button { cursor: pointer; }
 	text-anchor: middle;
 	dominant-baseline: central;
 }
-.clock-hand-hour { stroke: var(--blue); stroke-width: 6; stroke-linecap: round; }
-.clock-hand-minute { stroke: var(--blue); stroke-width: 4; stroke-linecap: round; }
+.clock-hand-hour { stroke: #ffffff; stroke-width: 6; stroke-linecap: round; }
+.clock-hand-minute { stroke: #ffffff; stroke-width: 4; stroke-linecap: round; }
 .clock-hand-second { stroke: var(--red); stroke-width: 1.5; stroke-linecap: round; }
 .clock-centre { fill: var(--red); }
 
