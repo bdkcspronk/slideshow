@@ -13,6 +13,7 @@ The slideshow on the TV in the Francken room. It shows:
 | Info, in turn: news (Dagblad van het Noorden, NU.nl, BBC World), weather and rain at Zernike, buses from Nijenborgh, today's Applied Physics timetable | RSS feeds, open-meteo.com, Buienradar, OVapi, rooster.rug.nl | `providers/info.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
 | The commandment of the week by Jeff de Hosson, our honorary member (the next one each Monday) | `config/commandments.txt` | `providers/commandments.py` |
+| The dilemma of the week: vote by tapping A or B, or scan the QR code and vote on your phone | `config/dilemmas.txt`, a Google Form | `providers/poll.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing \| TimeGuessr, with today's status; tap one to play it | nytimes.com, catfishing.net, timeguessr.com (map: OpenStreetMap) | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py`, `timeguessr.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song | | `providers/bieruur.py` |
@@ -123,6 +124,25 @@ Premium, and music already playing on some device. One-time setup:
    `data/spotifyd.log`). The PC is then a Spotify speaker called "Francken TV"; when nothing plays,
    the slide starts music there, and "Play on TV" moves music playing elsewhere to it. Without it,
    songs only play when a Spotify app somewhere is already playing.
+
+## Weekly dilemma
+
+The dilemmas are in `config/dilemmas.txt` (`question | option A | option B`, one per line, the next
+one every Monday). Tapping A or B on the TV counts a vote. To also vote on phones (the QR code):
+
+1. Make a Google Form with one multiple-choice question. Either give it the week's dilemma with the
+   same answers as the options in `dilemmas.txt` (capitals and punctuation don't matter), and change
+   both every Monday; or make the answers just **A** and **B** ("A: theory" is fine too) with "Vote on
+   the dilemma shown on the TV" as the question, so the form can stay the same every week. Don't
+   collect email addresses, and don't restrict it to an organisation: then it needs no login.
+2. *Responses* -> *Link to Sheets*: a new sheet. Share that sheet as "Anyone with the link can view".
+3. In `config/config.toml`, `[poll]`: `form_url` = the form's link (*Send* -> link, shortened is fine),
+   `sheet_id` = the long code in the sheet's link (`/spreadsheets/d/<sheet_id>/edit`).
+4. Restart the slideshow. Only this week's responses count (by their timestamp), so the same form
+   works every week. Is the sheet set to American dates (10/19/2026)? Then set `timestamp_day_first = false`.
+
+Both kinds of votes are added up on the slide, with last week's outcome below. `data/poll.json` keeps
+every week's dilemma and votes (keep it when moving the slideshow to another PC).
 
 ## Running on the TV PC
 

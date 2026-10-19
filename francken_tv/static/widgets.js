@@ -14,6 +14,7 @@
 // - data-lyrics: synced lyrics (Spotify): lines with data-time (seconds into the song). The line being
 //   sung gets .current (lines before it .past) and is kept in view, counting on from data-start
 //   while data-playing is set. The server redraws the slide when the song changes, pauses or jumps.
+// - data-qr: a QR code of the link in data-qr (static/vendor/qrcode), e.g. the weekly dilemma's form.
 
 const maps = new Set();
 
@@ -28,10 +29,19 @@ function setupWidgets(root) {
 	root.querySelectorAll("[data-lyrics]").forEach(setupLyrics);
 	root.querySelectorAll("[data-marquee]").forEach(setupMarquee);
 	root.querySelectorAll("[data-marquee-up]").forEach(setupMarqueeUp);
+	root.querySelectorAll("[data-qr]").forEach(setupQr);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
 		input.addEventListener("input", () => fieldChanged(input));
 		fieldChanged(input);
 	});
+}
+
+function setupQr(element) {
+	if (typeof qrcode === "undefined") return;   // the QR library didn't load
+	const qr = qrcode(0, "M");   // 0: as small as the link allows; M: still readable when a bit dirty
+	qr.addData(element.dataset.qr);
+	qr.make();
+	element.innerHTML = qr.createSvgTag({ cellSize: 1, margin: 2, scalable: true });
 }
 
 function setupMap(element) {

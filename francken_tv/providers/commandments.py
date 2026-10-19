@@ -16,7 +16,7 @@ FIRST_MONDAY = date(2026, 10, 19)   # commandment I is shown this week (a Monday
 ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
 
 
-def load_commandments(path: Path) -> list[str]:
+def load_lines(path: Path) -> list[str]:   # also used for the dilemmas (poll.py)
 	"""One commandment per line; lines starting with # are comments."""
 	try:
 		lines = path.read_text(encoding="utf-8").splitlines()
@@ -40,7 +40,7 @@ class CommandmentsProvider(Provider):
 		self.seconds = settings.get("seconds", default_seconds)
 
 	def slides(self, now: datetime) -> list[Slide]:
-		commandments = load_commandments(self.path)   # read every time: edits show up without a restart
+		commandments = load_lines(self.path)   # read every time: edits show up without a restart
 		if not commandments:
 			return []
 		index = week_index(now.date(), len(commandments))

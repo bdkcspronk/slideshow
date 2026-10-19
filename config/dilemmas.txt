@@ -1,0 +1,10 @@
+# The weekly dilemma: one per line, as  question | option A | option B
+# The slideshow shows one per week, in this order, starting over after the last one; it changes on
+# Monday at midnight (votes start again from zero). Lines starting with # are comments.
+# Changes show up without a restart. Replace these examples with your own.
+Would you rather always have a very hot or a very cold shower for the rest of your life? | Very hot | Very cold
+Would you rather... | Only do theory for the rest of your studies | Only do experiments for the rest of your studies
+Bieruur forever... | Every day at 16:00, but only alcohol-free beer | Real beer, but only on Fridays
+Exam season | One exam that counts for 100% | Weekly quizzes that each count a little
+The perfect lab partner | Brilliant, but never on time | Average, but always prepared
+Lecture hall seat | Front row, always | Back row, always

@@ -427,6 +427,109 @@ body.show-cursor button { cursor: pointer; }
 .commandments-week { margin: 4vh 0 0; font-size: 2.4vh; color: var(--faint); }
 @keyframes commandments-in { from { opacity: 0; transform: translateY(2vh); } }
 
+/* The weekly dilemma: the question and two big options with their share of the votes as a bar
+   behind them; the QR code for the form on the right. */
+.poll-slide {
+	display: flex;
+	align-items: center;
+	gap: 5vw;
+	padding: 0 6vw;
+	background: var(--bg);
+	color: var(--blue);
+}
+.poll-main { flex: 1; min-width: 0; }
+.poll-kicker { margin: 0; font-size: 2.8vh; font-weight: bold; letter-spacing: 0.3vh; text-transform: uppercase; color: var(--red-dark); }
+.poll-main h1 { margin: 1vh 0 3vh; font-size: 6vh; line-height: 1.15; }
+.poll-main h1.long { font-size: 4.2vh; }   /* e.g. a whole "would you rather" sentence */
+.poll-options { display: flex; flex-direction: column; gap: 2vh; }
+.poll-option {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;   /* the bar goes on its own line below */
+	align-items: center;
+	gap: 1.4vh 2vw;
+	padding: 2vh 2vw;
+	border: 0.3vh solid var(--card-border);
+	border-radius: 1.5vh;
+	background: var(--card);
+	color: var(--blue);
+	font-family: inherit;
+	text-align: left;
+	box-shadow: var(--shadow);
+	transition: transform 0.1s;
+}
+.poll-option:active { transform: scale(0.98); }
+.poll-option.chosen { border-color: var(--red); }
+.poll-option.busy { opacity: 0.6; }
+.poll-letter {
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 8vh;
+	height: 8vh;
+	border-radius: 50%;
+	background: var(--blue);
+	color: #ffffff;
+	font-size: 4vh;
+	font-weight: bold;
+}
+.poll-option.chosen .poll-letter { background: var(--red); }
+/* The share of the votes, as a bar under the option (this week's and last week's). */
+.poll-bar { flex: 0 0 100%; height: 1.4vh; border-radius: 0.7vh; background: var(--blue-faint); overflow: hidden; }
+.poll-bar i { display: block; width: var(--percent); height: 100%; border-radius: inherit; background: var(--blue); transition: width 0.6s ease; }
+.poll-option.chosen .poll-bar i, .poll-last-bar.won .poll-bar i { background: var(--red); }
+.poll-text { flex: 1; min-width: 0; font-size: 3.6vh; line-height: 1.2; }
+.poll-percent { flex: none; font-size: 4.4vh; font-weight: bold; }
+.poll-footer { margin: 3vh 0 0; font-size: 2.4vh; color: var(--muted); }
+.poll-footer strong { color: var(--red-dark); }
+.poll-last {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6vh;
+	margin-top: 2.5vh;
+	padding: 1.6vh 1.6vw;
+	border-left: 0.6vh solid var(--red);
+	border-radius: 0.8vh;
+	background: var(--blue-faint);
+}
+.poll-last-label { font-size: 2vh; font-weight: bold; letter-spacing: 0.2vh; text-transform: uppercase; color: var(--muted); }
+.poll-last-question { font-size: 2.6vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.poll-last-result { font-size: 2.2vh; color: var(--muted); }
+/* Last week's votes: the same bars as this week's, smaller; the winner in red. */
+.poll-last-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6vh 1vw;
+	padding: 0.8vh 1vw;
+	border-radius: 0.8vh;
+	background: var(--card);
+	font-size: 2.3vh;
+}
+.poll-last-bar .poll-bar { height: 0.9vh; }
+.poll-last-letter {
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 3.4vh;
+	height: 3.4vh;
+	border-radius: 50%;
+	background: var(--blue);
+	color: #ffffff;
+	font-size: 1.8vh;
+	font-weight: bold;
+}
+.poll-last-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.poll-last-percent { flex: none; font-weight: bold; }
+.poll-last-bar.won .poll-last-letter { background: var(--red); }
+.poll-last-bar.won .poll-last-text, .poll-last-bar.won .poll-last-percent { color: var(--red-dark); font-weight: bold; }
+.poll-qr { flex: none; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.poll-qr-code { width: 30vh; height: 30vh; padding: 1.5vh; border-radius: 1.5vh; background: #ffffff; box-shadow: var(--shadow); }
+.poll-qr-code svg { display: block; width: 100%; height: 100%; }
+.poll-qr p { margin: 2vh 0 0; font-size: 2.8vh; font-weight: bold; }
+
 /* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. White and red on dark
    Francken blue (no white background); the beer stays beer-coloured, with blue text on it. */
 .bieruur-slide {

@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "bieruur_countdown"]
+order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "poll", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 
@@ -120,6 +120,15 @@ refresh_hours = 6
 # Jeff de Hosson's commandment of the week: the next one from the file every Monday, in order.
 file = "config/commandments.txt"   # one commandment per line
 seconds = 12
+
+[poll]
+# The weekly dilemma: vote on the TV, or scan the QR code and vote on a Google Form (README, "Weekly dilemma").
+file = "config/dilemmas.txt"   # one per line: question | option A | option B; the next one every Monday
+form_url = "https://forms.gle/TkEbfZ8BVj4Q7LJ38"   # the Google Form's link (the QR code); empty: no QR code, TV votes only
+sheet_id = "1z4w-yIFYOSmDGzTRwJ77JXkWqafn8zo5RpLvt9GMVbY"   # the form's responses sheet, shared as "anyone with the link can view"
+timestamp_day_first = true     # the sheet's timestamps are 19-10-2026 (Dutch/British); false: 10/19/2026 (American)
+refresh_minutes = 2            # how often the form's votes are read
+seconds = 15
 
 [puzzles]
 # The Daily puzzles slide: one half per puzzle, tap one to play it.

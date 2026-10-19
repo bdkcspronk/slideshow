@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from francken_tv.providers.commandments import CommandmentsProvider, load_commandments
+from francken_tv.providers.commandments import CommandmentsProvider, load_lines
 
 
 class CommandmentsTest(unittest.TestCase):
@@ -22,7 +22,7 @@ class CommandmentsTest(unittest.TestCase):
 		return self.provider.slides(now)[0].data["commandment"]
 
 	def test_comments_and_empty_lines_are_skipped(self):
-		self.assertEqual(load_commandments(self.path), ["One", "Two", "Three"])
+		self.assertEqual(load_lines(self.path), ["One", "Two", "Three"])
 
 	def test_same_all_week_next_one_on_monday_in_order(self):
 		monday = datetime(2026, 10, 19)
@@ -33,7 +33,7 @@ class CommandmentsTest(unittest.TestCase):
 		self.assertEqual(weeks, [["One", "Two", "Three"][(start + i) % 3] for i in range(6)])   # every one in turn, then again
 
 	def test_the_real_file_has_ten(self):
-		self.assertEqual(len(load_commandments(Path(__file__).parent.parent / "config" / "commandments.txt")), 10)
+		self.assertEqual(len(load_lines(Path(__file__).parent.parent / "config" / "commandments.txt")), 10)
 
 	def test_no_file_no_slide(self):
 		self.assertEqual(CommandmentsProvider({"file": "/nonexistent.txt"}, 8).slides(datetime(2026, 10, 19)), [])

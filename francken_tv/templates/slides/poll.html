@@ -1,0 +1,51 @@
+{#
+	The weekly dilemma (providers/poll.py): tap an option to vote, or scan the QR code (data-qr,
+	widgets.js) to vote on the Google Form. The bars show this week's votes, TV and phones together;
+	below them last week's outcome.
+	After a vote on the TV the bars show the new count and the slideshow goes on after a bit.
+#}
+<div class="slide poll-slide" data-interactive data-provider="poll" data-idle-seconds="60" {% if voted %}data-resume-after="8"{% endif %}>
+	<div class="poll-main">
+		<p class="poll-kicker">Dilemma of the week</p>
+		<h1 class="{{ 'long' if question | length > 70 }}">{{ question }}</h1>
+		<div class="poll-options">
+			{% for option in options %}
+			<button class="poll-option{{ ' chosen' if voted == option.key }}" data-action="vote" data-value="{{ option.key }}" style="--percent: {{ option.percent }}%">
+				<span class="poll-letter">{{ option.letter }}</span>
+				<span class="poll-text">{{ option.text }}</span>
+				<span class="poll-percent">{{ option.percent }}%</span>
+				<span class="poll-bar"><i></i></span>
+			</button>
+			{% endfor %}
+		</div>
+		<p class="poll-footer">
+			{% if voted %}<strong>Thanks for voting!</strong> &middot; {% else %}Tap to vote &middot; {% endif %}
+			{{ total }} vote{{ '' if total == 1 else 's' }} this week &middot; a new dilemma every Monday
+		</p>
+		{% if last_week %}
+		<div class="poll-last">
+			<span class="poll-last-label">Last week</span>
+			<span class="poll-last-question">{{ last_week.question }}</span>
+			{% if last_week.total %}
+			{% for option in last_week.options %}
+			<div class="poll-last-bar{{ ' won' if option.won }}" style="--percent: {{ option.percent }}%">
+				<span class="poll-last-letter">{{ option.letter }}</span>
+				<span class="poll-last-text">{{ option.text }}</span>
+				<span class="poll-last-percent">{{ option.percent }}%</span>
+				<span class="poll-bar"><i></i></span>
+			</div>
+			{% endfor %}
+			<span class="poll-last-result">{% if not last_week.winner %}A tie &middot; {% endif %}{{ last_week.total }} vote{{ '' if last_week.total == 1 else 's' }}</span>
+			{% else %}
+			<span class="poll-last-result">Nobody voted</span>
+			{% endif %}
+		</div>
+		{% endif %}
+	</div>
+	{% if form_url %}
+	<div class="poll-qr">
+		<div class="poll-qr-code" data-qr="{{ form_url }}"></div>
+		<p>Scan to vote<br>on your phone</p>
+	</div>
+	{% endif %}
+</div>

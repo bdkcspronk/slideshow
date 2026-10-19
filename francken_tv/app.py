@@ -22,6 +22,7 @@ from .providers.books import BooksProvider
 from .providers.catfishing import CatfishingProvider
 from .providers.commandments import CommandmentsProvider
 from .providers.connections import ConnectionsProvider
+from .providers.poll import PollProvider
 from .providers.puzzles import PuzzlesProvider
 from .providers.spotify import SpotifyProvider
 from .providers.timeguessr import TimeGuessrProvider
@@ -150,6 +151,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		LeaderboardProvider(config.get("leaderboard", {}), store, devices, seconds),
 		QuoteProvider(config.get("quote", {}), DATA_DIR / "quotes.csv", announcer, seconds),
 		CommandmentsProvider(config.get("commandments", {}), seconds),
+		PollProvider(config.get("poll", {}), seconds, DATA_DIR / "poll.json"),
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),
 		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),
