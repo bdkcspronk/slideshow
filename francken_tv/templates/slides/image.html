@@ -1,3 +1,4 @@
 <div class="slide image-slide">
+	{% if backdrop %}<div class="image-backdrop" style="background-image: url('{{ url }}')"></div>{% endif %}
 	<img src="{{ url }}" alt="">
 </div>

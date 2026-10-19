@@ -25,6 +25,6 @@ class ImagesProvider(Provider):
 		if self.shuffle:
 			random.shuffle(paths)
 		return [
-			Slide("image.html", max(self.seconds, animation_seconds(path)), {"url": media_url(path)})
+			Slide("image.html", max(self.seconds, animation_seconds(path)), {"url": media_url(path), "backdrop": True})
 			for path in paths
 		]
