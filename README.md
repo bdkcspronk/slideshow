@@ -10,7 +10,7 @@ The slideshow on the TV in the Francken room. It shows:
 | Who was in the room today (animated chart) | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
 | This week's leaderboard: most time in the room | the ESP32 sniffer | `providers/presence.py` |
 | Second-hand books for sale: three at a time, as 3D books flying onto a shelf, with title and price | professorfrancken.nl/study/books, covers from openlibrary.org | `providers/books.py` |
-| Info, in turn: news (Dagblad van het Noorden, NU.nl, BBC World), weather and rain at Zernike, buses from Nijenborgh, today's Applied Physics timetable | RSS feeds, open-meteo.com, Buienradar, OVapi, rooster.rug.nl | `providers/info.py` |
+| Info, in turn: news (Dagblad van het Noorden, NU.nl, BBC World), weather and rain at Zernike, buses from Aletta Jacobshal, today's Applied Physics timetable | RSS feeds, open-meteo.com, Buienradar, OVapi, rooster.rug.nl | `providers/info.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
 | The commandment of the week by Jeff de Hosson, our honorary member (the next one each Monday) | `config/commandments.txt` | `providers/commandments.py` |
 | The dilemma of the week: vote by tapping A or B, or scan the QR code and vote on your phone | `config/dilemmas.txt`, a Google Form | `providers/poll.py` |

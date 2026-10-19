@@ -57,8 +57,8 @@ news_feeds = [
 headlines_per_feed = 3          # the first with its picture
 weather_place = "Zernike campus"
 weather_location = [53.2406, 6.5364]
-bus_stop_name = "Nijenborgh"
-bus_stop_codes = ["10004130"]   # timing point codes: the side towards the city centre (Hoofdstation); the other side is 10004140 (stop_ifopt in the national GTFS stops.txt)
+bus_stop_name = "Aletta Jacobshal"
+bus_stop_codes = ["10004120"]   # timing point codes: the side towards the city centre (Hoofdstation); the other side is 10004110. OVapi still calls this stop "Crematoriumlaan" (stop_ifopt in the national GTFS stops.txt)
 departures_shown = 8
 # bus_line_colors = { "1" = ["#00be46", "#000000"] }   # per line [background, text]; default: Qbuzz's Groningen city lines (BUS_LINE_COLORS in providers/info.py)
 timetable_name = "Applied Physics"

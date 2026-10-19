@@ -47,7 +47,7 @@ ZERNIKE = (53.2406, 6.5364)
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 RAIN_URL = "https://gpsgadget.buienradar.nl/data/raintext"
 OVAPI_URL = "http://v0.ovapi.nl/tpc/{codes}"
-NIJENBORGH = ["10004130"]   # Groningen, Nijenborgh: the side towards the city centre (10004140 is the other side)
+ALETTA_JACOBSHAL = ["10004120"]   # Groningen, Aletta Jacobshal: the side towards the city centre (10004110 is the other side)
 # Qbuzz's colours for the Groningen city lines (Qlink), as on their site and the buses: [background, text].
 # From route_color/route_text_color in the national GTFS (gtfs.ovapi.nl/nl, routes.txt); the regional lines
 # (107, 109, 171, ...) have none there and keep the slide's blue.
@@ -364,8 +364,8 @@ class InfoProvider(Provider):
 		self.headlines_per_feed = settings.get("headlines_per_feed", 3)
 		self.place = settings.get("weather_place", "Zernike campus")
 		self.location = settings.get("weather_location", list(ZERNIKE))
-		self.stop_name = settings.get("bus_stop_name", "Nijenborgh")
-		self.stop_codes = settings.get("bus_stop_codes", NIJENBORGH)
+		self.stop_name = settings.get("bus_stop_name", "Aletta Jacobshal")
+		self.stop_codes = settings.get("bus_stop_codes", ALETTA_JACOBSHAL)
 		self.departures_shown = settings.get("departures_shown", 8)
 		self.line_colors = settings.get("bus_line_colors", BUS_LINE_COLORS)
 		self.timetable_name = settings.get("timetable_name", "Applied Physics")

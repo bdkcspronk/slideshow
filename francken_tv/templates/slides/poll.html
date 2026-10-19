@@ -10,7 +10,7 @@
 		<h1 class="{{ 'long' if question | length > 70 }}">{{ question }}</h1>
 		<div class="poll-options">
 			{% for option in options %}
-			<button class="poll-option{{ ' chosen' if voted == option.key }}" data-action="vote" data-value="{{ option.key }}" style="--percent: {{ option.percent }}%">
+			<button class="poll-option poll-{{ option.key }}{{ ' chosen' if voted == option.key }}" data-action="vote" data-value="{{ option.key }}" style="--percent: {{ option.percent }}%">
 				<span class="poll-letter">{{ option.letter }}</span>
 				<span class="poll-text">{{ option.text }}</span>
 				<span class="poll-percent">{{ option.percent }}%</span>
@@ -28,7 +28,7 @@
 			<span class="poll-last-question">{{ last_week.question }}</span>
 			{% if last_week.total %}
 			{% for option in last_week.options %}
-			<div class="poll-last-bar{{ ' won' if option.won }}" style="--percent: {{ option.percent }}%">
+			<div class="poll-last-bar poll-{{ option.key }}{{ ' won' if option.won }}" style="--percent: {{ option.percent }}%">
 				<span class="poll-last-letter">{{ option.letter }}</span>
 				<span class="poll-last-text">{{ option.text }}</span>
 				<span class="poll-last-percent">{{ option.percent }}%</span>

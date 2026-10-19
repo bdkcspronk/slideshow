@@ -442,6 +442,9 @@ body.show-cursor button { cursor: pointer; }
 .poll-main h1 { margin: 1vh 0 3vh; font-size: 6vh; line-height: 1.15; }
 .poll-main h1.long { font-size: 4.2vh; }   /* e.g. a whole "would you rather" sentence */
 .poll-options { display: flex; flex-direction: column; gap: 2vh; }
+/* Option A is red, option B blue: the letter and the bar, this week and last week. */
+.poll-a { --option: var(--red); --option-text: var(--red-dark); }
+.poll-b { --option: var(--blue); --option-text: var(--blue); }
 .poll-option {
 	position: relative;
 	display: flex;
@@ -459,7 +462,7 @@ body.show-cursor button { cursor: pointer; }
 	transition: transform 0.1s;
 }
 .poll-option:active { transform: scale(0.98); }
-.poll-option.chosen { border-color: var(--red); }
+.poll-option.chosen { border-color: var(--option); border-width: 0.6vh; padding: 1.7vh calc(2vw - 0.3vh); }   /* the one just voted for on the TV; less padding, so nothing moves */
 .poll-option.busy { opacity: 0.6; }
 .poll-letter {
 	flex: none;
@@ -469,18 +472,16 @@ body.show-cursor button { cursor: pointer; }
 	width: 8vh;
 	height: 8vh;
 	border-radius: 50%;
-	background: var(--blue);
+	background: var(--option);
 	color: #ffffff;
 	font-size: 4vh;
 	font-weight: bold;
 }
-.poll-option.chosen .poll-letter { background: var(--red); }
 /* The share of the votes, as a bar under the option (this week's and last week's). */
 .poll-bar { flex: 0 0 100%; height: 1.4vh; border-radius: 0.7vh; background: var(--blue-faint); overflow: hidden; }
-.poll-bar i { display: block; width: var(--percent); height: 100%; border-radius: inherit; background: var(--blue); transition: width 0.6s ease; }
-.poll-option.chosen .poll-bar i, .poll-last-bar.won .poll-bar i { background: var(--red); }
+.poll-bar i { display: block; width: var(--percent); height: 100%; border-radius: inherit; background: var(--option); transition: width 0.6s ease; }
 .poll-text { flex: 1; min-width: 0; font-size: 3.6vh; line-height: 1.2; }
-.poll-percent { flex: none; font-size: 4.4vh; font-weight: bold; }
+.poll-percent { flex: none; font-size: 4.4vh; font-weight: bold; color: var(--option-text); }
 .poll-footer { margin: 3vh 0 0; font-size: 2.4vh; color: var(--muted); }
 .poll-footer strong { color: var(--red-dark); }
 .poll-last {
@@ -516,15 +517,14 @@ body.show-cursor button { cursor: pointer; }
 	width: 3.4vh;
 	height: 3.4vh;
 	border-radius: 50%;
-	background: var(--blue);
+	background: var(--option);
 	color: #ffffff;
 	font-size: 1.8vh;
 	font-weight: bold;
 }
 .poll-last-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.poll-last-percent { flex: none; font-weight: bold; }
-.poll-last-bar.won .poll-last-letter { background: var(--red); }
-.poll-last-bar.won .poll-last-text, .poll-last-bar.won .poll-last-percent { color: var(--red-dark); font-weight: bold; }
+.poll-last-percent { flex: none; font-weight: bold; color: var(--option-text); }
+.poll-last-bar.won .poll-last-text, .poll-last-bar.won .poll-last-percent { color: var(--option-text); font-weight: bold; }   /* the winner */
 .poll-qr { flex: none; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .poll-qr-code { width: 30vh; height: 30vh; padding: 1.5vh; border-radius: 1.5vh; background: #ffffff; box-shadow: var(--shadow); }
 .poll-qr-code svg { display: block; width: 100%; height: 100%; }
