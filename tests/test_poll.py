@@ -95,6 +95,11 @@ class PollTest(unittest.TestCase):
 		self.assertEqual(form_answer("A", None), "a")
 		self.assertIsNone(form_answer("Always hot", None))
 
+	def test_american_sheet_dates_are_recognised(self):
+		sheet = "Timestamp,Answer\n10/19/2026 17:52:41,Very cold\n10/05/2026 10:00:00,Very hot\n"   # like the real sheet
+		dilemma = parse_dilemma("Hot or cold? | Very hot | Very cold")
+		self.assertEqual(count_form_votes(sheet, date(2026, 10, 19), True, dilemma), {"a": 0, "b": 1})   # day first set, but the 19 says otherwise
+
 	def test_timestamps(self):
 		self.assertEqual(parse_timestamp("19-10-2026 14:03:12"), datetime(2026, 10, 19, 14, 3))
 		self.assertEqual(parse_timestamp("10/19/2026 14:03:12", day_first=False), datetime(2026, 10, 19, 14, 3))

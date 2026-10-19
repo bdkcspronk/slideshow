@@ -139,7 +139,8 @@ one every Monday). Tapping A or B on the TV counts a vote. To also vote on phone
 3. In `config/config.toml`, `[poll]`: `form_url` = the form's link (*Send* -> link, shortened is fine),
    `sheet_id` = the long code in the sheet's link (`/spreadsheets/d/<sheet_id>/edit`).
 4. Restart the slideshow. Only this week's responses count (by their timestamp), so the same form
-   works every week. Is the sheet set to American dates (10/19/2026)? Then set `timestamp_day_first = false`.
+   works every week. The date order of the sheet's timestamps is worked out from the sheet; for the first
+   days of a month it uses `timestamp_day_first` (false: American dates, 10/19/2026).
 
 Both kinds of votes are added up on the slide, with last week's outcome below. `data/poll.json` keeps
 every week's dilemma and votes (keep it when moving the slideshow to another PC).

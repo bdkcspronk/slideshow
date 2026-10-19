@@ -83,12 +83,25 @@ def form_answer(answer: str, dilemma: Dilemma | None) -> str | None:
 	return letter.group(1).lower() if letter else None
 
 
+def sheet_is_day_first(timestamps: list[str], default: bool) -> bool:
+	"""Whether the sheet writes 19-10-2026 (day first) or 10/19/2026 (month first): a number above 12
+	in front means day first, in the middle month first. Only days up to the 12th: the default."""
+	for text in timestamps:
+		match = TIMESTAMP.search(text)
+		if match and int(match.group(1)) <= 31:   # not 2026-10-19
+			if int(match.group(1)) > 12:
+				return True
+			if int(match.group(2)) > 12:
+				return False
+	return default
+
+
 def count_form_votes(csv_text: str, week_start: date, day_first: bool = True, dilemma: Dilemma | None = None) -> dict[str, int]:
 	"""This week's responses in the form's sheet: timestamp in the first column, the answer in the second."""
 	votes = {"a": 0, "b": 0}
 	week = (datetime.combine(week_start, datetime.min.time()), datetime.combine(week_start + timedelta(days=7), datetime.min.time()))
-	rows = csv.reader(io.StringIO(csv_text.lstrip("﻿")))
-	next(rows, None)   # the header
+	rows = list(csv.reader(io.StringIO(csv_text.lstrip("\ufeff"))))[1:]   # without the header (and a byte order mark)
+	day_first = sheet_is_day_first([row[0] for row in rows if row], day_first)
 	for row in rows:
 		if len(row) < 2:
 			continue

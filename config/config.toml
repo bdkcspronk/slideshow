@@ -126,7 +126,7 @@ seconds = 12
 file = "config/dilemmas.txt"   # one per line: question | option A | option B; the next one every Monday
 form_url = "https://forms.gle/TkEbfZ8BVj4Q7LJ38"   # the Google Form's link (the QR code); empty: no QR code, TV votes only
 sheet_id = "1z4w-yIFYOSmDGzTRwJ77JXkWqafn8zo5RpLvt9GMVbY"   # the form's responses sheet, shared as "anyone with the link can view"
-timestamp_day_first = true     # the sheet's timestamps are 19-10-2026 (Dutch/British); false: 10/19/2026 (American)
+timestamp_day_first = false    # the sheet's timestamps are 10/19/2026 (American); true: 19-10-2026 (Dutch/British). Worked out from the sheet once a date after the 12th is in it
 refresh_minutes = 2            # how often the form's votes are read
 seconds = 15
 
