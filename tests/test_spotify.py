@@ -94,7 +94,7 @@ class SpotifyTest(unittest.TestCase):
 
 	def test_next_song_and_playlists(self):
 		self.assertEqual(parse_next({"queue": [TRACK["item"], EPISODE["item"]]}),
-			{"title": "Live Is Life", "artist": "Opus", "cover": "https://i.scdn.co/big.jpg"})
+			{"title": "Live Is Life", "artist": "Opus", "cover": "https://i.scdn.co/big.jpg", "uri": ""})
 		self.assertIsNone(parse_next({"queue": []}))
 		playlists = parse_playlists({"items": [{"name": "Borrel", "uri": "spotify:playlist:1", "images": None}, None]})
 		self.assertEqual(playlists, [{"name": "Borrel", "uri": "spotify:playlist:1", "cover": None}])
@@ -113,6 +113,19 @@ class SpotifyTest(unittest.TestCase):
 		self.assertEqual(slide.data["next"]["title"], "Episode 1")
 		self.assertEqual((slide.data["elapsed_seconds"], slide.data["total_seconds"]), (61, 250))
 		self.assertEqual(slide.data["volume"], 40)
+
+	def test_a_queued_song_redraws_the_slide_right_away(self):
+		self.connect()
+		before = self.provider.slides(NOW)[0].data["state"]
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)):
+			self.provider.action("queue", ["spotify:track:queued"], NOW)
+		queued = TRACK["item"] | {"id": "queued", "name": "Queued Song", "uri": "spotify:track:queued"}
+		with mock.patch("francken_tv.providers.spotify.requests.request",
+				side_effect=[FakeResponse(200, TRACK), FakeResponse(200, {"queue": [queued]})]):
+			self.provider.refresh(NOW)   # the same song still plays...
+		[slide] = self.provider.slides(NOW)
+		self.assertEqual(slide.data["next"]["title"], "Queued Song")
+		self.assertNotEqual(slide.data["state"], before)   # ...but the slide redraws to show the new next song
 
 	def test_play_a_playlist(self):
 		self.connect()

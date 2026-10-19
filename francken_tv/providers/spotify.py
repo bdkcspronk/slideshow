@@ -128,7 +128,7 @@ def parse_next(data: dict) -> dict | None:
 		artist, images = item.get("show", {}).get("name", ""), item.get("images") or item.get("show", {}).get("images", [])
 	else:
 		artist, images = ", ".join(a["name"] for a in item.get("artists", [])), item.get("album", {}).get("images", [])
-	return {"title": item.get("name", ""), "artist": artist, "cover": biggest_image(images)}
+	return {"title": item.get("name", ""), "artist": artist, "cover": biggest_image(images), "uri": item.get("uri", "")}
 
 
 def smallest_image(images: list[dict]) -> str | None:
@@ -437,8 +437,9 @@ class SpotifyProvider(Provider):
 		playing = self.playing
 		progress = playing.progress()
 		return {
-			# A new song, pausing/resuming or a jump in the song redraws the slide (see refresh() in player.js).
-			"state": f"{playing.id} {'playing' if playing.is_playing else 'paused'} {self.jumps}",
+			# A new song, pausing/resuming, a jump in the song or a new next song (e.g. one added to the queue)
+			# redraws the slide (see refresh() in player.js).
+			"state": f"{playing.id} {'playing' if playing.is_playing else 'paused'} {self.jumps} {(self.next or {}).get('uri', '')}",
 			"title": playing.title, "artist": playing.artist, "album": playing.album,
 			"cover": playing.cover, "is_playing": playing.is_playing, "next": self.next,
 			"volume": None if playing.volume is None else self.shown_volume(playing),
