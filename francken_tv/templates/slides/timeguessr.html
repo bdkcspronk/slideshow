@@ -1,0 +1,89 @@
+{#
+	timeguessr.com daily challenge: five photos; tap the map to guess where, set the year to guess
+	when. Guess sends both (data-send-fields, see static/widgets.js) to TimeGuessrProvider.action() in
+	providers/timeguessr.py, which returns the answer: both pins on the map, and the points.
+	Tapping the photo shows it full screen (data-toggle), tapping again shrinks it.
+#}
+{% macro points(n) %}{{ "{:,}".format(n) }}{% endmacro %}
+<div class="slide timeguessr-slide" data-interactive data-idle-seconds="240" data-provider="timeguessr"
+	{% if game.done %}data-resume-after="15"{% endif %}>
+	<header class="timeguessr-header">
+		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
+		<h1>TimeGuessr</h1>
+		<div class="timeguessr-progress">
+			{% if not game.done %}<span>Photo {{ number }} of {{ game.photos | length }}</span>{% endif %}
+			{% for p in game.photos %}<i class="{{ 'done' if loop.index0 < game.guesses | length }}"></i>{% endfor %}
+			<span>{{ points(game.score) }} / {{ points(total_points) }}</span>
+		</div>
+	</header>
+
+	{% if game.done %}
+	{# ---- All five guessed: the summary ---- #}
+	<div class="timeguessr-summary">
+		<h2>{{ points(game.score) }} of {{ points(total_points) }} points</h2>
+		<ol>
+			{% for photo, guess in summary %}
+			<li>
+				<img src="{{ photo.image }}" alt="">
+				<div><b>{{ photo.year }} &middot; {{ photo.country }}</b><span>you said {{ guess.year }}, {{ guess.distance }} away</span></div>
+				<strong>{{ points(guess.points) }}</strong>
+			</li>
+			{% endfor %}
+		</ol>
+		<p>A new daily challenge tomorrow!</p>
+	</div>
+
+	{% else %}
+	<div class="timeguessr-round">
+		<figure class="timeguessr-photo" data-toggle>
+			<img src="{{ photo.image }}" alt="">
+			{% if photo.credit %}<figcaption>{{ photo.credit | truncate(100) }}</figcaption>{% endif %}
+		</figure>
+		<div class="timeguessr-side">
+			{% if game.showing_answer %}
+			{# ---- The answer: both pins on the map, and the points ---- #}
+			{% set off = (last.year - photo.year) | abs %}
+			<div class="timeguessr-map" data-map data-tiles="{{ tiles }}" data-attribution="{{ attribution }}"
+				data-pins='{{ {"guess": [last.lat, last.lng], "answer": [photo.lat, photo.lng]} | tojson }}'></div>
+			<div class="timeguessr-scores">
+				<div class="timeguessr-score">
+					<span>Year</span>
+					<b>{{ photo.year }}</b>
+					<small>{% if off == 0 %}spot on!{% else %}you said {{ last.year }}, {{ off }} year{{ "s" if off != 1 }} off{% endif %}</small>
+					<strong>{{ points(last.year_points) }}</strong>
+				</div>
+				<div class="timeguessr-score">
+					<span>Place</span>
+					<b>{{ photo.country }}</b>
+					<small>{{ last.distance }} away</small>
+					<strong>{{ points(last.place_points) }}</strong>
+				</div>
+			</div>
+			<p class="timeguessr-description">{{ photo.description }}</p>
+			<button class="timeguessr-button primary" data-action="next">
+				{{ "See the results" if game.guesses | length == game.photos | length else "Next photo" }} &rarr;
+			</button>
+
+			{% else %}
+			{# ---- A question: a pin on the map and a year ---- #}
+			<div class="timeguessr-map" data-map data-field="place" data-tiles="{{ tiles }}" data-attribution="{{ attribution }}">
+				<span class="timeguessr-map-hint">Tap where you think this is</span>
+			</div>
+			<div class="timeguessr-year">
+				<output data-field-output="year">{{ start_year }}</output>
+				<input type="range" data-field="year" min="{{ first_year }}" max="{{ last_year }}" value="{{ start_year }}" step="1">
+				<div class="timeguessr-nudges">
+					<button data-nudge="year" data-by="-10">&minus;10</button>
+					<button data-nudge="year" data-by="-1">&minus;1</button>
+					<button data-nudge="year" data-by="1">+1</button>
+					<button data-nudge="year" data-by="10">+10</button>
+				</div>
+			</div>
+			<button class="timeguessr-button primary" data-action="guess" data-send-fields data-needs-fields disabled>Guess</button>
+			{% endif %}
+		</div>
+	</div>
+	{% endif %}
+
+	<p class="timeguessr-credit footer">Daily challenge from timeguessr.com</p>
+</div>

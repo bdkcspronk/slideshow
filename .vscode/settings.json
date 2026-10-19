@@ -1,0 +1,5 @@
+{
+	// The templates fill style="..." attributes with Jinja ({{ ... }}), which VS Code's CSS check
+	// reports as errors; the browser only ever sees the filled-in CSS.
+	"html.validate.styles": false
+}

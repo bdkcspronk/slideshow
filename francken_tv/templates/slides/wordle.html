@@ -4,7 +4,7 @@
 	providers/wordle.py, which returns the redrawn slide. The flip and bounce animations are CSS.
 #}
 <div class="slide wordle-slide" data-interactive data-idle-seconds="240" data-provider="wordle" data-submit-action="submit"
-	{% if finished %}data-resume-after="15"{% endif %} {% if new_row is not none %}data-message-delay="1800"{% endif %}>
+	{% if finished %}data-resume-after="15"{% endif %}>
 	<div class="wordle-left">
 		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
 		<h1>Wordle</h1>

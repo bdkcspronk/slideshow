@@ -14,17 +14,21 @@ from .announcer import Announcer
 from .background import BackgroundRunner
 from .clock import Clock
 from .config import CACHE_DIR, DATA_DIR, project_path
+from .maptiles import ATTRIBUTION, TILES, TileCache
 from .devices import DeviceList
 from .presence_store import PresenceStore
 from .providers.activities import ActivitiesProvider
+from .providers.books import BooksProvider
 from .providers.catfishing import CatfishingProvider
 from .providers.connections import ConnectionsProvider
 from .providers.puzzles import PuzzlesProvider
 from .providers.spotify import SpotifyProvider
+from .providers.timeguessr import TimeGuessrProvider
 from .providers.wordle import WordleProvider
 from .providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
 from .providers.event_photos import EventPhotosProvider
 from .providers.images import ImagesProvider
+from .providers.info import InfoProvider
 from .providers.presence import Greeter, LeaderboardProvider, PresenceChartProvider
 from .providers.quote import QuoteProvider
 from .providers.vrijmibo import VrijmiboTakeover
@@ -52,18 +56,11 @@ class App:
 	settings_path: Path | None = None                         # where they're saved
 	power_commands: dict[str, list[str]] = field(default_factory=dict)   # "shutdown"/"restart" -> command
 	system_volume: SystemVolume | None = None   # the volume and mute in the settings, also for Spotify
+	tiles: TileCache | None = None              # map tiles for maps in slides (/tiles/..., maptiles.py)
 	settings_lock: threading.Lock = field(default_factory=threading.Lock)   # the server handles requests in parallel
-	notice_id: int = 0      # the latest on-screen notice, shown by the browser
-	notice_text: str = ""
-
-	def notify(self, text: str) -> None:
-		"""Show a short message in the corner of the TV screen."""
-		self.notice_text = text
-		self.notice_id += 1
-
 	def toggle_quotes(self) -> None:
 		self.change_settings({"quotes_aloud": not self.settings.quotes_aloud})
-		self.notify(f"Reading quotes aloud: {'on' if self.settings.quotes_aloud else 'off'}")
+		log.info("Reading quotes aloud: %s", "on" if self.settings.quotes_aloud else "off")
 
 	def toggle_mute(self) -> None:
 		"""All sound on/off, like "Mute all sound" in the menu's Settings (the m key in the slideshow)."""
@@ -113,7 +110,7 @@ class App:
 
 	def reload_devices(self) -> None:
 		count = len(self.devices.reload())   # the activity chart uses it the next time it's shown
-		self.notify(f"Reloaded {count} devices")
+		log.info("Reloaded %d devices", count)
 
 
 def build_app(config: dict, clock: Clock) -> App:
@@ -135,13 +132,18 @@ def build_app(config: dict, clock: Clock) -> App:
 	available_puzzles = {puzzle.name: puzzle for puzzle in [
 		ConnectionsProvider(config.get("connections", {}), seconds, DATA_DIR / "puzzles" / "connections.json"),
 		WordleProvider(config.get("wordle", {}), seconds, DATA_DIR / "puzzles" / "wordle.json"),
-		CatfishingProvider(config.get("catfishing", {}), seconds, DATA_DIR / "puzzles" / "catfishing.json"),
+		CatfishingProvider(config.get("catfishing", {}), seconds, DATA_DIR / "puzzles" / "catfishing.json",
+			DATA_DIR / "puzzles" / "catfishing_history.json"),
+		TimeGuessrProvider(config.get("timeguessr", {}), seconds, CACHE_DIR / "timeguessr", DATA_DIR / "puzzles" / "timeguessr.json",
+			attribution=config.get("maps", {}).get("attribution", ATTRIBUTION)),
 	]}
 	puzzles = [available_puzzles[name] for name in puzzle_settings.get("order", list(available_puzzles))]
 
 	all_providers: list[Provider] = [
 		ImagesProvider(config.get("images", {}), seconds),
 		ActivitiesProvider(config.get("activities", {}), seconds),
+		InfoProvider(config.get("info", {}), seconds, CACHE_DIR / "news"),
+		BooksProvider(config.get("books", {}), CACHE_DIR / "books"),
 		EventPhotosProvider(config.get("event_photos", {}), CACHE_DIR / "event_photos", seconds),
 		PresenceChartProvider(presence, store, devices, project_path("media/nyancat.png"), seconds),
 		LeaderboardProvider(config.get("leaderboard", {}), store, devices, seconds),
@@ -191,6 +193,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		power_commands={"shutdown": power.get("shutdown", ["systemctl", "poweroff"]),
 			"restart": power.get("restart", ["systemctl", "reboot"])},
 		system_volume=SystemVolume(),
+		tiles=TileCache(CACHE_DIR / "tiles", config.get("maps", {}).get("tiles", TILES)),
 	)
 	app.read_sound()
 	app.apply_settings()

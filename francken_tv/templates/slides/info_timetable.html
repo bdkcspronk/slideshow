@@ -1,0 +1,28 @@
+{# Info slide, timetable part (providers/info.py): the lectures per year of study, from rooster.rug.nl.
+   Each activity: the course, its kind (coloured by group: lecture, tutorial, practical, exam, other)
+   and the rooms. Ones that are over are faded, the ones going on now stand out; a list of rooms too
+   long to fit scrolls by (data-marquee), and a column too full for the screen scrolls slowly
+   upwards (data-marquee-up, widgets.js). #}
+<div class="slide info-slide info-timetable">
+	<h1>{{ name }} <span>{{ day }}</span></h1>
+	<div class="timetable-columns" style="--columns: {{ columns | length }}">
+		{% for column, lectures in columns.items() %}
+		<section style="--i: {{ loop.index0 }}">
+			<h2>{{ column }}</h2>
+			<div class="timetable-list" data-marquee-up>
+			{% for lecture in lectures %}
+			<div class="lecture kind-{{ lecture.group }}{{ ' past' if lecture.end <= now }}{{ ' current' if lecture.start <= now < lecture.end }}">
+				<span class="lecture-time">{{ lecture.start.strftime("%H:%M") }}<br>{{ lecture.end.strftime("%H:%M") }}</span>
+				<b>{{ lecture.course }}</b>
+				<span class="lecture-kind">{{ lecture.kind }}</span>
+				{% if lecture.rooms %}<span class="lecture-details" data-marquee>{{ lecture.rooms | join(", ") }}</span>{% endif %}
+			</div>
+			{% else %}
+			<p class="no-lectures">No lectures</p>
+			{% endfor %}
+			</div>
+		</section>
+		{% endfor %}
+	</div>
+	<p class="info-source">From rooster.rug.nl</p>
+</div>

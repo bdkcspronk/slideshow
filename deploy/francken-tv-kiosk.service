@@ -1,8 +1,12 @@
 # Shows the slideshow full-screen in a browser once the desktop is up. Install: see README.md.
+# Also opens when francken-tv starts (e.g. after Alt+F4 closed it), if the desktop is up by then.
 [Unit]
 Description=Francken TV kiosk browser
 After=graphical-session.target francken-tv.service
 PartOf=graphical-session.target
+# No desktop yet (francken-tv starting at boot): skip; graphical-session.target starts it later.
+ConditionEnvironment=|WAYLAND_DISPLAY
+ConditionEnvironment=|DISPLAY
 
 [Service]
 ExecStart=%h/slideshow/deploy/kiosk.sh
@@ -11,4 +15,4 @@ Restart=on-failure
 RestartSec=5
 
 [Install]
-WantedBy=graphical-session.target
+WantedBy=graphical-session.target francken-tv.service

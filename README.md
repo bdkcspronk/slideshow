@@ -9,9 +9,11 @@ The slideshow on the TV in the Francken room. It shows:
 | A photo from one of the last 3 events | Nextcloud `images/albums/` | `providers/event_photos.py` |
 | Who was in the room today (animated chart) | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
 | This week's leaderboard: most time in the room | the ESP32 sniffer | `providers/presence.py` |
+| Second-hand books for sale: three at a time, as 3D books flying onto a shelf, with title and price | professorfrancken.nl/study/books, covers from openlibrary.org | `providers/books.py` |
+| Info, in turn: news (NOS, NU.nl, BBC World), weather and rain at Zernike, buses from Nijenborgh, today's Applied Physics timetable | RSS feeds, open-meteo.com, Buienradar, OVapi, rooster.rug.nl | `providers/info.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
-| Daily puzzles: Connections \| Wordle \| Catfishing, with today's status; tap one to play it | nytimes.com, catfishing.net | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py` |
+| Daily puzzles: Connections \| Wordle \| Catfishing \| TimeGuessr, with today's status; tap one to play it | nytimes.com, catfishing.net, timeguessr.com (map: OpenStreetMap) | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py`, `timeguessr.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song | | `providers/bieruur.py` |
 | The vrijmibo GIF, every 15 minutes on Fridays | `media/vrijmibo.gif` | `providers/vrijmibo.py` |
 
@@ -113,43 +115,33 @@ Premium, and music already playing on some device. One-time setup:
    the Spotify account whose music should be shown. The slideshow adds a refresh token to that
    file (no password is stored). It keeps working after restarts. Connected before changing
    playlists was possible? Log in once more, so Spotify allows it.
-4. So music plays from the TV PC itself (not from a Spotify tab somewhere): install
-   [spotifyd](https://github.com/Spotifyd/spotifyd/releases) as `~/.local/bin/spotifyd` (the
-   `linux-x86_64-default` build), log it in once with
-   `~/.local/bin/spotifyd authenticate --config-path deploy/spotifyd.conf --cache-path data/spotifyd`
-   (open the link it prints on the TV PC), then
-   `cp deploy/francken-tv-spotifyd.service ~/.config/systemd/user/ && systemctl --user enable --now francken-tv-spotifyd`.
-   The PC is then a Spotify speaker called "Francken TV"; when nothing plays, the slide starts music
-   there, and "Play on TV" moves music playing elsewhere to it.
-
-## Updating a PC that ran the old slideshow
-
-```sh
-git pull
-deploy/migrate_from_old_layout.sh   # moves slides/, audio/, Sniffer/filter.json, ... to the new places
-```
-
-Then follow the steps below (venv, piper) and start it with `./start.sh --fullscreen`.
+4. So music plays from the PC itself (not from a Spotify tab somewhere): `deploy/install_spotifyd.sh`
+   installs [spotifyd](https://github.com/Spotifyd/spotifyd) as `~/.local/bin/spotifyd` and logs it
+   in once (open the link it prints on that PC; `--login` logs in again). The TV PC runs it with
+   `francken-tv-spotifyd.service` (see "Running on the TV PC"); elsewhere `start.sh` starts it (log:
+   `data/spotifyd.log`). The PC is then a Spotify speaker called "Francken TV"; when nothing plays,
+   the slide starts music there, and "Play on TV" moves music playing elsewhere to it. Without it,
+   songs only play when a Spotify app somewhere is already playing.
 
 ## Running on the TV PC
 
 ```sh
-sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial python3-venv ffmpeg chromium
+sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial python3-venv ffmpeg firefox
 sudo usermod -aG dialout $USER                      # serial port access for the sniffer; log in again after
 git clone <this repo> ~/slideshow && cd ~/slideshow
 python3 -m venv --system-site-packages .venv        # uses the apt packages above
 .venv/bin/pip install piper-tts tomli               # text-to-speech; tomli is only needed on Python 3.10
+deploy/install_spotifyd.sh                          # the "Francken TV" Spotify speaker; open the login link it prints
 mkdir -p ~/.config/systemd/user && cp deploy/*.service ~/.config/systemd/user/
 systemctl --user daemon-reload
-systemctl --user enable --now francken-tv francken-tv-sniffer francken-tv-kiosk
+systemctl --user enable --now francken-tv francken-tv-sniffer francken-tv-kiosk francken-tv-spotifyd
 sudo loginctl enable-linger $USER                   # keep running without anyone logged in
 ```
 
 Logs: `journalctl --user -u francken-tv -f` (or `-u francken-tv-sniffer`).
 After changing `config.toml`: `systemctl --user restart francken-tv`.
 Closed the full-screen slideshow with Alt+F4? It stays closed; bring it back with `systemctl --user start francken-tv-kiosk`
-(`stop` to close it from a terminal).
-
-To import the logs of the old sniffer: `python3 -m francken_tv.sniffer --import filtered_output.jsonl`.
+(`stop` to close it from a terminal). Starting `francken-tv` also opens it, and starts the Spotify speaker
+(`francken-tv-spotifyd`); stopping `francken-tv` stops the speaker too.
 
 The sniffer firmware lives in `firmware/` (PlatformIO).

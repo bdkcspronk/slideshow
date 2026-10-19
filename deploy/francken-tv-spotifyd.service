@@ -1,7 +1,9 @@
 # Spotify Connect speaker "Francken TV" (spotifyd). Install: see README.md ("Spotify").
+# Part of the slideshow: starts and stops with francken-tv.service.
 [Unit]
 Description=Francken TV Spotify speaker
 After=network-online.target sound.target
+PartOf=francken-tv.service
 
 [Service]
 WorkingDirectory=%h/slideshow
@@ -10,4 +12,4 @@ Restart=always
 RestartSec=10
 
 [Install]
-WantedBy=default.target
+WantedBy=francken-tv.service

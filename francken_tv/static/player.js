@@ -10,7 +10,6 @@
 // Messages from the server (e.g. Ctrl+M / Ctrl+R in the terminal) appear in the corner.
 
 const layers = [document.getElementById("layer-a"), document.getElementById("layer-b")];
-const toast = document.getElementById("toast");
 let front = 0;
 let nextTimer = null;
 let refreshTimer = null;
@@ -18,8 +17,6 @@ let paused = false;
 let current = null;
 const history = [];      // recently shown slides, for the left arrow key
 let historyIndex = -1;
-let toastTimer = null;
-let lastNoticeId = null;
 let interacting = false;   // someone is playing an interactive slide
 let idleTimer = null;
 let takeoverTimer = null;
@@ -41,8 +38,9 @@ async function show(slide, { canRefresh = true } = {}) {
 	clearInterval(refreshTimer);
 	const back = layers[1 - front];
 	back.innerHTML = slide.html;
+	setupWidgets(back);
 	// Wait until the images are decoded, so slides never appear half-loaded.
-	const images = [...back.querySelectorAll("img")];
+	const images = [...back.querySelectorAll("img")].filter((img) => !img.closest(".leaflet-container"));   // not map tiles
 	await Promise.all(images.map((img) => img.decode().catch(() => {})));
 	if (mine !== showCount) return;   // skipped again while loading: the newer change takes over
 	if (images.some((img) => img.naturalWidth === 0)) {
@@ -94,7 +92,7 @@ async function jumpTo(key) {
 		if (response.status === 404) return;   // not a shortcut
 		if (!response.ok) throw new Error(`shortcut ${key}: ${response.status}`);
 		const slide = await response.json();
-		if (slide.message) return showToast(slide.message);
+		if (slide.message) return;   // nothing to show for that key right now
 		history.splice(historyIndex + 1);   // jumping drops the slides ahead after going back
 		history.push(slide);
 		if (history.length > 30) history.shift();
@@ -137,6 +135,7 @@ async function refresh() {
 		const newState = fresh.querySelector("[data-state]")?.dataset.state;
 		if (oldState === undefined || oldState !== newState) {
 			layer.innerHTML = slide.html;
+			setupWidgets(layer);
 			return;
 		}
 		for (const element of fresh.querySelectorAll("[data-live]")) {
@@ -150,22 +149,6 @@ async function refresh() {
 	}
 }
 
-function showToast(text) {
-	toast.textContent = text;
-	toast.classList.add("visible");
-	clearTimeout(toastTimer);
-	toastTimer = setTimeout(() => toast.classList.remove("visible"), 3000);
-}
-
-async function checkNotice() {
-	try {
-		const notice = await getJson("/api/notice");
-		if (lastNoticeId !== null && notice.id !== lastNoticeId) showToast(notice.text);
-		lastNoticeId = notice.id;   // the first check only remembers, so old messages don't pop up on load
-	} catch (error) {
-		// server not reachable; next() already handles that
-	}
-}
 
 // ---- Interactive slides -----------------------------------------------------------------
 // A slide with data-interactive pauses the slideshow when clicked or typed on.
@@ -173,8 +156,9 @@ async function checkNotice() {
 // - data-action buttons send the selected data-values (or their own data-value) to the provider's
 //   action() in Python (or to another provider, with data-provider on the button);
 // - data-input-cell elements are filled by typing (keyboard or data-key buttons, e.g. Wordle),
-//   or a data-input-text element takes free text (e.g. Catfishing);
-//   Enter sends the typed text as data-submit-action.
+//   or a data-input-text element takes free text (e.g. Catfishing, Spotify search), with a cursor
+//   that the arrow keys, Home and End move; Enter sends the typed text as data-submit-action;
+// - maps, sliders and other data-field widgets are in widgets.js.
 // action() returns the redrawn slide and an optional message.
 
 document.addEventListener("click", async (event) => {
@@ -185,8 +169,11 @@ document.addEventListener("click", async (event) => {
 	const toggle = event.target.closest("[data-toggle]");
 	const action = event.target.closest("[data-action]");
 	const key = event.target.closest("[data-key]");
+	const input = event.target.closest("[data-input-text]");
 	const selected = () => [...slide.querySelectorAll("[data-toggle].selected")];
-	if (toggle) {
+	if (input) {
+		clickInput(input, event);
+	} else if (toggle) {
 		const max = parseInt(slide.dataset.maxSelected || "1000", 10);
 		if (toggle.classList.contains("selected") || selected().length < max) toggle.classList.toggle("selected");
 	} else if (key) {
@@ -194,7 +181,9 @@ document.addEventListener("click", async (event) => {
 	} else if (action && action.dataset.action === "deselect") {
 		selected().forEach((element) => element.classList.remove("selected"));
 	} else if (action) {
-		const values = action.dataset.value ? [action.dataset.value] : selected().map((element) => element.dataset.value);
+		const values = action.dataset.value ? [action.dataset.value]
+			: action.hasAttribute("data-send-fields") ? fieldValues(slide)   // e.g. TimeGuessr: the pin and the year (widgets.js)
+			: selected().map((element) => element.dataset.value);
 		action.classList.add("busy");   // shows the tap was seen, until the answer is there (style.css)
 		sendAction(slide, action.dataset.action, values, action.dataset.provider).finally(() => action.classList.remove("busy"));
 	}
@@ -204,13 +193,23 @@ function interactiveSlide() {
 	return layers[front].querySelector("[data-interactive]");
 }
 
-// Typing: a character, "SPACE", "ENTER" or "BACK".
+// Typing: a character, "SPACE", "ENTER" or "BACK"; in free text also "DELETE" and the cursor
+// keys "LEFT", "RIGHT", "HOME" and "END".
 function typeKey(slide, key) {
 	const text = slide.querySelector("[data-input-text]");
 	if (text) {   // free text
-		if (key === "ENTER") sendAction(slide, slide.dataset.submitAction, [text.textContent]);
-		else if (key === "BACK") text.textContent = text.textContent.slice(0, -1);
-		else text.textContent += key === "SPACE" ? " " : key;
+		const [value, at] = inputState(text);
+		if (key === "ENTER") sendAction(slide, slide.dataset.submitAction, [value]);
+		else if (key === "BACK") { if (at > 0) showInput(text, value.slice(0, at - 1) + value.slice(at), at - 1); }
+		else if (key === "DELETE") showInput(text, value.slice(0, at) + value.slice(at + 1), at);
+		else if (key === "LEFT") showInput(text, value, Math.max(0, at - 1));
+		else if (key === "RIGHT") showInput(text, value, Math.min(value.length, at + 1));
+		else if (key === "HOME") showInput(text, value, 0);
+		else if (key === "END") showInput(text, value, value.length);
+		else {
+			const typed = key === "SPACE" ? " " : key;
+			showInput(text, value.slice(0, at) + typed + value.slice(at), at + 1);
+		}
 		return;
 	}
 	const cells = [...slide.querySelectorAll("[data-input-cell]")];
@@ -225,25 +224,60 @@ function typeKey(slide, key) {
 	}
 }
 
+// Free text and where its cursor is. The cursor is an empty .input-caret span inside the text, or,
+// at the end, no span at all: then the slide's CSS draws it after the text (and a placeholder when empty).
+function inputState(text) {
+	const caret = text.querySelector(".input-caret");
+	if (!caret) return [text.textContent, text.textContent.length];
+	const before = document.createRange();
+	before.selectNodeContents(text);
+	before.setEndBefore(caret);
+	return [text.textContent, before.toString().length];
+}
+
+// A click on a free-text field: the placeholder goes away (.editing) and the cursor goes where
+// it was clicked.
+function clickInput(text, event) {
+	text.classList.add("editing");
+	const [value] = inputState(text);
+	const point = document.caretPositionFromPoint(event.clientX, event.clientY);
+	let at = value.length;   // e.g. clicked after the text
+	if (point && text.contains(point.offsetNode)) {
+		const before = document.createRange();
+		before.selectNodeContents(text);
+		before.setEnd(point.offsetNode, point.offset);
+		at = before.toString().length;
+	}
+	showInput(text, value, at);
+}
+
+function showInput(text, value, at) {
+	if (at >= value.length) {
+		text.textContent = value;
+		return;
+	}
+	const caret = document.createElement("span");
+	caret.className = "input-caret";
+	text.replaceChildren(value.slice(0, at), caret, value.slice(at));
+}
+
 async function sendAction(slide, action, values, provider = slide.dataset.provider) {
 	const result = await getJson("/api/action", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ provider, action, values }),
 	});
-	let messageDelay = 0;
 	if (result.html) {
 		const fresh = new DOMParser().parseFromString(result.html, "text/html");
 		const effect = fresh.querySelector("[data-effect]");
 		if (effect && effects[effect.dataset.effect]) await effects[effect.dataset.effect](slide);
-		messageDelay = parseInt(fresh.querySelector("[data-message-delay]")?.dataset.messageDelay || "0", 10);
 		layers[front].innerHTML = result.html;
+		setupWidgets(layers[front]);
 		const resumeAfter = layers[front].querySelector("[data-resume-after]");
 		if (resumeAfter) keepPaused(parseFloat(resumeAfter.dataset.resumeAfter));   // e.g. game over
 	} else if (current && current.refresh) {
 		refresh();   // nothing redrawn (e.g. the volume): show the change now, not at the next check
 	}
-	if (result.message) setTimeout(() => showToast(result.message), messageDelay);   // e.g. after the tiles flip
 }
 
 // Animations that play on the current slide before the redrawn one replaces it.
@@ -286,8 +320,6 @@ function keepPaused(seconds) {
 	if (!interacting) {
 		interacting = true;
 		clearTimeout(nextTimer);
-		const minutes = Math.round(seconds / 60);
-		showToast(`Paused: the slideshow continues after ${minutes === 1 ? "a minute" : minutes + " minutes"} without clicks`);
 		takeoverTimer = setInterval(checkTakeover, 5000);
 	}
 	clearTimeout(idleTimer);
@@ -322,14 +354,16 @@ document.addEventListener("keydown", async (event) => {
 	// On a slide you can type on, keys go to the game instead of the shortcuts below.
 	const slide = interactiveSlide();
 	if (slide && slide.querySelector("[data-input-text]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
-		const key = event.key === "Enter" ? "ENTER" : event.key === "Backspace" ? "BACK" : event.key === " " ? "SPACE" : event.key;
-		if (key.length === 1 || ["ENTER", "BACK", "SPACE"].includes(key)) {
+		const names = { Enter: "ENTER", Backspace: "BACK", " ": "SPACE", Delete: "DELETE",
+			ArrowLeft: "LEFT", ArrowRight: "RIGHT", Home: "HOME", End: "END" };
+		const key = names[event.key] || event.key;
+		if (key.length === 1 || Object.values(names).includes(key)) {
 			event.preventDefault();
 			keepPaused(idleSeconds(slide));
 			typeKey(slide, key);
 			return;
 		}
-		if (event.key.startsWith("Arrow")) return;   // while typing, the arrows don't change slides
+		if (event.key.startsWith("Arrow")) return;   // up and down don't change slides while typing either
 	}
 	if (slide && slide.querySelector("[data-input-cell]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		const key = event.key === "Enter" ? "ENTER" : event.key === "Backspace" ? "BACK" : event.key.toUpperCase();
@@ -339,6 +373,15 @@ document.addEventListener("keydown", async (event) => {
 			typeKey(slide, key);
 			return;
 		}
+	}
+	if (event.key.startsWith("Arrow") && event.target.closest?.("input, .leaflet-container")) return;   // they move the slider or map
+	// Up and down scroll a text that's longer than the screen (data-scroll, e.g. a news article).
+	const scroller = slide?.querySelector("[data-scroll]");
+	if (scroller && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+		event.preventDefault();
+		keepPaused(idleSeconds(slide));
+		scroller.scrollBy({ top: (event.key === "ArrowDown" ? 0.6 : -0.6) * scroller.clientHeight, behavior: "smooth" });
+		return;
 	}
 	if (event.key === "ArrowRight" || event.key === "ArrowDown") {
 		next();
@@ -350,17 +393,16 @@ document.addEventListener("keydown", async (event) => {
 		keepPaused(idleSeconds(slide));
 		const button = slide.querySelector(`[data-action="${slide.dataset.spaceAction}"]`);
 		button?.classList.add("busy");
-		sendAction(slide, slide.dataset.spaceAction, []).finally(() => button?.classList.remove("busy"));
+		const values = button?.dataset.value ? [button.dataset.value] : [];   // what the button sends, e.g. "lyrics" to stay in that view
+		sendAction(slide, slide.dataset.spaceAction, values).finally(() => button?.classList.remove("busy"));
 	} else if (event.key === " ") {
 		paused = !paused;
-		showToast(paused ? "Paused" : "Playing");
 		if (paused) clearTimeout(nextTimer);
 		else if (current) nextTimer = setTimeout(next, current.seconds * 1000);
 	} else if (/^[0-9]$/.test(event.key) && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		jumpTo(event.key);
 	} else if (event.key === "m") {
-		await getJson("/api/mute", { method: "POST" });
-		checkNotice();   // the server's confirmation shows up as a notice
+		await getJson("/api/narration", { method: "POST" });
 	}
 });
 
@@ -395,7 +437,7 @@ async function openMenu() {
 		menuData = await getJson("/api/menu");
 	} catch (error) {
 		console.error(error);
-		return showToast("The menu is not available right now");
+		return;   // the menu isn't available right now
 	}
 	showCount += 1;   // a slide that is still loading doesn't appear (and close the menu)
 	clearTimeout(nextTimer);
@@ -577,10 +619,8 @@ async function sendMenu(button, command, value) {
 		});
 		menuData = answer.menu;
 		if (menuIsOpen() && menuPage !== "overview") showMenuPage(menuPage, button.dataset.focus);
-		if (answer.message) showToast(answer.message);
 	} catch (error) {
 		console.error(error);
-		showToast("That didn't work, sorry");
 	} finally {
 		button.classList.remove("busy");
 	}
@@ -638,5 +678,3 @@ menu.addEventListener("click", (event) => {
 menu.addEventListener("mousemove", menuActivity);
 
 next();
-checkNotice();
-setInterval(checkNotice, 1000);

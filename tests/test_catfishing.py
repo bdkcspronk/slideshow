@@ -1,5 +1,8 @@
+import json
+import tempfile
 import unittest
 from datetime import date, datetime
+from pathlib import Path
 
 from francken_tv.providers.catfishing import CatfishingProvider, normalise, parse_game
 
@@ -102,6 +105,67 @@ class CatfishingGameTest(unittest.TestCase):
 	def test_empty_guess_is_not_an_answer(self):
 		data, message = self.act("submit", "   ")
 		self.assertEqual((message, data["game"].answers), ("Type a guess, or skip", []))
+
+
+class CatfishingArchiveTest(unittest.TestCase):
+	"""Earlier days from catfishing.net's archive, and the history of every day played."""
+
+	def setUp(self):
+		self.folder = tempfile.TemporaryDirectory()
+		self.addCleanup(self.folder.cleanup)
+		folder = Path(self.folder.name)
+		self.state, self.history = folder / "catfishing.json", folder / "catfishing_history.json"
+		self.provider = self.new_provider()
+
+	def new_provider(self):
+		provider = CatfishingProvider({}, 8, self.state, self.history)
+		provider.fetch = lambda day: parse_game(fake_game())
+		provider.refresh(NOW)
+		return provider
+
+	def act(self, name, *values):
+		return self.provider.action(name, list(values), NOW)[0]
+
+	def test_play_an_earlier_day_and_finish_it_later(self):
+		slide = self.act("open_day", "2026-09-14")
+		self.assertEqual((slide.data["today"], slide.data["day_label"]), (False, "14 Sep 2026"))
+		self.act("submit", "beatles")
+		self.act("next")
+		self.assertEqual(self.provider.status(NOW).text, "Not tried yet")   # today's game is untouched
+		later = self.new_provider()   # e.g. after a restart
+		self.provider = later
+		slide = self.act("open_day", "2026-09-14")
+		self.assertEqual(len(slide.data["game"].answers), 1)   # carries on where it was left
+		self.assertEqual(self.act("today").data["today"], True)
+
+	def test_calendar_shows_done_and_started_days(self):
+		self.act("open_day", "2026-10-01")
+		for _ in range(10):
+			self.act("skip")
+			self.act("next")
+		self.act("open_day", "2026-10-02")
+		self.act("skip")
+		slide = self.act("archive", "2026-10")
+		days = {day["date"]: day for week in slide.data["weeks"] for day in week if day["in_month"]}
+		self.assertEqual((days[date(2026, 10, 1)]["state"], days[date(2026, 10, 1)]["text"]), ("done", "0/20"))
+		self.assertEqual((days[date(2026, 10, 2)]["state"], days[date(2026, 10, 2)]["text"]), ("playing", "1/10"))
+		self.assertEqual(days[date(2026, 10, 3)]["state"], "new")
+		self.assertTrue(days[date(2026, 10, 14)]["today"])
+		self.assertFalse(days[date(2026, 10, 15)]["playable"])   # the future
+		self.assertEqual((slide.data["done"], slide.data["started"], slide.data["next"]), (1, 1, None))
+
+	def test_archive_limits(self):
+		self.assertIsNone(self.act("archive", "2024-07").data["previous"])   # the archive starts in July 2024
+		self.assertEqual(self.act("archive", "2020-01").data["month"], date(2024, 7, 1))
+		self.assertTrue(self.act("open_day", "2024-06-30").data["today"])   # before the archive: today's game instead
+
+	def test_starting_today_over_forgets_it_in_the_history(self):
+		self.act("skip")
+		self.assertIn("2026-10-14", json.loads(self.history.read_text()))
+		self.state.unlink()   # what "start over" in the menu does
+		self.provider.game = None
+		self.provider.todays_game(NOW)
+		self.assertNotIn("2026-10-14", json.loads(self.history.read_text()))
 
 
 if __name__ == "__main__":

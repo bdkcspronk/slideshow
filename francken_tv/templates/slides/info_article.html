@@ -1,0 +1,16 @@
+{# A news article to read, opened from the news part of the info slide (InfoProvider.action() in
+   providers/info.py). The text scrolls by touch, mouse wheel or the up and down arrows (data-scroll). #}
+<div class="slide info-slide info-article" data-interactive data-provider="info" data-idle-seconds="120">
+	<header class="article-header">
+		<button class="article-back" data-action="news">&larr; All news</button>
+		<span>{{ feed }}{% if ago %} &middot; {{ ago }}{% endif %}</span>
+	</header>
+	<h1>{{ headline.title }}</h1>
+	<div class="article-body">
+		<div class="article-text" data-scroll>
+			{% for paragraph in paragraphs %}<p>{{ paragraph }}</p>{% endfor %}
+			{% if not whole %}<p class="article-more">This is the summary; the whole article is on {{ headline.link.split("/")[2] | replace("www.", "") }}.</p>{% endif %}
+		</div>
+		{% if headline.image %}<img class="article-image" src="{{ headline.image }}" alt="">{% endif %}
+	</div>
+</div>

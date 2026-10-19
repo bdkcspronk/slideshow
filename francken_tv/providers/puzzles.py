@@ -1,6 +1,7 @@
-"""The "Daily puzzles" slide: one half per puzzle (Connections | Wordle) with today's status.
+"""The "Daily puzzles" slide: one card per puzzle (Connections | Wordle | Catfishing | TimeGuessr) with
+today's status.
 
-Tapping a half opens that puzzle on the spot; its "All puzzles" button comes back here.
+Tapping a card opens that puzzle on the spot; its "All puzzles" button comes back here.
 To add a puzzle: write a provider with a `title`, a `status(now)` method and an interactive
 slide (see connections.py), create it in app.py and add its name to puzzles.order in config.toml.
 Like the others, it keeps today's game in `self.game` and saves it at `self.state_path`, so it can

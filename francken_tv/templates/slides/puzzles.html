@@ -1,10 +1,9 @@
 {#
-	The Daily puzzles slide: one half per puzzle. Tapping a half sends "open" to
+	The Daily puzzles slide: one card per puzzle, two by two. Tapping a half sends "open" to
 	PuzzlesProvider.action() in providers/puzzles.py, which returns that puzzle's slide.
 #}
-<div class="slide puzzles-slide" data-interactive data-idle-seconds="240" data-provider="puzzles" style="--cards: {{ cards | length }}">
+<div class="slide puzzles-slide" data-interactive data-idle-seconds="240" data-provider="puzzles">
 	{% for card in cards %}
-	{% if not loop.first %}<div class="puzzles-divider"></div>{% endif %}
 	<button class="puzzle-card puzzle-{{ card.name }} status-{{ card.state }}" data-action="open" data-value="{{ card.name }}">
 		{# A small picture of each game, in its own colours. #}
 		<span class="puzzle-icon" aria-hidden="true">
@@ -14,6 +13,8 @@
 			{% for state in ["absent", "present", "absent", "correct", "absent", "correct", "correct", "correct", "correct", "correct"] %}<i class="{{ state }}"></i>{% endfor %}
 			{% elif card.name == "catfishing" %}
 			<i class="tag w1"></i><i class="tag w2"></i><i class="tag w3"></i>
+			{% elif card.name == "timeguessr" %}
+			<i class="photo"><svg class="pin" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 30.5S21.5 19.6 21.5 12a9.5 9.5 0 0 0-19 0c0 7.6 9.5 18.5 9.5 18.5z"/><circle cx="12" cy="12" r="3.6"/></svg></i><i class="year">1969</i>
 			{% endif %}
 		</span>
 		<span class="puzzle-title">{{ card.title }}</span>
@@ -21,5 +22,4 @@
 		<span class="puzzle-play">{{ "View" if card.state in ["solved", "lost"] else "Play" }}</span>
 	</button>
 	{% endfor %}
-	<p class="puzzles-footer">Daily puzzles from The New York Times and catfishing.net &middot; tap one to play</p>
 </div>
