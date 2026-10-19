@@ -174,5 +174,24 @@ class BackgroundTest(unittest.TestCase):
 		self.assertTrue(85 <= due_in <= 91, due_in)   # 00:00:30, not 00:29
 
 
+	def test_a_site_that_is_down_is_logged_without_a_traceback(self):
+		import requests
+		class Down(Provider):
+			name, refresh_seconds = "down", 60
+			def refresh(self, now):
+				raise requests.HTTPError("503 Server Error: Service Unavailable")
+		class Bug(Provider):
+			name, refresh_seconds = "bug", 60
+			def refresh(self, now):
+				raise KeyError("oops")
+		runner = BackgroundRunner(Clock(), [Down(), Bug()], [])
+		runner.stopped.wait = lambda seconds: runner.stopped.set()   # run the loop once
+		with self.assertLogs("francken_tv.background") as logs:
+			runner.refresh_loop()
+		self.assertEqual([(record.levelname, record.exc_info is not None) for record in logs.records],
+			[("WARNING", False), ("ERROR", True)])   # a bug still gets its traceback
+		self.assertIn("503", runner.status["down"].last_error)   # and both show on /status
+
+
 if __name__ == "__main__":
 	unittest.main()

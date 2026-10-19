@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 
-from ..slides import Provider, Slide
+from ..slides import PartsFailed, Provider, Slide
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class PuzzlesProvider(Provider):
 				log.warning("Could not load the %s puzzle: %s", puzzle.name, error)
 				failed.append(f"{puzzle.name}: {error!r}")
 		if failed:
-			raise RuntimeError("; ".join(failed))
+			raise PartsFailed("; ".join(failed))
 
 	def cards(self, now: datetime) -> list[dict]:
 		cards = []

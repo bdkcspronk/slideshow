@@ -32,7 +32,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-from ..slides import Provider, Slide, media_url
+from ..slides import PartsFailed, Provider, Slide, media_url
 
 log = logging.getLogger(__name__)
 
@@ -395,7 +395,7 @@ class InfoProvider(Provider):
 				log.warning("Could not fetch the %s: %s", part, error)
 				failed.append(f"{part}: {error!r}")
 		if failed:
-			raise RuntimeError("; ".join(failed))
+			raise PartsFailed("; ".join(failed))
 
 	def fetch_news(self, now: datetime) -> None:
 		news = {}

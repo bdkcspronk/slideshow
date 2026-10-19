@@ -19,6 +19,11 @@ from urllib.parse import quote
 from .config import PROJECT_DIR
 
 
+class PartsFailed(RuntimeError):
+	"""refresh() of a provider with several parts (info, puzzles): some failed, the rest worked. Each
+	failure is already logged, so the background runner logs this without a traceback."""
+
+
 @dataclass
 class Slide:
 	template: str                      # file in francken_tv/templates/slides/

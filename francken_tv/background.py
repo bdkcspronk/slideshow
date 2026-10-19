@@ -12,8 +12,10 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+import requests
+
 from .clock import Clock
-from .slides import Job, Provider
+from .slides import Job, PartsFailed, Provider
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +59,11 @@ class BackgroundRunner:
 				try:
 					provider.refresh(self.clock.now())
 				except Exception as error:
-					log.exception("Refreshing %s failed", provider.name)
+					if isinstance(error, (requests.RequestException, PartsFailed)):
+						# A website that's down or a network hiccup (each part already logged): one line.
+						log.warning("Refreshing %s failed: %s", provider.name, error)
+					else:
+						log.exception("Refreshing %s failed", provider.name)   # probably a bug: with the traceback
 					status.last_error = f"{self.clock.now():%H:%M:%S} {error!r}"
 					status.next_due = time.monotonic() + min(RETRY_AFTER_ERROR_SECONDS, provider.refresh_seconds)
 				else:
