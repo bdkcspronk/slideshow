@@ -1,5 +1,8 @@
 """Upcoming activities, scraped from professorfrancken.nl/association/activities.
 
+Activities of today (also one of several days that's going on, e.g. a members weekend) each get a
+card across both columns at the top; the others follow in two columns.
+
 If the website's layout changes, only parse_activities() needs fixing.
 Test it with: python -m unittest tests.test_activities
 """
@@ -9,7 +12,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import requests
 from bs4 import BeautifulSoup
@@ -21,6 +24,9 @@ log = logging.getLogger(__name__)
 # Activity links look like /association/activities/2026-10-14-i-gma
 ACTIVITY_LINK = re.compile(r"/association/activities/(\d{4}-\d{2}-\d{2})-")
 TIME = re.compile(r"\bat (\d{1,2}:\d{2})")
+# Several days: "27 - 30 November at 01:00", or across months "30 November - 2 December at ..."
+DAYS = re.compile(r"^\s*\d{1,2}(?:\s+[A-Za-z]+)?\s*-\s*(\d{1,2})\s+([A-Za-z]+)")
+MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
 
 
 @dataclass
@@ -30,6 +36,25 @@ class Activity:
 	time: str | None       # "17:00"
 	when: str              # as written on the website, e.g. "27 - 30 November at 01:00"
 	location: str | None
+	end: date | None = None   # the last day, for activities of several days
+
+	@property
+	def last_day(self) -> date:
+		return self.end or self.day
+
+
+def end_day(start: date, when: str) -> date | None:
+	"""The last day of an activity of several days ("27 - 30 November"), or None."""
+	match = DAYS.search(when)
+	if not match or match.group(2).lower() not in MONTHS:
+		return None
+	month = MONTHS.index(match.group(2).lower()) + 1
+	year = start.year + (1 if month < start.month else 0)   # "28 December - 2 January"
+	try:
+		end = date(year, month, int(match.group(1)))
+	except ValueError:
+		return None
+	return end if start < end <= start + timedelta(days=60) else None
 
 
 def parse_activities(html: str) -> list[Activity]:
@@ -47,7 +72,8 @@ def parse_activities(html: str) -> list[Activity]:
 			elif small.find(class_="fa-map-marker"):
 				location = small.get_text(" ", strip=True) or None
 		time_match = TIME.search(when)
-		activity = Activity(day, title.get_text(" ", strip=True), time_match.group(1) if time_match else None, when, location)
+		activity = Activity(day, title.get_text(" ", strip=True), time_match.group(1) if time_match else None, when, location,
+			end_day(day, when))
 		activities[(activity.day, activity.title)] = activity   # the page may list an activity twice
 	return sorted(activities.values(), key=lambda a: (a.day, a.time or ""))
 
@@ -72,7 +98,12 @@ class ActivitiesProvider(Provider):
 		self.activities = activities
 
 	def slides(self, now: datetime) -> list[Slide]:
-		upcoming = [activity for activity in self.activities if activity.day >= now.date()][: self.max_events]
-		if not upcoming:
+		today = now.date()
+		current = [a for a in self.activities if a.day <= today <= a.last_day]   # today, or going on
+		later = [a for a in self.activities if a.day > today]
+		# A card across both columns takes the room of two, so it counts as two of max_events.
+		current = current[:(self.max_events + 1) // 2]
+		later = later[:max(0, self.max_events - 2 * len(current))]
+		if not current and not later:
 			return []
-		return [Slide("activities.html", self.seconds, {"activities": upcoming, "today": now.date()})]
+		return [Slide("activities.html", self.seconds, {"current": current, "activities": later, "today": today})]

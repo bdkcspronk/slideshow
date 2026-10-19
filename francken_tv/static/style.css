@@ -125,9 +125,19 @@ body.show-cursor button { cursor: pointer; }
 	margin: 0;
 	padding: 0;
 	display: grid;
+	gap: 2.5vh 3vw;
+}
+/* Today's activities: one card per activity across both columns, bigger, above the others. */
+.activities-slide .activities-current { grid-template-columns: minmax(0, 1fr); margin-bottom: 2.5vh; }
+.activities-slide .activities-current li { padding: 2.4vh 2vw; }
+.activities-slide .activities-current .activity-date .day { font-size: 6.5vh; }
+.activities-slide .activities-current .activity-title { font-size: 4.4vh; }
+.activities-slide .activities-current .activity-details { font-size: 2.8vh; }
+.activities-slide li.from-top { animation: slide-from-top 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.6s + var(--i) * 0.5s) both; }
+@keyframes slide-from-top { from { transform: translateY(-30vh); opacity: 0; } }
+.activities-later {
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);   /* two equal columns, even with long names */
 	grid-auto-flow: column;   /* in date order down the left column, then down the right */
-	gap: 2.5vh 3vw;
 }
 .activities-slide li {
 	display: flex;

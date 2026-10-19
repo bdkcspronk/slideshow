@@ -1,11 +1,10 @@
 <div class="slide activities-slide">
 	<h1>Upcoming activities</h1>
-	{# Fill the left column top to bottom, then the right column. The activities slide in one by one
-	   in date order (--i): the left column from the left, the right column from the right. #}
-	{% set rows = (activities | length + 1) // 2 %}
-	<ul style="grid-template-rows: repeat({{ rows }}, auto)">
-		{% for activity in activities %}
-		<li class="{{ 'from-left' if loop.index0 < rows else 'from-right' }}{{ ' today' if activity.day == today }}" style="--i: {{ loop.index0 }}">
+	{# Today's activities (and ones of several days going on now) each across both columns, at the top;
+	   then the others: down the left column, then the right. They slide in one by one (--i): today's
+	   from above, the left column from the left, the right column from the right. #}
+	{% macro card(activity, cls, i) %}
+		<li class="{{ cls }}" style="--i: {{ i }}">
 			<div class="activity-date">
 				<span class="day">{{ activity.day.day }}</span>
 				<span class="month">{{ activity.day.strftime("%b") }}</span>
@@ -13,12 +12,25 @@
 			<div class="activity-text">
 				<div class="activity-title">{{ activity.title }}</div>
 				<div class="activity-details">
-					{% if activity.day == today %}Today{% else %}{{ activity.day.strftime("%A") }}{% endif %}
+					{% if activity.day == today %}Today{% elif activity.day < today %}Going on{% else %}{{ activity.day.strftime("%A") }}{% endif %}
+					{% if activity.end %}&middot; until {{ activity.end.strftime("%A %-d %B") }}{% endif %}
 					{% if activity.time %}&middot; {{ activity.time }}{% endif %}
 					{% if activity.location %}&middot; {{ activity.location }}{% endif %}
 				</div>
 			</div>
 		</li>
+	{% endmacro %}
+	{% if current %}
+	<ul class="activities-current">
+		{% for activity in current %}{{ card(activity, "today from-top", loop.index0) }}{% endfor %}
+	</ul>
+	{% endif %}
+	{% if activities %}
+	{% set rows = (activities | length + 1) // 2 %}
+	<ul class="activities-later" style="grid-template-rows: repeat({{ rows }}, auto)">
+		{% for activity in activities %}
+		{{ card(activity, 'from-left' if loop.index0 < rows else 'from-right', current | length + loop.index0) }}
 		{% endfor %}
 	</ul>
+	{% endif %}
 </div>
