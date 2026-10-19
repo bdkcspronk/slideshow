@@ -482,6 +482,7 @@ body.show-cursor button { cursor: pointer; }
 .poll-bar i { display: block; width: var(--percent); height: 100%; border-radius: inherit; background: var(--option); transition: width 0.6s ease; }
 .poll-text { flex: 1; min-width: 0; font-size: 3.6vh; line-height: 1.2; }
 .poll-percent { flex: none; font-size: 4.4vh; font-weight: bold; color: var(--option-text); }
+.poll-count { font-size: 0.65em; font-weight: normal; color: var(--muted); }   /* "5 votes ·" before the percentage */
 .poll-footer { margin: 3vh 0 0; font-size: 2.4vh; color: var(--muted); }
 .poll-footer strong { color: var(--red-dark); }
 .poll-last {

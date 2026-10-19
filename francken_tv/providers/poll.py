@@ -74,11 +74,18 @@ def simplified(text: str) -> str:
 
 def form_answer(answer: str, dilemma: Dilemma | None) -> str | None:
 	"""Which option a form answer is: "a", "b" or None. The option's text (in any case, without
-	punctuation), or its letter."""
+	punctuation), a part of only one option's text ("very cold" for "always have a very cold shower",
+	e.g. after the options were reworded), or its letter."""
 	if dilemma:
-		for key in ("a", "b"):
-			if simplified(answer) == simplified(getattr(dilemma, key)):
+		answer_text = simplified(answer)
+		options = {key: simplified(getattr(dilemma, key)) for key in ("a", "b")}
+		for key, text in options.items():
+			if answer_text == text:
 				return key
+		if len(answer_text) >= 3:   # not a letter like "a", which is in almost every text
+			containing = [key for key, text in options.items() if f" {answer_text} " in f" {text} "]
+			if len(containing) == 1:
+				return containing[0]
 	letter = LETTER.match(answer.strip())
 	return letter.group(1).lower() if letter else None
 
@@ -97,16 +104,18 @@ def sheet_is_day_first(timestamps: list[str], default: bool) -> bool:
 
 
 def count_form_votes(csv_text: str, week_start: date, day_first: bool = True, dilemma: Dilemma | None = None) -> dict[str, int]:
-	"""This week's responses in the form's sheet: timestamp in the first column, the answer in the second."""
+	"""This week's responses in the form's sheet: timestamp in the first column, then the answer. A question
+	made anew in the form gets a new column, so the first filled-in one after the timestamp counts."""
 	votes = {"a": 0, "b": 0}
 	week = (datetime.combine(week_start, datetime.min.time()), datetime.combine(week_start + timedelta(days=7), datetime.min.time()))
 	rows = list(csv.reader(io.StringIO(csv_text.lstrip("\ufeff"))))[1:]   # without the header (and a byte order mark)
 	day_first = sheet_is_day_first([row[0] for row in rows if row], day_first)
 	for row in rows:
-		if len(row) < 2:
+		filled = [cell for cell in row[1:] if cell.strip()]
+		if not row or not filled:
 			continue
 		when = parse_timestamp(row[0], day_first)
-		answer = form_answer(row[1], dilemma)
+		answer = form_answer(filled[0], dilemma)
 		if when and week[0] <= when < week[1] and answer:
 			votes[answer] += 1
 	return votes

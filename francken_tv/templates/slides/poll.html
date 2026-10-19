@@ -13,7 +13,7 @@
 			<button class="poll-option poll-{{ option.key }}{{ ' chosen' if voted == option.key }}" data-action="vote" data-value="{{ option.key }}" style="--percent: {{ option.percent }}%">
 				<span class="poll-letter">{{ option.letter }}</span>
 				<span class="poll-text">{{ option.text }}</span>
-				<span class="poll-percent">{{ option.percent }}%</span>
+				<span class="poll-percent"><span class="poll-count">{{ option.votes }} vote{{ '' if option.votes == 1 else 's' }} &middot;</span> {{ option.percent }}%</span>
 				<span class="poll-bar"><i></i></span>
 			</button>
 			{% endfor %}
@@ -31,7 +31,7 @@
 			<div class="poll-last-bar poll-{{ option.key }}{{ ' won' if option.won }}" style="--percent: {{ option.percent }}%">
 				<span class="poll-last-letter">{{ option.letter }}</span>
 				<span class="poll-last-text">{{ option.text }}</span>
-				<span class="poll-last-percent">{{ option.percent }}%</span>
+				<span class="poll-last-percent"><span class="poll-count">{{ option.votes }} vote{{ '' if option.votes == 1 else 's' }} &middot;</span> {{ option.percent }}%</span>
 				<span class="poll-bar"><i></i></span>
 			</div>
 			{% endfor %}

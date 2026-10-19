@@ -131,11 +131,11 @@ Premium, and music already playing on some device. One-time setup:
 The dilemmas are in `config/dilemmas.txt` (`question | option A | option B`, one per line, the next
 one every Monday). Tapping A or B on the TV counts a vote. To also vote on phones (the QR code):
 
-1. Make a Google Form with one multiple-choice question. Either give it the week's dilemma with the
-   same answers as the options in `dilemmas.txt` (capitals and punctuation don't matter), and change
-   both every Monday; or make the answers just **A** and **B** ("A: theory" is fine too) with "Vote on
-   the dilemma shown on the TV" as the question, so the form can stay the same every week. Don't
-   collect email addresses, and don't restrict it to an organisation: then it needs no login.
+1. Make a Google Form with one multiple-choice question, e.g. "Answer", with the answers **A)** and
+   **B)** ("A", "A: ..." work too): then the same form works every week, and only `dilemmas.txt`
+   decides what A and B are. (Answers with the options' own texts also count, but then the form has
+   to be changed every Monday.) Don't collect email addresses, and don't restrict it to an
+   organisation: then it needs no login.
 2. *Responses* -> *Link to Sheets*: a new sheet. Share that sheet as "Anyone with the link can view".
 3. In `config/config.toml`, `[poll]`: `form_url` = the form's link (*Send* -> link, shortened is fine),
    `sheet_id` = the long code in the sheet's link (`/spreadsheets/d/<sheet_id>/edit`).
