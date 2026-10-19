@@ -173,6 +173,12 @@ class InfoProviderTest(unittest.TestCase):
 		self.assertEqual(self.provider.timetable_data(datetime(2026, 10, 19, 10, 0))["day"], "today")
 		self.assertIsNone(self.provider.timetable_data(datetime(2026, 10, 19, 19, 0)))   # nothing in the week after
 
+	def test_lectures_that_are_over_are_left_out(self):
+		self.provider.timetable["BSc 1"].append(Lecture(datetime(2026, 10, 19, 13, 0), datetime(2026, 10, 19, 15, 0), "Optics", "Lecture", []))
+		courses = lambda now: [lecture.course for lecture in self.provider.timetable_data(now)["columns"]["BSc 1"]]
+		self.assertEqual(courses(datetime(2026, 10, 19, 10, 59)), ["Mechanics", "Optics"])
+		self.assertEqual(courses(datetime(2026, 10, 19, 11, 1)), ["Optics"])   # 9:00-11:00 is over
+
 	def test_open_an_article_and_go_back(self):
 		long = "A sentence that is long enough to count as article text, not a menu item."
 		self.provider.news = {

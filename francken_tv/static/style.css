@@ -355,7 +355,6 @@ body.show-cursor button { cursor: pointer; }
 .lecture b { font-size: 2.3vh; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }   /* up to two lines */
 .lecture-kind { font-size: 1.8vh; font-weight: bold; color: var(--kind); }
 .lecture-details { font-size: 1.8vh; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lecture.past { opacity: 0.45; }
 .lecture.current { border-left-color: var(--red); outline: 0.3vh solid var(--red); }
 .no-lectures { margin: 0; font-size: 2.4vh; color: var(--faint); }
 

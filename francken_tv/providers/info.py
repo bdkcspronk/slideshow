@@ -557,13 +557,14 @@ class InfoProvider(Provider):
 		return {"stop": self.stop_name, "departures": shown}
 
 	def timetable_data(self, now: datetime) -> dict | None:
-		"""Today's lectures until the evening, else those of the next day that has any (within a week)."""
+		"""Today's lectures that aren't over yet, until the evening; else those of the next day that has
+		any (within a week). A lecture from 9:00 to 11:00 is gone at 11:00."""
 		if not self.timetable:
 			return None
 		start_day = now.date() if now.hour < self.next_day_from else now.date() + timedelta(days=1)
 		for offset in range(8):
 			day = start_day + timedelta(days=offset)
-			columns = {column: [lecture for lecture in lectures if lecture.start.date() == day] for column, lectures in self.timetable.items()}
+			columns = {column: [lecture for lecture in lectures if lecture.start.date() == day and lecture.end > now] for column, lectures in self.timetable.items()}
 			if any(columns.values()):
 				label = "today" if day == now.date() else "tomorrow" if day == now.date() + timedelta(days=1) else day.strftime("%A %-d %B")
 				return {"name": self.timetable_name, "day": label, "columns": columns, "now": now}
