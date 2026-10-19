@@ -12,13 +12,8 @@
 			</div>
 		</div>
 		<div class="weather-rain">
-			<h2>{{ weather.rain_summary }}</h2>
-			{% if rain %}
-			<div class="rain-chart" style="--bars: {{ rain | length }}">
-				{% for bar in rain %}<i style="--height: {{ bar.height }}%; --k: {{ loop.index0 }}"></i>{% endfor %}
-				{% for bar in rain %}{% if loop.index0 % 6 == 0 %}<span style="grid-column: {{ loop.index }}">{{ bar.time }}</span>{% endif %}{% endfor %}
-			</div>
-			{% endif %}
+			<h2>{{ rain_summary }}</h2>
+			{% if rain %}{% with size = "" %}{% include "slides/rain_chart.html" %}{% endwith %}{% endif %}
 		</div>
 	</div>
 	<div class="weather-days">

@@ -1,0 +1,8 @@
+{# After bieruur (providers/info.py, outside_daytime_slides): a warning when rain is expected within
+   two hours, with Buienradar's rain chart (rain_chart.html) across the screen. #}
+<div class="slide info-slide info-rain">
+	<p class="rain-kicker">&#9888; Rain warning &middot; {{ place }}</p>
+	<h1><span class="rain-umbrella">&#9748;</span> {{ summary }}</h1>
+	{% with size = "big" %}{% include "slides/rain_chart.html" %}{% endwith %}
+	<p class="info-source">{% if example %}<b>Example: it stays dry for now</b> &middot; {% endif %}Rain forecast from Buienradar &middot; {{ weather.temperature | round | int }}&deg;, {{ weather.text | lower }}</p>
+</div>

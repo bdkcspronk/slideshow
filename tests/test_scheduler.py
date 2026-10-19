@@ -55,6 +55,26 @@ class RotationTest(unittest.TestCase):
 		self.assertEqual(names[-1], "special5")         # the round ends with a special slide
 		self.assertEqual([n for n in names if n.startswith("special")], [f"special{i}" for i in range(6)])
 
+	def test_daytime_only_slides_rest_from_bieruur_until_the_morning(self):
+		from datetime import time
+		scheduler = Scheduler([FixedProvider("images", 1), FixedProvider("info", 1), FixedProvider("books", 1)], [],
+			daytime_only={"info", "books"}, daytime=(time(8, 0), time(16, 0)))
+		names = lambda hhmm: [slide.data["name"] for slide in scheduler.build_round(at(THURSDAY, hhmm + ":00"))]
+		self.assertEqual(names("07:59"), ["images0"])
+		self.assertEqual(names("08:00"), ["images0", "info0", "books0"])
+		self.assertEqual(names("15:59"), ["images0", "info0", "books0"])
+		self.assertEqual(names("16:00"), ["images0"])   # bieruur
+		self.assertEqual(names("23:30"), ["images0"])
+
+	def test_outside_the_daytime_a_provider_can_still_show_something(self):
+		from datetime import time
+		class Info(FixedProvider):
+			def outside_daytime_slides(self, now):
+				return [Slide("info_weather.html", 8, {"name": "rain"})]   # e.g. rain coming
+		scheduler = Scheduler([FixedProvider("images", 1), Info("info", 1)], [], daytime_only={"info"}, daytime=(time(8, 0), time(16, 0)))
+		self.assertEqual([s.data["name"] for s in scheduler.build_round(at(THURSDAY, "21:00:00"))], ["images0", "rain"])
+		self.assertEqual([s.data["name"] for s in scheduler.build_round(at(THURSDAY, "10:00:00"))], ["images0", "info0"])
+
 	def test_broken_provider_is_skipped(self):
 		scheduler = Scheduler([BrokenProvider(), FixedProvider("a", 1)], [])
 		with self.assertLogs("francken_tv.scheduler", "ERROR"):

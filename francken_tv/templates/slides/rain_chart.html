@@ -1,0 +1,15 @@
+{# The rain chart of the weather slide and the rain warning (info_weather.html, info_rain.html): the
+   next two hours from Buienradar as a line chart with the area under it filled (rain_chart() in
+   providers/info.py), and dashed lines where light, medium and heavy rain start. #}
+{% if chart %}
+<div class="rain-chart{{ ' ' ~ size if size }}">
+	<div class="rain-plot">
+		<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+			<path class="rain-area" d="{{ chart.area }}"/>
+			<path class="rain-line" d="{{ chart.line }}" vector-effect="non-scaling-stroke"/>
+		</svg>
+		{% for line in rain_lines %}<div class="rain-level" style="bottom: {{ line.height }}%"><span>{{ line.label }}</span></div>{% endfor %}
+	</div>
+	<div class="rain-times">{% for time in chart.times %}<span style="left: {{ time.x }}%">{{ time.time }}</span>{% endfor %}</div>
+</div>
+{% endif %}

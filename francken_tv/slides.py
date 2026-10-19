@@ -48,6 +48,11 @@ class Provider:
 	def slides(self, now: datetime) -> list[Slide]:
 		raise NotImplementedError
 
+	def outside_daytime_slides(self, now: datetime) -> list[Slide]:
+		"""For slide types in rotation.daytime_only: what to show outside the daytime anyway (e.g. the
+		weather when it's going to rain). Usually nothing."""
+		return []
+
 	def shortcut_slide(self, now: datetime) -> Slide | None:
 		"""The slide to show right away when its shortcut key is pressed; None if there's nothing to show."""
 		slides = self.slides(now)

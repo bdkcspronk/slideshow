@@ -19,6 +19,11 @@ port = 8080
 order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "poll", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
+# These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
+# or until daytime_until if that's set. Their shortcut keys still work at any time. Outside the
+# daytime, info still shows a rain warning when rain is expected within 2 hours.
+daytime_only = ["info", "books"]
+daytime_from = "08:00"
 
 [shortcuts]
 # Number keys in the slideshow that jump straight to a slide type; these slide types are also the

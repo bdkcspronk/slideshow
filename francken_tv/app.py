@@ -13,7 +13,7 @@ from pathlib import Path
 from .announcer import Announcer
 from .background import BackgroundRunner
 from .clock import Clock
-from .config import CACHE_DIR, DATA_DIR, project_path
+from .config import CACHE_DIR, DATA_DIR, parse_time, project_path
 from .maptiles import ATTRIBUTION, TILES, TileCache
 from .devices import DeviceList
 from .presence_store import PresenceStore
@@ -159,10 +159,14 @@ def build_app(config: dict, clock: Clock) -> App:
 			"~/.config/slideshow/spotify.json")), seconds),
 	]
 	providers = {provider.name: provider for provider in all_providers}
-	order = config.get("rotation", {}).get("order", list(providers))
+	rotation = config.get("rotation", {})
+	order = rotation.get("order", list(providers))
 	unknown = [name for name in order if name not in providers]
 	if unknown:
 		raise SystemExit(f"Unknown slide types in rotation.order: {unknown}. Known: {list(providers)}")
+	unknown = [name for name in rotation.get("daytime_only", []) if name not in providers]
+	if unknown:
+		raise SystemExit(f"Unknown slide types in rotation.daytime_only: {unknown}. Known: {list(providers)}")
 	enabled = [providers[name] for name in order]
 	shortcuts = {str(key): name for key, name in config.get("shortcuts", {}).items()}
 	unknown = [name for name in shortcuts.values() if name not in providers]
@@ -186,7 +190,8 @@ def build_app(config: dict, clock: Clock) -> App:
 		providers=providers,
 		takeovers={takeover.name: takeover for takeover in takeovers},
 		jobs=jobs,
-		scheduler=Scheduler(enabled, takeovers, config.get("rotation", {}).get("fill_with", "images")),
+		scheduler=Scheduler(enabled, takeovers, rotation.get("fill_with", "images"), set(rotation.get("daytime_only", [])),
+			(parse_time(rotation.get("daytime_from", "08:00")), parse_time(rotation.get("daytime_until", bieruur.time)))),
 		# Slide types only reachable by a shortcut still need their downloads.
 		runner=BackgroundRunner(clock, enabled + [providers[name] for name in set(shortcuts.values())
 			if providers[name] not in enabled], jobs),

@@ -4,6 +4,9 @@
 2. Otherwise the next slide of the current round is shown. A round is built by asking
    every provider in `rotation.order` for its slides; the slides of the other providers
    are spread evenly between the "filler" slides (the posters in media/slides/).
+   Slide types in `rotation.daytime_only` (info, books) are left out of rounds outside the daytime
+   (from rotation.daytime_from until bieruur), except for their outside_daytime_slides() (the weather
+   when it's going to rain).
 """
 
 from __future__ import annotations
@@ -12,7 +15,7 @@ import logging
 import threading
 from collections import deque
 from dataclasses import replace
-from datetime import datetime
+from datetime import datetime, time
 
 from .slides import Provider, Slide, Takeover
 
@@ -22,9 +25,12 @@ EMPTY_SLIDE = Slide(template="empty.html", seconds=10)
 
 
 class Scheduler:
-	def __init__(self, providers: list[Provider], takeovers: list[Takeover], fill_with: str = "images") -> None:
+	def __init__(self, providers: list[Provider], takeovers: list[Takeover], fill_with: str = "images",
+			daytime_only: set[str] | None = None, daytime: tuple[time, time] = (time(8, 0), time(16, 0))) -> None:
 		self.providers = providers
 		self.fill_with = fill_with
+		self.daytime_only = daytime_only or set()   # e.g. the info and books slides: not in the evening and night
+		self.daytime = daytime                      # (from, until), e.g. 08:00 until bieruur
 		self.takeovers = takeovers
 		self.round: deque[Slide] = deque()
 		self.speed = 1.0                 # 2 = every slide is shown half as long (the menu's Settings)
@@ -59,11 +65,15 @@ class Scheduler:
 	def build_round(self, now: datetime) -> list[Slide]:
 		filler: list[Slide] = []
 		special: list[Slide] = []
+		daytime = self.daytime[0] <= now.time() < self.daytime[1]
 		for provider in self.providers:
 			if provider.name in self.hidden:
 				continue
 			try:
-				slides = provider.slides(now)
+				if provider.name in self.daytime_only and not daytime:
+					slides = provider.outside_daytime_slides(now)
+				else:
+					slides = provider.slides(now)
 			except Exception:
 				log.exception("Provider %s failed; skipping it this round", provider.name)
 				continue

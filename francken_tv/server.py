@@ -10,6 +10,7 @@
 	/api/action     POST: a button on an interactive slide (the puzzle) was clicked
 	/api/takeover   whether a takeover should interrupt a paused interactive slide
 	/preview/<name> one slide of a provider or takeover, for checking templates
+	/preview/rain   the rain warning of the evening (an example shower when it stays dry)
 	/status         what every provider is doing, and the last error
 	/spotify/login  connect the slideshow to a Spotify account (once; see providers/spotify.py)
 	/files/...      images from media/ and data/cache/ (large images are scaled down)
@@ -326,7 +327,9 @@ class Handler(BaseHTTPRequestHandler):
 		app = self.server.app
 		now = app.clock.now()
 		slide = None
-		if name in app.providers:
+		if name == "rain" and "info" in app.providers:
+			slide = app.providers["info"].rain_preview(now)
+		elif name in app.providers:
 			slide = app.providers[name].shortcut_slide(now)   # e.g. Spotify also when nothing plays
 		elif name in app.takeovers:
 			slide = app.takeovers[name].slide(now)

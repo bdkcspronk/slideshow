@@ -1,4 +1,5 @@
 """The info slide: in turn news, the weather, the next buses and today's Applied Physics timetable.
+After bieruur (rotation.daytime_only) only a rain warning, when rain is expected within two hours.
 
 One info slide per round, the next part each time; a part with nothing to show is skipped. All
 sources are free and need no key; each part is fetched on its own schedule, and one that fails
@@ -24,7 +25,7 @@ import logging
 import math
 import re
 import xml.etree.ElementTree as ElementTree
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -32,6 +33,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
+from ..config import parse_time
 from ..slides import PartsFailed, Provider, Slide, media_url
 
 log = logging.getLogger(__name__)
@@ -231,6 +233,58 @@ def parse_rain(text: str) -> list[tuple[str, float]]:
 
 def rain_words(mm: float) -> str:
 	return "light rain" if mm < 1 else "rain" if mm < 4 else "heavy rain"
+
+
+RAIN_LEVELS = [("Light", 0.1), ("Medium", 1.0), ("Heavy", 4.0)]   # where each kind of rain starts, mm/h
+
+
+def rain_top(rain: list[tuple[str, float]]) -> float:
+	return max([mm for _, mm in rain] + [2.0])   # the chart's top: at least 2 mm/h
+
+
+def rain_bars(rain: list[tuple[str, float]]) -> list[dict]:
+	"""The rain per 5 minutes, with its height in the chart (0-100) relative to the chart's top (square
+	root, so light rain still shows)."""
+	top = rain_top(rain)
+	return [{"time": time, "mm": mm, "level": rain_level(mm), "height": round(100 * math.sqrt(mm / top), 1)} for time, mm in rain]
+
+
+def smooth_path(points: list[tuple[float, float]]) -> str:
+	"""An SVG path through the points as a smooth curve (Catmull-Rom), never dipping below the
+	bottom (y = 100) or above the top (y = 0)."""
+	d = f"M{points[0][0]:.2f},{points[0][1]:.2f}"
+	for i in range(len(points) - 1):
+		p0, p1, p2, p3 = points[max(i - 1, 0)], points[i], points[i + 1], points[min(i + 2, len(points) - 1)]
+		c1 = (p1[0] + (p2[0] - p0[0]) / 6, min(100, max(0, p1[1] + (p2[1] - p0[1]) / 6)))
+		c2 = (p2[0] - (p3[0] - p1[0]) / 6, min(100, max(0, p2[1] - (p3[1] - p1[1]) / 6)))
+		d += f" C{c1[0]:.2f},{c1[1]:.2f} {c2[0]:.2f},{c2[1]:.2f} {p2[0]:.2f},{p2[1]:.2f}"
+	return d
+
+
+def rain_chart(rain: list[tuple[str, float]]) -> dict | None:
+	"""The line chart of the rain (rain_chart.html), in a 100 x 100 SVG box: the line, the area under
+	it and the times along the bottom, every half hour."""
+	if len(rain) < 2:
+		return None
+	bars = rain_bars(rain)
+	points = [(100 * i / (len(bars) - 1), 100 - bar["height"]) for i, bar in enumerate(bars)]
+	line = smooth_path(points)
+	return {"line": line, "area": f"{line} L100,100 L0,100 Z",
+		"times": [{"x": round(points[i][0], 2), "time": bars[i]["time"]} for i in range(0, len(bars), 6)]}
+
+
+def rain_lines(rain: list[tuple[str, float]]) -> list[dict]:
+	"""Lines across the rain chart where light, medium and heavy rain start, as high as a bar of that
+	much rain; only those within the chart, and none when it stays dry."""
+	if not any(mm >= 0.1 for _, mm in rain):
+		return []
+	top = rain_top(rain)
+	return [{"label": label, "height": round(100 * math.sqrt(mm / top), 1)} for label, mm in RAIN_LEVELS if mm <= top]
+
+
+def rain_level(mm: float) -> str:
+	"""For the chart's colours: "dry", "light" (< 1 mm/h), "medium" (< 4) or "heavy"."""
+	return "dry" if mm < 0.1 else "light" if mm < 1 else "medium" if mm < 4 else "heavy"
 
 
 def rain_summary(rain: list[tuple[str, float]]) -> str:
@@ -496,9 +550,56 @@ class InfoProvider(Provider):
 			data = self.data(part, now)
 			if data is not None:
 				self.turn = (self.turn + step + 1) % len(self.parts)
-				# Worked out again when shown: the round is planned ahead, and buses leave meanwhile.
-				return [Slide(f"info_{part}.html", self.part_seconds.get(part, self.seconds), data, update=lambda when, part=part: self.data(part, when) or data)]
+				return [self.part_slide(part, data)]
 		return []
+
+	def outside_daytime_slides(self, now: datetime) -> list[Slide]:
+		"""After bieruur and at night (rotation.daytime_only): no news, buses or timetable, but a rain
+		warning (info_rain.html) when rain is expected within two hours."""
+		data = self.rain_data(now) if "weather" in self.parts else None
+		return [self.part_slide("rain", data)] if data else []
+
+	def rain_preview(self, now: datetime) -> Slide | None:
+		"""For /preview/rain: the rain warning, with the real forecast, or when it stays dry with an
+		example shower starting in half an hour (marked as an example)."""
+		if self.weather is None:
+			return None
+		if self.rain_coming(now):
+			return self.part_slide("rain", self.rain_data(now))
+		start = now.replace(second=0, microsecond=0) - timedelta(minutes=now.minute % 5)
+		shower = [0] * 6 + [0.2, 0.5, 1.1, 2.3, 3.6, 2.8, 1.9, 1.2, 0.6, 0.3, 0.1] + [0] * 7
+		real = self.weather
+		self.weather = replace(real, rain=[((start + timedelta(minutes=5 * i)).strftime("%H:%M"), mm) for i, mm in enumerate(shower)])
+		try:
+			data = self.rain_data(now) | {"example": True}
+		finally:
+			self.weather = real
+		return Slide("info_rain.html", self.seconds, data)
+
+	def part_slide(self, part: str, data: dict) -> Slide:
+		# Worked out again when shown: the round is planned ahead, and buses leave meanwhile.
+		return Slide(f"info_{part}.html", self.part_seconds.get(part, self.seconds), data, update=lambda when: self.data(part, when) or data)
+
+	def upcoming_rain(self, now: datetime) -> list[tuple[str, float]]:
+		"""Buienradar's forecast from the current five minutes on: it's fetched every 10 minutes, so
+		its first values may be past already. At most the next two hours."""
+		if self.weather is None or not self.weather.rain:
+			return []
+		first = datetime.combine(now.date(), parse_time(self.weather.rain[0][0]))
+		if first > now + timedelta(hours=12):   # fetched just before midnight
+			first -= timedelta(days=1)
+		upcoming = []
+		for hhmm, mm in self.weather.rain:
+			when = datetime.combine(first.date(), parse_time(hhmm))
+			if when < first:   # after midnight
+				when += timedelta(days=1)
+			if now - timedelta(minutes=5) < when <= now + timedelta(hours=2):
+				upcoming.append((hhmm, mm))
+		return upcoming
+
+	def rain_coming(self, now: datetime) -> bool:
+		"""Rain in Buienradar's forecast for the next two hours (or now)."""
+		return any(mm >= 0.1 for _, mm in self.upcoming_rain(now))
 
 	def data(self, part: str, now: datetime) -> dict | None:
 		return getattr(self, f"{part}_data")(now)
@@ -542,9 +643,18 @@ class InfoProvider(Provider):
 		if self.weather is None:
 			return None
 		days = [day for day in self.weather.days if day.day >= now.date()][:6]   # today and the next five
-		top = max([mm for _, mm in self.weather.rain] + [2.0])   # the chart's top: at least 2 mm/h
-		rain = [{"time": time, "mm": mm, "height": 0 if mm <= 0 else max(4, round(100 * math.sqrt(mm / top)))} for time, mm in self.weather.rain]
-		return {"weather": self.weather, "place": self.place, "days": days, "today": now.date(), "rain": rain}
+		rain = self.upcoming_rain(now)
+		return {"weather": self.weather, "place": self.place, "days": days, "today": now.date(), "rain": rain_bars(rain),
+			"chart": rain_chart(rain), "rain_lines": rain_lines(rain), "rain_summary": rain_summary(rain)}
+
+	def rain_data(self, now: datetime) -> dict | None:
+		"""The rain warning (after bieruur): when, how heavy, and the chart; None when it stays dry."""
+		rain = self.upcoming_rain(now)
+		if not any(mm >= 0.1 for _, mm in rain):
+			return None
+		heaviest = max(mm for _, mm in rain)
+		return {"summary": rain_summary(rain), "heaviest": rain_words(heaviest), "place": self.place,
+			"rain": rain_bars(rain), "chart": rain_chart(rain), "rain_lines": rain_lines(rain), "weather": self.weather}
 
 	def buses_data(self, now: datetime) -> dict | None:
 		upcoming = [departure for departure in self.departures if departure.expected >= now - timedelta(seconds=30)]

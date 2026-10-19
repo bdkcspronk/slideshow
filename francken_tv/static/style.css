@@ -267,27 +267,37 @@ body.show-cursor button { cursor: pointer; }
 .weather-details { margin-top: 1vh; font-size: 2.4vh; color: var(--muted); }
 .weather-rain { flex: 1.2; display: flex; flex-direction: column; padding: 3vh 2vw; border-radius: 0.6vw; background: var(--card); border: 0.15vh solid var(--card-border); box-shadow: var(--shadow); }
 .weather-rain h2 { margin: 0 0 2vh; font-size: 3.6vh; }
+/* The rain chart: a line chart with the area under it filled (rain_chart.html), with dashed lines where
+   light, medium and heavy rain start. It grows up from the bottom when shown. */
 .rain-chart {
 	flex: 1;
 	min-height: 18vh;
-	display: grid;
-	grid-template-columns: repeat(var(--bars), minmax(0, 1fr));   /* all equally wide: the time labels may stick out of theirs */
-	grid-template-rows: 1fr auto;
-	column-gap: 0.25vw;
-	align-items: end;
-	border-bottom: 0.3vh solid var(--line);
+	display: flex;
+	flex-direction: column;
+	--rain-fill: rgba(45, 95, 138, 0.35);   /* --blue-light, see-through */
+	--rain-stroke: var(--blue-light);
 }
-.rain-chart i {
-	grid-row: 1;
-	height: var(--height);
-	min-height: 0.4vh;   /* a dry five minutes still shows as a sliver */
-	border-radius: 0.4vh 0.4vh 0 0;
-	background: var(--blue-light);
-	transform-origin: bottom;
-	animation: rain-grow 0.6s ease-out calc(0.5s + var(--k) * 0.03s) both;
-}
+.rain-plot { flex: 1; position: relative; border-bottom: 0.3vh solid var(--line); }
+.rain-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform-origin: bottom; animation: rain-grow 0.9s ease-out 0.5s both; }
 @keyframes rain-grow { from { transform: scaleY(0); } }
-.rain-chart span { grid-row: 2; justify-self: start; margin-top: 1vh; font-size: 2vh; color: var(--muted); white-space: nowrap; }
+.rain-area { fill: var(--rain-fill); }
+.rain-line { fill: none; stroke: var(--rain-stroke); stroke-width: 0.35vh; stroke-linejoin: round; }
+.rain-level { position: absolute; left: 0; right: 0; border-top: 0.2vh dashed var(--line); pointer-events: none; }
+.rain-level span { position: absolute; right: 0; bottom: 0.3vh; font-size: 1.7vh; color: var(--muted); }
+.rain-times { position: relative; height: 3vh; margin-top: 1vh; font-size: 2vh; color: var(--muted); }
+.rain-times span { position: absolute; top: 0; white-space: nowrap; }
+/* The rain warning after bieruur: dark Francken blue, a big heading and the rain chart across the screen. */
+.info-rain { background: var(--blue); color: #ffffff; }
+.rain-kicker { margin: 0 0 1.5vh; font-size: 3vh; font-weight: bold; letter-spacing: 0.3vh; text-transform: uppercase; color: #ffd166; }
+.info-rain h1 { margin: 0; font-size: 8vh; }
+.rain-umbrella { display: inline-block; animation: rain-sway 2.4s ease-in-out infinite; }
+@keyframes rain-sway { 50% { transform: rotate(-12deg); } }
+.rain-chart.big { min-height: 40vh; margin: 7vh 0 3vh; --rain-fill: rgba(91, 192, 235, 0.45); --rain-stroke: #5bc0eb; }   /* on dark blue */
+.rain-chart.big .rain-plot { border-bottom-color: rgba(255, 255, 255, 0.35); }
+.rain-chart.big .rain-level { border-top-color: rgba(255, 255, 255, 0.35); }
+.rain-chart.big .rain-level span { font-size: 2.4vh; color: rgba(255, 255, 255, 0.75); }
+.rain-chart.big .rain-times { font-size: 2.6vh; color: rgba(255, 255, 255, 0.75); }
+.info-rain .info-source { color: rgba(255, 255, 255, 0.6); }
 .weather-days { margin-top: 3.5vh; display: grid; grid-template-columns: repeat(6, 1fr); gap: 1.5vw; }
 .weather-days div {
 	display: flex;

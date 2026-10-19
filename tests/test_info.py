@@ -1,4 +1,5 @@
 import json
+import re
 import tempfile
 import unittest
 from datetime import datetime
@@ -146,6 +147,43 @@ class InfoProviderTest(unittest.TestCase):
 	def test_parts_take_turns(self):
 		templates = [self.provider.slides(SUNDAY_EVENING)[0].template for _ in range(5)]
 		self.assertEqual(templates, ["info_news.html", "info_weather.html", "info_buses.html", "info_timetable.html", "info_news.html"])
+
+	def test_rain_bars_have_an_intensity(self):
+		self.provider.weather.rain = [("19:30", 0.0), ("19:35", 0.4), ("19:40", 2.5), ("19:45", 6.0)]
+		self.assertEqual([bar["level"] for bar in self.provider.weather_data(SUNDAY_EVENING)["rain"]], ["dry", "light", "medium", "heavy"])
+		self.assertEqual([line["label"] for line in self.provider.weather_data(SUNDAY_EVENING)["rain_lines"]], ["Light", "Medium", "Heavy"])
+		self.provider.weather.rain = [("19:30", 0.0), ("19:35", 0.4)]   # only light rain: no line for heavy above the chart
+		self.assertEqual([line["label"] for line in self.provider.weather_data(SUNDAY_EVENING)["rain_lines"]], ["Light", "Medium"])
+		self.provider.weather.rain = [("19:30", 0.0)]   # dry: no lines
+		self.assertEqual(self.provider.weather_data(SUNDAY_EVENING)["rain_lines"], [])
+
+	def test_the_rain_chart_is_a_filled_line(self):
+		self.provider.weather.rain = [(f"19:{30 + 5 * i}", mm) for i, mm in enumerate([0.0, 0.5, 2.0, 6.0, 1.0, 0.0])]
+		chart = self.provider.weather_data(SUNDAY_EVENING)["chart"]
+		self.assertTrue(chart["line"].startswith("M0.00,100.00 C"))   # a smooth curve from the bottom left...
+		self.assertTrue(chart["area"].endswith("L100,100 L0,100 Z"))   # ...and the shaded area under it
+		numbers = [float(n) for n in re.findall(r"-?\d+\.\d+", chart["line"])]
+		self.assertTrue(all(0 <= n <= 100 for n in numbers))   # never below the bottom or above the top
+		self.assertEqual([t["time"] for t in chart["times"]], ["19:30"])   # every half hour
+
+	def test_only_the_next_two_hours_from_now(self):
+		self.provider.weather.rain = [(f"{19 + (i * 5 + 10) // 60}:{(i * 5 + 10) % 60:02d}", 0.0) for i in range(24)]   # 19:10 to 21:05
+		times = [bar["time"] for bar in self.provider.weather_data(SUNDAY_EVENING)["rain"]]   # shown at 19:30
+		self.assertEqual((times[0], times[-1]), ("19:30", "21:05"))   # fetched a while ago: what's past is left out
+		self.provider.weather.rain = [("23:50", 0.0), ("23:55", 2.0), ("0:00", 2.0), ("0:05", 0.0)]   # across midnight
+		late = datetime(2026, 10, 18, 23, 58)
+		self.assertEqual([t for t, _ in self.provider.upcoming_rain(late)], ["23:55", "0:00", "0:05"])
+		self.assertTrue(self.provider.rain_coming(late))
+		self.assertFalse(self.provider.rain_coming(datetime(2026, 10, 19, 0, 7)))   # the rain is over
+
+	def test_a_rain_warning_after_bieruur(self):
+		self.provider.weather.rain = [("19:30", 0.0), ("19:35", 0.0)]   # dry
+		self.assertEqual(self.provider.outside_daytime_slides(SUNDAY_EVENING), [])
+		self.provider.weather.rain = [("19:30", 0.0), ("20:45", 1.2)]   # rain in an hour and a quarter
+		[slide] = self.provider.outside_daytime_slides(SUNDAY_EVENING)
+		self.assertEqual((slide.template, slide.data["summary"], slide.data["heaviest"]), ("info_rain.html", "Rain from 20:45", "rain"))
+		templates = [self.provider.slides(SUNDAY_EVENING)[0].template for _ in range(4)]   # the daytime turns: unchanged
+		self.assertEqual(templates, ["info_news.html", "info_weather.html", "info_buses.html", "info_timetable.html"])
 
 	def test_buses_in_their_line_colours(self):
 		self.provider.departures.append(Departure("171", "Veendam", datetime(2026, 10, 18, 19, 40), datetime(2026, 10, 18, 19, 40)))
