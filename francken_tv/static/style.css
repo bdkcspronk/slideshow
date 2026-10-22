@@ -1995,6 +1995,14 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	outline-offset: 0.4vh;
 }
 .menu-button:focus, .menu-button:hover { outline-color: var(--menu-text); }
+/* The sound on the overview: Mute, then - [bar] + and the volume; dimmed while muted. */
+.menu-sound { display: flex; align-items: center; gap: 1.5vw; margin-right: auto; }
+.menu-sound .menu-button { min-width: 14vw; justify-content: center; }   /* Mute and Unmute equally wide: nothing shifts */
+.menu-sound .menu-button[aria-pressed="true"] { background: var(--menu-accent); }
+.menu-sound .menu-stepper { gap: 0.8vw; font-size: 2.6vh; }
+.menu-volume { position: relative; width: 22vw; height: 2.2vh; border-radius: 99vh; background: var(--menu-raised); overflow: hidden; cursor: pointer; }
+.menu-volume i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--menu-text); transition: width 0.2s; }
+.menu-sound.muted .menu-volume i, .menu-sound.muted output { opacity: 0.35; }
 
 /* Settings and Power: a panel with a header. */
 .menu-page-settings, .menu-page-power {

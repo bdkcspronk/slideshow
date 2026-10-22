@@ -407,7 +407,8 @@ document.addEventListener("keydown", async (event) => {
 });
 
 // ---- The menu --------------------------------------------------------------------------------
-// Esc opens it: previews of the slide types in [shortcuts] (config.toml), Settings and Power.
+// Esc opens it: previews of the slide types in [shortcuts] (config.toml), the sound (mute and volume),
+// Settings and Power.
 // What it shows comes from the server (francken_tv/menu.py), and choices go back there.
 // While it's open the slideshow waits; Esc again (or a minute without input) continues it.
 
@@ -424,7 +425,24 @@ const ICONS = {
 	settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>',
 	power: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>',
 	restart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+	sound: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>',
+	muted: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></svg>',
 };
+
+// Mute and the volume, on the overview: a bar that can be tapped anywhere, with - and + for the keys.
+function soundControls(settings) {
+	return `
+		<div class="menu-sound${settings.muted ? " muted" : ""}">
+			<button class="menu-button" data-focus="mute" data-menu="toggle" data-value="muted" aria-pressed="${settings.muted}">
+				${settings.muted ? ICONS.muted + "Unmute" : ICONS.sound + "Mute"}</button>
+			<span class="menu-stepper">
+				<button data-focus="volume-down" data-menu="volume" data-value="-10" aria-label="Quieter"${settings.volume <= 0 ? " disabled" : ""}>&minus;</button>
+				<span class="menu-volume" data-menu="volume_at" title="Volume"><i style="width: ${settings.volume}%"></i></span>
+				<button data-focus="volume-up" data-menu="volume" data-value="10" aria-label="Louder"${settings.volume >= 100 ? " disabled" : ""}>+</button>
+				<output>${settings.volume}%</output>
+			</span>
+		</div>`;
+}
 
 const escapeHtml = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
@@ -490,6 +508,7 @@ const menuPages = {
 			</button>`).join("")}
 		</div>
 		<div class="menu-actions">
+			${soundControls(data.settings)}
 			<button class="menu-button" data-focus="settings" data-menu="page" data-value="settings">${ICONS.settings}Settings</button>
 			${data.power.length ? `<button class="menu-button" data-focus="power" data-menu="page" data-value="power">${ICONS.power}Power</button>` : ""}
 		</div>
@@ -619,11 +638,21 @@ async function sendMenu(button, command, value) {
 		});
 		menuData = answer.menu;
 		if (menuIsOpen() && menuPage !== "overview") showMenuPage(menuPage, button.dataset.focus);
+		else if (menuIsOpen()) {   // the overview: only the sound controls, so the previews keep playing
+			menu.querySelector(".menu-sound")?.replaceWith(...htmlElements(soundControls(menuData.settings)));
+			menu.querySelector(`[data-focus="${button.dataset.focus}"]:not([disabled])`)?.focus();
+		}
 	} catch (error) {
 		console.error(error);
 	} finally {
 		button.classList.remove("busy");
 	}
+}
+
+function htmlElements(html) {
+	const template = document.createElement("template");
+	template.innerHTML = html.trim();
+	return [...template.content.children];
 }
 
 function menuKey(event) {
@@ -673,6 +702,12 @@ function moveMenuFocus(key) {
 menu.addEventListener("click", (event) => {
 	if (event.target === menu) return closeMenu();   // a click next to the menu
 	const button = event.target.closest("[data-menu]");
+	if (button?.dataset.menu === "volume_at") {   // a tap on the volume bar: that volume, in steps of 5
+		const bar = button.getBoundingClientRect();
+		const volume = Math.round(Math.max(0, Math.min(1, (event.clientX - bar.left) / bar.width)) * 20) * 5;
+		menuActivity();
+		return sendMenu(button, "settings", { volume });
+	}
 	if (button && !button.disabled) menuChoose(button);
 });
 menu.addEventListener("mousemove", menuActivity);
