@@ -585,7 +585,7 @@ body.show-cursor button { cursor: pointer; }
 .xkcd-alt { margin: 0; max-width: 70vw; font-size: 2.8vh; font-style: italic; line-height: 1.4; text-align: center; color: var(--blue-light); }
 
 /* The confidential contact persons: a heading, then a white card per person rising in one after the
-   other, the photo slowly zooming in; the website last. */
+   other (and then standing still), each photo in a rounded blue frame; the website last. */
 .confidential-slide {
 	display: flex;
 	flex-direction: column;
@@ -618,8 +618,19 @@ body.show-cursor button { cursor: pointer; }
 	text-align: center;
 	animation: confidential-rise 1s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.7s + var(--i) * 0.35s) both;
 }
-.confidential-photo { width: 100%; aspect-ratio: 4 / 3; border-radius: 0.8vw; overflow: hidden; background: var(--blue-faint); display: flex; align-items: center; justify-content: center; }
-.confidential-photo img { width: 100%; height: 100%; object-fit: cover; animation: confidential-zoom 14s ease-out calc(0.7s + var(--i) * 0.35s) both; }
+.confidential-photo {
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	box-sizing: border-box;
+	border: 0.6vh solid var(--blue);
+	border-radius: 1.6vh;
+	overflow: hidden;   /* the photo's corners follow the frame */
+	background: var(--blue-faint);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.confidential-photo img { width: 100%; height: 100%; object-fit: cover; }
 .confidential-photo span { font-size: 12vh; font-weight: bold; color: var(--blue-light); }   /* no photo: the first letter */
 .confidential-person strong { margin-top: 0.8vh; font-size: 4.4vh; }
 .confidential-email { font-size: 2.4vh; font-weight: bold; color: var(--red-dark); animation: confidential-in 0.8s ease-out calc(1.4s + var(--i) * 0.35s) both; }
@@ -627,7 +638,6 @@ body.show-cursor button { cursor: pointer; }
 .confidential-website b { color: var(--blue); }
 @keyframes confidential-in { from { opacity: 0; transform: translateY(1.5vh); } }
 @keyframes confidential-rise { from { opacity: 0; transform: translateY(12vh) scale(0.95); } }
-@keyframes confidential-zoom { from { transform: scale(1.12); } }
 
 /* Bieruur: the countdown on a background filling up with beer; a party at bieruur itself. White and red on dark
    Francken blue (no white background); the beer stays beer-coloured, with blue text on it. */
