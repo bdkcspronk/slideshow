@@ -14,6 +14,9 @@
 // - data-lyrics: synced lyrics (Spotify): lines with data-time (seconds into the song). The line being
 //   sung gets .current (lines before it .past) and is kept in view, counting on from data-start
 //   while data-playing is set. The server redraws the slide when the song changes, pauses or jumps.
+// - data-zoom: a photo (an <img> in a .zoom-view) that can be zoomed while it's full screen (.selected,
+//   e.g. TimeGuessr): two fingers or the mouse wheel zoom, dragging moves it, data-zoom-by buttons zoom
+//   by that factor (0: back to the whole photo). A tap without dragging still toggles full screen.
 // - data-qr: a QR code of the link in data-qr (static/vendor/qrcode), e.g. the weekly dilemma's form.
 
 const maps = new Set();
@@ -30,10 +33,91 @@ function setupWidgets(root) {
 	root.querySelectorAll("[data-marquee]").forEach(setupMarquee);
 	root.querySelectorAll("[data-marquee-up]").forEach(setupMarqueeUp);
 	root.querySelectorAll("[data-qr]").forEach(setupQr);
+	root.querySelectorAll("[data-zoom]").forEach(setupZoom);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
 		input.addEventListener("input", () => fieldChanged(input));
 		fieldChanged(input);
 	});
+}
+
+function setupZoom(element) {
+	const img = element.querySelector(".zoom-view img");
+	if (!img) return;
+	let scale = 1, x = 0, y = 0;   // the photo's zoom and shift, in px from the middle
+	let dragged = false;
+	const pointers = new Map();   // pointerId -> {x, y}
+	let pinch = null;             // {distance, scale} when two fingers went down
+
+	const apply = () => {
+		const view = img.parentElement.getBoundingClientRect();
+		const maxX = view.width * (scale - 1) / 2, maxY = view.height * (scale - 1) / 2;   // not past the edges
+		x = Math.max(-maxX, Math.min(maxX, x));
+		y = Math.max(-maxY, Math.min(maxY, y));
+		img.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+		element.classList.toggle("zoomed", scale > 1);
+	};
+	// Zoom by `factor` around a point on the screen (the fingers, the mouse); the photo stays under it.
+	const zoom = (factor, at) => {
+		const view = img.parentElement.getBoundingClientRect();
+		const next = factor === 0 ? 1 : Math.max(1, Math.min(6, scale * factor));
+		const cx = (at ? at.x : view.left + view.width / 2) - (view.left + view.width / 2);
+		const cy = (at ? at.y : view.top + view.height / 2) - (view.top + view.height / 2);
+		x = cx - (cx - x) * next / scale;
+		y = cy - (cy - y) * next / scale;
+		scale = next;
+		apply();
+	};
+	const full = () => element.classList.contains("selected");
+
+	element.addEventListener("wheel", (event) => {
+		if (!full()) return;
+		event.preventDefault();
+		zoom(event.deltaY < 0 ? 1.2 : 1 / 1.2, { x: event.clientX, y: event.clientY });
+	}, { passive: false });
+	element.addEventListener("pointerdown", (event) => {
+		if (event.target.closest("button")) return;
+		pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+		dragged = false;
+		if (pointers.size === 2) {
+			const [a, b] = [...pointers.values()];
+			pinch = { distance: Math.hypot(a.x - b.x, a.y - b.y), scale };
+		}
+	});
+	element.addEventListener("pointermove", (event) => {
+		const last = pointers.get(event.pointerId);
+		if (!last || !full()) return;
+		const now = { x: event.clientX, y: event.clientY };
+		pointers.set(event.pointerId, now);
+		if (pointers.size === 2 && pinch) {
+			const [a, b] = [...pointers.values()];
+			zoom(pinch.scale * Math.hypot(a.x - b.x, a.y - b.y) / pinch.distance / scale, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+			dragged = true;
+		} else if (pointers.size === 1 && scale > 1) {
+			x += now.x - last.x;
+			y += now.y - last.y;
+			if (Math.abs(now.x - last.x) + Math.abs(now.y - last.y) > 1) dragged = true;
+			apply();
+		}
+	});
+	const up = (event) => {
+		pointers.delete(event.pointerId);
+		if (pointers.size < 2) pinch = null;
+	};
+	element.addEventListener("pointerup", up);
+	element.addEventListener("pointercancel", up);
+	// A drag, a pinch or a zoom button is not a tap: it mustn't close full screen (player.js toggles on click).
+	element.addEventListener("click", (event) => {
+		const button = event.target.closest("[data-zoom-by]");
+		if (button) {
+			event.stopPropagation();
+			zoom(Number(button.dataset.zoomBy));
+		} else if (dragged) {
+			event.stopPropagation();
+		}
+		dragged = false;
+	}, true);
+	// Back to the whole photo when it leaves full screen.
+	new MutationObserver(() => { if (!full() && scale !== 1) zoom(0); }).observe(element, { attributes: true, attributeFilter: ["class"] });
 }
 
 function setupQr(element) {

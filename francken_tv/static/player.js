@@ -350,7 +350,16 @@ document.addEventListener("mousemove", () => {
 
 document.addEventListener("keydown", async (event) => {
 	if (menuIsOpen()) return menuKey(event);
-	if (event.key === "Escape") return openMenu();
+	if (event.key === "Escape") {
+		// A photo shown full screen (e.g. TimeGuessr's, data-zoom): Esc makes it small again first.
+		const full = interactiveSlide()?.querySelector("[data-zoom].selected");
+		if (full) {
+			full.classList.remove("selected");
+			keepPaused(idleSeconds(interactiveSlide()));
+			return;
+		}
+		return openMenu();
+	}
 	// On a slide you can type on, keys go to the game instead of the shortcuts below.
 	const slide = interactiveSlide();
 	if (slide && slide.querySelector("[data-input-text]") && !event.ctrlKey && !event.altKey && !event.metaKey) {

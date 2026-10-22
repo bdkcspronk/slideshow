@@ -2,7 +2,8 @@
 	timeguessr.com daily challenge: five photos; tap the map to guess where, set the year to guess
 	when. Guess sends both (data-send-fields, see static/widgets.js) to TimeGuessrProvider.action() in
 	providers/timeguessr.py, which returns the answer: both pins on the map, and the points.
-	Tapping the photo shows it full screen (data-toggle), tapping again shrinks it.
+	Tapping the photo shows it full screen (data-toggle), tapping again shrinks it; full screen it can be
+	zoomed (data-zoom, widgets.js). Its caption (credit) only shows with the answer: it may name the place.
 #}
 {% macro points(n) %}{{ "{:,}".format(n) }}{% endmacro %}
 <div class="slide timeguessr-slide" data-interactive data-idle-seconds="240" data-provider="timeguessr"
@@ -35,9 +36,14 @@
 
 	{% else %}
 	<div class="timeguessr-round">
-		<figure class="timeguessr-photo" data-toggle>
-			<img src="{{ photo.image }}" alt="">
-			{% if photo.credit %}<figcaption>{{ photo.credit | truncate(100) }}</figcaption>{% endif %}
+		<figure class="timeguessr-photo" data-toggle data-zoom>
+			<div class="zoom-view"><img src="{{ photo.image }}" alt="" draggable="false"></div>
+			<div class="zoom-buttons">
+				<button data-zoom-by="1.5" aria-label="Zoom in">+</button>
+				<button data-zoom-by="0.667" aria-label="Zoom out">&minus;</button>
+				<button data-zoom-by="0" aria-label="Whole photo">&#x2922;</button>
+			</div>
+			{% if photo.credit and game.showing_answer %}<figcaption>{{ photo.credit | truncate(100) }}</figcaption>{% endif %}
 		</figure>
 		<div class="timeguessr-side">
 			{% if game.showing_answer %}

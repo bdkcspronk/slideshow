@@ -1487,10 +1487,28 @@ body.show-cursor button { cursor: pointer; }
 	overflow: hidden;
 	background: #1b1b1b;
 }
-.timeguessr-photo img { flex: 1; min-height: 0; width: 100%; object-fit: contain; }
+.timeguessr-photo .zoom-view { flex: 1; min-height: 0; overflow: hidden; display: flex; }
+.timeguessr-photo img { flex: 1; min-width: 0; width: 100%; object-fit: contain; transform-origin: center; user-select: none; }
 .timeguessr-photo figcaption { padding: 0.8vh 1vw; font-size: 1.7vh; color: #b9b9b9; }
 /* Tapped: the photo fills the screen; tapping again shrinks it. */
-.timeguessr-photo.selected { position: absolute; inset: 0; z-index: 5; border-radius: 0; }
+.timeguessr-photo.selected { position: absolute; inset: 0; z-index: 5; border-radius: 0; touch-action: none; }   /* fingers zoom the photo, not the page */
+.timeguessr-photo.zoomed .zoom-view { cursor: grab; }
+/* Zoom buttons: only while full screen, in the bottom-right corner. */
+.zoom-buttons { display: none; position: absolute; right: 2vw; bottom: 3vh; gap: 1vw; z-index: 1; }
+.timeguessr-photo.selected .zoom-buttons { display: flex; }
+.zoom-buttons button {
+	width: 8vh;
+	height: 8vh;
+	border: none;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.6);
+	color: #ffffff;
+	font-family: inherit;
+	font-size: 4.4vh;
+	font-weight: bold;
+	line-height: 1;
+}
+.zoom-buttons button:active { background: rgba(0, 0, 0, 0.85); }
 
 .timeguessr-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2vh; }
 .timeguessr-map {
@@ -1500,6 +1518,7 @@ body.show-cursor button { cursor: pointer; }
 	border: 0.2vh solid var(--card-border);
 	background: #aad3df;   /* the sea, while the tiles load */
 	font-family: inherit;
+	isolation: isolate;   /* Leaflet's layers (z-index 400 and up) stay inside the map, under a full-screen photo */
 }
 .timeguessr-map-hint {
 	position: absolute;
