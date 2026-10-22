@@ -1,7 +1,7 @@
 {#
-	The bieruur countdown. The values come from countdown_data() in providers/bieruur.py.
-	It is redrawn every second; elements with data-live="..." are updated in place, so the
-	animations (bubbles, foam) keep running. The background fills up with beer towards bieruur.
+	The bieruur countdown: the time left, on a background that fills up with beer towards bieruur.
+	The values come from countdown_data() in providers/bieruur.py. It is redrawn every second;
+	elements with data-live="..." are updated in place, so the animations (bubbles, foam) keep running.
 #}
 {% macro beer(level, live=false) %}
 {# Beer from the bottom up to `level` % of the screen, with a foam head and rising bubbles. #}
@@ -26,34 +26,6 @@
 {% else %}
 <div class="slide bieruur-slide bieruur-{{ state }}" data-state="{{ state }}">
 	{{ beer(beer_level, live=true) }}
-	<svg class="bieruur-clock" viewBox="0 0 200 200" aria-hidden="true">
-		<circle class="clock-face" cx="100" cy="100" r="96"/>
-		<path class="clock-wedge" d="{{ wedge }}" data-live="wedge"/>
-		{% for tick in range(60) %}
-		<line class="{{ 'clock-tick-hour' if tick % 5 == 0 else 'clock-tick' }}"
-			x1="100" y1="{{ 7 if tick % 5 == 0 else 8 }}" x2="100" y2="{{ 17 if tick % 5 == 0 else 12 }}"
-			transform="rotate({{ tick * 6 }} 100 100)"/>
-		{% endfor %}
-		{% for number, x, y in numbers %}
-		{% if number == bieruur_number %}
-		<circle class="clock-bieruur-badge" cx="{{ x }}" cy="{{ y }}" r="12"/>
-		<text class="clock-bieruur-number" x="{{ x }}" y="{{ y }}">{{ bieruur_label }}</text>
-		{% else %}
-		<text class="clock-number" x="{{ x }}" y="{{ y }}">{{ number }}</text>
-		{% endif %}
-		{% endfor %}
-		<g data-live="hour-hand" transform="rotate({{ hour_angle }} 100 100)">
-			<line class="clock-hand-hour" x1="100" y1="110" x2="100" y2="52"/>
-		</g>
-		<g data-live="minute-hand" transform="rotate({{ minute_angle }} 100 100)">
-			<line class="clock-hand-minute" x1="100" y1="112" x2="100" y2="24"/>
-		</g>
-		<g data-live="second-hand" transform="rotate({{ second_angle }} 100 100)">
-			<line class="clock-hand-second" x1="100" y1="118" x2="100" y2="18"/>
-		</g>
-		<circle class="clock-centre" cx="100" cy="100" r="4"/>
-	</svg>
-
 	<div class="bieruur-info{{ ' on-beer' if beer_level > 40 }}" data-live="info">   {# dark text once the beer is behind it #}
 		<div class="bieruur-label">{{ "Bijna bieruur!" if state == "final" else "Bieruur in" }}</div>
 		<div class="bieruur-countdown" data-live="countdown">{{ countdown }}</div>

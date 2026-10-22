@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import math
 import random
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -48,37 +47,6 @@ class BieruurSettings:
 		)
 
 
-# Clock face geometry (SVG viewBox 0 0 200 200, centre 100,100).
-CLOCK_CENTRE = 100
-DIAL_RADIUS = 88
-NUMBER_RADIUS = 72
-
-
-def dial_point(degrees: float, radius: float) -> tuple[float, float]:
-	"""Point on the clock face; 0 degrees is 12 o'clock, clockwise."""
-	angle = math.radians(degrees)
-	return round(CLOCK_CENTRE + radius * math.sin(angle), 2), round(CLOCK_CENTRE - radius * math.cos(angle), 2)
-
-
-# Positions of the numbers 1-12 on the clock face.
-CLOCK_NUMBERS = [(number, *dial_point(number * 30, NUMBER_RADIUS)) for number in range(1, 13)]
-
-
-def hour_angle(moment: datetime) -> float:
-	return (moment.hour % 12 + moment.minute / 60 + moment.second / 3600) * 30
-
-
-def wedge_path(start_degrees: float, end_degrees: float) -> str:
-	"""SVG path of the pie slice between two clock positions (clockwise)."""
-	sweep = (end_degrees - start_degrees) % 360
-	if sweep < 0.01:
-		return ""
-	x1, y1 = dial_point(start_degrees, DIAL_RADIUS)
-	x2, y2 = dial_point(start_degrees + sweep, DIAL_RADIUS)
-	large_arc = 1 if sweep > 180 else 0
-	return f"M {CLOCK_CENTRE} {CLOCK_CENTRE} L {x1} {y1} A {DIAL_RADIUS} {DIAL_RADIUS} 0 {large_arc} 1 {x2} {y2} Z"
-
-
 def countdown_data(now: datetime, bieruur: datetime, settings: BieruurSettings | None = None) -> dict:
 	"""Everything the bieruur slide shows at this moment (see templates/slides/bieruur.html)."""
 	settings = settings or BieruurSettings()
@@ -94,14 +62,6 @@ def countdown_data(now: datetime, bieruur: datetime, settings: BieruurSettings |
 	return {
 		"state": "final" if remaining <= settings.takeover_minutes_before * 60 else "countdown",
 		"countdown": f"{hours}:{minutes:02d}:{seconds:02d}" if hours else f"{minutes:02d}:{seconds:02d}",
-		"hour_angle": round(hour_angle(now), 2),
-		"minute_angle": round((now.minute + now.second / 60) * 6, 2),
-		"second_angle": now.second * 6,
-		# Beer-coloured slice from now until bieruur (only when bieruur is less than 12 hours away).
-		"wedge": wedge_path(hour_angle(now), hour_angle(bieruur)) if remaining < 12 * 3600 else "",
-		"bieruur_number": bieruur.hour % 12 or 12,   # this number on the clock gets a beer badge...
-		"bieruur_label": f"{bieruur:%H}",            # ...showing "16"
-		"numbers": CLOCK_NUMBERS,
 		"beer_level": round(fill * 100, 2),   # % of the screen filled with beer
 	}
 

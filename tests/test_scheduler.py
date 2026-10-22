@@ -121,18 +121,6 @@ class BieruurTest(unittest.TestCase):
 		data = countdown_data(at(THURSDAY, "09:30:05"), bieruur)
 		self.assertEqual((data["countdown"], data["state"]), ("6:29:55", "countdown"))
 
-	def test_clock_hands(self):
-		data = countdown_data(at(THURSDAY, "15:30:15"), at(THURSDAY, "16:00:00"))
-		self.assertAlmostEqual(data["hour_angle"], 105.12, places=2)    # halfway between 3 and 4
-		self.assertAlmostEqual(data["minute_angle"], 181.5)
-		self.assertEqual(data["second_angle"], 90)
-		self.assertEqual(data["bieruur_number"], 4)
-
-	def test_wedge_from_now_until_bieruur(self):
-		bieruur = at(THURSDAY, "16:00:00")
-		self.assertTrue(countdown_data(at(THURSDAY, "13:00:00"), bieruur)["wedge"].startswith("M 100 100"))
-		self.assertEqual(countdown_data(at(THURSDAY, "03:00:00"), bieruur)["wedge"], "")   # more than 12 hours away
-
 	def test_beer_fills_up_during_the_day(self):
 		bieruur = at(THURSDAY, "16:00:00")
 		levels = [countdown_data(at(THURSDAY, t), bieruur)["beer_level"] for t in ("07:00:00", "08:00:00", "12:00:00", "15:59:59")]

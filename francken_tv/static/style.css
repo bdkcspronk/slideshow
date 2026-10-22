@@ -569,7 +569,7 @@ body.show-cursor button { cursor: pointer; }
 .xkcd-comic { flex: 1; min-height: 0; width: 100%; margin: 3vh 0 2vh; object-fit: contain; }
 .xkcd-alt { margin: 0; max-width: 70vw; font-size: 2.8vh; font-style: italic; line-height: 1.4; text-align: center; color: var(--blue-light); }
 
-/* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. White and red on dark
+/* Bieruur: the countdown on a background filling up with beer; a party at bieruur itself. White and red on dark
    Francken blue (no white background); the beer stays beer-coloured, with blue text on it. */
 .bieruur-slide {
 	display: flex;
@@ -582,41 +582,17 @@ body.show-cursor button { cursor: pointer; }
 	background: radial-gradient(ellipse at 50% 35%, #21445f, var(--blue) 70%);
 	color: #ffffff;
 }
-.bieruur-clock { height: 72vh; max-width: 38vw; flex: none; }
-.clock-face { fill: #10263a; stroke: #ffffff; stroke-width: 4; }
-.clock-wedge { fill: var(--red); opacity: 0.4; }
-.clock-tick { stroke: rgba(255, 255, 255, 0.4); stroke-width: 1; }
-.clock-tick-hour { stroke: #ffffff; stroke-width: 2.5; }
-.clock-number {
-	fill: #ffffff;
-	font-size: 15px;
-	font-weight: bold;
-	text-anchor: middle;
-	dominant-baseline: central;
-}
-.clock-bieruur-badge { fill: var(--red); stroke: #10263a; stroke-width: 2; }
-.clock-bieruur-number {
-	fill: #ffffff;
-	font-size: 12px;
-	font-weight: bold;
-	text-anchor: middle;
-	dominant-baseline: central;
-}
-.clock-hand-hour { stroke: #ffffff; stroke-width: 6; stroke-linecap: round; }
-.clock-hand-minute { stroke: #ffffff; stroke-width: 4; stroke-linecap: round; }
-.clock-hand-second { stroke: var(--red); stroke-width: 1.5; stroke-linecap: round; }
-.clock-centre { fill: var(--red); }
 
 .bieruur-info { text-align: center; flex: 1; min-width: 0; }
 .bieruur-label {
-	font-size: 6vh;
+	font-size: 8vh;
 	font-weight: bold;
 	letter-spacing: 0.4vh;
 	text-transform: uppercase;
 	color: var(--red);
 }
 .bieruur-countdown {
-	font-size: min(16vh, 8.5vw);
+	font-size: min(30vh, 17vw);
 	font-weight: bold;
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
