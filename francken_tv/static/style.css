@@ -256,7 +256,9 @@ body.show-cursor button { cursor: pointer; }
 	line-height: 1.55;
 }
 .article-text p { margin: 0 0 1.8vh; }
-.article-more { color: var(--red-dark); font-style: italic; }
+/* Below the text: the address of the article. */
+.article-link { color: var(--red-dark); font-style: italic; }
+.article-link span { font-style: normal; color: var(--blue-light); word-break: break-all; }
 
 /* Weather: now on the left, the rain chart on the right, the next days below. */
 .weather-main { display: flex; gap: 4vw; align-items: stretch; }
