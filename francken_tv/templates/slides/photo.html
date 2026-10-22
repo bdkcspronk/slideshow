@@ -1,5 +1,11 @@
-<div class="slide image-slide {{ 'photo-pair' if urls | length > 1 else '' }}">
-	{% for url in urls %}<img src="{{ url }}" alt="">{% endfor %}
+{# An event photo (providers/event_photos.py), or two portrait ones side by side. Behind each, the
+   photo itself zoomed in and blurred fills the screen; with two, each on its own half, fading into
+   each other in the middle. #}
+<div class="slide image-slide photo-slide{{ ' photo-pair' if urls | length > 1 }}">
+	{% for url in urls %}<div class="photo-backdrop" style="background-image: url('{{ url }}')"></div>{% endfor %}
+	<div class="photo-row">
+		{% for url in urls %}<div class="photo-frame"><img src="{{ url }}" alt=""></div>{% endfor %}
+	</div>
 	<div class="photo-caption">
 		<strong>{{ title }}</strong>
 		<span>{{ day.strftime("%-d %B %Y") }}</span>
