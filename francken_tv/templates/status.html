@@ -27,6 +27,12 @@
 		</tr>
 		{% endfor %}
 	</table>
+	{% if app.updater %}
+	<h2>Updates from GitHub</h2>
+	<p>Running: {{ app.updater.version or "-" }}<br>
+		Last check: {{ app.updater.last_check.strftime("%H:%M:%S") if app.updater.last_check else "-" }}
+		&middot; <span{% if "not updating" in app.updater.last_result or "failed" in app.updater.last_result %} class="error"{% endif %}>{{ app.updater.last_result }}</span></p>
+	{% endif %}
 	<h2>Takeovers</h2>
 	<ul>
 		{% for name in app.takeovers %}<li>{{ name }}</li>{% endfor %}

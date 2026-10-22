@@ -46,13 +46,15 @@ class FakeGit:
 class UpdaterTest(unittest.TestCase):
 	def updater(self, git, busy=False):
 		self.restarts = []
-		return Updater({}, lambda: NOW, lambda now: busy, lambda: self.restarts.append(True), run=git)
+		self.current = Updater({}, lambda: NOW, lambda now: busy, lambda: self.restarts.append(True), run=git)
+		return self.current
 
 	def test_new_commits_are_pulled_tested_and_the_slideshow_restarts(self):
 		git = FakeGit()
 		with self.assertLogs("francken_tv.updater", "INFO"):
 			self.assertTrue(self.updater(git).check())
 		self.assertEqual((git.head, self.restarts), ("bbbbbbb2", [True]))
+		self.assertEqual(self.current.last_result, "updated to bbbbbbb, restarting")
 		self.assertIn(("git", "merge", "--ff-only", "--quiet", "@{u}"), git.commands)
 
 	def test_up_to_date_nothing_happens(self):
@@ -77,6 +79,7 @@ class UpdaterTest(unittest.TestCase):
 		with self.assertLogs("francken_tv.updater", "WARNING"):
 			self.assertFalse(self.updater(git).check())
 		self.assertFalse(git.ran("merge"))
+		self.assertEqual(self.current.last_result, "not updating: this copy has changes of its own: config/config.toml")   # on /status
 
 	def test_no_fast_forward_no_update(self):
 		git = FakeGit(merge_fails=True)

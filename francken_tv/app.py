@@ -60,6 +60,7 @@ class App:
 	power_commands: dict[str, list[str]] = field(default_factory=dict)   # "shutdown"/"restart" -> command
 	system_volume: SystemVolume | None = None   # the volume and mute in the settings, also for Spotify
 	tiles: TileCache | None = None              # map tiles for maps in slides (/tiles/..., maptiles.py)
+	updater: object | None = None               # updating from GitHub (updater.py, set in __main__.py), for /status
 	settings_lock: threading.Lock = field(default_factory=threading.Lock)   # the server handles requests in parallel
 	def toggle_quotes(self) -> None:
 		self.change_settings({"quotes_aloud": not self.settings.quotes_aloud})

@@ -61,7 +61,7 @@ def main() -> None:
 		music = app.announcer.music_process
 		return music is not None and music.poll() is None
 
-	updater = Updater(config.get("update", {}), app.clock.now, busy, restart)
+	updater = app.updater = Updater(config.get("update", {}), app.clock.now, busy, restart)
 	updater.start()   # push to GitHub, and the TV runs it within minutes ([update] in config.toml)
 	restore_terminal = keyboard.listen(app, restart)
 	try:

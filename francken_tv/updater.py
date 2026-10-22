@@ -40,21 +40,36 @@ class Updater:
 		self.run = run
 		self.bad: str | None = None   # a commit whose tests failed: not tried again
 		self.stopped = threading.Event()
+		# For /status: the version that runs, and how the last check went.
+		self.version = ""
+		self.last_check: datetime | None = None
+		self.last_result = "not checked yet"
 
 	def start(self) -> None:
 		if not self.enabled:
+			self.last_result = "off ([update] auto = false)"
 			return
 		if not (PROJECT_DIR / ".git").exists():
+			self.last_result = "off: not a git checkout"
 			log.info("Not a git checkout: no automatic updates")
 			return
+		try:
+			self.version = self.git("log", "-1", "--format=%h %s (%cd)", "--date=format:%d-%m %H:%M")
+		except Exception as error:
+			self.version = f"unknown ({error})"
+		log.info("Running %s; checking for updates every %d minutes", self.version, self.check_seconds // 60)
 		threading.Thread(target=self.loop, name="updater", daemon=True).start()
+
+	def note(self, result: str) -> None:
+		self.last_check, self.last_result = self.now(), result
 
 	def loop(self) -> None:
 		while not self.stopped.wait(self.check_seconds):
 			try:
 				if self.check():
 					return   # restarting
-			except Exception:
+			except Exception as error:
+				self.note(f"failed: {error}")
 				log.exception("Checking for updates failed")
 
 	def git(self, *args: str) -> str:
@@ -66,26 +81,36 @@ class Updater:
 	def check(self) -> bool:
 		"""Update if there's something new. Returns True when the slideshow is restarting."""
 		if self.busy(self.now()):
-			return False   # bieruur: next time
+			self.note("waiting: bieruur")
+			return False   # next time
 		self.git("fetch", "--quiet")
 		upstream = self.git("rev-parse", "@{u}")
 		current = self.git("rev-parse", "HEAD")
-		if upstream == current or upstream == self.bad or self.git("rev-list", "--count", "HEAD..@{u}") == "0":
-			return False   # up to date, a commit that failed its tests, or only local commits
-		if self.git("status", "--porcelain", "--untracked-files=no"):
+		if upstream == self.bad:
+			self.note(f"not updating to {upstream[:7]}: its tests failed")
+			return False
+		if upstream == current or self.git("rev-list", "--count", "HEAD..@{u}") == "0":
+			self.note("up to date")
+			return False   # up to date, or only local commits
+		changes = self.git("status", "--porcelain", "--untracked-files=no")
+		if changes:
+			self.note("not updating: this copy has changes of its own: " + ", ".join(line.split(maxsplit=1)[-1] for line in changes.splitlines()))
 			log.warning("Not updating: the working copy has changes of its own (see 'git status')")
 			return False
 		try:
 			self.git("merge", "--ff-only", "--quiet", "@{u}")
 		except RuntimeError as error:
+			self.note(f"not updating: {error}")
 			log.warning("Not updating: %s", error)
 			return False
 		tests = self.run(sys.executable, "-m", "unittest", "discover", "-q", timeout=TESTS_TIMEOUT_SECONDS)
 		if tests.returncode != 0:
 			self.git("reset", "--keep", current)   # back to what's running; nothing else touched
 			self.bad = upstream
+			self.note(f"not updating to {upstream[:7]}: its tests failed (see the log)")
 			log.error("Not updating to %s: its tests fail\n%s", upstream[:7], tests.stderr[-2000:])
 			return False
+		self.note(f"updated to {upstream[:7]}, restarting")
 		log.info("Updated to %s: %s", upstream[:7], self.git("log", "-1", "--format=%s"))
 		self.restart()
 		return True
