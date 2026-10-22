@@ -149,6 +149,10 @@ every week's dilemma and votes (keep it when moving the slideshow to another PC)
 
 ## Running on the TV PC
 
+The slideshow updates itself: every 10 minutes it checks GitHub for new commits, pulls them (only
+when the TV PC has no changes of its own), runs the tests and restarts, never during bieruur. A
+commit whose tests fail is not taken; the log says why. Switch it off with `[update] auto = false`.
+
 ```sh
 sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial python3-venv ffmpeg firefox
 sudo usermod -aG dialout $USER                      # serial port access for the sniffer; log in again after

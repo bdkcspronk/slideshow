@@ -25,6 +25,13 @@ fill_with = "images"
 daytime_only = ["info", "books"]
 daytime_from = "08:00"
 
+[update]
+# Every check_minutes the slideshow looks for new commits on GitHub. If there are, and this copy has
+# no changes of its own, it pulls them, runs the tests and restarts (not during bieruur). If the
+# tests fail it stays on the version it runs. auto = false: only by hand (git pull, then Ctrl+R).
+auto = true
+check_minutes = 10
+
 [shortcuts]
 # Number keys in the slideshow that jump straight to a slide type; these slide types are also the
 # previews in the menu (Esc). While typing in a puzzle or the Spotify search, numbers are typed

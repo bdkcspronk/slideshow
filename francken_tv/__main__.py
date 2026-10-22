@@ -11,7 +11,7 @@ import os
 import signal
 import sys
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from . import keyboard
@@ -19,6 +19,7 @@ from .app import build_app
 from .clock import Clock
 from .config import DEFAULT_CONFIG, load_config
 from .server import Server
+from .updater import Updater
 
 log = logging.getLogger("francken_tv")
 
@@ -51,6 +52,17 @@ def main() -> None:
 		restarting.set()
 		threading.Thread(target=server.shutdown, daemon=True).start()
 
+	def busy(now: datetime) -> bool:
+		"""Bieruur (or vrijmibo) is on or starts within 15 minutes, or its song plays: don't restart now."""
+		for takeover in app.takeovers.values():
+			start = takeover.next_start(now)
+			if takeover.due(now) or (start is not None and start - now < timedelta(minutes=15)):
+				return True
+		music = app.announcer.music_process
+		return music is not None and music.poll() is None
+
+	updater = Updater(config.get("update", {}), app.clock.now, busy, restart)
+	updater.start()   # push to GitHub, and the TV runs it within minutes ([update] in config.toml)
 	restore_terminal = keyboard.listen(app, restart)
 	try:
 		server.serve_forever()
@@ -58,6 +70,7 @@ def main() -> None:
 		pass
 	finally:
 		restore_terminal()
+		updater.stopped.set()
 		app.runner.stop()
 		app.announcer.stop_music()
 		server.server_close()
