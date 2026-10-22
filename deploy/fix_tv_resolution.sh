@@ -8,7 +8,8 @@
 #   deploy/fix_tv_resolution.sh              # asks before changing anything; then reboot
 #   deploy/fix_tv_resolution.sh --dry-run    # only shows what it would do
 #   deploy/fix_tv_resolution.sh --undo       # back to how it was
-# Options: --port HDMI-A-1 (when several screens are connected), --mode 1920x1080 (else the TV's own).
+# Options: --port HDMI-A-1 (when several screens are connected), --mode 1920x1080 (else the TV's own),
+#          --no-edid (only force the resolution, when the TV's EDID can't be read at all).
 set -euo pipefail
 
 GRUB_FILE="${GRUB_FILE:-/etc/default/grub}"
@@ -16,11 +17,12 @@ DRM="${DRM_DIR:-/sys/class/drm}"   # the screens (GRUB_FILE and DRM_DIR can be s
 EDID_FILE=/lib/firmware/edid/francken-tv.bin
 HOOK_FILE=/etc/initramfs-tools/hooks/francken-tv-edid   # puts the EDID copy in the early boot image too
 
-dry_run=false undo=false port="" mode=""
+dry_run=false undo=false no_edid=false port="" mode=""
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--dry-run) dry_run=true ;;
 		--undo) undo=true ;;
+		--no-edid) no_edid=true ;;   # only force the resolution (when the EDID can't be read at all)
 		--port) port="$2"; shift ;;
 		--mode) mode="$2"; shift ;;
 		*) echo "Unknown option $1 (see the top of this file)"; exit 1 ;;
@@ -80,11 +82,41 @@ if ! [[ "$mode" =~ ^[0-9]+x[0-9]+$ ]]; then
 fi
 echo "Resolution: $mode at 60 Hz"
 
-# 3. The TV's EDID, saved now that it works.
-edid="$DRM/$folder/edid"
-size=$(stat -c %s "$edid" 2>/dev/null || echo 0)
+# 3. The TV's EDID, saved now that it works (unless --no-edid).
+if $no_edid; then
+	line="$(without_ours)"
+	$dry_run || { read -r -p "Force $mode on $port at every start? [y/N] " answer; [ "$answer" = y ] || [ "$answer" = Y ] || { echo "Nothing changed."; exit 0; }; }
+	write_grub "${line%\"} video=$port:$mode@60\""
+	finish
+	exit 0
+fi
+# Read it (not stat: files in /sys say 0 bytes even when they have data). Some drivers (NVIDIA's)
+# leave it empty: then from xrandr --verbose (X11), which shows it in hex.
+edid="$(mktemp)"
+trap 'rm -f "$edid"' EXIT
+cat "$DRM/$folder/edid" > "$edid" 2>/dev/null || true
+if [ "$(wc -c < "$edid")" -lt 128 ] && command -v xrandr >/dev/null && [ -n "${DISPLAY:-}" ]; then
+	echo "The driver doesn't give the EDID; reading it from xrandr instead"
+	xrandr --verbose | python3 -c '
+import sys
+hex_lines, reading, connected = [], False, False
+for line in sys.stdin:
+	if not line.startswith((" ", "\t")):          # an output: "HDMI-1 connected ..."
+		if hex_lines: break                         # the connected one had an EDID: done
+		connected = " connected" in line
+		continue
+	if connected and line.strip() == "EDID:":
+		reading = True
+	elif reading and all(c in "0123456789abcdef" for c in line.strip()) and line.strip():
+		hex_lines.append(line.strip())
+	else:
+		reading = False
+sys.stdout.buffer.write(bytes.fromhex("".join(hex_lines)))' > "$edid" || true
+fi
+size=$(wc -c < "$edid")
 if [ "$size" -lt 128 ]; then
 	echo "The TV's EDID can't be read right now ($size bytes). Unplug and plug the cable, check the picture is right, and run this again."
+	echo "Still nothing? Then use only the resolution: deploy/fix_tv_resolution.sh --no-edid"
 	exit 1
 fi
 echo "Saving the TV's EDID ($size bytes) as $EDID_FILE"
