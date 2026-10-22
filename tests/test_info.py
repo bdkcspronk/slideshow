@@ -81,7 +81,11 @@ class WeatherTest(unittest.TestCase):
 		dry, wet = 0.0, 1.5
 		self.assertEqual(rain_summary([("14:00", dry), ("14:05", dry)]), "Dry for the next 2 hours")
 		self.assertEqual(rain_summary([("14:00", dry), ("14:05", wet), ("14:10", 0.5)]), "Rain from 14:05")
-		self.assertEqual(rain_summary([("14:00", 0.3), ("14:05", dry)]), "Light rain now, dry from 14:05")
+		self.assertEqual(rain_summary([("14:00", 0.3)] + [(f"14:{m:02d}", dry) for m in range(5, 40, 5)]), "Light rain now, dry from 14:05")
+		# A dry ten minutes between two showers isn't "dry from": that's when it stays dry for half an hour.
+		showers = [0.5, 0.5, dry, dry, 1.0, 1.0, dry, dry, dry, dry, dry, dry, dry]
+		self.assertEqual(rain_summary([(f"14:{5 * i:02d}", mm) for i, mm in enumerate(showers)]), "Rain now, dry from 14:30")
+		self.assertEqual(rain_summary([(f"14:{5 * i:02d}", mm) for i, mm in enumerate([0.5, dry, 0.5, dry])]), "Light rain for the next 2 hours")   # never dry for long
 		self.assertEqual(rain_summary([("14:00", 5.0), ("14:05", wet)]), "Heavy rain for the next 2 hours")
 		self.assertEqual(rain_summary([]), "Dry for the next 2 hours")
 

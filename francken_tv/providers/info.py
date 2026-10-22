@@ -287,6 +287,21 @@ def rain_level(mm: float) -> str:
 	return "dry" if mm < 0.1 else "light" if mm < 1 else "medium" if mm < 4 else "heavy"
 
 
+DRY_STRETCH = 6        # "dry from" only when it then stays dry this many five minutes (half an hour)...
+DRY_STRETCH_AT_END = 3   # ...or, at the end of the forecast, at least this many (a quarter)
+
+
+def dry_from(rain: list[tuple[str, float]]) -> str | None:
+	"""When it stops raining for a while: the start of the first dry half hour, not the first dry
+	five minutes between two showers. None if there's no such stretch in the forecast."""
+	wet = [mm >= 0.1 for _, mm in rain]
+	for i in range(len(wet)):
+		stretch = wet[i:i + DRY_STRETCH]
+		if not any(stretch) and (len(stretch) == DRY_STRETCH or len(stretch) >= DRY_STRETCH_AT_END):
+			return rain[i][0]
+	return None
+
+
 def rain_summary(rain: list[tuple[str, float]]) -> str:
 	"""'Dry for the next 2 hours', 'Light rain from 14:35', 'Rain now, dry from 15:10'"""
 	wet = [mm >= 0.1 for _, mm in rain]
@@ -294,7 +309,7 @@ def rain_summary(rain: list[tuple[str, float]]) -> str:
 		return "Dry for the next 2 hours"
 	heaviest = max(mm for _, mm in rain)
 	if wet[0]:
-		dry = next((time for (time, _), is_wet in zip(rain, wet) if not is_wet), None)
+		dry = dry_from(rain)
 		return f"{rain_words(heaviest).capitalize()} now, dry from {dry}" if dry else f"{rain_words(heaviest).capitalize()} for the next 2 hours"
 	start = next(time for (time, _), is_wet in zip(rain, wet) if is_wet)
 	return f"{rain_words(heaviest).capitalize()} from {start}"
