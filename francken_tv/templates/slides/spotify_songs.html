@@ -3,12 +3,16 @@
 	providers/spotify.py).
 	Tapping a song plays the playlist from that song; "Play all" plays it from the start.
 	Spotify only lets us list the songs of the account's own playlists; others can only be played.
+	"+ Add to library" follows a playlist on the account (its maker then shows up under People in the
+	search); "Remove" unfollows it. The account's own playlists can't be removed here.
 #}
 <div class="slide spotify-slide spotify-pick-slide" data-state="songs" data-interactive data-provider="spotify">
 	<div class="spotify-pick-header">
 		<button class="spotify-button" data-action="{{ back.action }}" data-value="{{ back.value }}">&larr; {{ back.label }}</button>
 		{% if playlist.cover %}<img class="spotify-pick-cover" src="{{ playlist.cover }}" alt="">{% endif %}
 		<h1>{{ playlist.name }}</h1>
+		{% if is_playlist and not saved %}<button class="spotify-button" data-action="save" data-value="{{ playlist.uri }}">+ Add to library</button>
+		{% elif saved and not own %}<button class="spotify-button" data-action="unsave" data-value="{{ playlist.uri }}">&#10003; In library &middot; Remove</button>{% endif %}
 		{% if readable %}
 		<button class="spotify-button" data-action="shuffle" data-value="{{ playlist.uri }}">Shuffle</button>
 		<button class="spotify-button primary" data-action="play" data-value="{{ playlist.uri }}">&#9654; Play all</button>

@@ -122,7 +122,8 @@ it. The buttons need Spotify Premium, and music already playing on some device. 
    file (no password is stored). It keeps working after restarts. Connected before changing
    playlists or showing the last played song was possible? Log in once more, so Spotify allows it.
    Spotify doesn't let the app search people or see their profiles: **People** finds the makers of
-   the account's playlists by name.
+   the account's playlists by name. A playlist's page has **+ Add to library** (its maker then
+   shows up under People) and **Remove** (not for the account's own playlists).
 4. So music plays from the PC itself (not from a Spotify tab somewhere): `deploy/install_spotifyd.sh`
    installs [spotifyd](https://github.com/Spotifyd/spotifyd) as `~/.local/bin/spotifyd` and logs it
    in once (open the link it prints on that PC; `--login` logs in again). The TV PC runs it with

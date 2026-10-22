@@ -99,6 +99,7 @@ class SpotifyTest(unittest.TestCase):
 		self.assertEqual(playlists, [{"name": "Borrel", "uri": "spotify:playlist:1", "cover": None, "owner": "Francken", "owner_id": "francken"}])
 
 	def connect(self):
+		self.provider.account_id = "francken"
 		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
 		token = FakeResponse(200, {"access_token": "a", "expires_in": 3600})
 		queue = FakeResponse(200, {"queue": [EPISODE["item"]]})
@@ -268,7 +269,7 @@ class SpotifyTest(unittest.TestCase):
 			slide, _ = self.provider.action("search_kind", ["playlists"], NOW)   # the last search, just playlists
 		self.assertEqual(request.call_args.kwargs["params"], {"q": "borrel", "type": "playlist", "limit": 10})
 		self.assertEqual((slide.data["kind"], slide.data["cards"]), ("playlists", [{"name": "Borrel Hits", "subtitle": "By Francken",
-			"uri": "spotify:playlist:borrel", "cover": None, "kind": "Playlist"}]))
+			"uri": "spotify:playlist:borrel", "cover": None, "kind": "Playlist", "owner": "Francken", "owner_id": ""}]))
 		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, found)) as request:
 			slide, _ = self.provider.action("search", ["party"], NOW)   # a new search keeps the chip
 		self.assertEqual(request.call_args.kwargs["params"]["type"], "playlist")
@@ -401,6 +402,32 @@ class SpotifyTest(unittest.TestCase):
 		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, {"items": [], "total": 0})):
 			slide, _ = self.provider.action("songs", ["spotify:playlist:1"], NOW)
 		self.assertEqual(slide.data["back"], {"action": "person", "value": "spotify:user:jan123", "label": "Jan de Vries"})
+		self.assertEqual((slide.data["saved"], slide.data["own"]), (True, False))   # someone else's: can be removed
+
+	def test_add_a_playlist_to_the_library_and_its_maker_is_found(self):
+		self.connect()
+		self.provider.library_cache = (time.monotonic(), [{"name": "Mine", "uri": "spotify:playlist:2", "cover": None, "owner": "Francken", "owner_id": "francken"}])
+		playlist = {"name": "Kees' Mix", "uri": "spotify:playlist:kees", "owner": {"id": "kees", "display_name": "Kees"}, "images": []}
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, {"playlists": {"items": [playlist]}})):
+			self.provider.action("search_kind", ["playlists"], NOW)
+			slide, _ = self.provider.action("search", ["kees"], NOW)
+		songs = FakeResponse(200, {"items": [], "total": 0})
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=songs):
+			slide, _ = self.provider.action("songs", ["spotify:playlist:kees"], NOW)
+		self.assertFalse(slide.data["saved"])
+		with mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(200), songs]) as request:
+			slide, message = self.provider.action("save", ["spotify:playlist:kees"], NOW)
+		save = request.call_args_list[0]
+		self.assertEqual((save.args, save.kwargs["params"]), (("PUT", "https://api.spotify.com/v1/me/library"), {"uris": "spotify:playlist:kees"}))
+		self.assertEqual((message, slide.data["saved"], slide.data["own"]), ("Added Kees' Mix to the library", True, False))
+		self.assertEqual([card["name"] for card in self.provider.find_people("KEES")], ["Kees"])   # right away
+		with mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(200), songs]) as request:
+			slide, message = self.provider.action("unsave", ["spotify:playlist:kees"], NOW)
+		self.assertEqual((request.call_args_list[0].args[0], message, slide.data["saved"]), ("DELETE", "Removed Kees' Mix from the library", False))
+		self.assertEqual(self.provider.find_people("KEES"), [])
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=songs):
+			slide, _ = self.provider.action("songs", ["spotify:playlist:2"], NOW)
+		self.assertEqual((slide.data["saved"], slide.data["own"]), (True, True))   # the account's own: no Remove
 
 if __name__ == "__main__":
 	unittest.main()

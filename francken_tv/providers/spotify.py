@@ -63,7 +63,8 @@ JUMP_MS = 3000                # a position this far from what we expect: the son
 CATCH_UP_SECONDS = 3          # after skip/pause/play: how long to wait for Spotify to report it
 CATCH_UP_EVERY = 0.25
 SCOPES = ("user-read-currently-playing user-read-playback-state user-modify-playback-state "
-	"playlist-read-private playlist-read-collaborative user-read-recently-played")
+	"playlist-read-private playlist-read-collaborative user-read-recently-played "
+	"user-library-modify playlist-modify-public playlist-modify-private")
 NEW_LOGIN_MESSAGE = "Allow the buttons once: open 127.0.0.1:8080/spotify/login on this PC and click Agree"
 QUEUE_EVERY_SECONDS = 30      # the next song is also fetched whenever the song changes
 PLAYLISTS_EVERY_SECONDS = 600
@@ -79,6 +80,8 @@ QUEUE_ADD_URL = API + "/me/player/queue"
 # People looks for the makers of the account's playlists by name.
 LIBRARY_MAX = 500             # playlists read to find their makers
 RECENTLY_PLAYED_URL = API + "/me/player/recently-played"
+SAVED_URL = API + "/me/library"   # add (PUT) or remove (DELETE) playlists, by uri
+ME_URL = API + "/me"
 LAST_PLAYED_EVERY_SECONDS = 60   # nothing playing: how often to ask what played last
 
 
@@ -179,7 +182,8 @@ def parse_found_playlist(item: dict | None) -> dict | None:
 		return None
 	owner = (item.get("owner") or {}).get("display_name") or ""
 	return {"name": item.get("name", ""), "subtitle": f"By {owner}" if owner else "", "uri": item["uri"],
-		"cover": card_image(item.get("images") or []), "kind": "Playlist"}
+		"cover": card_image(item.get("images") or []), "kind": "Playlist",
+		"owner": owner, "owner_id": (item.get("owner") or {}).get("id") or ""}   # (to add it to the library)
 
 
 def parse_playlist_songs(data: dict) -> list[dict]:
@@ -262,6 +266,7 @@ class SpotifyProvider(Provider):
 		self.search_kind = "all"            # the chip chosen in the search: a key of SEARCH_KINDS
 		self.search_view: dict = {}         # what the search page shows, to redraw it after adding to the queue
 		self.library_cache: tuple[float, list[dict]] | None = None   # (fetched, all the account's playlists)
+		self.account_id = ""                # the account's username: its own playlists can't be removed
 		self.person: dict = {}                    # the person whose playlists were shown last (a person_card)
 		self.person_lists: dict[str, dict] = {}   # their playlists, by uri
 		self.last: NowPlaying | None = None   # what played last, paused where it stopped: shown when nothing plays
@@ -462,6 +467,12 @@ class SpotifyProvider(Provider):
 		known = {playlist["uri"] for playlist in self.playlists}
 		self.playlists += [playlist for playlist in playlists if playlist["uri"] not in known]
 		return playlists
+
+	def account(self) -> str:
+		"""The account's username."""
+		if not self.account_id:
+			self.account_id = self.api("GET", ME_URL).json()["id"]
+		return self.account_id
 
 	def find_people(self, query: str) -> list[dict]:
 		"""The makers of the account's playlists whose name (or username) has the query in it."""
@@ -683,8 +694,25 @@ class SpotifyProvider(Provider):
 				playlist = next((p for p in self.playlists if p["uri"] == uri), {"name": "Playlist", "uri": uri, "cover": None})
 				back = {"action": "playlists", "value": "", "label": "Playlists"}
 			pages = max(1, -(-total // SONGS_PER_PAGE))
+			saved = next((p for p in self.library() if p["uri"] == uri), None) if uri.startswith("spotify:playlist:") else None
 			return Slide("spotify_songs.html", self.seconds, {"playlist": playlist, "songs": songs, "readable": readable,
-				"back": back, "page": page, "pages": pages, "first_number": page * SONGS_PER_PAGE + 1}), None
+				"back": back, "page": page, "pages": pages, "first_number": page * SONGS_PER_PAGE + 1,
+				"is_playlist": uri.startswith("spotify:playlist:"), "saved": bool(saved),
+				"own": bool(saved) and saved["owner_id"] == self.account()}), None
+		if name in ("save", "unsave") and values:   # add a playlist to the account's library, or remove it
+			uri = values[0]
+			error = self.command("PUT" if name == "save" else "DELETE", SAVED_URL, params={"uris": uri})
+			if error:
+				return None, error
+			library = [p for p in self.library() if p["uri"] != uri]
+			if name == "save":   # its maker shows up under People right away
+				known = self.found.get(uri) or self.person_lists.get(uri) or {"name": "Playlist", "cover": None, "owner": "", "owner_id": ""}
+				library.append({key: known.get(key, "") for key in ("name", "cover", "owner", "owner_id")} | {"uri": uri})
+			self.library_cache = (self.library_cache[0], library)
+			self.playlist_pages.clear()   # the Playlists pages change too
+			slide, _ = self.action("songs", [uri], now)
+			name_text = self.collection_name(uri)
+			return slide, f"Added {name_text} to the library" if name == "save" else f"Removed {name_text} from the library"
 		if name == "person" and values:   # value: "spotify:user:id|page"; their playlists in the account's library
 			uri, _, page_text = values[0].partition("|")
 			page = int(page_text) if page_text.isdigit() else 0
