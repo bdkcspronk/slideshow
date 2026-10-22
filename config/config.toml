@@ -145,6 +145,7 @@ seconds = 15
 [xkcd]
 # The latest xkcd comic, with its hover text.
 seconds = 15
+every_minutes = 30            # in the rotation at most this often
 refresh_minutes = 60
 
 [puzzles]

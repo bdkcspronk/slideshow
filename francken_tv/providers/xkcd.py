@@ -1,14 +1,15 @@
 """The latest xkcd comic (xkcd.com), with its title and the hover text (the alt text: often the best joke).
 
 xkcd has a small JSON feed of the latest comic (info.0.json). The image is downloaded once per comic
-into data/cache/xkcd, in double size when xkcd has it (sharper on the TV).
+into data/cache/xkcd, in double size when xkcd has it (sharper on the TV). It's in the rotation at
+most once every half hour (every_minutes); its shortcut key and the menu show it any time.
 """
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import requests
@@ -38,7 +39,9 @@ class XkcdProvider(Provider):
 		self.cache_folder = cache_folder
 		self.seconds = settings.get("seconds", default_seconds)
 		self.refresh_seconds = settings.get("refresh_minutes", 60) * 60
+		self.every = timedelta(minutes=settings.get("every_minutes", 30))
 		self.comic: Comic | None = None
+		self.last_shown: datetime | None = None   # when it was last put in a round
 
 	def refresh(self, now: datetime) -> None:
 		response = requests.get(LATEST_URL, timeout=20)
@@ -69,6 +72,14 @@ class XkcdProvider(Provider):
 		raise ValueError(f"no image at {url}")
 
 	def slides(self, now: datetime) -> list[Slide]:
-		if self.comic is None:
+		"""The comic, unless it was in a round less than every_minutes ago."""
+		if self.comic is None or (self.last_shown is not None and now - self.last_shown < self.every):
 			return []
-		return [Slide("xkcd.html", self.seconds, {"comic": self.comic, "today": now.date()})]
+		self.last_shown = now
+		return [self.slide(now)]
+
+	def shortcut_slide(self, now: datetime) -> Slide | None:
+		return self.slide(now) if self.comic else None   # any time
+
+	def slide(self, now: datetime) -> Slide:
+		return Slide("xkcd.html", self.seconds, {"comic": self.comic, "today": now.date()})
