@@ -39,5 +39,32 @@ class TileCacheTest(unittest.TestCase):
 		self.assertEqual(list(Path(self.folder.name).rglob("*.png")), [])
 
 
+	def test_at_most_four_downloads_at_a_time(self):
+		import threading
+		import time
+		from francken_tv.maptiles import PARALLEL_DOWNLOADS
+		busy, most, lock = 0, 0, threading.Lock()
+
+		def slow_get(url, timeout):
+			nonlocal busy, most
+			with lock:
+				busy += 1
+				most = max(most, busy)
+			time.sleep(0.05)
+			with lock:
+				busy -= 1
+			return FakeResponse(200)
+
+		with mock.patch.object(self.tiles.session, "get", side_effect=slow_get):
+			threads = [threading.Thread(target=self.tiles.get, args=(5, x, 3)) for x in range(20)]   # 20 tiles asked at once
+			for thread in threads:
+				thread.start()
+			for thread in threads:
+				thread.join()
+		self.assertEqual(most, PARALLEL_DOWNLOADS)
+		self.assertEqual(len(list(Path(self.folder.name).rglob("*.png"))), 20)   # all fetched
+		self.assertEqual(self.tiles.session.get_adapter("https://tile.openstreetmap.org").poolmanager.connection_pool_kw["maxsize"], PARALLEL_DOWNLOADS)
+
+
 if __name__ == "__main__":
 	unittest.main()

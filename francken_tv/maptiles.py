@@ -20,14 +20,18 @@ TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 ATTRIBUTION = "&copy; OpenStreetMap contributors"
 USER_AGENT = "FranckenTV-slideshow/1.0 (the TV in the T.F.V. 'Professor Francken' room; https://professorfrancken.nl)"
 MAX_ZOOM = 19
+PARALLEL_DOWNLOADS = 4   # the browser asks many tiles at once: at most this many from the tile server at a time
 
 
 class TileCache:
 	def __init__(self, folder: Path, url: str = TILES) -> None:
 		self.folder = folder
 		self.url = url
-		self.session = requests.Session()   # one connection for all tiles: much faster than one each
+		self.session = requests.Session()   # reused connections: much faster than a new one for each tile
 		self.session.headers["User-Agent"] = USER_AGENT
+		# As many connections as downloads at a time (more would be opened and thrown away, with a warning each).
+		self.session.mount("https://", requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=PARALLEL_DOWNLOADS))
+		self.downloads = threading.Semaphore(PARALLEL_DOWNLOADS)
 
 	def get(self, z: int, x: int, y: int) -> Path | None:
 		"""The tile's file, downloaded first if needed; None if it doesn't exist or can't be fetched."""
@@ -36,9 +40,12 @@ class TileCache:
 		path = self.folder / str(z) / str(x) / f"{y}.png"
 		if path.exists():
 			return path
-		# The browser asks several tiles at once, and the server handles them in parallel.
+		# The browser asks several tiles at once, and the server handles them in parallel: a few at a time.
 		try:
-			response = self.session.get(self.url.format(z=z, x=x, y=y, s="a"), timeout=15)
+			with self.downloads:
+				if path.exists():   # fetched by another request while this one waited
+					return path
+				response = self.session.get(self.url.format(z=z, x=x, y=y, s="a"), timeout=15)
 		except requests.RequestException as error:
 			log.warning("Could not fetch map tile %s/%s/%s: %s", z, x, y, error)
 			return None
