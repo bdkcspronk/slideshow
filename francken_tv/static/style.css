@@ -553,6 +553,22 @@ body.show-cursor button { cursor: pointer; }
 .poll-qr-code svg { display: block; width: 100%; height: 100%; }
 .poll-qr p { margin: 2vh 0 0; font-size: 2.8vh; font-weight: bold; }
 
+/* xkcd: black line art on white, the comic as large as fits, the hover text below. */
+.xkcd-slide {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 5vh 5vw 6vh;
+	background: #ffffff;
+	color: var(--blue);
+	position: relative;
+}
+.xkcd-slide header { display: flex; align-items: baseline; gap: 2vw; align-self: stretch; }
+.xkcd-slide h1 { margin: 0; font-size: 6vh; }
+.xkcd-slide header span { font-size: 2.6vh; color: var(--muted); }
+.xkcd-comic { flex: 1; min-height: 0; width: 100%; margin: 3vh 0 2vh; object-fit: contain; }
+.xkcd-alt { margin: 0; max-width: 70vw; font-size: 2.8vh; font-style: italic; line-height: 1.4; text-align: center; color: var(--blue-light); }
+
 /* Bieruur: clock + countdown + filling beer glass; a party at bieruur itself. White and red on dark
    Francken blue (no white background); the beer stays beer-coloured, with blue text on it. */
 .bieruur-slide {

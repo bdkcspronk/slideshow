@@ -23,6 +23,7 @@ from .providers.catfishing import CatfishingProvider
 from .providers.commandments import CommandmentsProvider
 from .providers.connections import ConnectionsProvider
 from .providers.poll import PollProvider
+from .providers.xkcd import XkcdProvider
 from .providers.puzzles import PuzzlesProvider
 from .providers.spotify import SpotifyProvider
 from .providers.timeguessr import TimeGuessrProvider
@@ -152,6 +153,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		QuoteProvider(config.get("quote", {}), DATA_DIR / "quotes.csv", announcer, seconds),
 		CommandmentsProvider(config.get("commandments", {}), seconds),
 		PollProvider(config.get("poll", {}), seconds, DATA_DIR / "poll.json"),
+		XkcdProvider(config.get("xkcd", {}), CACHE_DIR / "xkcd", seconds),
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),
 		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),

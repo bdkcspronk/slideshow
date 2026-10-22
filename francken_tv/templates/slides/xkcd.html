@@ -1,0 +1,10 @@
+{# The latest xkcd (providers/xkcd.py): the title, the comic as large as fits, and its hover text. #}
+<div class="slide xkcd-slide">
+	<header>
+		<h1>{{ comic.title }}</h1>
+		<span>xkcd #{{ comic.number }} &middot; {{ "today" if comic.day == today else comic.day.strftime("%A %-d %B") }}</span>
+	</header>
+	<img class="xkcd-comic" src="{{ comic.image }}" alt="{{ comic.alt }}">
+	{% if comic.alt %}<p class="xkcd-alt">{{ comic.alt }}</p>{% endif %}
+	<p class="info-source">xkcd.com/{{ comic.number }} &middot; by Randall Munroe, CC BY-NC 2.5</p>
+</div>
