@@ -191,6 +191,12 @@ file = "media/vrijmibo.gif"
 weekday = "friday"
 every_minutes = 15
 
+[sound]
+# Keep the sound on the line-out (the speakers, "Line Out - Built-in Audio"), not the TV's HDMI: at
+# startup and when the speakers are plugged in, checked every check_seconds. false: leave it alone.
+line_out = true
+check_seconds = 30
+
 [announcer]
 voice = "en_US-ryan-high"        # piper voice, stored in voices_folder
 voices_folder = "media/voices"

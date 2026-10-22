@@ -13,6 +13,7 @@ from pathlib import Path
 from .announcer import Announcer
 from .background import BackgroundRunner
 from .clock import Clock
+from .line_out import LineOut
 from .config import CACHE_DIR, DATA_DIR, parse_time, project_path
 from .maptiles import ATTRIBUTION, TILES, TileCache
 from .devices import DeviceList
@@ -179,7 +180,8 @@ def build_app(config: dict, clock: Clock) -> App:
 
 	takeovers: list[Takeover] = [BieruurTakeover(bieruur), VrijmiboTakeover(config.get("vrijmibo", {}))]
 	jobs: list[Job] = [BieruurSong(bieruur, announcer)]
-	jobs.append(Greeter(presence, store, devices, announcer))   # quiet if greetings are off in the settings
+	jobs.append(Greeter(presence, store, devices, announcer))
+	jobs.append(LineOut(config.get("sound", {})))   # the sound on the speakers, not the TV's HDMI   # quiet if greetings are off in the settings
 
 	power = config.get("power", {})
 	defaults = Settings(
