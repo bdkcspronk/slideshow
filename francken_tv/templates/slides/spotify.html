@@ -4,11 +4,31 @@
 	(data-state changes) redraws the slide; the volume bar is updated in place. The buttons send
 	actions to SpotifyProvider.action(); "Lyrics", "Search" and "Playlists" open spotify_lyrics.html,
 	spotify_search.html and spotify_playlists.html.
-	Nothing playing ("idle"): just those two buttons, to start some music on the TV's own speaker.
+	Nothing playing ("idle"): what played last (a playlist, album or song) with Play, or else just Search
+	and Playlists, to start some music on the TV's own speaker.
 	The space bar pauses and resumes the music (data-space-action, see player.js).
 #}
 <div class="slide spotify-slide" data-state="{{ state }}" data-interactive data-provider="spotify"{% if not idle %} data-space-action="toggle"{% endif %}>
-	{% if idle %}
+	{% if idle and last %}
+	{% if last.cover %}<div class="spotify-backdrop" style="background-image: url('{{ last.cover }}')"></div>{% endif %}
+	<div class="spotify-content">
+		{% if last.cover %}<img class="spotify-cover" src="{{ last.cover }}" alt="">{% endif %}
+		<div class="spotify-info">
+			<div class="spotify-label"><span class="spotify-eq paused"><i></i><i></i><i></i><i></i></span> Last played on Spotify</div>
+			<h1 class="spotify-title" data-marquee>{{ last.name }}</h1>
+			<div class="spotify-artist" data-marquee>{{ last.subtitle }}</div>
+			<div class="spotify-album">Nothing playing right now: it plays on the {{ speaker }} speaker</div>
+			<div class="spotify-bottom">
+				<div class="spotify-buttons spotify-last-buttons">
+					<button class="spotify-button primary" data-action="{{ last.action }}" data-value="{{ last.value }}">&#9654; Play</button>
+					{% if last.shuffle %}<button class="spotify-button" data-action="shuffle" data-value="{{ last.uri }}">Shuffle</button>{% endif %}
+					<button class="spotify-button" data-action="playlists">Playlists</button>
+					<button class="spotify-button" data-action="search">Search</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	{% elif idle %}
 	<div class="spotify-idle">
 		<div class="spotify-label"><span class="spotify-eq paused"><i></i><i></i><i></i><i></i></span> Spotify</div>
 		<h1 class="spotify-title">Nothing playing right now</h1>

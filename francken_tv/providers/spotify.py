@@ -1,8 +1,9 @@
 """What's playing on Spotify: title, artist, album cover, progress and the next song
 (templates/slides/spotify.html), with buttons for the previous/next song, pause and the volume.
 "Playlists" shows the account's playlists (templates/slides/spotify_playlists.html), tapping one
-shows its songs (spotify_songs.html); "Search" finds songs, playlists and albums by typing, with
-All / Songs / Playlists / Albums chips like the desktop app (spotify_search.html).
+shows its songs (spotify_songs.html); "Search" finds songs, playlists, albums and people by typing,
+with All / Songs / Playlists / Albums / People chips like the desktop app (spotify_search.html).
+Tapping a person shows their public playlists (spotify_playlists.html).
 Tapping a song plays it. "Lyrics" shows the song's lyrics, the line being sung lit up when LRCLIB
 has them synced (spotify_lyrics.html, lyrics.py). The buttons need Spotify Premium.
 
@@ -13,7 +14,7 @@ Uses Spotify's Web API. One-time setup (see README, "Spotify"):
 2. Open http://127.0.0.1:8080/spotify/login on the TV PC and log in with Spotify.
    The slideshow then adds a refresh token to that file; no password is stored.
    (Logged in before changing playlists was possible? Log in again once, to allow it.)
-The slide only appears while something is playing.
+When nothing plays, the slide shows the last played playlist (or album, or song) with a Play button.
 """
 
 from __future__ import annotations
@@ -61,7 +62,7 @@ JUMP_MS = 3000                # a position this far from what we expect: the son
 CATCH_UP_SECONDS = 3          # after skip/pause/play: how long to wait for Spotify to report it
 CATCH_UP_EVERY = 0.25
 SCOPES = ("user-read-currently-playing user-read-playback-state user-modify-playback-state "
-	"playlist-read-private playlist-read-collaborative")
+	"playlist-read-private playlist-read-collaborative user-read-recently-played")
 NEW_LOGIN_MESSAGE = "Allow the buttons once: open 127.0.0.1:8080/spotify/login on this PC and click Agree"
 QUEUE_EVERY_SECONDS = 30      # the next song is also fetched whenever the song changes
 PLAYLISTS_EVERY_SECONDS = 600
@@ -71,8 +72,13 @@ SEARCH_URL = API + "/search"
 SEARCH_RESULTS = 10           # Spotify's maximum for apps in development mode
 SEARCH_CARDS = 4              # "All": albums and playlists shown above the songs
 SEARCH_CARDS_ONLY = 8         # "Albums" or "Playlists": two rows of them
-SEARCH_KINDS = {"all": "track,album,playlist", "songs": "track", "playlists": "playlist", "albums": "album"}   # the chips
+SEARCH_KINDS = {"all": "track,album,playlist", "songs": "track", "playlists": "playlist", "albums": "album", "people": ""}   # the chips
 QUEUE_ADD_URL = API + "/me/player/queue"
+# Spotify can't search people, nor show anyone's profile or playlists to an app in development mode:
+# People looks for the makers of the account's playlists by name.
+LIBRARY_MAX = 500             # playlists read to find their makers
+RECENTLY_PLAYED_URL = API + "/me/player/recently-played"
+LAST_PLAYED_EVERY_SECONDS = 60   # nothing playing: how often to ask what played last
 
 
 @dataclass
@@ -88,6 +94,8 @@ class NowPlaying:
 	fetched_at: float  # time.monotonic() when progress_ms was measured
 	volume: int | None = None   # of the playing device in %, None if it can't be changed
 	device: str = ""            # the name of the device that plays
+	uri: str = ""
+	context: str = ""           # the playlist, album, ... it plays from ("" for a song on its own)
 
 	def progress(self) -> int:
 		"""Progress now, counting the time since Spotify was last asked."""
@@ -110,7 +118,7 @@ def parse_playing(data: dict, fetched_at: float) -> NowPlaying | None:
 		duration_ms=item.get("duration_ms", 0), progress_ms=data.get("progress_ms") or 0,
 		is_playing=bool(data.get("is_playing")), fetched_at=fetched_at,
 		volume=device.get("volume_percent") if (device := data.get("device") or {}).get("supports_volume", True) else None,
-		device=device.get("name", ""),
+		device=device.get("name", ""), uri=item.get("uri", ""), context=(data.get("context") or {}).get("uri") or "",
 	)
 
 
@@ -180,8 +188,15 @@ def parse_playlist_songs(data: dict) -> list[dict]:
 
 
 def parse_playlists(data: dict) -> list[dict]:
-	return [{"name": playlist.get("name", ""), "uri": playlist["uri"], "cover": biggest_image(playlist.get("images") or [])}
+	return [{"name": playlist.get("name", ""), "uri": playlist["uri"], "cover": biggest_image(playlist.get("images") or []),
+		"owner": (playlist.get("owner") or {}).get("display_name") or "", "owner_id": (playlist.get("owner") or {}).get("id") or ""}
 		for playlist in data.get("items") or [] if playlist and playlist.get("uri")]
+
+
+def person_card(user_id: str, name: str, playlists: int) -> dict:
+	"""A person for the search's cards; tapping it shows their playlists."""
+	return {"name": name or user_id, "subtitle": f"{playlists} playlist{'s' if playlists != 1 else ''}",
+		"uri": f"spotify:user:{user_id}", "cover": None, "kind": "Profile", "person": True}
 
 
 def parse_embed_songs(html: str) -> list[dict]:
@@ -245,6 +260,13 @@ class SpotifyProvider(Provider):
 		self.last_query = ""                # for "back to the search" from an album or playlist
 		self.search_kind = "all"            # the chip chosen in the search: a key of SEARCH_KINDS
 		self.search_view: dict = {}         # what the search page shows, to redraw it after adding to the queue
+		self.library_cache: tuple[float, list[dict]] | None = None   # (fetched, all the account's playlists)
+		self.person: dict = {}                    # the person whose playlists were shown last (a person_card)
+		self.person_lists: dict[str, dict] = {}   # their playlists, by uri
+		self.last_uri = ""                  # what played last: its playlist, album, ... or the song itself
+		self.last_song: dict | None = None  # the last song that played (title, artist, cover, uri)
+		self.last_played: dict | None = None   # last_uri described for the slide when nothing plays (see describe())
+		self.last_checked = 0.0             # time.monotonic() of the last RECENTLY_PLAYED_URL request
 		self.access_token: str | None = None
 		self.token_expires = 0.0
 		self.login_state: str | None = None
@@ -328,6 +350,11 @@ class SpotifyProvider(Provider):
 			self.jumps += 1   # restarted (the ⏮ button) or moved within the song: the slide redraws (see view())
 		if self.playing and self.volume_set and time.monotonic() - self.volume_set[1] < VOLUME_SETTLE_SECONDS:
 			self.playing.volume = self.volume_set[0]   # Spotify takes a moment to report a new volume
+		if self.playing:
+			self.remember(self.playing.context, {"title": self.playing.title, "artist": self.playing.artist,
+				"cover": self.playing.cover, "uri": self.playing.uri})
+		elif not self.start_step:   # (on start the music is started first)
+			self.refresh_last_played()
 		if self.playing is None:
 			self.next = None
 		elif self.next_fetched[0] != self.playing.id or time.monotonic() - self.next_fetched[1] > QUEUE_EVERY_SECONDS:
@@ -367,6 +394,40 @@ class SpotifyProvider(Provider):
 				log.info("Resumed the music on %s: %s", self.speaker, response.status_code)
 			self.start_step = None
 
+	def remember(self, context: str, song: dict | None) -> None:
+		if song and song.get("uri"):
+			self.last_song = song
+		self.last_uri = context or (song or {}).get("uri", "")
+
+	def refresh_last_played(self) -> None:
+		"""Nothing plays: find out what played last (if it didn't play while we watched), for the slide."""
+		if not self.last_uri and time.monotonic() - self.last_checked > LAST_PLAYED_EVERY_SECONDS:
+			self.last_checked = time.monotonic()
+			response = self.api("GET", RECENTLY_PLAYED_URL, params={"limit": 1})
+			items = response.json().get("items") or [] if response.status_code == 200 else []
+			if items:
+				self.remember((items[0].get("context") or {}).get("uri") or "", parse_song(items[0]["track"]))
+		if self.last_uri and (self.last_played or {}).get("uri") != self.last_uri:
+			self.last_played = self.describe(self.last_uri)
+
+	def describe(self, uri: str) -> dict:
+		"""The name, cover and Play button of what played last: a playlist, album, artist or podcast, or a song
+		(played on its own, or from Liked Songs, which the Web API can't play as a whole)."""
+		song = self.last_song or {}
+		kind = uri.split(":")[1]
+		if kind not in ("playlist", "album", "artist", "show"):
+			liked = uri.endswith(":collection")
+			return {"uri": uri, "name": "Liked Songs" if liked else song["title"], "cover": song["cover"],
+				"subtitle": f"{song['title']} \u00b7 {song['artist']}" if liked else song["artist"],
+				"action": "play_song", "value": song["uri"], "shuffle": False}
+		data = self.api("GET", f"{API}/{kind}s/{uri.rsplit(':', 1)[-1]}").json()
+		subtitle = {"playlist": f"By {(data.get('owner') or {}).get('display_name', '')}", "artist": "Artist", "show": "Podcast",
+			"album": ", ".join(a["name"] for a in data.get("artists") or [])}[kind]
+		goes_on = kind in ("playlist", "album") and song.get("uri")   # from the last song
+		return {"uri": uri, "name": data["name"], "subtitle": subtitle, "cover": card_image(data.get("images") or []),
+			"action": "play_song" if goes_on else "play", "value": f"{song['uri']}|{uri}" if goes_on else uri,
+			"shuffle": kind in ("playlist", "album")}
+
 	def refresh_next(self) -> None:
 		try:
 			response = self.api("GET", QUEUE_URL)
@@ -390,6 +451,36 @@ class SpotifyProvider(Provider):
 		known = {playlist["uri"] for playlist in self.playlists}
 		self.playlists += [playlist for playlist in playlists if playlist["uri"] not in known]
 		return playlists, total
+
+	def library(self) -> list[dict]:
+		"""All the account's playlists (at most LIBRARY_MAX), to find the people who made them."""
+		if self.library_cache and time.monotonic() - self.library_cache[0] < PLAYLISTS_EVERY_SECONDS:
+			return self.library_cache[1]
+		playlists: list[dict] = []
+		offset = 0
+		while offset < LIBRARY_MAX:
+			response = self.api("GET", PLAYLISTS_URL, params={"limit": 50, "offset": offset})
+			if response.status_code != 200:
+				break
+			data = response.json()
+			playlists += parse_playlists(data)
+			offset += len(data.get("items") or [])
+			if not data.get("items") or offset >= data.get("total", 0):
+				break
+		self.library_cache = (time.monotonic(), playlists)
+		known = {playlist["uri"] for playlist in self.playlists}
+		self.playlists += [playlist for playlist in playlists if playlist["uri"] not in known]
+		return playlists
+
+	def find_people(self, query: str) -> list[dict]:
+		"""The makers of the account's playlists whose name (or username) has the query in it."""
+		wanted = query.strip().casefold()
+		people: dict[tuple[str, str], int] = {}   # (username, name) -> number of playlists
+		for playlist in self.library():
+			if wanted in playlist["owner"].casefold() or wanted in playlist["owner_id"].casefold():
+				owner = (playlist["owner_id"], playlist["owner"])
+				people[owner] = people.get(owner, 0) + 1
+		return [person_card(user_id, name, count) for (user_id, name), count in people.items()]
 
 	def fetch_songs(self, playlist_uri: str, page: int) -> tuple[list[dict], int]:
 		"""One page of a playlist's songs, and the number of songs in it."""
@@ -416,7 +507,11 @@ class SpotifyProvider(Provider):
 		return parse_playlist_songs(data), data.get("total", 0)
 
 	def search(self, query: str, kind: str = "all") -> tuple[list[dict], list[dict]]:
-		"""Songs, and cards (albums and playlists), matching the query, for one of the chips (SEARCH_KINDS)."""
+		"""Songs, and cards (albums, playlists and people), matching the query, for one of the chips (SEARCH_KINDS)."""
+		if kind == "people":
+			cards = self.find_people(query)[:SEARCH_CARDS_ONLY]
+			self.found.update({card["uri"]: card for card in cards})
+			return [], cards
 		response = self.api("GET", SEARCH_URL, params={"q": query, "type": SEARCH_KINDS[kind], "limit": SEARCH_RESULTS})
 		if response.status_code >= 400:
 			raise PermissionError("search failed")
@@ -425,9 +520,10 @@ class SpotifyProvider(Provider):
 		albums = [album for album in map(parse_album, (data.get("albums") or {}).get("items") or []) if album]
 		playlists = [playlist for playlist in map(parse_found_playlist, (data.get("playlists") or {}).get("items") or []) if playlist]
 		if kind == "all":   # like the desktop app: a few of each; if there are few playlists, more albums
-			half = SEARCH_CARDS // 2
-			cards = albums[:max(half, SEARCH_CARDS - len(playlists))] + playlists
-			cards = cards[:SEARCH_CARDS]
+			people = self.find_people(query)[:SEARCH_CARDS // 2]
+			room = SEARCH_CARDS - len(people)
+			cards = albums[:max(room // 2, room - len(playlists))] + playlists
+			cards = people + cards[:room]
 		else:
 			cards = (albums + playlists)[:SEARCH_CARDS_ONLY]
 		self.found.update({card["uri"]: card for card in cards})
@@ -454,6 +550,8 @@ class SpotifyProvider(Provider):
 		"""The name of a playlist or album we've shown, for messages like "Playing ..."."""
 		if uri in self.found:
 			return self.found[uri]["name"]
+		if uri in self.person_lists:
+			return self.person_lists[uri]["name"]
 		return next((p["name"] for p in self.playlists if p["uri"] == uri), "the playlist")
 
 	def shown_volume(self, playing: NowPlaying) -> int:
@@ -463,7 +561,9 @@ class SpotifyProvider(Provider):
 	def current_view(self) -> dict:
 		if self.playing:
 			return self.view()
-		return {"state": "idle", "idle": True, "speaker": self.speaker}   # nothing playing: pick something
+		# Nothing playing: what played last, or pick something.
+		last = self.last_played if self.last_played and self.last_played["uri"] == self.last_uri else None
+		return {"state": "idle " + (last or {}).get("uri", ""), "idle": True, "speaker": self.speaker, "last": last}
 
 	def now_playing(self) -> Slide:
 		# Checked every second, so a new song (or the music stopping) shows up while the slide is on screen.
@@ -553,8 +653,9 @@ class SpotifyProvider(Provider):
 		return self.now_playing() if self.connected else None
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
-		"""'playlists' shows the playlists, 'songs' one playlist's songs, 'search' finds songs, playlists and
-		albums ('search_kind' picks a chip: all, songs, playlists or albums), 'lyrics' the lyrics;
+		"""'playlists' shows the playlists, 'songs' one playlist's songs, 'search' finds songs, playlists, albums
+		and people ('search_kind' picks a chip: all, songs, playlists, albums or people), 'person' someone's
+		playlists, 'lyrics' the lyrics;
 		'play' plays a playlist (values = [its uri]), 'play_song' a song, 'queue' adds one; 'back' returns;
 		'previous', 'skip', 'toggle' (pause/play), 'volume_up' and 'volume_down' control the music."""
 		if name == "playlists":
@@ -587,12 +688,26 @@ class SpotifyProvider(Provider):
 			if uri in self.found:   # from the search: back to it
 				playlist = self.found[uri]
 				back = {"action": "search", "value": self.last_query, "label": "Search"}
+			elif uri in self.person_lists:   # from someone's playlists: back to them
+				playlist = self.person_lists[uri]
+				back = {"action": "person", "value": self.person["uri"], "label": self.person["name"]}
 			else:
 				playlist = next((p for p in self.playlists if p["uri"] == uri), {"name": "Playlist", "uri": uri, "cover": None})
 				back = {"action": "playlists", "value": "", "label": "Playlists"}
 			pages = max(1, -(-total // SONGS_PER_PAGE))
 			return Slide("spotify_songs.html", self.seconds, {"playlist": playlist, "songs": songs, "readable": readable,
 				"back": back, "page": page, "pages": pages, "first_number": page * SONGS_PER_PAGE + 1}), None
+		if name == "person" and values:   # value: "spotify:user:id|page"; their playlists in the account's library
+			uri, _, page_text = values[0].partition("|")
+			page = int(page_text) if page_text.isdigit() else 0
+			person = self.found[uri]
+			theirs = [playlist for playlist in self.library() if playlist["owner_id"] == uri.rsplit(":", 1)[-1]]
+			playlists, total = theirs[page * PLAYLISTS_PER_PAGE:(page + 1) * PLAYLISTS_PER_PAGE], len(theirs)
+			self.person = person
+			self.person_lists.update({playlist["uri"]: playlist for playlist in playlists})
+			return Slide("spotify_playlists.html", self.seconds, {"playlists": playlists, "page": page,
+				"pages": max(1, -(-total // PLAYLISTS_PER_PAGE)), "person": person, "page_action": "person", "page_prefix": uri + "|",
+				"back": {"action": "search", "value": self.last_query, "label": "Search"}}), None
 		if name in ("search", "search_kind"):   # search: values = [typed text], empty: just the keyboard;
 			if name == "search_kind":           # search_kind: values = [a chip], the last search again
 				self.search_kind = values[0] if values and values[0] in SEARCH_KINDS else "all"
@@ -610,8 +725,8 @@ class SpotifyProvider(Provider):
 					log.warning("Spotify search for %r failed: %s", query, error)
 					return None, "Searching Spotify failed, try again"
 			self.search_view = {"query": query, "songs": songs, "cards": cards, "searched": bool(query),
-				"kind": kind, "kinds": [("all", "All"), ("songs", "Songs"), ("playlists", "Playlists"), ("albums", "Albums")],
-				"rows": [list("QWERTYUIOP"), list("ASDFGHJKL"), list("ZXCVBNM")], "queued": set()}
+				"kind": kind, "kinds": [("all", "All"), ("songs", "Songs"), ("playlists", "Playlists"), ("albums", "Albums"), ("people", "People")],
+				"rows": [list("1234567890"), list("QWERTYUIOP"), list("ASDFGHJKL"), list("ZXCVBNM")], "queued": set()}
 			return Slide("spotify_search.html", self.seconds, self.search_view), None
 		if name == "play_song" and values:   # value: "song uri" or "song uri|playlist uri" (to go on with the playlist)
 			song, _, playlist = values[0].partition("|")

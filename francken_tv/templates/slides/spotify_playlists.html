@@ -1,12 +1,14 @@
 {#
-	The account's Spotify playlists, 12 per page (SpotifyProvider.action() in providers/spotify.py):
-	tapping one shows its songs (spotify_songs.html). data-state never changes, so the once-a-second check
+	The account's Spotify playlists, or a person's (from the search), 12 per page
+	(SpotifyProvider.action() in providers/spotify.py): tapping one shows its songs (spotify_songs.html). data-state never changes, so the once-a-second check
 	leaves this slide alone.
 #}
 <div class="slide spotify-slide spotify-pick-slide" data-state="playlists" data-interactive data-provider="spotify">
 	<div class="spotify-pick-header">
-		<button class="spotify-button" data-action="back">&larr; Back</button>
-		<h1>Playlists</h1>
+		{% if back %}<button class="spotify-button" data-action="{{ back.action }}" data-value="{{ back.value }}">&larr; {{ back.label }}</button>
+		{% else %}<button class="spotify-button" data-action="back">&larr; Back</button>{% endif %}
+		{% if person and person.cover %}<img class="spotify-pick-cover person" src="{{ person.cover }}" alt="">{% endif %}
+		<h1>{{ person.name ~ "'s playlists" if person else "Playlists" }}</h1>
 		<button class="spotify-button" data-action="search">Search a song</button>
 	</div>
 	<div class="spotify-playlists">
@@ -19,9 +21,9 @@
 	</div>
 	{% if pages > 1 %}
 	<div class="spotify-pages">
-		<button class="spotify-button" data-action="playlists" data-value="{{ page - 1 }}"{% if page == 0 %} disabled{% endif %}>&larr;</button>
+		<button class="spotify-button" data-action="{{ page_action or 'playlists' }}" data-value="{{ page_prefix }}{{ page - 1 }}"{% if page == 0 %} disabled{% endif %}>&larr;</button>
 		<span>Page {{ page + 1 }} of {{ pages }}</span>
-		<button class="spotify-button" data-action="playlists" data-value="{{ page + 1 }}"{% if page + 1 >= pages %} disabled{% endif %}>&rarr;</button>
+		<button class="spotify-button" data-action="{{ page_action or 'playlists' }}" data-value="{{ page_prefix }}{{ page + 1 }}"{% if page + 1 >= pages %} disabled{% endif %}>&rarr;</button>
 	</div>
 	{% endif %}
 </div>

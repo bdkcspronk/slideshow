@@ -1,9 +1,9 @@
 {#
-	Search Spotify for songs, playlists and albums (SpotifyProvider.action() in providers/spotify.py).
+	Search Spotify for songs, playlists, albums and people (SpotifyProvider.action() in providers/spotify.py).
 	Typing (on the screen or a real keyboard, see typeKey() in player.js) goes into data-input-text;
-	Enter sends it as "search". The chips (All, Songs, Playlists, Albums) search again for just that,
-	as in the desktop app. Tapping a song plays it; + adds it to the queue; tapping an album or
-	playlist shows its songs. After +, the page comes back with a popup ("Added ... to the queue")
+	Enter sends it as "search". The chips (All, Songs, Playlists, Albums, People) search again for just
+	that, as in the desktop app. Tapping a song plays it; + adds it to the queue; tapping an album or
+	playlist shows its songs, tapping a person their playlists. After +, the page comes back with a popup ("Added ... to the queue")
 	and a tick on the song.
 #}
 <div class="slide spotify-slide spotify-pick-slide" data-state="search" data-interactive data-provider="spotify" data-submit-action="search">
@@ -39,8 +39,8 @@
 		{% if cards %}
 		<div class="spotify-albums">
 			{% for card in cards %}
-			<button class="spotify-album-card" data-action="songs" data-value="{{ card.uri }}">
-				{% if card.cover %}<img src="{{ card.cover }}" alt="">{% else %}<span class="spotify-playlist-blank"></span>{% endif %}
+			<button class="spotify-album-card{{ ' person' if card.person }}" data-action="{{ 'person' if card.person else 'songs' }}" data-value="{{ card.uri }}">
+				{% if card.cover %}<img src="{{ card.cover }}" alt="">{% else %}<span class="spotify-playlist-blank">{{ card.name[:1] if card.person }}</span>{% endif %}
 				<b>{{ card.name }}</b>
 				<span>{% if kind == "all" %}{{ card.kind }}{% if card.subtitle %} &middot; {% endif %}{% endif %}{{ card.subtitle }}</span>
 			</button>
@@ -63,11 +63,11 @@
 				{% endif %}
 			</li>
 			{% else %}
-			<li class="spotify-search-hint">{{ "Nothing found" if searched else "Type a song, playlist, album or artist, then tap Search" }}</li>
+			<li class="spotify-search-hint">{{ "Nothing found" if searched else "Type a song, playlist, album, artist or person, then tap Search" }}</li>
 			{% endfor %}
 		</ol>
 		{% elif not cards %}
-		<p class="spotify-search-hint">{{ "Nothing found" if searched else "Type a song, playlist, album or artist, then tap Search" }}</p>
+		<p class="spotify-search-hint">{% if not searched %}Type a song, playlist, album, artist or person, then tap Search{% elif kind == "people" %}Nobody found: Spotify only lets us find the people who made playlists in this account{% else %}Nothing found{% endif %}</p>
 		{% endif %}
 		</div>
 	</div>

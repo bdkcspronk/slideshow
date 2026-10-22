@@ -1212,6 +1212,7 @@ body.show-cursor button { cursor: pointer; }
 .spotify-idle { height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 0 10vw; }
 .spotify-idle .spotify-buttons { margin: 6vh 0 0; }
 .spotify-idle .spotify-button { font-size: 3.4vh; padding: 2vh 3vw; }
+.spotify-last-buttons .spotify-button { font-size: 3vh; padding: 1.8vh 2.6vw; }
 .spotify-buttons .spotify-button { margin: 0; }
 .spotify-button.primary { background: #1db954; border-color: #1db954; color: #121212; }
 .spotify-button:disabled { opacity: 0.3; }
@@ -1294,7 +1295,7 @@ body.show-cursor button { cursor: pointer; }
 .spotify-keyboard-row { display: flex; justify-content: center; gap: 0.5vw; }
 .spotify-key {
 	min-width: 3.8vw;
-	height: 8vh;
+	height: 7vh;
 	padding: 0 0.5vw;
 	border: none;
 	border-radius: 0.8vh;
@@ -1342,6 +1343,9 @@ body.show-cursor button { cursor: pointer; }
 .spotify-album-card b { font-size: 2.2vh; }
 .spotify-album-card span { font-size: 1.9vh; opacity: 0.7; }
 .spotify-album-card.busy { opacity: 0.55; }
+/* People: round pictures, or the first letter of their name. */
+.spotify-album-card.person img, .spotify-album-card.person .spotify-playlist-blank, .spotify-pick-cover.person { border-radius: 50%; }
+.spotify-album-card.person .spotify-playlist-blank { display: flex; align-items: center; justify-content: center; font-size: 6vh; font-weight: bold; }
 .spotify-results .spotify-song img, .spotify-results .spotify-song-blank { height: 5vh; }
 .spotify-results .spotify-control { width: 6vh; height: 6vh; flex: none; }
 .spotify-search-hint { font-size: 2.6vh; opacity: 0.6; }
