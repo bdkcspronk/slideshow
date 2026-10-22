@@ -172,4 +172,13 @@ Closed the full-screen slideshow with Alt+F4? It stays closed; bring it back wit
 (`stop` to close it from a terminal). Starting `francken-tv` also opens it, and starts the Spotify speaker
 (`francken-tv-spotifyd`); stopping `francken-tv` stops the speaker too.
 
+### In a terminal instead (Ctrl+C, Ctrl+M and Ctrl+R at hand)
+
+Set up as above, then run `deploy/install_autostart.sh` once. From then on, logging in on the TV PC
+opens a terminal running `./start.sh --fullscreen`: the full-screen slideshow is on top, Alt+Tab
+gets to the terminal. If the slideshow stops, the terminal stays and Enter starts it again. This
+needs the TV PC to log in by itself (Settings -> Users -> Automatic login). The script switches the
+`francken-tv`, `francken-tv-sniffer` and `francken-tv-kiosk` services off (they'd run a second
+slideshow); `deploy/install_autostart.sh --undo` switches them back on.
+
 The sniffer firmware lives in `firmware/` (PlatformIO).

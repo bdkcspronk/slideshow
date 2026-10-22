@@ -41,7 +41,9 @@ stop() {
 }
 trap stop INT TERM
 
-if [ -e "$SERIAL_PORT" ]; then
+if systemctl --user is-active --quiet francken-tv-sniffer 2>/dev/null; then
+	:   # its service already reads the sniffer (TV PC)
+elif [ -e "$SERIAL_PORT" ]; then
 	"$PYTHON" -m francken_tv.sniffer &
 	pids+=($!)
 else
