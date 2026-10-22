@@ -803,10 +803,10 @@ body.show-cursor button { cursor: pointer; }
    price appear below it. Each book is a 3D box (front cover, spine, pages, top, back); --hue colours
    the spine and the cloth of books without a cover. */
 .books-slide {
-	--w: 34vh;   /* a book: width, height, thickness */
-	--h: 48vh;
-	--d: 5vh;
-	--shelf-top: 63vh;   /* where the books stand, from the top of .books-row (leaves room under the title) */
+	--w: 27vh;   /* a book: width, height, thickness */
+	--h: 38vh;
+	--d: 4vh;
+	--shelf-top: 50vh;   /* where the books stand, from the top of .books-row (leaves room under the title) */
 	--shelf-surface: 4vh;   /* the top of the plank the books stand on (seen from a little above) */
 	--shelf-edge: 4.5vh;    /* the plank's front edge */
 	display: flex;
@@ -979,7 +979,26 @@ body.show-cursor button { cursor: pointer; }
 	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(1.6s + var(--i) * 0.3s) both;
 }
 @keyframes book-text-in { from { opacity: 0; transform: translateY(2vh); } }
+.book-title {
+	font-weight: bold;
+	font-size: 2.8vh;
+	line-height: 1.25;
+	min-height: 2.5em;   /* always two lines, so the prices line up */
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow: hidden;
+}
+.book-authors {
+	margin-top: 0.8vh;
+	font-size: 2.1vh;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
 .book-price {
+	margin-top: 1.8vh;
 	display: flex;
 	justify-content: center;
 	align-items: baseline;
