@@ -1,0 +1,21 @@
+{# The confidential contact persons (providers/confidential.py): the heading, then a card per person
+   rising in one after the other (--i), the photo slowly zooming; the shared email and the website last. #}
+<div class="slide confidential-slide">
+	<header class="confidential-header">
+		<h1>{{ title }}</h1>
+		{% if email %}<p>{{ intro }} <b>{{ email }}</b></p>{% endif %}
+	</header>
+	<div class="confidential-people" style="--count: {{ people | length }}">
+		{% for person in people %}
+		<div class="confidential-person" style="--i: {{ loop.index0 }}">
+			<div class="confidential-photo">
+				{% if person.photo %}<img src="{{ person.photo }}" alt="">{% else %}<span>{{ person.name[:1] }}</span>{% endif %}
+			</div>
+			<strong>{{ person.name }}</strong>
+			{# a long address breaks only after a dot or before the @ #}
+			{% if person.email %}<span class="confidential-email">{% for part in person.email_parts %}{{ part }}<wbr>{% endfor %}</span>{% endif %}
+		</div>
+		{% endfor %}
+	</div>
+	{% if website %}<p class="confidential-website">More info: <b>{{ website.split("://")[-1] | replace("www.", "") }}</b></p>{% endif %}
+</div>

@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "poll", "xkcd", "bieruur_countdown"]
+order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "poll", "xkcd", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -132,6 +132,12 @@ refresh_hours = 6
 # Jeff de Hosson's commandment of the week: the next one from the file every Monday, in order.
 file = "config/commandments.txt"   # one commandment per line
 seconds = 12
+
+[confidential]
+# The confidential contact persons: who they are is in config/confidential.json (personal data, not in
+# git; the format is in francken_tv/providers/confidential.py), their photos in media/confidential/.
+# Without that file the slide is left out.
+seconds = 15
 
 [poll]
 # The weekly dilemma: vote on the TV, or scan the QR code and vote on a Google Form (README, "Weekly dilemma").

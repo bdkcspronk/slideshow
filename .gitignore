@@ -1,8 +1,9 @@
 __pycache__/
 # Runtime data: presence database, caches, downloaded quotes, old logs.
 data/
-# Personal data (phone MAC addresses). Copy to the TV PC by hand.
+# Personal data (phone MAC addresses, the confidential contact persons). Copy to the TV PC by hand.
 config/devices.json
+config/confidential.json
 # Slides, songs, GIF, voice model: large files, copy to the TV PC by hand.
 media/
 firmware/.pio/

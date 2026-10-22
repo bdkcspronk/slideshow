@@ -22,6 +22,7 @@ from .providers.activities import ActivitiesProvider
 from .providers.books import BooksProvider
 from .providers.catfishing import CatfishingProvider
 from .providers.commandments import CommandmentsProvider
+from .providers.confidential import ConfidentialProvider
 from .providers.connections import ConnectionsProvider
 from .providers.poll import PollProvider
 from .providers.xkcd import XkcdProvider
@@ -155,6 +156,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		LeaderboardProvider(config.get("leaderboard", {}), store, devices, seconds),
 		QuoteProvider(config.get("quote", {}), DATA_DIR / "quotes.csv", announcer, seconds),
 		CommandmentsProvider(config.get("commandments", {}), seconds),
+		ConfidentialProvider(config.get("confidential", {}), seconds),
 		PollProvider(config.get("poll", {}), seconds, DATA_DIR / "poll.json"),
 		XkcdProvider(config.get("xkcd", {}), CACHE_DIR / "xkcd", seconds),
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),

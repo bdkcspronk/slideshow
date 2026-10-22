@@ -98,6 +98,7 @@ Copy these to the TV PC by hand:
 | `media/quote_background.png`, `media/nyancat.png` | images for the quote slide and chart |
 | `media/voices/en_US-ryan-high.onnx(.json)` | piper text-to-speech voice |
 | `config/devices.json` | phone MAC addresses → names, chart styles, greetings (personal data!) |
+| `config/confidential.json`, `media/confidential/` | the confidential contact persons: names, email addresses, photos (personal data; the format is in `providers/confidential.py`) |
 | `~/.config/slideshow/nextcloud.credentials.json` | Nextcloud login |
 
 `data/` is created automatically: the presence database, caches and the downloaded quotes.
