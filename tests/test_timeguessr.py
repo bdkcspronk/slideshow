@@ -117,6 +117,15 @@ class ProviderTest(unittest.TestCase):
 		game = restarted.todays_game(NOW)
 		self.assertEqual((len(game.guesses), game.showing_answer), (1, True))
 
+	def test_finishing_sets_the_high_score(self):
+		for _ in range(5):
+			self.provider.action("guess", [BERLIN, "1970"], NOW)
+			slide, _ = self.provider.action("next", [], NOW)
+		self.assertTrue(self.provider.game.done)
+		best = slide.data["highscore"]
+		self.assertEqual((best["score"], best["new"]), (self.provider.game.score, True))
+		self.assertTrue(self.provider.status(NOW).best.startswith("Highscore: "))
+
 	def test_slide_data(self):
 		[slide] = self.provider.slides(NOW)
 		self.assertEqual((slide.data["first_year"], slide.data["last_year"], slide.data["total_points"]), (1900, 2026, 50_000))

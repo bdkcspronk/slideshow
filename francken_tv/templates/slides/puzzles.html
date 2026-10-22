@@ -18,7 +18,7 @@
 			{% endif %}
 		</span>
 		<span class="puzzle-title">{{ card.title }}</span>
-		<span class="puzzle-status">{% if card.state == "solved" %}&#10003; {% endif %}{{ card.status }}</span>
+		<span class="puzzle-status">{% if card.state == "solved" %}&#10003; {% endif %}{{ card.status }}{% if card.best %}<small>{{ card.best }}</small>{% endif %}</span>
 		<span class="puzzle-play">{{ "View" if card.state in ["solved", "lost"] else "Play" }}</span>
 	</button>
 	{% endfor %}

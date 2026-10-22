@@ -22,6 +22,7 @@
 	{# ---- All ten answered: the summary ---- #}
 	<div class="catfishing-summary">
 		<h2>{{ game.score }} of {{ total_points }} points</h2>
+		{% if highscore %}<p class="puzzle-highscore{{ ' new' if highscore.new }}">{% if highscore.new %}&#127942; New highscore!{% else %}Highscore: {{ highscore.score }} points &middot; {{ highscore.day.strftime("%-d %B") }}{% endif %}</p>{% endif %}
 		<ol>
 			{% for article, answer in summary %}
 			<li class="{{ answer.result }}"><b>{{ article.title }}</b>{% if answer.guess and answer.result != "correct" %} <span>you said: {{ answer.guess }}</span>{% endif %}</li>

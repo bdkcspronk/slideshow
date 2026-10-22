@@ -1435,6 +1435,11 @@ body.show-cursor button { cursor: pointer; }
 .status-solved .puzzle-status { color: var(--blue-light); font-weight: bold; }
 .status-playing .puzzle-status { color: var(--red-dark); font-weight: bold; }
 .status-lost .puzzle-status { color: var(--muted); font-weight: bold; }
+.puzzle-status small { display: block; margin-top: 0.6vh; font-size: 2.4vh; font-weight: normal; color: var(--muted); }   /* the high score */
+/* Under a finished game's score: the high score, or a celebration when it was just beaten. */
+.puzzle-highscore { margin: -1vh 0 2.5vh; font-size: 2.8vh; color: var(--muted); }
+.puzzle-highscore.new { font-size: 3.6vh; font-weight: bold; color: var(--red-dark); animation: highscore-pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) 0.4s both; }
+@keyframes highscore-pop { from { transform: scale(0.4); opacity: 0; } }
 .puzzle-play {
 	margin-top: 1vh;
 	padding: 1.4vh 3vw;

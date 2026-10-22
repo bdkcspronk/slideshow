@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 from datetime import datetime
 
 from francken_tv.providers.connections import ConnectionsProvider, parse_puzzle
@@ -52,6 +53,22 @@ class PuzzlesHubTest(unittest.TestCase):
 		tomorrow = NOW.replace(day=15)
 		hub.refresh(tomorrow)
 		self.assertEqual(len(hub.slides(tomorrow)), 1)   # new puzzles: back in the rotation
+
+	def test_high_scores(self):
+		from datetime import date
+		from tempfile import TemporaryDirectory
+		from francken_tv.providers.puzzles import HighScores
+		with TemporaryDirectory() as folder:
+			path = Path(folder) / "highscores.json"
+			scores = HighScores(path)
+			self.assertEqual(scores.text("timeguessr"), "")   # none yet
+			self.assertTrue(scores.record("timeguessr", 31000, date(2026, 10, 14)))
+			self.assertFalse(scores.record("timeguessr", 25000, date(2026, 10, 15)))   # lower: the old one stays
+			self.assertFalse(scores.record("timeguessr", 31000, date(2026, 10, 16)))   # as high: the first one stays
+			again = HighScores(path)   # after a restart
+			self.assertEqual(again.text("timeguessr"), "Highscore: 31,000 \u00b7 14 Oct")
+			self.assertEqual(again.best("timeguessr", date(2026, 10, 14))["new"], True)   # set by that day's game
+			self.assertEqual(again.best("timeguessr", date(2026, 10, 15))["new"], False)
 
 	def test_open_a_puzzle_and_go_back(self):
 		hub, _, _ = make_hub()

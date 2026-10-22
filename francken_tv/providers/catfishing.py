@@ -18,7 +18,7 @@ from pathlib import Path
 import requests
 
 from ..slides import Provider, Slide
-from .puzzles import PuzzleStatus, load_state, save_state
+from .puzzles import HighScores, PuzzleStatus, load_state, save_state
 
 log = logging.getLogger(__name__)
 
@@ -181,8 +181,9 @@ class CatfishingProvider(Provider):
 	title = "Catfishing"
 
 	def __init__(self, settings: dict, default_seconds: float, state_path: Path | None = None,
-			history_path: Path | None = None) -> None:
+			history_path: Path | None = None, highscores: HighScores | None = None) -> None:
 		self.state_path = state_path   # where today's game is saved, so it survives a restart
+		self.highscores = highscores or HighScores(None)
 		self.history_path = history_path
 		self.seconds = settings.get("seconds", default_seconds)
 		self.refresh_seconds = settings.get("refresh_minutes", 30) * 60
@@ -268,12 +269,20 @@ class CatfishingProvider(Provider):
 		if game is None:
 			return None
 		total = 2 * len(game.articles)
+		self.check_highscore(game)   # e.g. a game finished before the slideshow restarted
+		best = self.highscores.text(self.name)
 		if game.done:
-			return PuzzleStatus("solved", f"Done: {game.score} of {total} points")
+			return PuzzleStatus("solved", f"Done: {game.score} of {total} points", best)
 		if game.answers:
 			points = "point" if game.score == 1 else "points"
-			return PuzzleStatus("playing", f"{len(game.answers)} of {len(game.articles)} answered · {game.score} {points}")
-		return PuzzleStatus("new", "Not tried yet")
+			return PuzzleStatus("playing", f"{len(game.answers)} of {len(game.articles)} answered · {game.score} {points}", best)
+		return PuzzleStatus("new", "Not tried yet", best)
+
+	def check_highscore(self, game: Game) -> bool | None:
+		"""Today's game, once finished, counts for the high score (an archive day doesn't)."""
+		if game is not self.game or not game.done:
+			return None
+		return self.highscores.record(self.name, game.score, game.day)
 
 	# -- slides --
 
@@ -297,6 +306,7 @@ class CatfishingProvider(Provider):
 			"summary": list(zip(game.articles, game.answers)) if game.done else [],
 			"today": game.day == now.date(),
 			"day_label": game.day.strftime("%-d %b %Y"),
+			"highscore": self.highscores.best(self.name, game.day) if game is self.game else None,
 		})
 
 	def day_status(self, day: date, now: datetime) -> dict:
@@ -371,4 +381,5 @@ class CatfishingProvider(Provider):
 				"showing_answer": game.showing_answer})
 		if game.answers or game.day.isoformat() in self.history:
 			self.record(game)
+		self.check_highscore(game)
 		return self.game_slide(game, now, typed=result.get("typed", "")), result.get("message")

@@ -22,6 +22,7 @@
 	{# ---- All five guessed: the summary ---- #}
 	<div class="timeguessr-summary">
 		<h2>{{ points(game.score) }} of {{ points(total_points) }} points</h2>
+		{% if highscore %}<p class="puzzle-highscore{{ ' new' if highscore.new }}">{% if highscore.new %}&#127942; New highscore!{% else %}Highscore: {{ points(highscore.score) }} points &middot; {{ highscore.day.strftime("%-d %B") }}{% endif %}</p>{% endif %}
 		<ol>
 			{% for photo, guess in summary %}
 			<li>

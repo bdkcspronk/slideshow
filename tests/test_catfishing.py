@@ -102,6 +102,15 @@ class CatfishingGameTest(unittest.TestCase):
 		self.assertEqual(len(data["summary"]), 10)
 		self.assertEqual(self.provider.status(NOW).text, "Done: 2 of 20 points")
 
+	def test_finishing_today_sets_the_high_score(self):
+		self.act("submit", "beatles")
+		self.act("next")
+		for _ in range(9):
+			self.act("skip")
+			data, _ = self.act("next")
+		self.assertEqual((data["highscore"]["score"], data["highscore"]["new"]), (2, True))
+		self.assertEqual(self.provider.status(NOW).best, "Highscore: 2 \u00b7 14 Oct")
+
 	def test_empty_guess_is_not_an_answer(self):
 		data, message = self.act("submit", "   ")
 		self.assertEqual((message, data["game"].answers), ("Type a guess, or skip", []))
@@ -137,6 +146,13 @@ class CatfishingArchiveTest(unittest.TestCase):
 		slide = self.act("open_day", "2026-09-14")
 		self.assertEqual(len(slide.data["game"].answers), 1)   # carries on where it was left
 		self.assertEqual(self.act("today").data["today"], True)
+
+	def test_an_archive_day_does_not_count_for_the_high_score(self):
+		self.act("open_day", "2026-09-14")
+		for _ in range(10):
+			self.act("submit", "beatles")
+			self.act("next")
+		self.assertEqual(self.provider.highscores.text("catfishing"), "")
 
 	def test_calendar_shows_done_and_started_days(self):
 		self.act("open_day", "2026-10-01")

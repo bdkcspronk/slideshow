@@ -24,7 +24,7 @@ from .providers.commandments import CommandmentsProvider
 from .providers.connections import ConnectionsProvider
 from .providers.poll import PollProvider
 from .providers.xkcd import XkcdProvider
-from .providers.puzzles import PuzzlesProvider
+from .providers.puzzles import HighScores, PuzzlesProvider
 from .providers.spotify import SpotifyProvider
 from .providers.timeguessr import TimeGuessrProvider
 from .providers.wordle import WordleProvider
@@ -133,13 +133,14 @@ def build_app(config: dict, clock: Clock) -> App:
 
 	# The puzzles are shown through the Daily puzzles slide, in the order of puzzles.order.
 	puzzle_settings = config.get("puzzles", {})
+	highscores = HighScores(DATA_DIR / "puzzles" / "highscores.json")   # Catfishing and TimeGuessr
 	available_puzzles = {puzzle.name: puzzle for puzzle in [
 		ConnectionsProvider(config.get("connections", {}), seconds, DATA_DIR / "puzzles" / "connections.json"),
 		WordleProvider(config.get("wordle", {}), seconds, DATA_DIR / "puzzles" / "wordle.json"),
 		CatfishingProvider(config.get("catfishing", {}), seconds, DATA_DIR / "puzzles" / "catfishing.json",
-			DATA_DIR / "puzzles" / "catfishing_history.json"),
+			DATA_DIR / "puzzles" / "catfishing_history.json", highscores),
 		TimeGuessrProvider(config.get("timeguessr", {}), seconds, CACHE_DIR / "timeguessr", DATA_DIR / "puzzles" / "timeguessr.json",
-			attribution=config.get("maps", {}).get("attribution", ATTRIBUTION)),
+			attribution=config.get("maps", {}).get("attribution", ATTRIBUTION), highscores=highscores),
 	]}
 	puzzles = [available_puzzles[name] for name in puzzle_settings.get("order", list(available_puzzles))]
 

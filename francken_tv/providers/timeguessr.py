@@ -19,7 +19,7 @@ from pathlib import Path
 import requests
 
 from ..slides import Provider, Slide, media_url
-from .puzzles import PuzzleStatus, load_state, save_state
+from .puzzles import HighScores, PuzzleStatus, load_state, save_state
 
 log = logging.getLogger(__name__)
 
@@ -196,8 +196,9 @@ class TimeGuessrProvider(Provider):
 	title = "TimeGuessr"
 
 	def __init__(self, settings: dict, default_seconds: float, cache_folder: Path, state_path: Path | None = None,
-			attribution: str = "") -> None:
+			attribution: str = "", highscores: HighScores | None = None) -> None:
 		self.state_path = state_path   # where today's game is saved, so it survives a restart
+		self.highscores = highscores or HighScores(None)
 		self.cache_folder = cache_folder
 		self.seconds = settings.get("seconds", default_seconds)
 		self.refresh_seconds = settings.get("refresh_minutes", 30) * 60
@@ -246,11 +247,17 @@ class TimeGuessrProvider(Provider):
 		if game is None:
 			return None
 		total = MAX_POINTS * 2 * len(game.photos)
+		self.check_highscore(game, now)
+		best = self.highscores.text(self.name)
 		if game.done:
-			return PuzzleStatus("solved", f"Done: {game.score:,} of {total:,} points")
+			return PuzzleStatus("solved", f"Done: {game.score:,} of {total:,} points", best)
 		if game.guesses:
-			return PuzzleStatus("playing", f"{len(game.guesses)} of {len(game.photos)} photos · {game.score:,} points")
-		return PuzzleStatus("new", "Not tried yet")
+			return PuzzleStatus("playing", f"{len(game.guesses)} of {len(game.photos)} photos · {game.score:,} points", best)
+		return PuzzleStatus("new", "Not tried yet", best)
+
+	def check_highscore(self, game: Game, now: datetime) -> None:
+		if game.done:
+			self.highscores.record(self.name, game.score, now.date())
 
 	def slides(self, now: datetime) -> list[Slide]:
 		game = self.todays_game(now)
@@ -271,6 +278,7 @@ class TimeGuessrProvider(Provider):
 			"tiles": TILES,
 			"attribution": self.attribution,
 			"summary": list(zip(game.photos, game.guesses)) if game.done else [],
+			"highscore": self.highscores.best(self.name, now.date()) if game.done else None,
 		})]
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
@@ -278,6 +286,7 @@ class TimeGuessrProvider(Provider):
 		if game is None:
 			return None, None
 		message = game.act(name, values)
+		self.check_highscore(game, now)
 		save_state(self.state_path, now.date(), {"number": game.number, "showing_answer": game.showing_answer,
 			"guesses": [guess.__dict__ for guess in game.guesses]})
 		slides = self.slides(now)

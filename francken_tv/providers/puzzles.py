@@ -27,6 +27,47 @@ log = logging.getLogger(__name__)
 class PuzzleStatus:
 	state: str     # "new", "playing", "solved" or "lost"
 	text: str      # e.g. "2 of 4 groups"
+	best: str = ""   # the high score, for puzzles with points (e.g. "Highscore: 9,812 · 14 Oct")
+
+
+class HighScores:
+	"""The best score ever of the puzzles with points (Catfishing, TimeGuessr), with its day: in
+	data/puzzles/highscores.json. Only the daily game counts (not one replayed from an archive)."""
+
+	def __init__(self, path: Path | None) -> None:
+		self.path = path
+		self.scores: dict[str, dict] = {}
+		if path is not None and path.exists():
+			try:
+				self.scores = json.loads(path.read_text(encoding="utf-8"))
+			except (OSError, ValueError) as error:
+				log.warning("Ignoring unreadable high scores %s: %s", path, error)
+
+	def record(self, name: str, score: int, day: date) -> bool:
+		"""A finished game's score. Returns True if it's a new high score."""
+		best = self.scores.get(name)
+		if best is not None and score <= best["score"]:
+			return False
+		self.scores[name] = {"score": score, "day": day.isoformat()}
+		if self.path is not None:
+			self.path.parent.mkdir(parents=True, exist_ok=True)
+			temporary = self.path.with_suffix(".tmp")
+			temporary.write_text(json.dumps(self.scores, indent=1), encoding="utf-8")
+			temporary.replace(self.path)
+		log.info("New %s high score: %d", name, score)
+		return True
+
+	def best(self, name: str, game_day: date | None = None) -> dict | None:
+		"""{"score", "day", "new"} for the summary; new: set by the game of game_day."""
+		best = self.scores.get(name)
+		if best is None:
+			return None
+		day = date.fromisoformat(best["day"])
+		return {"score": best["score"], "day": day, "new": day == game_day}
+
+	def text(self, name: str) -> str:
+		best = self.best(name)
+		return f"Highscore: {best['score']:,} \u00b7 {best['day']:%-d %b}" if best else ""
 
 
 def load_state(path: Path | None, day: date) -> dict | None:
@@ -78,7 +119,7 @@ class PuzzlesProvider(Provider):
 		for puzzle in self.puzzles:
 			status = puzzle.status(now)
 			if status is not None:   # None: today's puzzle couldn't be downloaded
-				cards.append({"name": puzzle.name, "title": puzzle.title, "state": status.state, "status": status.text})
+				cards.append({"name": puzzle.name, "title": puzzle.title, "state": status.state, "status": status.text, "best": status.best})
 		return cards
 
 	def overview(self, now: datetime) -> Slide | None:
