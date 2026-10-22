@@ -5,13 +5,7 @@
 	(data-state). Plain lyrics just scroll (touch, mouse wheel, up/down: data-scroll). The buttons send
 	"lyrics" along, so the slide stays this view; "Song" goes back to the normal Spotify slide.
 #}
-<div class="slide spotify-slide spotify-lyrics-slide" data-state="{{ state }}" data-interactive data-provider="spotify"{% if not idle %} data-space-action="toggle"{% endif %}>
-	{% if idle %}
-	<div class="spotify-idle">
-		<h1 class="spotify-title">Nothing playing right now</h1>
-		<div class="spotify-buttons"><button class="spotify-button primary" data-action="back">&larr; Spotify</button></div>
-	</div>
-	{% else %}
+<div class="slide spotify-slide spotify-lyrics-slide" data-state="{{ state }}" data-interactive data-provider="spotify" data-space-action="toggle">
 	{% if cover %}<div class="spotify-backdrop" style="background-image: url('{{ cover }}')"></div>{% endif %}
 	<div class="spotify-content">
 		<div class="spotify-lyrics-song">
@@ -45,6 +39,5 @@
 		</div>
 		{% endif %}
 	</div>
-	{% endif %}
 	<p class="spotify-lyrics-credit">Lyrics from lrclib.net</p>
 </div>

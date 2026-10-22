@@ -105,11 +105,11 @@ Copy these to the TV PC by hand:
 
 ## Spotify
 
-The Spotify slide shows what's playing and the next song (it only appears while something plays).
+The Spotify slide shows what's playing and the next song. When nothing plays, it shows the last
+played song paused where it stopped (▶ continues it); before anything has played, there is no slide.
 Its buttons skip songs, pause and change the volume; **Playlists** shows the account's playlists and
 their songs, and **Search** finds songs, albums, playlists and people by typing. Tapping a song plays
-it. When nothing plays, the slide shows the last played playlist with a Play button. The buttons need
-Spotify Premium, and music already playing on some device. One-time setup:
+it. The buttons need Spotify Premium, and music already playing on some device. One-time setup:
 
 1. At https://developer.spotify.com/dashboard, log in and **Create app**. Any name and description;
    **Redirect URI**: `http://127.0.0.1:8080/spotify/callback` (exactly this; `127.0.0.1`, not
@@ -120,7 +120,7 @@ Spotify Premium, and music already playing on some device. One-time setup:
 3. Start the slideshow and open http://127.0.0.1:8080/spotify/login **on the TV PC**; log in with
    the Spotify account whose music should be shown. The slideshow adds a refresh token to that
    file (no password is stored). It keeps working after restarts. Connected before changing
-   playlists or showing the last played playlist was possible? Log in once more, so Spotify allows it.
+   playlists or showing the last played song was possible? Log in once more, so Spotify allows it.
    Spotify doesn't let the app search people or see their profiles: **People** finds the makers of
    the account's playlists by name.
 4. So music plays from the PC itself (not from a Spotify tab somewhere): `deploy/install_spotifyd.sh`

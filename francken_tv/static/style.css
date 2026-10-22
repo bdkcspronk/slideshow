@@ -1208,11 +1208,6 @@ body.show-cursor button { cursor: pointer; }
 .spotify-button.small { margin-left: 1vw; padding: 0.6vh 1.2vw; font-size: 2vh; letter-spacing: normal; text-transform: none; }
 .spotify-label-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .spotify-device { color: #ffffff; opacity: 0.8; letter-spacing: normal; text-transform: none; }
-/* Nothing playing: a short text and the buttons to start some music. */
-.spotify-idle { height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 0 10vw; }
-.spotify-idle .spotify-buttons { margin: 6vh 0 0; }
-.spotify-idle .spotify-button { font-size: 3.4vh; padding: 2vh 3vw; }
-.spotify-last-buttons .spotify-button { font-size: 3vh; padding: 1.8vh 2.6vw; }
 .spotify-buttons .spotify-button { margin: 0; }
 .spotify-button.primary { background: #1db954; border-color: #1db954; color: #121212; }
 .spotify-button:disabled { opacity: 0.3; }

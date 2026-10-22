@@ -14,7 +14,8 @@ Uses Spotify's Web API. One-time setup (see README, "Spotify"):
 2. Open http://127.0.0.1:8080/spotify/login on the TV PC and log in with Spotify.
    The slideshow then adds a refresh token to that file; no password is stored.
    (Logged in before changing playlists was possible? Log in again once, to allow it.)
-When nothing plays, the slide shows the last played playlist (or album, or song) with a Play button.
+When nothing plays, the slide shows the last played song, paused where it stopped, and its playlist:
+▶ continues it. Before anything is known to have played, there's no slide.
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ import re
 import secrets
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlencode
@@ -244,7 +245,7 @@ class SpotifyProvider(Provider):
 		self.credentials_path = credentials_path
 		self.redirect_uri = settings.get("redirect_uri", "http://127.0.0.1:8080/spotify/callback")
 		self.speaker = settings.get("speaker", "Francken TV")   # spotifyd on the TV PC (deploy/spotifyd.conf)
-		self.show_when_idle = settings.get("show_when_idle", True)   # with Search and Playlists, to start music
+		self.show_when_idle = settings.get("show_when_idle", True)   # the last played song, paused, to continue it
 		self.start_playlist = settings.get("start_playlist", "")   # played on start if there's nothing to resume
 		self.start_step = "resume" if settings.get("play_on_start", True) else None   # see start_music()
 		self.start_deadline = time.monotonic() + START_WAIT_SECONDS
@@ -263,9 +264,8 @@ class SpotifyProvider(Provider):
 		self.library_cache: tuple[float, list[dict]] | None = None   # (fetched, all the account's playlists)
 		self.person: dict = {}                    # the person whose playlists were shown last (a person_card)
 		self.person_lists: dict[str, dict] = {}   # their playlists, by uri
-		self.last_uri = ""                  # what played last: its playlist, album, ... or the song itself
-		self.last_song: dict | None = None  # the last song that played (title, artist, cover, uri)
-		self.last_played: dict | None = None   # last_uri described for the slide when nothing plays (see describe())
+		self.last: NowPlaying | None = None   # what played last, paused where it stopped: shown when nothing plays
+		self.last_context = ("", "")        # (uri, name) of the playlist, album, ... it played from
 		self.last_checked = 0.0             # time.monotonic() of the last RECENTLY_PLAYED_URL request
 		self.access_token: str | None = None
 		self.token_expires = 0.0
@@ -351,8 +351,7 @@ class SpotifyProvider(Provider):
 		if self.playing and self.volume_set and time.monotonic() - self.volume_set[1] < VOLUME_SETTLE_SECONDS:
 			self.playing.volume = self.volume_set[0]   # Spotify takes a moment to report a new volume
 		if self.playing:
-			self.remember(self.playing.context, {"title": self.playing.title, "artist": self.playing.artist,
-				"cover": self.playing.cover, "uri": self.playing.uri})
+			self.last = replace(self.playing, is_playing=False, progress_ms=self.playing.progress(), volume=None)
 		elif not self.start_step:   # (on start the music is started first)
 			self.refresh_last_played()
 		if self.playing is None:
@@ -394,39 +393,31 @@ class SpotifyProvider(Provider):
 				log.info("Resumed the music on %s: %s", self.speaker, response.status_code)
 			self.start_step = None
 
-	def remember(self, context: str, song: dict | None) -> None:
-		if song and song.get("uri"):
-			self.last_song = song
-		self.last_uri = context or (song or {}).get("uri", "")
-
 	def refresh_last_played(self) -> None:
-		"""Nothing plays: find out what played last (if it didn't play while we watched), for the slide."""
-		if not self.last_uri and time.monotonic() - self.last_checked > LAST_PLAYED_EVERY_SECONDS:
+		"""Nothing plays: find out what played last (if it didn't play while we watched), and from where."""
+		if not self.last and time.monotonic() - self.last_checked > LAST_PLAYED_EVERY_SECONDS:
 			self.last_checked = time.monotonic()
 			response = self.api("GET", RECENTLY_PLAYED_URL, params={"limit": 1})
 			items = response.json().get("items") or [] if response.status_code == 200 else []
 			if items:
-				self.remember((items[0].get("context") or {}).get("uri") or "", parse_song(items[0]["track"]))
-		if self.last_uri and (self.last_played or {}).get("uri") != self.last_uri:
-			self.last_played = self.describe(self.last_uri)
+				self.last = parse_playing({"item": items[0]["track"], "context": items[0].get("context")}, time.monotonic())
+		if self.last and self.last.context != self.last_context[0]:
+			self.last_context = (self.last.context, self.context_name(self.last.context))
 
-	def describe(self, uri: str) -> dict:
-		"""The name, cover and Play button of what played last: a playlist, album, artist or podcast, or a song
-		(played on its own, or from Liked Songs, which the Web API can't play as a whole)."""
-		song = self.last_song or {}
-		kind = uri.split(":")[1]
+	def context_name(self, uri: str) -> str:
+		"""The name of a playlist, album, artist or podcast ("" if a song played on its own)."""
+		kind = uri.split(":")[1] if uri else ""
+		if uri.endswith(":collection"):
+			return "Liked Songs"
 		if kind not in ("playlist", "album", "artist", "show"):
-			liked = uri.endswith(":collection")
-			return {"uri": uri, "name": "Liked Songs" if liked else song["title"], "cover": song["cover"],
-				"subtitle": f"{song['title']} \u00b7 {song['artist']}" if liked else song["artist"],
-				"action": "play_song", "value": song["uri"], "shuffle": False}
-		data = self.api("GET", f"{API}/{kind}s/{uri.rsplit(':', 1)[-1]}").json()
-		subtitle = {"playlist": f"By {(data.get('owner') or {}).get('display_name', '')}", "artist": "Artist", "show": "Podcast",
-			"album": ", ".join(a["name"] for a in data.get("artists") or [])}[kind]
-		goes_on = kind in ("playlist", "album") and song.get("uri")   # from the last song
-		return {"uri": uri, "name": data["name"], "subtitle": subtitle, "cover": card_image(data.get("images") or []),
-			"action": "play_song" if goes_on else "play", "value": f"{song['uri']}|{uri}" if goes_on else uri,
-			"shuffle": kind in ("playlist", "album")}
+			return ""
+		return self.api("GET", f"{API}/{kind}s/{uri.rsplit(':', 1)[-1]}").json()["name"]
+
+	def continue_last(self, from_start: bool = False) -> str | None:
+		"""Play the last song again from where it stopped, going on with its playlist or album."""
+		last = self.last
+		body = {"context_uri": last.context, "offset": {"uri": last.uri}} if last.context.split(":")[1:2] in (["playlist"], ["album"]) else {"uris": [last.uri]}
+		return self.command("PUT", PLAY_URL, start=True, json=body | {"position_ms": 0 if from_start else last.progress_ms})
 
 	def refresh_next(self) -> None:
 		try:
@@ -530,7 +521,7 @@ class SpotifyProvider(Provider):
 		return songs, cards
 
 	def view(self) -> dict:
-		playing = self.playing
+		playing = self.playing or self.last
 		progress = playing.progress()
 		return {
 			# A new song, pausing/resuming, a jump in the song or a new next song (e.g. one added to the queue)
@@ -540,6 +531,7 @@ class SpotifyProvider(Provider):
 			"cover": playing.cover, "is_playing": playing.is_playing, "next": self.next,
 			"volume": None if playing.volume is None else self.shown_volume(playing),
 			"device": playing.device, "on_speaker": playing.device == self.speaker, "speaker": self.speaker,
+			**({} if self.playing else {"device": self.last_context[1] or self.speaker, "on_speaker": True}),   # the last song
 			"elapsed": minutes(progress), "total": minutes(playing.duration_ms),
 			# For the bar and the clock, which the browser moves on by itself (see "Spotify" in style.css).
 			"elapsed_seconds": progress // 1000, "total_seconds": playing.duration_ms // 1000,
@@ -558,17 +550,12 @@ class SpotifyProvider(Provider):
 		"""The volume bar: as it sounds on our own speaker; other players as Spotify reports them."""
 		return heard_volume(playing.volume) if playing.device == self.speaker else playing.volume
 
-	def current_view(self) -> dict:
-		if self.playing:
-			return self.view()
-		# Nothing playing: what played last, or pick something.
-		last = self.last_played if self.last_played and self.last_played["uri"] == self.last_uri else None
-		return {"state": "idle " + (last or {}).get("uri", ""), "idle": True, "speaker": self.speaker, "last": last}
-
-	def now_playing(self) -> Slide:
+	def now_playing(self) -> Slide | None:
+		"""What's playing, or else the last song (paused); None before either is known."""
+		if not (self.playing or self.last):
+			return None
 		# Checked every second, so a new song (or the music stopping) shows up while the slide is on screen.
-		return Slide("spotify.html", self.seconds, self.current_view(),
-			update=lambda now: self.current_view(), refresh_seconds=1)
+		return Slide("spotify.html", self.seconds, self.view(), update=lambda now: self.view(), refresh_seconds=1)
 
 	def song_lyrics(self, playing: NowPlaying) -> Lyrics | None | str:
 		"""The playing song's lyrics (looked up once per song), None if there are none, or "error"
@@ -585,14 +572,15 @@ class SpotifyProvider(Provider):
 			return self.lyrics[playing.id]
 
 	def lyrics_view(self) -> dict:
-		if not self.playing:
-			return {"state": "lyrics idle", "idle": True}
-		lyrics = self.song_lyrics(self.playing)
+		playing = self.playing or self.last
+		lyrics = self.song_lyrics(playing)
 		return {**self.view(), "state": "lyrics " + self.view()["state"],
 			"lyrics": None if lyrics == "error" else lyrics, "lyrics_error": lyrics == "error",
-			"progress_seconds": round(self.playing.progress() / 1000, 2)}
+			"progress_seconds": round(playing.progress() / 1000, 2)}
 
-	def lyrics_slide(self) -> Slide:
+	def lyrics_slide(self) -> Slide | None:
+		if not (self.playing or self.last):
+			return None
 		# Redrawn when the song changes, pauses or jumps (data-state); the lit-up line moves on by
 		# itself in between (widgets.js).
 		return Slide("spotify_lyrics.html", self.seconds, self.lyrics_view(), update=lambda now: self.lyrics_view(), refresh_seconds=1)
@@ -645,11 +633,11 @@ class SpotifyProvider(Provider):
 		if not self.connected:
 			return []
 		if (self.playing and self.playing.is_playing) or self.show_when_idle:
-			return [self.now_playing()]
+			return [slide] if (slide := self.now_playing()) else []
 		return []   # nothing playing (and show_when_idle is off): no slide
 
 	def shortcut_slide(self, now: datetime) -> Slide | None:
-		# Also when nothing plays: the shortcut is a quick way to start the music.
+		# Also when nothing plays: the shortcut is a quick way to continue the music.
 		return self.now_playing() if self.connected else None
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
@@ -774,6 +762,13 @@ class SpotifyProvider(Provider):
 			return self.now_playing(), f"Playing on {self.speaker}"
 		if name == "lyrics":
 			return self.lyrics_slide(), None
+		if name in ("previous", "skip", "toggle") and not self.playing and self.last:   # the last song: continue it
+			error = self.continue_last(from_start=name == "previous")
+			error = error or (self.command("POST", NEXT_URL) if name == "skip" else None)
+			if error:
+				return None, error
+			self.catch_up(now)
+			return (self.lyrics_slide() if values[:1] == ["lyrics"] else self.now_playing()), None
 		if name in ("previous", "skip", "toggle") and self.playing:
 			if name == "toggle":
 				error = self.command("PUT", PAUSE_URL if self.playing.is_playing else PLAY_URL, start=True)

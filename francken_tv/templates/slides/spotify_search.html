@@ -67,7 +67,11 @@
 			{% endfor %}
 		</ol>
 		{% elif not cards %}
-		<p class="spotify-search-hint">{% if not searched %}Type a song, playlist, album, artist or person, then tap Search{% elif kind == "people" %}Nobody found: Spotify only lets us find the people who made playlists in this account{% else %}Nothing found{% endif %}</p>
+		<p class="spotify-search-hint">{% if not searched %}Type a song, playlist, album, artist or person, then tap Search{% elif kind == "people" %}Nobody found{% else %}Nothing found{% endif %}</p>
+		{% endif %}
+		{% if kind == "people" and searched %}
+		<p class="spotify-search-hint">Not there? Spotify only lets us find people who made a playlist in this account.
+			Add one of your playlists to it (follow it on this account) and you'll show up here within 10 minutes.</p>
 		{% endif %}
 		</div>
 	</div>

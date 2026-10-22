@@ -81,16 +81,14 @@ class SpotifyTest(unittest.TestCase):
 		self.assertEqual(slide.data["percent"], 24.4)
 		self.assertEqual(slide.refresh_seconds, 1)
 
-	def test_nothing_playing_shows_how_to_start_music(self):
+	def test_no_slide_before_anything_is_known_to_have_played(self):
 		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
 		token = FakeResponse(200, {"access_token": "a", "expires_in": 3600})
 		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=token), \
 				mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)):
 			self.provider.refresh(NOW)
-		[slide] = self.provider.slides(NOW)
-		self.assertTrue(slide.data["idle"])
-		self.provider.show_when_idle = False
 		self.assertEqual(self.provider.slides(NOW), [])
+		self.assertIsNone(self.provider.shortcut_slide(NOW))
 
 	def test_next_song_and_playlists(self):
 		self.assertEqual(parse_next({"queue": [TRACK["item"], EPISODE["item"]]}),
@@ -343,43 +341,47 @@ class SpotifyTest(unittest.TestCase):
 		self.provider.access_token, self.provider.token_expires = "a", time.monotonic() + 3600
 		return self.provider
 
-	def test_nothing_playing_shows_the_last_played_playlist(self):
+	def test_nothing_playing_shows_the_last_song_paused(self):
 		provider = self.idle_provider()
 		recent = {"items": [{"track": TRACK["item"] | {"uri": "spotify:track:abc"}, "context": {"uri": "spotify:playlist:borrel"}}]}
-		playlist = {"name": "Borrel Hits", "owner": {"display_name": "Francken"}, "images": [{"url": "cover", "width": 300}]}
 		with mock.patch("francken_tv.providers.spotify.requests.request",
-				side_effect=[FakeResponse(204), FakeResponse(200, recent), FakeResponse(200, playlist), FakeResponse(204)]) as request:
+				side_effect=[FakeResponse(204), FakeResponse(200, recent), FakeResponse(200, {"name": "Borrel Hits"}), FakeResponse(204)]) as request:
 			provider.refresh(NOW)
 			provider.refresh(NOW)   # known now: not asked again
 		self.assertEqual(request.call_count, 4)
 		[slide] = provider.slides(NOW)
-		last = slide.data["last"]
-		self.assertEqual((last["name"], last["subtitle"], last["cover"]), ("Borrel Hits", "By Francken", "cover"))
-		self.assertEqual((last["action"], last["value"]), ("play_song", "spotify:track:abc|spotify:playlist:borrel"))   # on from the last song
-		self.assertIn("spotify:playlist:borrel", slide.data["state"])
+		data = slide.data
+		self.assertEqual((slide.template, data["title"], data["is_playing"], data["elapsed"]), ("spotify.html", "Live Is Life", False, "0:00"))
+		self.assertEqual((data["device"], data["on_speaker"], data["volume"]), ("Borrel Hits", True, None))   # no "Play on TV"
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request, \
+				mock.patch.object(provider, "catch_up"):
+			provider.action("toggle", [], NOW)   # ▶: on with the playlist from that song
+		self.assertEqual(request.call_args.kwargs["json"],
+			{"context_uri": "spotify:playlist:borrel", "offset": {"uri": "spotify:track:abc"}, "position_ms": 0})
 
-	def test_what_played_while_watching_is_shown_when_it_stops(self):
+	def test_what_played_while_watching_continues_where_it_stopped(self):
 		provider = self.idle_provider()
 		with mock.patch("francken_tv.providers.spotify.requests.request",
-				side_effect=[FakeResponse(200, TRACK | {"context": {"uri": "spotify:playlist:1"}}), FakeResponse(200, {"queue": []}), FakeResponse(204),
-					FakeResponse(200, {"name": "Borrel", "owner": {"display_name": "Francken"}})]) as request:
+				side_effect=[FakeResponse(200, TRACK | {"context": {"uri": "spotify:artist:opus"}}), FakeResponse(200, {"queue": []}), FakeResponse(204),
+					FakeResponse(200, {"name": "Opus"})]) as request:
 			provider.refresh(NOW)
-			provider.refresh(NOW)   # stopped: no need to ask what played last, only the playlist's name
-		self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/playlists/1")
-		self.assertEqual(request.call_count, 4)
-		self.assertEqual(provider.current_view()["last"]["name"], "Borrel")
+			provider.refresh(NOW)   # stopped: no need to ask what played last, only the artist's name
+		self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/artists/opus")
+		data = provider.slides(NOW)[0].data
+		self.assertEqual((data["title"], data["elapsed"], data["is_playing"], data["device"]), ("Live Is Life", "1:01", False, "Opus"))
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request, \
+				mock.patch.object(provider, "catch_up"):
+			provider.action("skip", [], NOW)   # an artist can't start at a song: that song, then the next
+		play, skip = request.call_args_list
+		self.assertEqual(play.kwargs["json"]["uris"], [""])   # (TRACK has no uri)
+		self.assertAlmostEqual(play.kwargs["json"]["position_ms"], 61_000, delta=100)
+		self.assertEqual(skip.args[1], "https://api.spotify.com/v1/me/player/next")
 
-	def test_a_song_on_its_own_or_an_old_login(self):
-		provider = self.idle_provider()
-		recent = {"items": [{"track": TRACK["item"] | {"uri": "spotify:track:abc"}, "context": None}]}
-		with mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(204), FakeResponse(200, recent)]):
-			provider.refresh(NOW)
-		last = provider.current_view()["last"]
-		self.assertEqual((last["name"], last["action"], last["value"], last["shuffle"]), ("Live Is Life", "play_song", "spotify:track:abc", False))
+	def test_an_old_login_shows_nothing_until_something_plays(self):
 		provider = self.idle_provider()
 		with mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(204), FakeResponse(403)]):
 			provider.refresh(NOW)   # logged in before recently played was asked
-		self.assertIsNone(provider.current_view()["last"])
+		self.assertEqual(provider.slides(NOW), [])
 
 	def test_search_people_and_open_their_playlists(self):
 		self.connect()
