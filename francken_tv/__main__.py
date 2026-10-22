@@ -14,7 +14,7 @@ import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import keyboard
+from . import keyboard, quiet_log
 from .app import build_app
 from .clock import Clock
 from .config import DEFAULT_CONFIG, load_config
@@ -36,6 +36,7 @@ def main() -> None:
 		level=logging.DEBUG if args.debug else logging.INFO,
 		format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 	)
+	quiet_log.install()   # the same warning at most once an hour (e.g. without internet)
 
 	config = load_config(args.config)
 	app = build_app(config, Clock(args.fake_time))

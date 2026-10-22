@@ -68,6 +68,9 @@ class Updater:
 			try:
 				if self.check():
 					return   # restarting
+			except RuntimeError as error:   # git failed, e.g. no internet: one line, it's tried again later
+				self.note(f"failed: {error}")
+				log.warning("Checking for updates failed: %s", error)
 			except Exception as error:
 				self.note(f"failed: {error}")
 				log.exception("Checking for updates failed")

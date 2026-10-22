@@ -67,6 +67,8 @@ class BackgroundRunner:
 					status.last_error = f"{self.clock.now():%H:%M:%S} {error!r}"
 					status.next_due = time.monotonic() + min(RETRY_AFTER_ERROR_SECONDS, provider.refresh_seconds)
 				else:
+					if status.last_error:
+						log.info("Refreshing %s works again", provider.name)
 					status.last_success = self.clock.now()
 					status.last_error = None
 					status.next_due = time.monotonic() + min(provider.refresh_seconds, self.seconds_until_midnight() + AFTER_MIDNIGHT_SECONDS)
