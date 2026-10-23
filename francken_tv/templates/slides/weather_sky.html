@@ -3,7 +3,8 @@
    providers/info.py) and `is_day` (else the moon and stars). The clouds, drops, flakes and stars are
    spread with arithmetic on the loop index, so it looks random but is the same every time. Styles:
    "Weather" in style.css; the slide around it has the classes weather-slide, scene-... and night. #}
-{% set clouds = {"clear": 0, "partly": 3, "cloudy": 7, "fog": 3, "drizzle": 5, "rain": 6, "heavy-rain": 7, "snow": 5, "storm": 7}[scene] %}
+{% set scene = scene | default("cloudy", true) %}{% set is_day = is_day | default(true) %}{# (e.g. new templates with code that hasn't restarted yet) #}
+{% set clouds = {"clear": 0, "partly": 3, "cloudy": 7, "fog": 3, "drizzle": 5, "rain": 6, "heavy-rain": 7, "snow": 5, "storm": 7}.get(scene, 7) %}
 {% set drops = {"drizzle": 45, "rain": 80, "heavy-rain": 130, "storm": 130}.get(scene, 0) %}
 <div class="weather-sky" aria-hidden="true">
 	{% if scene in ("clear", "partly") %}
