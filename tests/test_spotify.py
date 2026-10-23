@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 from unittest import mock
 from urllib.parse import parse_qs, urlparse
 
-from francken_tv.providers.spotify import SpotifyProvider, heard_volume, parse_embed_songs, parse_next, parse_playing, parse_playlist_songs, parse_playlists
+from francken_tv.providers.spotify import SCOPES, SpotifyProvider, heard_volume, parse_embed_songs, parse_next, parse_playing, parse_playlist_songs, parse_playlists
 
 NOW = datetime(2026, 10, 14, 15, 0)
 TRACK = {
@@ -188,10 +188,39 @@ class SpotifyTest(unittest.TestCase):
 		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=token), \
 				mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(200, TRACK), FakeResponse(204)]):
 			self.provider.refresh(NOW)
-		with mock.patch("francken_tv.providers.spotify.requests.request") as request:
+		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=token) as post, \
+				mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, {"id": "francken"})) as request:
 			slide, message = self.provider.action("skip", [], NOW)
-		request.assert_not_called()   # no use asking Spotify
+		post.assert_called_once()   # a new token, to be sure the login is still too old...
+		self.assertEqual([call.args[1] for call in request.call_args_list], ["https://api.spotify.com/v1/me"])   # ...but no skipping
 		self.assertIn("/spotify/login", message)
+
+	def test_a_login_on_another_pc_is_noticed_when_a_button_is_pressed(self):
+		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
+		old = FakeResponse(200, {"access_token": "a", "expires_in": 3600, "scope": "user-read-playback-state"})
+		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=old), \
+				mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[FakeResponse(200, TRACK), FakeResponse(204)]):
+			self.provider.refresh(NOW)
+		self.assertTrue(self.provider.needs_new_login)
+		new = FakeResponse(200, {"access_token": "b", "expires_in": 3600, "scope": SCOPES})
+		with mock.patch("francken_tv.providers.spotify.requests.post", return_value=new), \
+				mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request, \
+				mock.patch.object(self.provider, "catch_up"):
+			slide, message = self.provider.action("skip", [], NOW)
+		self.assertIsNone(message)
+		self.assertEqual(request.call_args_list[-1].args[:2], ("POST", "https://api.spotify.com/v1/me/player/next"))
+
+	def test_play_before_anything_is_known_resumes_on_our_speaker(self):
+		provider = self.idle_provider()
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, {"devices": []})):
+			slide, message = provider.action("toggle", [], NOW)
+		self.assertEqual((slide, message), (None, "The Francken TV speaker isn't running (see the README, \"Spotify\")"))
+		speaker = FakeResponse(200, {"devices": [{"id": "tv", "name": "Francken TV"}]})
+		with mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[speaker, FakeResponse(204)]) as request, \
+				mock.patch.object(provider, "catch_up"):
+			slide, message = provider.action("toggle", [], NOW)
+		self.assertEqual(request.call_args.kwargs["json"], {"device_ids": ["tv"], "play": True})
+		self.assertEqual(message, "Playing on Francken TV")
 
 	def test_play_on_the_tv_speaker_when_no_player_is_active(self):
 		self.connect()

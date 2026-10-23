@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "poll", "xkcd", "bieruur_countdown"]
+order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -91,7 +91,7 @@ albums_folder = "images/albums"   # contains <year>/<YYYY-MM-DD>-<event name>/ f
 recent_events = 3                 # pick photos from this many most recent events
 photos_per_event = 20             # photos downloaded from each event every refresh (fewer if it has fewer; the others make up the rest)
 photos_per_round = 1              # photos shown per round of the slideshow; all of a batch are shown before any comes back
-refresh_minutes = 60
+refresh_minutes = 1440        # checked for a new comic once a day (just after midnight), and at start
 seconds = 10
 
 [presence]
@@ -139,6 +139,12 @@ seconds = 12
 # Without that file the slide is left out.
 seconds = 15
 
+[extern]
+# The extern ("Internship? Job? Thesis?" and how to reach them): the text is in config/extern.json
+# (personal data, not in git; the format is in francken_tv/providers/extern.py), the photo and the
+# background in media/extern/. Without that file the slide is left out.
+seconds = 15
+
 [poll]
 # The weekly dilemma: vote on the TV, or scan the QR code and vote on a Google Form (README, "Weekly dilemma").
 file = "config/dilemmas.txt"   # one per line: question | option A | option B; the next one every Monday
@@ -151,8 +157,8 @@ seconds = 15
 [xkcd]
 # The latest xkcd comic, with its hover text.
 seconds = 15
-every_minutes = 30            # in the rotation at most this often
-refresh_minutes = 60
+every_minutes = 60            # in the rotation at most once an hour
+refresh_minutes = 1440        # checked for a new comic once a day (just after midnight), and at start
 
 [puzzles]
 # The Daily puzzles slide: one half per puzzle, tap one to play it.

@@ -99,6 +99,7 @@ Copy these to the TV PC by hand:
 | `media/voices/en_US-ryan-high.onnx(.json)` | piper text-to-speech voice |
 | `config/devices.json` | phone MAC addresses → names, chart styles, greetings (personal data!) |
 | `config/confidential.json`, `media/confidential/` | the confidential contact persons: names, email addresses, photos (personal data; the format is in `providers/confidential.py`) |
+| `config/extern.json`, `media/extern/` | the extern's slide: the text, phone number, photo and background (personal data; the format is in `providers/extern.py`) |
 | `~/.config/slideshow/nextcloud.credentials.json` | Nextcloud login |
 
 `data/` is created automatically: the presence database, caches and the downloaded quotes.
@@ -176,6 +177,8 @@ After changing `config.toml`: `systemctl --user restart francken-tv`.
 Closed the full-screen slideshow with Alt+F4? It stays closed; bring it back with `systemctl --user start francken-tv-kiosk`
 (`stop` to close it from a terminal). Starting `francken-tv` also opens it, and starts the Spotify speaker
 (`francken-tv-spotifyd`); stopping `francken-tv` stops the speaker too.
+The internet gone for minutes at a time ("Temporary failure in name resolution" in the log)?
+`deploy/fix_dns.sh` makes the PC skip its unreliable IPv6 DNS server (`--undo` to switch back).
 
 ### In a terminal instead (Ctrl+C, Ctrl+M and Ctrl+R at hand)
 

@@ -607,10 +607,21 @@ class SpotifyProvider(Provider):
 		"""The saved login is older than the buttons: it may only read what's playing."""
 		return self.scopes is not None and not set(SCOPES.split()) <= self.scopes
 
+	def login_too_old(self) -> bool:
+		"""needs_new_login, asked again with a new token: the one we have may be up to an hour old, from
+		before someone logged in again (e.g. on another PC with the same Spotify app and account)."""
+		if self.needs_new_login:
+			self.access_token = None
+			try:
+				self.api("GET", ME_URL)
+			except requests.RequestException:
+				pass
+		return self.needs_new_login
+
 	def command(self, method: str, url: str, start: bool = False, **kwargs) -> str | None:
 		"""Tell the Spotify player to do something; returns what went wrong, or None.
 		start: if no player is active, play on the TV PC's own speaker."""
-		if self.needs_new_login:
+		if self.login_too_old():
 			return NEW_LOGIN_MESSAGE
 		try:
 			response = self.api(method, url, **kwargs)
@@ -673,7 +684,7 @@ class SpotifyProvider(Provider):
 		if name == "songs" and values:   # value: "playlist or album uri|page" (a button sends one value)
 			uri, _, page_text = values[0].partition("|")
 			page = int(page_text) if page_text.isdigit() else 0
-			if self.needs_new_login:
+			if self.login_too_old():
 				return None, NEW_LOGIN_MESSAGE
 			try:
 				songs, total = self.fetch_songs(uri, page)
@@ -776,6 +787,8 @@ class SpotifyProvider(Provider):
 				return None, error
 			self.catch_up(now)
 			return self.now_playing(), f"Playing {self.collection_name(values[0])}"
+		if name in ("previous", "skip", "toggle", "here") and not self.playing and not self.last:
+			name = "here"   # nothing known to have played yet: the account's last session, on our speaker
 		if name == "here":   # move the music to the TV PC's own speaker
 			try:
 				speaker = self.speaker_id()

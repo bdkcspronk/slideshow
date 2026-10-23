@@ -2,7 +2,7 @@
 
 xkcd has a small JSON feed of the latest comic (info.0.json). The image is downloaded once per comic
 into data/cache/xkcd, in double size when xkcd has it (sharper on the TV). It's in the rotation at
-most once every half hour (every_minutes); its shortcut key and the menu show it any time.
+most once an hour (every_minutes); its shortcut key and the menu show it any time.
 """
 
 from __future__ import annotations
@@ -38,8 +38,8 @@ class XkcdProvider(Provider):
 	def __init__(self, settings: dict, cache_folder: Path, default_seconds: float) -> None:
 		self.cache_folder = cache_folder
 		self.seconds = settings.get("seconds", default_seconds)
-		self.refresh_seconds = settings.get("refresh_minutes", 60) * 60
-		self.every = timedelta(minutes=settings.get("every_minutes", 30))
+		self.refresh_seconds = settings.get("refresh_minutes", 24 * 60) * 60   # once a day
+		self.every = timedelta(minutes=settings.get("every_minutes", 60))
 		self.comic: Comic | None = None
 		self.last_shown: datetime | None = None   # when it was last put in a round
 
