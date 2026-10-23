@@ -1,11 +1,17 @@
+{# Upcoming activities (providers/activities.py), a poster in navy and crimson: soft glows drifting over
+   the navy, the title with a crimson highlighter wiping in, and a card per activity with a crimson date
+   block. Today's activities (and ones of several days going on now) each across both columns at the top,
+   crimson themselves; then the others: down the left column, then the right. They slide in one by one
+   (--i): today's from above, the left column from the left, the right column from the right. #}
 <div class="slide activities-slide">
-	<h1>Upcoming activities</h1>
-	{# Today's activities (and ones of several days going on now) each across both columns, at the top;
-	   then the others: down the left column, then the right. They slide in one by one (--i): today's
-	   from above, the left column from the left, the right column from the right. #}
+	<div class="activities-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="activities-pill">What's on at Francken</div>
+	<h1 class="activities-title"><span>Upcoming</span> <span class="activities-marked">activities</span></h1>
 	{% macro card(activity, cls, i) %}
+		{% set now = activity.day <= today %}
 		<li class="{{ cls }}" style="--i: {{ i }}">
 			<div class="activity-date">
+				<span class="weekday">{% if activity.day == today %}Today{% elif now %}Now{% else %}{{ activity.day.strftime("%a") }}{% endif %}</span>
 				<span class="day">{{ activity.day.day }}</span>
 				<span class="month">{{ activity.day.strftime("%b") }}</span>
 			</div>

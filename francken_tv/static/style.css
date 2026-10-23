@@ -122,28 +122,72 @@ body.show-cursor button { cursor: pointer; }
 .photo-caption strong { font-size: 4vh; }
 .photo-caption span { font-size: 2.6vh; opacity: 0.85; }
 
-/* Upcoming activities. */
+/* Upcoming activities: a poster in navy and crimson. Soft glows drift over the navy; the title gets a
+   crimson highlighter; cream cards with a crimson date block; today's cards crimson themselves. */
 .activities-slide {
+	--navy: #0d1f3c;
+	--crimson: #c8102e;
+	--paper: #fdf8ec;
+	position: relative;
+	overflow: hidden;
 	display: flex;
 	flex-direction: column;
-	background: var(--bg);
-	color: var(--blue);
-	padding: 6vh 5vw 5vh;   /* the title in the same place as on the info slides */
+	padding: 5vh 5vw;
+	background:
+		repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 28px),
+		linear-gradient(160deg, #13294f, var(--navy) 60%);
+	color: var(--paper);
+	font-family: "Familjen Grotesk", "DejaVu Sans", sans-serif;
+	font-weight: 700;
 }
-.activities-slide h1 {
-	margin: 0 0 4vh;
-	font-size: 6.5vh;
+.activities-glows i {   /* big soft circles drifting slowly behind everything */
+	position: absolute;
+	width: 70vh;
+	height: 70vh;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(200, 16, 46, 0.35), transparent 65%);
+	animation: activities-glow 26s ease-in-out infinite alternate;
+}
+.activities-glows i:nth-child(1) { left: -15vh; top: -20vh; }
+.activities-glows i:nth-child(2) { right: -20vh; top: 25vh; background: radial-gradient(circle, rgba(70, 120, 220, 0.3), transparent 65%); animation-duration: 32s; animation-delay: -10s; }
+.activities-glows i:nth-child(3) { left: 35vw; bottom: -40vh; animation-duration: 38s; animation-delay: -20s; }
+@keyframes activities-glow { to { transform: translate(18vh, 12vh) scale(1.2); } }
+.activities-pill {
+	position: relative;
+	align-self: flex-start;
+	padding: 0.9vh 1.4vw;
+	border-radius: 4vh;
+	background: var(--crimson);
+	font-size: 2.6vh;
+	letter-spacing: 0.2vh;
+	text-transform: uppercase;
+	animation: practice-in 0.6s ease-out 0.1s both;
+}
+.activities-title { position: relative; margin: 1.8vh 0 3.5vh; font-size: 8vh; line-height: 1; letter-spacing: -0.1vh; }
+.activities-title span { display: inline-block; animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.25s both; }
+.activities-marked { position: relative; animation-delay: 0.4s !important; }
+.activities-marked::before {   /* the highlighter, wiping in from the left behind the word */
+	content: "";
+	position: absolute;
+	z-index: -1;
+	inset: 38% -1vw 4% -0.8vw;
+	background: var(--crimson);
+	border-radius: 0.6vh;
+	transform: skewX(-8deg) rotate(-1.5deg);
+	transform-origin: left;
+	animation: practice-wipe 0.7s cubic-bezier(0.6, 0, 0.3, 1) 0.9s both;
 }
 .activities-slide ul {
+	position: relative;
 	list-style: none;
 	margin: 0;
 	padding: 0;
 	display: grid;
-	gap: 2.5vh 3vw;
+	gap: 2.2vh 2.5vw;
 }
 /* Today's activities: one card per activity across both columns, bigger, above the others. */
-.activities-slide .activities-current { grid-template-columns: minmax(0, 1fr); margin-bottom: 2.5vh; }
-.activities-slide .activities-current li { padding: 2.4vh 2vw; }
+.activities-slide .activities-current { grid-template-columns: minmax(0, 1fr); margin-bottom: 2.2vh; }
+.activities-slide .activities-current li { padding: 0; }
 .activities-slide .activities-current .activity-date .day { font-size: 6.5vh; }
 .activities-slide .activities-current .activity-title { font-size: 4.4vh; }
 .activities-slide .activities-current .activity-details { font-size: 2.8vh; }
@@ -153,39 +197,54 @@ body.show-cursor button { cursor: pointer; }
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);   /* two equal columns, even with long names */
 	grid-auto-flow: column;   /* in date order down the left column, then down the right */
 }
-.activities-slide li {
+.activities-slide li {   /* a cream card: the crimson date block, then the title and details */
 	display: flex;
-	align-items: center;
-	gap: 1.5vw;
-	background: var(--card);
-	border: 0.15vh solid var(--card-border);
-	border-radius: 0.6vw;
-	padding: 1.8vh 1.5vw;
-	box-shadow: var(--shadow);
+	align-items: stretch;
+	overflow: hidden;
+	border-radius: 1.4vh;
+	background: var(--paper);
+	color: var(--navy);
+	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
 }
-.activities-slide li.today { outline: 0.4vh solid var(--red); }
+.activities-slide li.today { background: var(--crimson); color: #ffffff; box-shadow: 0 1.2vh 3.5vh rgba(200, 16, 46, 0.45); }
 .activities-slide li.from-left { animation: slide-from-left 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.6s + var(--i) * 0.5s) both; }
 .activities-slide li.from-right { animation: slide-from-right 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.6s + var(--i) * 0.5s) both; }
 @keyframes slide-from-left { from { transform: translateX(-60vw); opacity: 0; } }
 @keyframes slide-from-right { from { transform: translateX(60vw); opacity: 0; } }
 .activity-date {
+	flex: none;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	min-width: 6vw;
-	color: var(--blue-light);
+	justify-content: center;
+	min-width: 7.5vw;
+	padding: 1.2vh 0;
+	background: var(--crimson);
+	color: #ffffff;
+	line-height: 1;
+	text-transform: uppercase;
 }
-.activity-date .day { font-size: 5vh; font-weight: bold; line-height: 1; }
-.activity-date .month { font-size: 2.4vh; text-transform: uppercase; color: var(--red-dark); }
-.activity-text { min-width: 0; }   /* lets long titles shrink instead of widening the card */
+.activities-slide li.today .activity-date { background: var(--navy); }   /* today: the colours the other way round */
+.activity-date .weekday { font-size: 1.9vh; letter-spacing: 0.15vh; opacity: 0.9; }
+.activity-date .day { font-size: 5vh; margin: 0.3vh 0; }
+.activity-date .month { font-size: 1.9vh; letter-spacing: 0.15vh; opacity: 0.9; }
+.activity-text {   /* lets long titles shrink instead of widening the card */
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 1.6vh 1.5vw;
+	border-left: 0.35vh dashed rgba(13, 31, 60, 0.18);   /* the perforation, like the tickets */
+}
+.activities-slide li.today .activity-text { border-left-color: rgba(255, 255, 255, 0.35); }
 .activity-title {
 	font-size: 3.2vh;
-	font-weight: bold;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;   /* long names end in "..." on one line */
 }
-.activity-details { font-size: 2.4vh; color: var(--muted); margin-top: 0.6vh; }
+.activity-details { font-size: 2.3vh; margin-top: 0.6vh; color: #4b5d77; font-weight: normal; }
+.activities-slide li.today .activity-details { color: rgba(255, 255, 255, 0.85); }
 
 /* Info slide (providers/info.py): news, weather, buses or the timetable, in the activities slide's
    look. Items slide in one after another (--i, --j). */
