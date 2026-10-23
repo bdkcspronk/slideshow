@@ -1,11 +1,14 @@
 {#
-	Today's activity chart. The numbers come from chart_view() in activity_chart.py; the looks and
-	animations ("Activity chart" in style.css): bars grow in from left to right, beer bubbles
-	rise, and the nyan cat rides the front of its rainbow. Positions are in % of the chart width.
+	Today's activity chart, on the navy and crimson poster (like the activities and news slides). The
+	numbers come from chart_view() in activity_chart.py; the looks and animations ("Activity chart" in
+	style.css): bars grow in from left to right, beer bubbles rise, and the nyan cat rides the front of
+	its rainbow. Positions are in % of the chart width.
 #}
 {% from "bar.html" import bar as draw_bar %}
 <div class="slide presence-slide" style="--rows: {{ names | length }}">
-	<h1>Francken activity tracker</h1>
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="poster-pill">Activity tracker</div>
+	<h1 class="poster-title"><span>Today in the</span> <span class="poster-marked">room</span></h1>
 	<div class="chart">
 		<div class="chart-names">
 			{% for name in names %}<div>{{ name }}</div>{% endfor %}

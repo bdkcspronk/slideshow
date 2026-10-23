@@ -122,9 +122,10 @@ body.show-cursor button { cursor: pointer; }
 .photo-caption strong { font-size: 4vh; }
 .photo-caption span { font-size: 2.6vh; opacity: 0.85; }
 
-/* The navy and crimson posters (upcoming activities, news): soft glows drift over the navy (.navy-glows),
-   a crimson label (.poster-pill) and a title with a crimson highlighter behind a word (.poster-marked). */
-.activities-slide, .news-slide {
+/* The navy and crimson posters (upcoming activities, news, the activity chart, the leaderboard, books): soft
+   glows drift over the navy (.navy-glows), a crimson label (.poster-pill) and a title with a crimson
+   highlighter behind a word (.poster-marked). */
+.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide {
 	--navy: #0d1f3c;
 	--crimson: #c8102e;
 	--paper: #fdf8ec;
@@ -1325,25 +1326,23 @@ body.show-cursor button { cursor: pointer; }
 .party-title { font-size: 14vh; font-weight: bold; line-height: 1; }
 .party-subtitle { font-size: 7vh; margin-top: 3vh; }
 
-/* Activity chart (activity_chart.py + templates/slides/presence.html), dark like the leaderboard (an
-   exception to the blue and red theme). Rows are 1/--rows of the
-   chart height; bars grow from left to right (a clip that opens), like time playing back. */
-.presence-slide {
-	display: flex;
-	flex-direction: column;
-	gap: 3vh;
-	padding: 5vh 3vw 3vh;
-	background: #151722;
-	color: #ECEFF1;
-}
-.presence-slide h1 { margin: 0 0 0 13vw; font-size: 3.4vh; letter-spacing: 0.2vh; text-transform: uppercase; }
+/* Activity chart (activity_chart.py + templates/slides/presence.html), on the navy poster (see "The navy
+   and crimson posters"), the chart on a see-through panel rising in. Rows are 1/--rows of the chart
+   height; bars grow from left to right (a clip that opens), like time playing back. */
+.presence-slide .poster-title { margin-bottom: 2.5vh; }
 .chart {
+	position: relative;
 	flex: 1;
 	display: grid;
 	grid-template-columns: 12vw 1fr;
 	grid-template-rows: 1fr 5vh;
 	column-gap: 1vw;
 	min-height: 0;
+	padding: 2.5vh 2vw 1vh 1vw;
+	border-radius: 2vh;
+	background: rgba(5, 14, 30, 0.45);
+	border: 0.2vh solid rgba(255, 255, 255, 0.12);
+	animation: weather-tile 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.6s both;
 }
 .chart-names { display: flex; flex-direction: column; }
 .chart-names div {
@@ -1351,15 +1350,15 @@ body.show-cursor button { cursor: pointer; }
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
-	font-size: min(2.6vh, calc(55vh / var(--rows)));
+	font-size: min(2.6vh, calc(48vh / var(--rows)));
 }
 .chart-plot { position: relative; }
 /* Vertical lines: every quarter hour thin, half hours thicker, hours thickest (centred on their time). */
-.chart-grid { position: absolute; top: 0; bottom: 0; width: 0.1vh; transform: translateX(-50%); background: rgba(38, 50, 56, 0.5); }
-.chart-grid.half { width: 0.28vh; background: rgba(38, 50, 56, 0.75); }
-.chart-grid.hour { width: 0.48vh; background: rgba(38, 50, 56, 0.9); }
+.chart-grid { position: absolute; top: 0; bottom: 0; width: 0.1vh; transform: translateX(-50%); background: rgba(255, 255, 255, 0.05); }
+.chart-grid.half { width: 0.28vh; background: rgba(255, 255, 255, 0.08); }
+.chart-grid.hour { width: 0.48vh; background: rgba(255, 255, 255, 0.13); }
 .chart-hours { grid-column: 2; position: relative; }
-.chart-hours span { position: absolute; top: 1vh; transform: translateX(-50%); font-size: 2.4vh; }
+.chart-hours span { position: absolute; top: 1vh; transform: translateX(-50%); font-size: 2.4vh; opacity: 0.8; }
 .bar {
 	position: absolute;
 	top: calc((var(--row) + 0.1) * 100% / var(--rows));
@@ -1426,69 +1425,54 @@ body.show-cursor button { cursor: pointer; }
 }
 @keyframes cat-bob { to { margin-top: -0.8vh; } }
 
-/* Weekly leaderboard. */
-.leaderboard-slide {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	padding: 0 8vw;
-	background: #151722;
-	color: #ECEFF1;
-}
-.leaderboard-slide h1 { margin: 0 0 4vh; font-size: 5.5vh; }
-.leaderboard-slide ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.6vh; }
+/* Weekly leaderboard, on the navy poster: a cream card per person sliding in one after another (like the
+   practice tickets), with a gold, silver or bronze place for the top three and their bar growing in. */
+.leaderboard-slide ol { position: relative; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.4vh; }
 .leaderboard-slide li {
 	display: grid;
-	grid-template-columns: 5.5vh 16vw 1fr 15vw 6vw;
+	grid-template-columns: 5.5vh 16vw 1fr 13vw 6vw;
 	align-items: center;
 	gap: 1.5vw;
+	padding: 1.1vh 1.5vw 1.1vh 1.1vh;
+	border-radius: 1.4vh;
+	background: var(--paper);
+	color: var(--navy);
+	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
 	font-size: 3vh;
-	opacity: 0;
-	animation: leader-in 0.6s ease calc(0.6s + var(--i) * 0.15s) forwards;
+	animation: practice-ticket 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) calc(0.9s + var(--i) * 0.14s) both;
 }
-@keyframes leader-in { from { opacity: 0; transform: translateY(1vh); } to { opacity: 1; transform: none; } }
 .leaderboard-place {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	width: 5.5vh;
 	height: 5.5vh;
-	border-radius: 50%;
-	background: #263238;
-	font-weight: bold;
+	border-radius: 1.2vh;
+	background: var(--navy);
+	color: #ffffff;
 }
-.place-1 .leaderboard-place { background: #f3b01f; color: #151722; }
-.place-2 .leaderboard-place { background: #c0c6cc; color: #151722; }
-.place-3 .leaderboard-place { background: #cd7f32; color: #151722; }
-.leaderboard-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.place-1 .leaderboard-place { background: #f3b01f; color: var(--navy); }
+.place-2 .leaderboard-place { background: #c0c6cc; color: var(--navy); }
+.place-3 .leaderboard-place { background: #cd7f32; color: #ffffff; }
+.leaderboard-slide li.place-1 { box-shadow: 0 0 0 0.4vh #f3b01f, 0 1.2vh 3.5vh rgba(243, 176, 31, 0.35); }   /* the winner */
+.leaderboard-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The bars are the activity chart's (.bar, above), in a row of their own instead of on the chart. */
-.leaderboard-track { position: relative; height: 4vh; border-radius: 8px; background: rgba(255, 255, 255, 0.06); }
+.leaderboard-track { position: relative; height: 4vh; border-radius: 8px; background: rgba(13, 31, 60, 0.08); }
 .leaderboard-track .bar { top: 0; left: 0; height: 100%; animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1); }
 .leaderboard-track .bar-stripes { --s: var(--stripe, 2.4vh); }
-.leaderboard-time { text-align: right; font-weight: bold; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.leaderboard-days { color: #8a9aa3; font-size: 2.4vh; }
+.leaderboard-time { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.leaderboard-days { color: var(--crimson); font-size: 2.4vh; font-weight: normal; }
 
-/* Books for sale (providers/books.py): a wooden bookshop shelf. The books slide in from the
-   right one just after the other (--i), turning, and land on the shelf; their title, authors and
+/* Books for sale (providers/books.py), on the navy poster. The books slide in from the right one just
+   after the other (--i), turning, and land in place with a crimson glow behind them; their title, authors and
    price appear below it. Each book is a 3D box (front cover, spine, pages, top, back); --hue colours
    the spine and the cloth of books without a cover. */
 .books-slide {
-	--w: 27vh;   /* a book: width, height, thickness */
-	--h: 38vh;
+	--w: 25vh;   /* a book: width, height, thickness */
+	--h: 35vh;
 	--d: 4vh;
-	--shelf-top: 50vh;   /* where the books stand, from the top of .books-row (leaves room under the title) */
-	--shelf-surface: 4vh;   /* the top of the plank the books stand on (seen from a little above) */
-	--shelf-edge: 4.5vh;    /* the plank's front edge */
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-	padding: 6vh 5vw 0;   /* the title in the same place as on the info slides */
-	background: var(--bg);
-	color: var(--blue);
-}
-.books-slide h1 {
-	margin: 0;
-	font-size: 6.5vh;   /* as on the activities and info slides */
+	--stand: 41vh;   /* where the books stand, from the top of .books-row (leaves room under the title) */
+	padding: 5vh 5vw 0;   /* the navy poster's background, label and title: see "The navy and crimson posters" */
 }
 
 .books-row {
@@ -1496,20 +1480,7 @@ body.show-cursor button { cursor: pointer; }
 	flex: 1;
 	display: flex;
 	justify-content: space-around;
-	padding-top: calc(var(--shelf-top) - var(--h));
-}
-/* A thick wooden plank: its top surface, on which the books stand halfway back, and its front edge. */
-.books-shelf {
-	position: absolute;
-	left: -5vw;   /* to the edges of the screen, past the slide's padding */
-	right: -5vw;
-	top: calc(var(--shelf-top) - var(--shelf-surface) / 2);
-	height: calc(var(--shelf-surface) + var(--shelf-edge));
-	background:
-		linear-gradient(#c9a07a, #b88d66) top / 100% var(--shelf-surface) no-repeat,
-		linear-gradient(#94693f, #7a5432 70%, #5f4127);
-	box-shadow: 0 2vh 3vh -1vh rgba(60, 40, 20, 0.45);
-	z-index: 0;
+	padding-top: calc(var(--stand) - var(--h));
 }
 .book-card {
 	position: relative;
@@ -1523,12 +1494,11 @@ body.show-cursor button { cursor: pointer; }
 
 .book-stage {
 	position: relative;
-	z-index: 0;   /* its own layer, so the shadow can go behind the book */
+	z-index: 1;   /* in front of its glow */
 	perspective: 140vh;
 	perspective-origin: 50% 30%;
 }
-/* Hovering over the shelf: a slow bob up and down and a little sway, each book out of step with the
-   others; its shadow stays on the shelf and shrinks as the book rises (book-shadow-hover, same timing). */
+/* Hovering: a slow bob up and down and a little sway, each book out of step with the others. */
 .book-sway {
 	transform-style: preserve-3d;
 	animation: book-sway 5s ease-in-out calc(var(--i) * -1.7s) infinite alternate;
@@ -1597,25 +1567,26 @@ body.show-cursor button { cursor: pointer; }
 	transform: rotateX(90deg) translateZ(calc(var(--h) / 2 - 0.3vh));
 	background: repeating-linear-gradient(0deg, #f7f2e8 0 0.3vh, #ddd3c2 0.3vh 0.4vh);
 }
-/* The book's shadow on the shelf's surface, below the hovering book. It slides in with the book (the
-   same timing as book-arrive, using translate) and shrinks and fades as the book bobs up (using scale
-   and opacity, so the two animations don't overwrite each other). */
-.book-shadow {
+/* A crimson glow behind each book: it slides in with the book (the same timing as book-arrive, using
+   translate) and then pulses slowly, to catch the eye (using scale and opacity, so the two animations
+   don't overwrite each other). */
+.book-glow {   /* behind the book (outside its 3D scene, which would hide it): centred on where it hovers */
 	position: absolute;
-	z-index: -1;
-	left: 6%;
-	right: 2%;
-	bottom: -1.2vh;
-	height: 2.2vh;
+	z-index: 0;
+	left: 50%;
+	top: calc(var(--h) * -0.2);
+	width: calc(var(--w) * 1.9);
+	height: calc(var(--h) * 1.35);
+	margin-left: calc(var(--w) * -0.95);
 	border-radius: 50%;
-	background: rgba(40, 25, 10, 0.5);
-	filter: blur(0.8vh);
+	background: radial-gradient(closest-side, rgba(225, 30, 60, 0.9), rgba(200, 16, 46, 0.35) 55%, transparent);
+	filter: blur(2vh);
 	animation:
-		book-shadow-arrive 1.8s cubic-bezier(0.22, 0.8, 0.3, 1) calc(0.4s + var(--i) * 0.3s) both,
-		book-shadow-hover 5s ease-in-out calc(var(--i) * -1.7s) infinite alternate;
+		book-glow-arrive 1.8s cubic-bezier(0.22, 0.8, 0.3, 1) calc(0.4s + var(--i) * 0.3s) both,
+		book-glow-pulse 2.4s ease-in-out calc(2.2s + var(--i) * 0.8s) infinite alternate both;
 }
-@keyframes book-shadow-arrive { 0% { translate: 100vw 0; } 80%, 100% { translate: 0 0; } }   /* in place at 80%, like the book */
-@keyframes book-shadow-hover { from { scale: 0.95; opacity: 0.9; } to { scale: 0.8; opacity: 0.6; } }   /* low, then high */
+@keyframes book-glow-arrive { 0% { translate: 100vw 0; } 80%, 100% { translate: 0 0; } }   /* in place at 80%, like the book */
+@keyframes book-glow-pulse { from { scale: 0.9; opacity: 0.6; } to { scale: 1.08; opacity: 1; } }
 
 /* Books without a cover on Open Library: a cloth-bound hardcover with a gold title. */
 .book-drawn {
@@ -1642,10 +1613,10 @@ body.show-cursor button { cursor: pointer; }
 }
 .book-drawn-authors { font-size: 1.6vh; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
 
-/* Below the shelf: title, authors, price. */
+/* Below the books: title, authors, price. */
 .book-text {
 	width: 100%;
-	margin-top: calc(var(--shelf-surface) / 2 + var(--shelf-edge) + 2.5vh);   /* below the shelf */
+	margin-top: 5vh;   /* below the hovering books */
 	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(1.6s + var(--i) * 0.3s) both;
 }
 @keyframes book-text-in { from { opacity: 0; transform: translateY(2vh); } }
@@ -1662,7 +1633,8 @@ body.show-cursor button { cursor: pointer; }
 .book-authors {
 	margin-top: 0.8vh;
 	font-size: 2.1vh;
-	color: var(--muted);
+	font-weight: normal;
+	opacity: 0.75;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -1677,13 +1649,13 @@ body.show-cursor button { cursor: pointer; }
 .book-price > span {
 	padding: 0.7vh 1.4vw;
 	border-radius: 0.6vh;
-	background: var(--red);
+	background: var(--crimson);
 	color: #ffffff;
 	font-size: 3.6vh;
-	font-weight: bold;
+	box-shadow: 0 0.8vh 2vh rgba(200, 16, 46, 0.35);
 }
 .book-price > span small { font-size: 2vh; font-weight: normal; opacity: 0.75; }
-.book-price > small { font-size: 2vh; color: var(--muted); }
+.book-price > small { font-size: 2vh; font-weight: normal; opacity: 0.75; }
 
 /* Spotify: the album cover, blurred, as the background; the cover itself, title, progress and the
    next song on top. Dark, in Spotify's own colours (an exception to the blue and red theme). */

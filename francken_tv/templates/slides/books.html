@@ -1,10 +1,15 @@
+{# Second-hand books for sale (providers/books.py), on the navy and crimson poster (like the activities
+   and news slides): 3D books hovering with a crimson glow behind them, their title, authors and price below. #}
 <div class="slide books-slide">
-	<h1>Second Hand Books</h1>
-	{# The books slide in from the right one just after the other (--i), turning, and land on the
-	   shelf with their title, authors and price below it. #}
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="poster-pill">For sale at Francken</div>
+	<h1 class="poster-title"><span>Second-hand</span> <span class="poster-marked">books</span></h1>
+	{# The books slide in from the right one just after the other (--i), turning, and land in place, each
+	   with its glow; their title, authors and price appear below. #}
 	<div class="books-row">
 		{% for book in books %}
 		<div class="book-card" style="--i: {{ loop.index0 }}; --hue: {{ book.hue }}">
+			<div class="book-glow" aria-hidden="true"></div>
 			<div class="book-stage">
 				<div class="book-sway">
 					<div class="book-3d">
@@ -22,7 +27,6 @@
 						<div class="book-top"></div>
 					</div>
 				</div>
-				<div class="book-shadow"></div>
 			</div>
 			<div class="book-text">
 				<div class="book-title">{{ book.title }}</div>
@@ -34,6 +38,5 @@
 			</div>
 		</div>
 		{% endfor %}
-		<div class="books-shelf"></div>
 	</div>
 </div>
