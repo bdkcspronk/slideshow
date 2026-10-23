@@ -194,6 +194,25 @@ class InfoProviderTest(unittest.TestCase):
 		rows = self.provider.buses_data(SUNDAY_EVENING)["departures"]
 		self.assertEqual([row["colors"] for row in rows], [["#00be46", "#000000"], None])   # a regional line: the slide's blue
 
+	def test_only_buses_that_can_still_be_caught_and_a_last_call(self):
+		at = lambda minute, second=0: datetime(2026, 10, 18, 19, minute, second)
+		self.provider.departures = [Departure("2", "Europapark", at(40), at(40)), Departure("15", "Hoofdstation", at(41), at(41)),
+			Departure("1", "Hoofdstation", at(45), at(45))]
+		rows = self.provider.buses_data(at(38, 30))["departures"]   # 1.5 minutes before the 2: too late (2 minutes' walk)
+		self.assertEqual([(row["departure"].line, row["minutes"], row["last_call"]) for row in rows], [("15", 2, True), ("1", 6, False)])
+		self.assertIsNone(self.provider.buses_data(at(43, 30)))   # none left that can be caught
+
+	def test_the_bus_poster_shows_the_next_bus_that_is_not_cancelled(self):
+		from jinja2 import Environment, FileSystemLoader, select_autoescape
+		self.provider.departures.insert(0, Departure("15", "Hoofdstation", datetime(2026, 10, 18, 19, 35), datetime(2026, 10, 18, 19, 35), cancelled=True))
+		data = self.provider.buses_data(SUNDAY_EVENING)
+		html = Environment(loader=FileSystemLoader(Path(__file__).parent.parent / "francken_tv" / "templates"), autoescape=select_autoescape()).get_template(
+			"slides/info_buses.html").render(**data)
+		next_bus = re.search(r'class="bus-next">(.*?)</div>\s*</div>', html, re.S).group(1)
+		self.assertIn(">1</span>", next_bus)   # not the cancelled 15
+		self.assertIn("in 9 min", next_bus)
+		self.assertIn("<em>Cancelled</em>", html)
+
 	def test_the_timetable_stays_longer(self):
 		self.provider.turn = 3
 		self.assertEqual(self.provider.slides(SUNDAY_EVENING)[0].seconds, 25)

@@ -1,15 +1,45 @@
-{# Info slide, buses part (providers/info.py): the next departures, live from OVapi. #}
-<div class="slide info-slide info-buses">
-	<h1>Buses from {{ stop }}</h1>
-	<ol class="bus-list">
+{# Info slide, buses part (providers/info.py): the next departures, live from OVapi. A poster like the
+   practice sessions one: the headline and the next bus on the left, a ticket per departure on the
+   right, and a road along the bottom where a bus drives by now and then. On the 1920 x 1080 grid (--px).
+   Only buses that can still be caught from the association (walk_minutes); when the next one is one you
+   have to leave for right away, it's a "last call" on the left. #}
+{% set next = departures | rejectattr("departure.cancelled") | first %}
+<div class="slide bus-slide" style="--rows: {{ departures | length }}">
+	<div class="bus-road" aria-hidden="true">
+		<div class="bus-lane"></div>
+		<svg class="bus-driving" viewBox="0 0 320 130">
+			<rect x="6" y="8" width="300" height="96" rx="20" class="bus-body"/>
+			<rect x="6" y="70" width="300" height="10" class="bus-stripe"/>
+			{% for x in [40, 92, 144, 196] %}<rect x="{{ x }}" y="22" width="44" height="38" rx="6" class="bus-window"/>{% endfor %}
+			<rect x="252" y="22" width="40" height="38" rx="6" class="bus-window"/>
+			<rect x="14" y="26" width="18" height="70" rx="4" class="bus-door"/>
+			<rect x="296" y="78" width="10" height="12" rx="3" class="bus-light"/>
+			{% for x in [76, 244] %}<g class="bus-wheel" style="transform-origin: {{ x }}px 104px"><circle cx="{{ x }}" cy="104" r="22"/><circle cx="{{ x }}" cy="104" r="8" class="bus-hub"/><rect x="{{ x - 2 }}" y="84" width="4" height="40" class="bus-hub"/></g>{% endfor %}
+		</svg>
+	</div>
+	<div class="bus-poster">
+		<div class="bus-pill"><i></i> Live &middot; {{ stop }}</div>
+		<h1 class="bus-headline"><span>Next</span><span class="bus-marked">Buses</span></h1>
+		{% if next %}
+		<div class="bus-next">
+			<span class="bus-badge{{ ' long' if next.departure.line | length > 2 }}"{% if next.colors %} style="background: {{ next.colors[0] }}"{% endif %}>{{ next.departure.line }}</span>
+			<div>
+				<span>to {{ next.departure.destination }}</span>
+				<b class="{{ 'last-call' if next.last_call }}">{% if next.last_call %}Last call!{% else %}in {{ next.minutes }} min{% endif %}</b>
+				{% if next.last_call %}<small>leaves in {{ next.minutes }} min</small>{% endif %}
+			</div>
+		</div>
+		{% endif %}
+	</div>
+	<ol class="bus-tickets">
 		{% for row in departures %}{% set departure = row.departure %}
-		<li class="{{ 'cancelled' if departure.cancelled }}" style="--i: {{ loop.index0 }}">
-			<span class="bus-line"{% if row.colors %} style="background: {{ row.colors[0] }}; color: {{ row.colors[1] }}"{% endif %}>{{ departure.line }}</span>
+		<li class="bus-ticket{{ ' cancelled' if departure.cancelled }}" style="--i: {{ loop.index0 }}">
+			<span class="bus-badge{{ ' long' if departure.line | length > 2 }}"{% if row.colors %} style="background: {{ row.colors[0] }}"{% endif %}>{{ departure.line }}</span>
 			<span class="bus-destination">{{ departure.destination }}</span>
-			<span class="bus-time">{{ departure.expected.strftime("%H:%M") }}{% if departure.delay %}<small>+{{ departure.delay }}</small>{% endif %}</span>
-			<span class="bus-minutes">{% if departure.cancelled %}cancelled{% elif row.minutes == 0 %}now{% else %}{{ row.minutes }} min{% endif %}</span>
+			<span class="bus-time">{{ departure.expected.strftime("%H:%M") }}{% if departure.delay and not departure.cancelled %}<small>+{{ departure.delay }}</small>{% endif %}</span>
+			<span class="bus-minutes">{% if departure.cancelled %}<em>Cancelled</em>{% else %}<b>{{ row.minutes }}</b> min{% endif %}</span>
 		</li>
 		{% endfor %}
 	</ol>
-	<p class="info-source">Live times from OVapie</p>
+	<p class="bus-source">Live times from OVapi</p>
 </div>

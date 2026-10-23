@@ -436,6 +436,7 @@ class InfoProvider(Provider):
 		self.stop_name = settings.get("bus_stop_name", "Aletta Jacobshal")
 		self.stop_codes = settings.get("bus_stop_codes", ALETTA_JACOBSHAL)
 		self.departures_shown = settings.get("departures_shown", 8)
+		self.walk_minutes = settings.get("bus_walk_minutes", 2)   # from the association to the stop
 		self.line_colors = settings.get("bus_line_colors", BUS_LINE_COLORS)
 		self.timetable_name = settings.get("timetable_name", "Applied Physics")
 		self.timetable_programmes = settings.get("timetable", TIMETABLE)
@@ -672,14 +673,18 @@ class InfoProvider(Provider):
 			"rain": rain_bars(rain), "chart": rain_chart(rain), "rain_lines": rain_lines(rain), "weather": self.weather}
 
 	def buses_data(self, now: datetime) -> dict | None:
-		upcoming = [departure for departure in self.departures if departure.expected >= now - timedelta(seconds=30)]
+		"""The buses that can still be caught: those leaving at least walk_minutes from now. One you have to
+		leave for right away (less than a minute to spare) is a "last call"."""
+		catchable = now + timedelta(minutes=self.walk_minutes)
+		upcoming = [departure for departure in self.departures if departure.expected >= catchable]
 		if not upcoming:
 			return None
 		shown = []
 		for departure in upcoming[: self.departures_shown]:
 			minutes = int((departure.expected - now).total_seconds() // 60)
-			shown.append({"departure": departure, "minutes": max(0, minutes), "colors": self.line_colors.get(departure.line)})
-		return {"stop": self.stop_name, "departures": shown}
+			shown.append({"departure": departure, "minutes": minutes, "colors": self.line_colors.get(departure.line),
+				"last_call": departure.expected < catchable + timedelta(minutes=1)})
+		return {"stop": self.stop_name, "departures": shown, "walk_minutes": self.walk_minutes}
 
 	def timetable_data(self, now: datetime) -> dict | None:
 		"""Today's lectures that aren't over yet, until the evening; else those of the next day that has

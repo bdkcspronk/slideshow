@@ -333,29 +333,175 @@ body.show-cursor button { cursor: pointer; }
 .weather-days strong em { font-style: normal; font-weight: normal; color: var(--muted); }   /* the low, after the high */
 .weather-days small { font-size: 2.2vh; color: var(--blue-light); }
 
-/* Buses: one row per departure. */
-.bus-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1.4vh; }
-.bus-list li {
-	display: grid;
-	grid-template-columns: 9vh 1fr 16vh 14vh;
-	align-items: center;
-	gap: 2vw;
-	padding: 1.4vh 1.5vw;
-	border-radius: 0.6vw;
-	background: var(--card);
-	border: 0.15vh solid var(--card-border);
-	box-shadow: var(--shadow);
-	font-size: 3.6vh;
-	animation: info-in 0.7s ease-out calc(0.4s + var(--i) * 0.1s) both;
+/* Buses: a poster like the practice sessions one, on the 1920 x 1080 grid (--px). Francken blue graph
+   paper; the headline (an amber highlighter, the colour of a bus stop sign) and the next bus on the left;
+   a ticket per departure on the right, in the line's own colour; a road along the bottom with moving lane
+   markings, where a bus drives by every 16 seconds. */
+.bus-slide {
+	--px: calc(100vw / 1920);
+	--paper: #fdf8ec;
+	--amber: #f2a33a;
+	position: relative;
+	overflow: hidden;
+	background:
+		linear-gradient(rgba(253, 248, 236, 0.05) 1px, transparent 1px) 0 0 / calc(48 * var(--px)) calc(48 * var(--px)),
+		linear-gradient(90deg, rgba(253, 248, 236, 0.05) 1px, transparent 1px) 0 0 / calc(48 * var(--px)) calc(48 * var(--px)),
+		radial-gradient(ellipse at 30% 40%, #224866, var(--blue) 70%);
+	color: var(--paper);
+	font-family: "Familjen Grotesk", "DejaVu Sans", sans-serif;
+	font-weight: 700;
 }
-.bus-line { padding: 0.6vh 0; border-radius: 0.6vh; background: var(--blue); color: white; text-align: center; font-weight: bold; }
-.bus-destination { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bus-time { font-variant-numeric: tabular-nums; }
-.bus-time small { margin-left: 0.6vw; font-size: 2.6vh; font-weight: bold; color: var(--red); }
-.bus-minutes { justify-self: end; font-weight: bold; color: var(--red-dark); }
-.bus-list li.cancelled { opacity: 0.6; }
-.bus-list li.cancelled .bus-destination, .bus-list li.cancelled .bus-time { text-decoration: line-through; }
-.bus-list li.cancelled .bus-minutes { color: var(--red); }
+.bus-poster { position: absolute; left: calc(100 * var(--px)); top: calc(110 * var(--px)); width: calc(700 * var(--px)); }
+.bus-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: calc(14 * var(--px));
+	padding: calc(10 * var(--px)) calc(26 * var(--px));
+	border-radius: calc(40 * var(--px));
+	background: rgba(253, 248, 236, 0.12);
+	font-size: calc(30 * var(--px));
+	letter-spacing: calc(2 * var(--px));
+	text-transform: uppercase;
+	animation: practice-in 0.6s ease-out 0.1s both;
+}
+.bus-pill i { width: calc(16 * var(--px)); height: calc(16 * var(--px)); border-radius: 50%; background: var(--red); animation: bus-blink 1.4s ease-in-out infinite; }   /* live */
+.bus-headline { margin: calc(26 * var(--px)) 0 0; font-size: calc(170 * var(--px)); line-height: 0.95; letter-spacing: calc(-3 * var(--px)); text-transform: uppercase; }
+.bus-headline span { display: block; width: fit-content; animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.25s both; }
+.bus-marked { position: relative; color: var(--blue); }
+.bus-headline .bus-marked { animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.45s both, bus-ink 0.4s ease-out 1.3s both; }   /* light until the highlighter is there */
+.bus-marked::before {   /* the highlighter, wiping in from the left behind the word */
+	content: "";
+	position: absolute;
+	z-index: -1;
+	inset: 8% calc(-18 * var(--px)) 2% calc(-14 * var(--px));
+	background: var(--amber);
+	border-radius: calc(8 * var(--px));
+	transform: skewX(-8deg) rotate(-1.5deg);
+	transform-origin: left;
+	animation: practice-wipe 0.7s cubic-bezier(0.6, 0, 0.3, 1) 1.1s both;
+}
+.bus-next {   /* the next bus that isn't cancelled */
+	margin-top: calc(56 * var(--px));
+	display: flex;
+	align-items: center;
+	gap: calc(28 * var(--px));
+	animation: practice-in 0.8s ease-out 1.4s both;
+}
+.bus-next .bus-badge { --size: calc(180 * var(--px)); font-size: calc(var(--size) * 0.58); }
+.bus-next .bus-badge.long { font-size: calc(var(--size) * 0.42); }
+.bus-next .bus-badge:not([style]) { background: var(--blue-light); }   /* no line colour: lighter, to stand out from the background */
+.bus-next div { display: flex; flex-direction: column; gap: calc(6 * var(--px)); min-width: 0; }
+.bus-next span, .bus-next small { font-size: calc(38 * var(--px)); line-height: 1.15; opacity: 0.8; }   /* a long destination wraps */
+.bus-next b { font-size: calc(96 * var(--px)); line-height: 1; }
+.bus-next b.last-call { color: var(--amber); text-transform: uppercase; animation: bus-pulse 1s ease-in-out infinite; }
+.bus-badge {   /* the line number in the line's colour (Qbuzz); a square with round corners */
+	--size: calc(var(--h) * 0.72);
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--size);
+	height: var(--size);
+	border-radius: calc(var(--size) * 0.22);
+	background: var(--blue);   /* lines without their own colour (e.g. regional buses) */
+	color: #ffffff;
+	font-size: calc(var(--size) * 0.5);
+	letter-spacing: calc(-1 * var(--px));
+}
+.bus-badge.long { font-size: calc(var(--size) * 0.38); }   /* e.g. 109 */
+.bus-tickets {
+	position: absolute;
+	right: calc(90 * var(--px));
+	top: calc(70 * var(--px));
+	bottom: calc(190 * var(--px));   /* above the road */
+	width: calc(960 * var(--px));
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: calc(16 * var(--px));
+}
+.bus-ticket {
+	--h: min(calc(104 * var(--px)), calc((820 * var(--px) - (var(--rows) - 1) * 16 * var(--px)) / var(--rows)));
+	position: relative;
+	height: var(--h);
+	display: grid;
+	grid-template-columns: auto 1fr auto calc(170 * var(--px));
+	align-items: center;
+	gap: calc(26 * var(--px));
+	padding: 0 calc(30 * var(--px)) 0 calc(var(--h) * 0.14);
+	border-radius: calc(18 * var(--px));
+	background: var(--paper);
+	color: var(--blue);
+	box-shadow: 0 calc(14 * var(--px)) calc(30 * var(--px)) rgba(0, 0, 0, 0.3);
+	font-size: calc(var(--h) * 0.36);
+	animation: practice-ticket 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) calc(1s + var(--i) * 0.14s) both;
+}
+.bus-destination { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bus-time { font-variant-numeric: tabular-nums; color: var(--blue-light); }
+.bus-time small { margin-left: calc(10 * var(--px)); padding: calc(2 * var(--px)) calc(10 * var(--px)); border-radius: calc(8 * var(--px)); background: var(--red); color: var(--paper); font-size: 0.7em; vertical-align: middle; }
+.bus-minutes {   /* the perforation, then the minutes left */
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: calc(8 * var(--px));
+	border-left: calc(4 * var(--px)) dashed rgba(23, 50, 73, 0.25);
+	color: var(--red-dark);
+	font-size: 0.8em;
+}
+.bus-minutes b { font-size: 1.5em; font-variant-numeric: tabular-nums; }
+.bus-ticket.cancelled { background: #e9e4d8; }
+.bus-ticket.cancelled .bus-destination, .bus-ticket.cancelled .bus-time { opacity: 0.5; text-decoration: line-through; }
+.bus-ticket.cancelled .bus-badge { opacity: 0.5; }
+.bus-minutes em {   /* the cancelled stamp */
+	padding: calc(4 * var(--px)) calc(12 * var(--px));
+	border: calc(4 * var(--px)) solid var(--red);
+	border-radius: calc(8 * var(--px));
+	color: var(--red);
+	font-style: normal;
+	font-size: 0.75em;
+	text-transform: uppercase;
+	transform: rotate(-8deg);
+}
+.bus-road {   /* the road along the bottom */
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: calc(120 * var(--px));
+	background: #10202f;
+	border-top: calc(6 * var(--px)) solid rgba(253, 248, 236, 0.15);
+}
+.bus-lane {   /* the dashed line, moving towards the bus */
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 50%;
+	height: calc(8 * var(--px));
+	background: repeating-linear-gradient(90deg, rgba(253, 248, 236, 0.5) 0 calc(60 * var(--px)), transparent 0 calc(120 * var(--px)));
+	animation: bus-lane 1.2s linear infinite;
+}
+.bus-driving { position: absolute; left: 0; bottom: calc(48 * var(--px)); width: calc(320 * var(--px)); animation: bus-drive 16s linear 1.5s infinite both; }
+.bus-body { fill: var(--red); }
+.bus-stripe { fill: var(--amber); }
+.bus-window { fill: #bcd7ec; }
+.bus-door { fill: #9fc2df; }
+.bus-light { fill: #ffe9a8; }
+.bus-wheel { fill: #1b1b1b; animation: bus-wheel 0.6s linear infinite; }
+.bus-hub { fill: #9aa4ad; }
+.bus-source { position: absolute; bottom: calc(132 * var(--px)); right: calc(90 * var(--px)); margin: 0; font-size: calc(22 * var(--px)); opacity: 0.45; }
+@keyframes bus-blink { 50% { opacity: 0.25; } }
+@keyframes bus-ink { from { color: var(--paper); } }
+@keyframes bus-pulse { 50% { opacity: 0.55; } }
+@keyframes bus-lane { to { background-position: calc(-120 * var(--px)) 0; } }
+@keyframes bus-wheel { to { transform: rotate(360deg); } }
+@keyframes bus-drive {   /* across the screen in 6 of the 16 seconds, then out of sight */
+	from { transform: translateX(calc(-340 * var(--px))); }
+	37.5%, to { transform: translateX(calc(1940 * var(--px))); }
+}
 
 /* Timetable: a column per year of study. */
 .timetable-columns { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); gap: 2vw; }
