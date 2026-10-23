@@ -7,6 +7,7 @@ the bieruur song.
 from __future__ import annotations
 
 import logging
+import socket
 import threading
 import time
 from dataclasses import dataclass
@@ -21,6 +22,8 @@ log = logging.getLogger(__name__)
 
 RETRY_AFTER_ERROR_SECONDS = 60
 AFTER_MIDNIGHT_SECONDS = 30   # every provider refreshes this soon after midnight: a new day's puzzles, ...
+NETWORK_WAIT_SECONDS = 120    # at boot, wait at most this long for DNS before the first refreshes
+NETWORK_CHECK_HOST = "professorfrancken.nl"
 
 
 @dataclass
@@ -39,7 +42,7 @@ class BackgroundRunner:
 		self.stopped = threading.Event()
 
 	def start(self) -> None:
-		threading.Thread(target=self.refresh_loop, name="refresh", daemon=True).start()
+		threading.Thread(target=self.refresh_when_online, name="refresh", daemon=True).start()
 		threading.Thread(target=self.job_loop, name="jobs", daemon=True).start()
 
 	def stop(self) -> None:
@@ -49,6 +52,34 @@ class BackgroundRunner:
 		"""Refresh this provider within a second instead of waiting for its interval."""
 		if name in self.status:
 			self.status[name].next_due = 0.0
+
+	def refresh_when_online(self) -> None:
+		self.wait_for_network()
+		self.refresh_loop()
+
+	def wait_for_network(self) -> None:
+		"""At boot we start before DNS works (a user service can't wait for network-online.target).
+
+		Without this every provider fails once, logs a warning, and only retries a minute later.
+		"""
+		deadline = time.monotonic() + NETWORK_WAIT_SECONDS
+		waiting_since = None
+		while True:
+			try:
+				socket.getaddrinfo(NETWORK_CHECK_HOST, 443)
+			except OSError:
+				if waiting_since is None:
+					waiting_since = time.monotonic()
+					log.info("Waiting for the network before refreshing")
+				if time.monotonic() > deadline:
+					log.warning("No network after %d seconds; refreshing anyway", NETWORK_WAIT_SECONDS)
+					return
+				if self.stopped.wait(1):
+					return
+			else:
+				if waiting_since is not None:
+					log.info("Network is up after %.0f seconds", time.monotonic() - waiting_since)
+				return
 
 	def refresh_loop(self) -> None:
 		while not self.stopped.is_set():
