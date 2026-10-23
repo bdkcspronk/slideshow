@@ -24,6 +24,7 @@ fill_with = "images"
 # daytime, info still shows a rain warning when rain is expected within 2 hours.
 daytime_only = ["info", "books"]
 daytime_from = "08:00"
+daytime_until = "18:00"
 
 [update]
 # Every check_minutes the slideshow looks for new commits on GitHub. If there are, and this copy has
