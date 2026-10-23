@@ -6,6 +6,9 @@ of its own (nothing on the TV PC is ever overwritten). Then it runs the tests: i
 slideshow restarts itself like Ctrl+R; if they fail, it goes back to the version it was running
 and doesn't try that commit again. It never restarts during bieruur (the countdown and the song).
 
+Commits made on the TV PC itself (or pulled by hand) count too: when the commit on disk isn't the one
+that's running, the tests run and the slideshow restarts, the same way (not with uncommitted changes).
+
 Settings: [update] in config.toml.
 """
 
@@ -39,6 +42,7 @@ class Updater:
 		self.restart = restart  # shuts down and starts again (__main__.py)
 		self.run = run
 		self.bad: str | None = None   # a commit whose tests failed: not tried again
+		self.running: str | None = None   # the commit the slideshow started with
 		self.stopped = threading.Event()
 		# For /status: the version that runs, and how the last check went.
 		self.version = ""
@@ -55,6 +59,7 @@ class Updater:
 			return
 		try:
 			self.version = self.git("log", "-1", "--format=%h %s (%cd)", "--date=format:%d-%m %H:%M")
+			self.running = self.git("rev-parse", "HEAD")
 		except Exception as error:
 			self.version = f"unknown ({error})"
 		log.info("Running %s; checking for updates every %d minutes", self.version, self.check_seconds // 60)
@@ -86,9 +91,12 @@ class Updater:
 		if self.busy(self.now()):
 			self.note("waiting: bieruur")
 			return False   # next time
+		current = self.git("rev-parse", "HEAD")
+		self.running = self.running or current
+		if current != self.running and current != self.bad:   # committed here: no internet needed
+			return self.restart_for(current)
 		self.git("fetch", "--quiet")
 		upstream = self.git("rev-parse", "@{u}")
-		current = self.git("rev-parse", "HEAD")
 		if upstream == self.bad:
 			self.note(f"not updating to {upstream[:7]}: its tests failed")
 			return False
@@ -115,5 +123,23 @@ class Updater:
 			return False
 		self.note(f"updated to {upstream[:7]}, restarting")
 		log.info("Updated to %s: %s", upstream[:7], self.git("log", "-1", "--format=%s"))
+		self.restart()
+		return True
+
+	def restart_for(self, commit: str) -> bool:
+		"""A newer commit is on disk than the one running (made or pulled here): restart if it's committed
+		completely and its tests pass. Returns True when restarting."""
+		changes = self.git("status", "--porcelain", "--untracked-files=no")
+		if changes:
+			self.note(f"waiting: {commit[:7]} is newer than what runs, but there are uncommitted changes")
+			return False
+		tests = self.run(sys.executable, "-m", "unittest", "discover", "-q", timeout=TESTS_TIMEOUT_SECONDS)
+		if tests.returncode != 0:
+			self.bad = commit
+			self.note(f"not restarting for {commit[:7]}: its tests failed (see the log)")
+			log.error("Not restarting for %s: its tests fail\n%s", commit[:7], tests.stderr[-2000:])
+			return False
+		self.note(f"{commit[:7]} is newer than what runs: restarting")
+		log.info("Restarting for %s: %s", commit[:7], self.git("log", "-1", "--format=%s"))
 		self.restart()
 		return True

@@ -87,6 +87,36 @@ class UpdaterTest(unittest.TestCase):
 			self.assertFalse(self.updater(git).check())
 		self.assertEqual(self.restarts, [])
 
+	def test_a_commit_made_here_restarts_the_slideshow_too(self):
+		git = FakeGit()
+		git.upstream = git.head
+		updater = self.updater(git)
+		self.assertFalse(updater.check())   # running aaaaaaa1, nothing new
+		git.head = git.upstream = "ccccccc3"   # committed on the TV PC
+		git.dirty = " M francken_tv/static/style.css"
+		self.assertFalse(updater.check())   # but still editing: wait
+		self.assertEqual(self.restarts, [])
+		self.assertIn("uncommitted changes", updater.last_result)
+		git.dirty = ""
+		git.commands.clear()
+		with self.assertLogs("francken_tv.updater", "INFO"):
+			self.assertTrue(updater.check())
+		self.assertEqual(self.restarts, [True])
+		self.assertFalse(git.ran("fetch"))   # no internet needed
+
+	def test_a_commit_made_here_with_failing_tests_keeps_the_running_version(self):
+		git = FakeGit(tests_fail=True)
+		git.upstream = git.head
+		updater = self.updater(git)
+		updater.check()
+		git.head = git.upstream = "ccccccc3"
+		with self.assertLogs("francken_tv.updater", "ERROR"):
+			self.assertFalse(updater.check())
+		git.commands.clear()
+		self.assertFalse(updater.check())   # not tested again
+		self.assertFalse(any(command[0] != "git" for command in git.commands))
+		self.assertEqual(self.restarts, [])
+
 	def test_not_during_bieruur(self):
 		git = FakeGit()
 		self.assertFalse(self.updater(git, busy=True).check())
