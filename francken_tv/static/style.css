@@ -91,8 +91,8 @@ body.show-cursor button { cursor: pointer; }
 }
 
 /* Event photos: the photo blurred behind it fills the bars, like the posters; the caption in the
-   bottom-left corner. Two portrait photos: side by side as prints (rounded, a shadow, a gap), each on
-   its own blurred half, and the halves fade into each other in the middle. */
+   bottom-left corner. Two portrait photos: side by side as prints (rounded, a shadow), evenly spaced, each
+   on its own blurred half, and the halves fade into each other in the middle. */
 .photo-backdrop {
 	position: absolute;
 	inset: -10%;
@@ -103,9 +103,8 @@ body.show-cursor button { cursor: pointer; }
 .photo-pair .photo-backdrop:nth-of-type(2) { left: 40%; mask-image: linear-gradient(to left, #000 65%, transparent); }
 .photo-row { position: relative; display: flex; width: 100%; height: 100%; }
 .photo-frame { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
-.photo-pair .photo-row { gap: 2vw; padding: 4vh 3vw; box-sizing: border-box; }
-.photo-pair .photo-frame:first-child { justify-content: flex-end; }   /* the two meet in the middle */
-.photo-pair .photo-frame:last-child { justify-content: flex-start; }
+.photo-pair .photo-row { justify-content: space-evenly; padding: 4vh 0; box-sizing: border-box; }   /* the same gap left, between and right */
+.photo-pair .photo-frame { flex: 0 1 auto; max-width: 46vw; }   /* as wide as its photo */
 .photo-pair .photo-frame img { width: auto; height: 100%; max-width: 100%; object-fit: cover; border-radius: 0.8vw; box-shadow: 0 2vh 5vh rgba(0, 0, 0, 0.45); }   /* full height, also small photos */
 .photo-caption {
 	position: absolute;
