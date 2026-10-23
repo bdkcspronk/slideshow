@@ -205,6 +205,7 @@ choose_song_minutes_before = 10
 # Seconds relative to bieruur at which a song starts; negative starts early
 # so that the drop lands exactly at bieruur.
 "toby.mp3" = -39
+"gdn.sci.090701.sc.moon-countdown-launch.mp3" = -30   # the Apollo launch countdown: lift-off at bieruur
 
 [vrijmibo]
 file = "media/vrijmibo.gif"
