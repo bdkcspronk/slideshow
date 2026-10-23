@@ -26,6 +26,7 @@ from .providers.confidential import ConfidentialProvider
 from .providers.extern import ExternProvider
 from .providers.connections import ConnectionsProvider
 from .providers.poll import PollProvider
+from .providers.practice import PracticeSessionsProvider
 from .providers.xkcd import XkcdProvider
 from .providers.puzzles import HighScores, PuzzlesProvider
 from .providers.spotify import SpotifyProvider
@@ -147,9 +148,11 @@ def build_app(config: dict, clock: Clock) -> App:
 	]}
 	puzzles = [available_puzzles[name] for name in puzzle_settings.get("order", list(available_puzzles))]
 
+	activities = ActivitiesProvider(config.get("activities", {}), seconds)
 	all_providers: list[Provider] = [
 		ImagesProvider(config.get("images", {}), seconds),
-		ActivitiesProvider(config.get("activities", {}), seconds),
+		activities,
+		PracticeSessionsProvider(activities, config.get("practice", {}), seconds),
 		InfoProvider(config.get("info", {}), seconds, CACHE_DIR / "news"),
 		BooksProvider(config.get("books", {}), CACHE_DIR / "books"),
 		EventPhotosProvider(config.get("event_photos", {}), CACHE_DIR / "event_photos", seconds),
