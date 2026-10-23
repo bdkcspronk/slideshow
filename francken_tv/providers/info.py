@@ -169,6 +169,14 @@ WEATHER_CODES = {
 	95: ("Thunderstorm", "⛈️"), 96: ("Thunderstorm with hail", "⛈️"), 99: ("Thunderstorm with hail", "⛈️"),
 }
 NIGHT_ICONS = {"☀️": "🌙", "🌤️": "🌙", "⛅": "☁️"}
+# The animated background of the weather slide for each WMO code (default: cloudy).
+WEATHER_SCENES = {
+	0: "clear", 1: "clear", 2: "partly", 3: "cloudy", 45: "fog", 48: "fog",
+	51: "drizzle", 53: "drizzle", 55: "drizzle", 56: "drizzle", 57: "drizzle",
+	61: "rain", 63: "rain", 65: "heavy-rain", 66: "rain", 67: "heavy-rain", 80: "rain", 81: "rain", 82: "heavy-rain",
+	71: "snow", 73: "snow", 75: "snow", 77: "snow", 85: "snow", 86: "snow",
+	95: "storm", 96: "storm", 99: "storm",
+}
 WIND_DIRECTIONS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 
 
@@ -197,10 +205,17 @@ class Weather:
 	wind_from: str     # "NE"
 	days: list[Day] = field(default_factory=list)   # today first
 	rain: list[tuple[str, float]] = field(default_factory=list)   # ("14:35", mm/h) per 5 minutes, two hours ahead
+	code: int = 3      # the WMO weather code now
+	is_day: bool = True
 
 	@property
 	def rain_summary(self) -> str:
 		return rain_summary(self.rain)
+
+	@property
+	def scene(self) -> str:
+		"""The weather slide's animated background: clear, partly, cloudy, fog, drizzle, rain, heavy-rain, snow or storm."""
+		return WEATHER_SCENES.get(self.code, "cloudy")
 
 
 def parse_weather(data: dict) -> Weather:
@@ -218,6 +233,8 @@ def parse_weather(data: dict) -> Weather:
 		wind_kmh=current["wind_speed_10m"],
 		wind_from=WIND_DIRECTIONS[round(current["wind_direction_10m"] / 45) % 8],
 		days=days,
+		code=current["weather_code"],
+		is_day=bool(current.get("is_day", 1)),
 	)
 
 

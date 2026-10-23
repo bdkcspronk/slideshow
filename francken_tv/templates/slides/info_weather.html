@@ -1,20 +1,42 @@
-{# Info slide, weather part (providers/info.py): now, the rain in the next two hours (a bar per
-   5 minutes, from Buienradar) and the next days. #}
-<div class="slide info-slide info-weather">
-	<h1>Weather</h1>
-	<div class="weather-main">
-		<div class="weather-now">
-			<span class="weather-icon">{{ weather.icon }}</span>
-			<div>
-				<div class="weather-temperature">{{ weather.temperature | round | int }}&deg;</div>
-				<div class="weather-text">{{ weather.text }}</div>
-				<div class="weather-details">Feels like {{ weather.feels_like | round | int }}&deg; &middot; wind {{ weather.wind_kmh | round | int }} km/h {{ weather.wind_from }}</div>
-			</div>
-		</div>
-		<div class="weather-rain">
-			<h2>{{ rain_summary }}</h2>
-			{% if rain %}{% with size = "" %}{% include "slides/rain_chart.html" %}{% endwith %}{% endif %}
-		</div>
+{# Info slide, weather part (providers/info.py): now, the rain in the next two hours (a bar per 5 minutes,
+   from Buienradar) and the next days, over an animated sky of the weather now (Weather.scene: clear,
+   partly, cloudy, fog, drizzle, rain, heavy-rain, snow or storm; at night with the moon and stars).
+   The clouds, drops, flakes and stars are spread with arithmetic on the loop index, so it looks random
+   but is the same every time. On the 1920 x 1080 grid (--px), like the bus and practice posters. #}
+{% set scene = weather.scene %}
+{% set clouds = {"clear": 0, "partly": 3, "cloudy": 7, "fog": 3, "drizzle": 5, "rain": 6, "heavy-rain": 7, "snow": 5, "storm": 7}[scene] %}
+{% set drops = {"drizzle": 45, "rain": 80, "heavy-rain": 130, "storm": 130}.get(scene, 0) %}
+<div class="slide weather-slide scene-{{ scene }}{{ ' night' if not weather.is_day }}">
+	<div class="weather-sky" aria-hidden="true">
+		{% if scene in ("clear", "partly") %}
+		{% if weather.is_day %}<div class="weather-sun"><i></i></div>
+		{% else %}
+		{% for i in range(45) %}<span class="weather-star" style="--x: {{ (i * 41 + 7) % 100 }}; --y: {{ (i * 29 + 3) % 62 }}; --d: {{ (i * 13) % 40 / 10 }}"></span>{% endfor %}
+		<div class="weather-moon"></div>
+		{% endif %}
+		{% endif %}
+		{% for i in range(clouds) %}
+		<svg class="weather-cloud" viewBox="0 0 200 100" style="--y: {{ (i * 23 + 2) % (55 if scene != 'partly' else 40) }}; --s: {{ 0.8 + (i * 7 % 5) / 6 }}; --t: {{ 70 + (i * 17) % 50 }}; --d: {{ (i * 37) % 100 }}; --o: {{ 0.55 + (i * 3 % 4) / 10 }}">
+			<path d="M42 92C18 92 6 74 18 58 8 38 32 22 54 32 64 8 106 4 118 30 138 16 168 30 162 54 188 58 190 92 160 92Z"/>
+		</svg>
+		{% endfor %}
+		{% if scene == "fog" %}{% for i in range(5) %}<div class="weather-fog" style="--y: {{ 18 + i * 17 }}; --t: {{ 40 + i * 9 }}; --d: {{ i * 11 }}"></div>{% endfor %}{% endif %}
+		{% for i in range(drops) %}<span class="weather-drop" style="--x: {{ (i * 53 + 11) % 104 - 2 }}; --t: {{ 0.55 + (i * 7 % 10) / 25 }}; --d: {{ (i * 31) % 100 / 50 }}; --l: {{ 40 + (i * 11) % 50 }}"></span>{% endfor %}
+		{% if scene == "snow" %}{% for i in range(70) %}<span class="weather-flake" style="--x: {{ (i * 47 + 5) % 100 }}; --t: {{ 9 + (i * 13) % 9 }}; --d: {{ (i * 29) % 160 / 10 }}; --s: {{ 8 + (i * 7) % 12 }}"></span>{% endfor %}{% endif %}
+		{% if scene == "storm" %}
+		<svg class="weather-bolt" viewBox="0 0 100 300"><path d="M58 0 18 150h34L30 300 86 120H52L74 0Z"/></svg>
+		<div class="weather-flash"></div>
+		{% endif %}
+	</div>
+	<div class="weather-pill">{{ place }} &middot; now</div>
+	<div class="weather-now">
+		<div class="weather-temperature">{{ weather.temperature | round | int }}&deg;</div>
+		<div class="weather-text">{{ weather.text }}</div>
+		<div class="weather-details">Feels like {{ weather.feels_like | round | int }}&deg; &middot; wind {{ weather.wind_kmh | round | int }} km/h {{ weather.wind_from }}</div>
+	</div>
+	<div class="weather-rain">
+		<h2>{{ rain_summary }}</h2>
+		{% if rain %}{% with size = "" %}{% include "slides/rain_chart.html" %}{% endwith %}{% endif %}
 	</div>
 	<div class="weather-days">
 		{% for day in days %}

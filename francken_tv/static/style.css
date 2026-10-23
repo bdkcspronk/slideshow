@@ -274,15 +274,211 @@ body.show-cursor button { cursor: pointer; }
 .article-link { color: var(--red-dark); font-style: italic; }
 .article-link span { font-style: normal; color: var(--blue-light); word-break: break-all; }
 
-/* Weather: now on the left, the rain chart on the right, the next days below. */
-.weather-main { display: flex; gap: 4vw; align-items: stretch; }
-.weather-now { flex: 1; display: flex; align-items: center; gap: 2.5vw; padding: 3vh 2vw; border-radius: 0.6vw; background: var(--card); border: 0.15vh solid var(--card-border); box-shadow: var(--shadow); }
-.weather-icon { font-size: 16vh; line-height: 1; }
-.weather-temperature { font-size: 13vh; font-weight: bold; line-height: 1; }
-.weather-text { margin-top: 1vh; font-size: 4vh; }
-.weather-details { margin-top: 1vh; font-size: 2.4vh; color: var(--muted); }
-.weather-rain { flex: 1.2; display: flex; flex-direction: column; padding: 3vh 2vw; border-radius: 0.6vw; background: var(--card); border: 0.15vh solid var(--card-border); box-shadow: var(--shadow); }
-.weather-rain h2 { margin: 0 0 2vh; font-size: 3.6vh; }
+/* Weather: a poster over an animated sky of the weather now (info_weather.html), on the 1920 x 1080 grid
+   (--px). The temperature big on the left, the rain chart on a see-through panel on the right, the next
+   days as tiles along the bottom. The sky: .scene-clear, -partly, -cloudy, -fog, -drizzle, -rain,
+   -heavy-rain, -snow or -storm, and .night; only transforms and opacity move, which the TV PC does easily. */
+.weather-slide {
+	--px: calc(100vw / 1920);
+	--sky-top: #2b6aa3;
+	--sky-bottom: #8cbfe0;
+	--cloud: #ffffff;
+	position: relative;
+	overflow: hidden;
+	background: linear-gradient(var(--sky-top), var(--sky-bottom));
+	color: #ffffff;
+	font-family: "Familjen Grotesk", "DejaVu Sans", sans-serif;
+	font-weight: 700;
+	text-shadow: 0 calc(3 * var(--px)) calc(18 * var(--px)) rgba(0, 20, 40, 0.55);
+}
+.weather-sky::after {   /* a soft shade on the left, so the white text stays readable over white clouds */
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, rgba(5, 18, 32, 0.4), rgba(5, 18, 32, 0.15) 45%, transparent 60%);
+}
+.scene-clear { --sky-top: #1565b0; --sky-bottom: #6db8ea; }
+.scene-cloudy { --sky-top: #4a5d70; --sky-bottom: #93a3b1; --cloud: #e4e9ee; }
+.scene-fog { --sky-top: #69777f; --sky-bottom: #aab4ba; --cloud: #dfe4e7; }
+.scene-drizzle, .scene-rain { --sky-top: #33495d; --sky-bottom: #62788a; --cloud: #c9d2da; }
+.scene-heavy-rain { --sky-top: #22364a; --sky-bottom: #45596b; --cloud: #9eabb7; }
+.scene-snow { --sky-top: #5b7389; --sky-bottom: #b6c6d3; --cloud: #eef2f6; }
+.scene-storm { --sky-top: #121c27; --sky-bottom: #2b3947; --cloud: #5e6d7b; }
+.weather-slide.night { --sky-top: #081527; --sky-bottom: #1d3657; --cloud: #8796a8; }
+.weather-slide.night.scene-cloudy, .weather-slide.night.scene-fog, .weather-slide.night.scene-snow { --sky-top: #1b2633; --sky-bottom: #3a4a5a; }
+.weather-sky { position: absolute; inset: 0; }
+.weather-sun {   /* a sun with slowly turning rays, high on the right */
+	position: absolute;
+	left: calc(1500 * var(--px));
+	top: calc(-120 * var(--px));
+	width: calc(520 * var(--px));
+	height: calc(520 * var(--px));
+	border-radius: 50%;
+	background: repeating-conic-gradient(rgba(255, 236, 160, 0.28) 0 6deg, transparent 6deg 18deg);
+	mask-image: radial-gradient(closest-side, #000 55%, transparent);
+	animation: weather-turn 60s linear infinite;
+}
+.weather-sun i {
+	position: absolute;
+	inset: 30%;
+	border-radius: 50%;
+	background: radial-gradient(circle, #fff6c8, #ffd54a 60%, #ffb92e);
+	box-shadow: 0 0 calc(120 * var(--px)) calc(40 * var(--px)) rgba(255, 214, 90, 0.55);
+}
+.weather-moon {
+	position: absolute;
+	left: calc(1560 * var(--px));
+	top: calc(60 * var(--px));
+	width: calc(170 * var(--px));
+	height: calc(170 * var(--px));
+	border-radius: 50%;
+	background: radial-gradient(circle at 38% 36%, #fffbea, #e7e2c8 70%);
+	box-shadow: 0 0 calc(80 * var(--px)) calc(20 * var(--px)) rgba(255, 250, 220, 0.25);
+}
+.weather-moon::after {   /* a crescent: the sky's colour over part of it */
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: 50%;
+	background: var(--sky-top);
+	transform: translate(32%, -14%);
+}
+.weather-star {
+	position: absolute;
+	left: calc(var(--x) * 1%);
+	top: calc(var(--y) * 1%);
+	width: calc(5 * var(--px));
+	height: calc(5 * var(--px));
+	border-radius: 50%;
+	background: #ffffff;
+	animation: weather-twinkle 3s ease-in-out calc(var(--d) * -1s) infinite alternate;
+}
+.weather-cloud {   /* drifting from left to right, spread over the sky from the start (a negative delay) */
+	position: absolute;
+	left: 0;
+	top: calc(var(--y) * 1%);
+	width: calc(420 * var(--s) * var(--px));
+	fill: var(--cloud);
+	opacity: var(--o);
+	animation: weather-drift calc(var(--t) * 1s) linear calc(var(--d) * var(--t) * -0.01s) infinite;
+}
+.weather-fog {
+	position: absolute;
+	left: -50%;
+	width: 200%;
+	top: calc(var(--y) * 1%);
+	height: calc(160 * var(--px));
+	background: linear-gradient(90deg, transparent, rgba(240, 244, 246, 0.35) 20%, rgba(240, 244, 246, 0.15) 50%, rgba(240, 244, 246, 0.4) 75%, transparent);
+	filter: blur(calc(20 * var(--px)));
+	animation: weather-fog calc(var(--t) * 1s) ease-in-out calc(var(--d) * -1s) infinite alternate;
+}
+.weather-drop {   /* rain: thin lines falling slightly slanted */
+	position: absolute;
+	top: 0;
+	left: calc(var(--x) * 1%);
+	width: calc(3 * var(--px));
+	height: calc(var(--l) * var(--px));
+	border-radius: calc(2 * var(--px));
+	background: linear-gradient(transparent, rgba(220, 235, 250, 0.75));
+	animation: weather-fall calc(var(--t) * 1s) linear calc(var(--d) * -1s) infinite;
+}
+.scene-drizzle .weather-drop { --t: 1.3; height: calc(var(--l) * 0.5 * var(--px)); opacity: 0.6; }
+.weather-flake {
+	position: absolute;
+	top: 0;
+	left: calc(var(--x) * 1%);
+	width: calc(var(--s) * var(--px));
+	height: calc(var(--s) * var(--px));
+	border-radius: 50%;
+	background: #ffffff;
+	opacity: 0.9;
+	animation: weather-snow calc(var(--t) * 1s) linear calc(var(--d) * -1s) infinite;
+}
+.weather-flash { position: absolute; inset: 0; background: #e8f0ff; opacity: 0; animation: weather-flash 7s linear 1.5s infinite; }
+.weather-bolt { position: absolute; left: calc(860 * var(--px)); top: calc(30 * var(--px)); width: calc(120 * var(--px)); fill: #fff6c8; opacity: 0; filter: drop-shadow(0 0 calc(20 * var(--px)) #fff6c8); animation: weather-flash 7s linear 1.5s infinite; }
+/* In front: what it's like now, the rain chart and the next days. */
+.weather-pill {
+	position: absolute;
+	left: calc(100 * var(--px));
+	top: calc(90 * var(--px));
+	padding: calc(10 * var(--px)) calc(26 * var(--px));
+	border-radius: calc(40 * var(--px));
+	background: rgba(8, 20, 35, 0.35);
+	font-size: calc(30 * var(--px));
+	letter-spacing: calc(2 * var(--px));
+	text-transform: uppercase;
+	text-shadow: none;
+	animation: practice-in 0.6s ease-out 0.1s both;
+}
+.weather-now { position: absolute; left: calc(100 * var(--px)); top: calc(160 * var(--px)); width: calc(820 * var(--px)); }
+.weather-temperature { font-size: calc(290 * var(--px)); line-height: 1; letter-spacing: calc(-8 * var(--px)); animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.25s both; }
+.weather-text { font-size: calc(68 * var(--px)); line-height: 1.1; animation: practice-in 0.7s ease-out 0.6s both; }
+.weather-details { margin-top: calc(14 * var(--px)); font-size: calc(34 * var(--px)); opacity: 0.85; animation: practice-in 0.7s ease-out 0.8s both; }
+.weather-rain {   /* a see-through panel, so the sky shows through */
+	position: absolute;
+	left: calc(1000 * var(--px));
+	right: calc(100 * var(--px));
+	top: calc(110 * var(--px));
+	height: calc(440 * var(--px));
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	padding: calc(30 * var(--px)) calc(40 * var(--px));
+	border-radius: calc(24 * var(--px));
+	background: rgba(8, 20, 35, 0.32);
+	border: calc(2 * var(--px)) solid rgba(255, 255, 255, 0.18);
+	text-shadow: none;
+	animation: practice-ticket 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.6s both;
+	--line: rgba(255, 255, 255, 0.3);
+	--muted: rgba(255, 255, 255, 0.75);
+}
+.weather-rain .rain-chart { --rain-fill: rgba(140, 205, 245, 0.45); --rain-stroke: #a9dcfb; }
+.weather-rain h2 { margin: 0 0 calc(20 * var(--px)); font-size: calc(44 * var(--px)); }
+.weather-days {
+	position: absolute;
+	left: calc(100 * var(--px));
+	right: calc(100 * var(--px));
+	bottom: calc(80 * var(--px));
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	gap: calc(24 * var(--px));
+}
+.weather-days div {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: calc(8 * var(--px));
+	padding: calc(26 * var(--px)) 0;
+	border-radius: calc(24 * var(--px));
+	background: rgba(8, 20, 35, 0.32);
+	border: calc(2 * var(--px)) solid rgba(255, 255, 255, 0.18);
+	text-shadow: none;
+	animation: weather-tile 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(1s + var(--i) * 0.12s) both;
+}
+.weather-days span { font-size: calc(30 * var(--px)); opacity: 0.8; }
+.weather-days b { font-size: calc(96 * var(--px)); line-height: 1.1; }
+.weather-days strong { font-size: calc(46 * var(--px)); }
+.weather-days strong em { font-style: normal; opacity: 0.65; }   /* the low, after the high */
+.weather-days small { font-size: calc(26 * var(--px)); color: #a9dcfb; }
+@keyframes weather-turn { to { transform: rotate(360deg); } }
+@keyframes weather-twinkle { from { opacity: 0.2; } to { opacity: 0.95; } }
+@keyframes weather-drift { from { transform: translateX(-30vw); } to { transform: translateX(110vw); } }
+@keyframes weather-fog { from { transform: translateX(-12%); } to { transform: translateX(12%); } }
+@keyframes weather-fall { from { transform: translate(0, -15vh) rotate(12deg); } to { transform: translate(-12vh, 112vh) rotate(12deg); } }
+@keyframes weather-snow {
+	0% { transform: translate(0, -5vh); }
+	25% { transform: translate(2.5vw, 24vh); }
+	50% { transform: translate(-1.5vw, 52vh); }
+	75% { transform: translate(2vw, 80vh); }
+	100% { transform: translate(0, 108vh); }
+}
+@keyframes weather-flash {   /* a double flash now and then */
+	0%, 70%, 74%, 100% { opacity: 0; }
+	71% { opacity: 0.85; }
+	72% { opacity: 0.1; }
+	73% { opacity: 0.6; }
+}
+@keyframes weather-tile { from { opacity: 0; transform: translateY(calc(80 * var(--px))); } }
 /* The rain chart: a line chart with the area under it filled (rain_chart.html), with dashed lines where
    light, medium and heavy rain start. It grows up from the bottom when shown. */
 .rain-chart {
@@ -314,25 +510,6 @@ body.show-cursor button { cursor: pointer; }
 .rain-chart.big .rain-level span { font-size: 2.4vh; color: rgba(255, 255, 255, 0.75); }
 .rain-chart.big .rain-times { font-size: 2.6vh; color: rgba(255, 255, 255, 0.75); }
 .info-rain .info-source { color: rgba(255, 255, 255, 0.6); }
-.weather-days { margin-top: 3.5vh; display: grid; grid-template-columns: repeat(6, 1fr); gap: 1.5vw; }
-.weather-days div {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 1.2vh;
-	padding: 3.5vh 0;
-	border-radius: 0.6vw;
-	background: var(--card);
-	border: 0.15vh solid var(--card-border);
-	box-shadow: var(--shadow);
-	animation: info-in 0.7s ease-out calc(0.8s + var(--i) * 0.12s) both;
-}
-.weather-days span { font-size: 2.6vh; color: var(--muted); }
-.weather-days b { font-size: 11vh; line-height: 1.1; }
-.weather-days strong { font-size: 4.2vh; }
-.weather-days strong em { font-style: normal; font-weight: normal; color: var(--muted); }   /* the low, after the high */
-.weather-days small { font-size: 2.2vh; color: var(--blue-light); }
-
 /* Buses: a poster like the practice sessions one, on the 1920 x 1080 grid (--px). Francken blue graph
    paper; the headline (an amber highlighter, the colour of a bus stop sign) and the next bus on the left;
    a ticket per departure on the right, in the line's own colour; a road along the bottom with moving lane

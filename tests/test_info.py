@@ -72,6 +72,12 @@ class WeatherTest(unittest.TestCase):
 		today, tomorrow = weather.days
 		self.assertEqual((today.icon, today.high, today.low, today.rain_chance), ("🌦️", 14.2, 6.8, 40))
 		self.assertEqual((tomorrow.icon, tomorrow.rain_chance), ("☀️", 0))   # the days always get the daytime icon
+		self.assertEqual((weather.scene, weather.is_day), ("clear", False))   # the sky behind the slide: clear, at night
+
+	def test_scenes(self):
+		scene = lambda code: Weather(10, 8, "", "", 5, "N", code=code).scene
+		self.assertEqual([scene(code) for code in (1, 2, 3, 48, 55, 61, 82, 85, 96, 1234)],
+			["clear", "partly", "cloudy", "fog", "drizzle", "rain", "heavy-rain", "snow", "storm", "cloudy"])
 
 	def test_rain(self):
 		rain = parse_rain("000|19:10\n077|19:15\n109|19:20\n\n")
