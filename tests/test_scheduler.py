@@ -176,6 +176,7 @@ class BackgroundTest(unittest.TestCase):
 		daily = Daily()
 		runner = BackgroundRunner(Clock(datetime(2026, 10, 14, 23, 59, 0)), [daily], [])
 		runner.stopped.wait = lambda seconds: runner.stopped.set()   # run the loop once
+		runner.online = lambda: True
 		runner.refresh_loop()
 		due_in = runner.status["daily"].next_due - time.monotonic()
 		self.assertEqual(daily.refreshed, 1)
@@ -194,11 +195,32 @@ class BackgroundTest(unittest.TestCase):
 				raise KeyError("oops")
 		runner = BackgroundRunner(Clock(), [Down(), Bug()], [])
 		runner.stopped.wait = lambda seconds: runner.stopped.set()   # run the loop once
+		runner.online = lambda: True
 		with self.assertLogs("francken_tv.background") as logs:
 			runner.refresh_loop()
 		self.assertEqual([(record.levelname, record.exc_info is not None) for record in logs.records],
 			[("WARNING", False), ("ERROR", True)])   # a bug still gets its traceback
 		self.assertIn("503", runner.status["down"].last_error)   # and both show on /status
+
+
+	def test_without_the_network_nothing_refreshes_and_it_is_logged_once(self):
+		class Site(Provider):
+			name, refresh_seconds, refreshed = "site", 3600, 0
+			def refresh(self, now):
+				self.refreshed += 1
+		site = Site()
+		runner = BackgroundRunner(Clock(), [site], [])
+		runner.status["site"].next_due = time.monotonic() - 1
+		network = iter([False, False, False, True])
+		runner.online = lambda: next(network)
+		rounds = iter(range(4))
+		runner.stopped.wait = lambda seconds: next(rounds, None) is None and runner.stopped.set()
+		with self.assertLogs("francken_tv.background") as logs:
+			runner.refresh_loop()
+		self.assertEqual(site.refreshed, 1)   # only once the network was back
+		self.assertEqual([record.levelname for record in logs.records], ["WARNING", "INFO"])   # lost, back: no error per try
+		self.assertIn("Lost the network", logs.records[0].getMessage())
+		self.assertIsNone(runner.offline_since)
 
 
 if __name__ == "__main__":
