@@ -91,7 +91,7 @@ albums_folder = "images/albums"   # contains <year>/<YYYY-MM-DD>-<event name>/ f
 recent_events = 3                 # pick photos from this many most recent events
 photos_per_event = 20             # photos downloaded from each event every refresh (fewer if it has fewer; the others make up the rest)
 photos_per_round = 1              # photos shown per round of the slideshow; all of a batch are shown before any comes back
-refresh_minutes = 60
+refresh_minutes = 1440        # checked for a new comic once a day (just after midnight), and at start
 seconds = 10
 
 [presence]
@@ -157,8 +157,8 @@ seconds = 15
 [xkcd]
 # The latest xkcd comic, with its hover text.
 seconds = 15
-every_minutes = 30            # in the rotation at most this often
-refresh_minutes = 60
+every_minutes = 60            # in the rotation at most once an hour
+refresh_minutes = 1440        # checked for a new comic once a day (just after midnight), and at start
 
 [puzzles]
 # The Daily puzzles slide: one half per puzzle, tap one to play it.

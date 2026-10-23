@@ -48,11 +48,11 @@ class XkcdTest(unittest.TestCase):
 		self.assertEqual([p.name for p in Path(self.folder.name).iterdir()], ["3315.png"])
 		self.assertEqual((Path(self.folder.name) / "3315.png").read_bytes(), b"https://imgs.xkcd.com/comics/next.png")
 
-	def test_at_most_once_every_half_hour(self):
+	def test_at_most_once_an_hour(self):
 		with mock.patch("francken_tv.providers.xkcd.requests.get", side_effect=fake_get(LATEST)):
 			self.provider.refresh(datetime(2026, 10, 22, 12))
-		shown = lambda minute: len(self.provider.slides(datetime(2026, 10, 22, 12, minute)))
-		self.assertEqual([shown(m) for m in (0, 10, 29, 30, 45, 59)], [1, 0, 0, 1, 0, 0])
+		shown = lambda minute: len(self.provider.slides(datetime(2026, 10, 22, 12 + minute // 60, minute % 60)))
+		self.assertEqual([shown(m) for m in (0, 10, 30, 59, 60, 90, 119)], [1, 0, 0, 0, 1, 0, 0])
 		self.assertIsNotNone(self.provider.shortcut_slide(datetime(2026, 10, 22, 12, 40)))   # the shortcut key: any time
 
 	def test_no_slide_before_the_first_download(self):
