@@ -1,0 +1,28 @@
+{# The animated sky behind the weather slide and the rain warning (info_weather.html, info_rain.html):
+   `scene` (clear, partly, cloudy, fog, drizzle, rain, heavy-rain, snow or storm, see WEATHER_SCENES in
+   providers/info.py) and `is_day` (else the moon and stars). The clouds, drops, flakes and stars are
+   spread with arithmetic on the loop index, so it looks random but is the same every time. Styles:
+   "Weather" in style.css; the slide around it has the classes weather-slide, scene-... and night. #}
+{% set clouds = {"clear": 0, "partly": 3, "cloudy": 7, "fog": 3, "drizzle": 5, "rain": 6, "heavy-rain": 7, "snow": 5, "storm": 7}[scene] %}
+{% set drops = {"drizzle": 45, "rain": 80, "heavy-rain": 130, "storm": 130}.get(scene, 0) %}
+<div class="weather-sky" aria-hidden="true">
+	{% if scene in ("clear", "partly") %}
+	{% if is_day %}<div class="weather-sun"><i></i></div>
+	{% else %}
+	{% for i in range(45) %}<span class="weather-star" style="--x: {{ (i * 41 + 7) % 100 }}; --y: {{ (i * 29 + 3) % 62 }}; --d: {{ (i * 13) % 40 / 10 }}"></span>{% endfor %}
+	<div class="weather-moon"></div>
+	{% endif %}
+	{% endif %}
+	{% for i in range(clouds) %}
+	<svg class="weather-cloud" viewBox="0 0 200 100" style="--y: {{ (i * 23 + 2) % (55 if scene != 'partly' else 40) }}; --s: {{ 0.8 + (i * 7 % 5) / 6 }}; --t: {{ 70 + (i * 17) % 50 }}; --d: {{ (i * 37) % 100 }}; --o: {{ 0.55 + (i * 3 % 4) / 10 }}">
+		<path d="M42 92C18 92 6 74 18 58 8 38 32 22 54 32 64 8 106 4 118 30 138 16 168 30 162 54 188 58 190 92 160 92Z"/>
+	</svg>
+	{% endfor %}
+	{% if scene == "fog" %}{% for i in range(5) %}<div class="weather-fog" style="--y: {{ 18 + i * 17 }}; --t: {{ 40 + i * 9 }}; --d: {{ i * 11 }}"></div>{% endfor %}{% endif %}
+	{% for i in range(drops) %}<span class="weather-drop" style="--x: {{ (i * 53 + 11) % 104 - 2 }}; --t: {{ 0.55 + (i * 7 % 10) / 25 }}; --d: {{ (i * 31) % 100 / 50 }}; --l: {{ 40 + (i * 11) % 50 }}"></span>{% endfor %}
+	{% if scene == "snow" %}{% for i in range(70) %}<span class="weather-flake" style="--x: {{ (i * 47 + 5) % 100 }}; --t: {{ 9 + (i * 13) % 9 }}; --d: {{ (i * 29) % 160 / 10 }}; --s: {{ 8 + (i * 7) % 12 }}"></span>{% endfor %}{% endif %}
+	{% if scene == "storm" %}
+	<svg class="weather-bolt" viewBox="0 0 100 300"><path d="M58 0 18 150h34L30 300 86 120H52L74 0Z"/></svg>
+	<div class="weather-flash"></div>
+	{% endif %}
+</div>

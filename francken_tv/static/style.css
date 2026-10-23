@@ -499,17 +499,45 @@ body.show-cursor button { cursor: pointer; }
 .rain-times { position: relative; height: 3vh; margin-top: 1vh; font-size: 2vh; color: var(--muted); }
 .rain-times span { position: absolute; top: 0; white-space: nowrap; }
 /* The rain warning after bieruur: dark Francken blue, a big heading and the rain chart across the screen. */
-.info-rain { background: var(--blue); color: #ffffff; }
-.rain-kicker { margin: 0 0 1.5vh; font-size: 3vh; font-weight: bold; letter-spacing: 0.3vh; text-transform: uppercase; color: #ffd166; }
-.info-rain h1 { margin: 0; font-size: 8vh; }
 .rain-umbrella { display: inline-block; animation: rain-sway 2.4s ease-in-out infinite; }
 @keyframes rain-sway { 50% { transform: rotate(-12deg); } }
-.rain-chart.big { min-height: 40vh; margin: 7vh 0 3vh; --rain-fill: rgba(91, 192, 235, 0.45); --rain-stroke: #5bc0eb; }   /* on dark blue */
-.rain-chart.big .rain-plot { border-bottom-color: rgba(255, 255, 255, 0.35); }
-.rain-chart.big .rain-level { border-top-color: rgba(255, 255, 255, 0.35); }
-.rain-chart.big .rain-level span { font-size: 2.4vh; color: rgba(255, 255, 255, 0.75); }
-.rain-chart.big .rain-times { font-size: 2.6vh; color: rgba(255, 255, 255, 0.75); }
-.info-rain .info-source { color: rgba(255, 255, 255, 0.6); }
+/* The rain warning (info_rain.html): the weather slide's sky (as heavy as the rain that's coming), the
+   warning big on the left, and the rain chart across the screen on a see-through panel. */
+.rain-warning-pill { background: #ffd166; color: var(--blue); }
+.rain-warning-title {
+	position: absolute;
+	left: calc(100 * var(--px));
+	top: calc(170 * var(--px));
+	right: calc(100 * var(--px));
+	margin: 0;
+	font-size: calc(130 * var(--px));
+	line-height: 1.05;
+	letter-spacing: calc(-3 * var(--px));
+	animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.25s both;
+}
+.rain-warning-now { position: absolute; left: calc(100 * var(--px)); top: calc(330 * var(--px)); margin: 0; font-size: calc(40 * var(--px)); opacity: 0.85; animation: practice-in 0.7s ease-out 0.6s both; }
+.rain-warning-now b { color: #ffd166; }
+.rain-warning-panel {
+	position: absolute;
+	left: calc(100 * var(--px));
+	right: calc(100 * var(--px));
+	top: calc(440 * var(--px));
+	bottom: calc(110 * var(--px));
+	display: flex;
+	flex-direction: column;
+	padding: calc(40 * var(--px)) calc(50 * var(--px)) calc(30 * var(--px));
+	border-radius: calc(24 * var(--px));
+	background: rgba(8, 20, 35, 0.32);
+	border: calc(2 * var(--px)) solid rgba(255, 255, 255, 0.18);
+	text-shadow: none;
+	animation: weather-tile 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.7s both;
+	--line: rgba(255, 255, 255, 0.3);
+	--muted: rgba(255, 255, 255, 0.75);
+}
+.rain-warning-panel .rain-chart { --rain-fill: rgba(140, 205, 245, 0.45); --rain-stroke: #a9dcfb; }
+.rain-warning-panel .rain-level span { font-size: calc(28 * var(--px)); }
+.rain-warning-panel .rain-times { height: calc(40 * var(--px)); font-size: calc(30 * var(--px)); }
+.rain-warning-source { position: absolute; bottom: calc(50 * var(--px)); right: calc(100 * var(--px)); margin: 0; font-size: calc(24 * var(--px)); opacity: 0.6; text-shadow: none; }
 /* Buses: a poster like the practice sessions one, on the 1920 x 1080 grid (--px). Francken blue graph
    paper; the headline (an amber highlighter, the colour of a bus stop sign) and the next bus on the left;
    a ticket per departure on the right, in the line's own colour; a road along the bottom with moving lane

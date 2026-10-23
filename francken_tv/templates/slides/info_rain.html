@@ -1,8 +1,13 @@
-{# After bieruur (providers/info.py, outside_daytime_slides): a warning when rain is expected within
-   two hours, with Buienradar's rain chart (rain_chart.html) across the screen. #}
-<div class="slide info-slide info-rain">
-	<p class="rain-kicker">&#9888; Rain warning &middot; {{ place }}</p>
-	<h1><span class="rain-umbrella">&#9748;</span> {{ summary }}</h1>
-	{% with size = "big" %}{% include "slides/rain_chart.html" %}{% endwith %}
-	<p class="info-source">{% if example %}<b>Example: it stays dry for now</b> &middot; {% endif %}Rain forecast from Buienradar &middot; {{ weather.temperature | round | int }}&deg;, {{ weather.text | lower }}</p>
+{# Outside the daytime (providers/info.py, outside_daytime_slides): a warning when rain is expected within
+   two hours, over the animated sky of the weather slide (weather_sky.html) as heavy as the rain that's
+   coming, with Buienradar's rain chart (rain_chart.html) on a see-through panel. On the 1920 x 1080 grid. #}
+<div class="slide weather-slide rain-warning scene-{{ scene }}{{ ' night' if not is_day }}">
+	{% include "slides/weather_sky.html" %}
+	<div class="weather-pill rain-warning-pill">&#9888; Rain warning &middot; {{ place }}</div>
+	<h1 class="rain-warning-title"><span class="rain-umbrella">&#9748;</span> {{ summary }}</h1>
+	<p class="rain-warning-now">Now {{ weather.temperature | round | int }}&deg; and {{ weather.text | lower }}{% if example %} &middot; <b>an example: it stays dry for now</b>{% endif %}</p>
+	<div class="rain-warning-panel">
+		{% with size = "" %}{% include "slides/rain_chart.html" %}{% endwith %}
+	</div>
+	<p class="rain-warning-source">Rain forecast from Buienradar</p>
 </div>

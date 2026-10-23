@@ -686,8 +686,11 @@ class InfoProvider(Provider):
 		if not any(mm >= 0.1 for _, mm in rain):
 			return None
 		heaviest = max(mm for _, mm in rain)
+		# The sky behind it: as heavy as the rain that's coming, or the thunderstorm that's already there.
+		scene = "storm" if self.weather and self.weather.scene == "storm" else {"light rain": "drizzle", "rain": "rain"}.get(rain_words(heaviest), "heavy-rain")
 		return {"summary": rain_summary(rain), "heaviest": rain_words(heaviest), "place": self.place,
-			"rain": rain_bars(rain), "chart": rain_chart(rain), "rain_lines": rain_lines(rain), "weather": self.weather}
+			"rain": rain_bars(rain), "chart": rain_chart(rain), "rain_lines": rain_lines(rain), "weather": self.weather,
+			"scene": scene, "is_day": self.weather.is_day if self.weather else True}
 
 	def buses_data(self, now: datetime) -> dict | None:
 		"""The buses that can still be caught: those leaving at least walk_minutes from now. One you have to

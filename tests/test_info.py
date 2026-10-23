@@ -192,6 +192,11 @@ class InfoProviderTest(unittest.TestCase):
 		self.provider.weather.rain = [("19:30", 0.0), ("20:45", 1.2)]   # rain in an hour and a quarter
 		[slide] = self.provider.outside_daytime_slides(SUNDAY_EVENING)
 		self.assertEqual((slide.template, slide.data["summary"], slide.data["heaviest"]), ("info_rain.html", "Rain from 20:45", "rain"))
+		self.assertEqual(slide.data["scene"], "rain")   # the sky behind it: as heavy as the rain that's coming
+		self.provider.weather.rain = [("19:30", 0.0), ("20:45", 6.0)]
+		self.assertEqual(self.provider.rain_data(SUNDAY_EVENING)["scene"], "heavy-rain")
+		self.provider.weather.code = 95   # a thunderstorm now
+		self.assertEqual(self.provider.rain_data(SUNDAY_EVENING)["scene"], "storm")
 		templates = [self.provider.slides(SUNDAY_EVENING)[0].template for _ in range(4)]   # the daytime turns: unchanged
 		self.assertEqual(templates, ["info_news.html", "info_weather.html", "info_buses.html", "info_timetable.html"])
 
