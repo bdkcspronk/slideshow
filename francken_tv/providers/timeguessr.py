@@ -162,7 +162,12 @@ class Game:
 
 	@property
 	def done(self) -> bool:
-		return len(self.guesses) == len(self.photos) and not self.showing_answer
+		return self.all_guessed and not self.showing_answer
+
+	@property
+	def all_guessed(self) -> bool:
+		"""Every photo has a guess: the score is final, even if nobody presses Next after the last answer."""
+		return len(self.guesses) == len(self.photos)
 
 	@property
 	def score(self) -> int:
@@ -249,14 +254,14 @@ class TimeGuessrProvider(Provider):
 		total = MAX_POINTS * 2 * len(game.photos)
 		self.check_highscore(game, now)
 		best = self.highscores.text(self.name)
-		if game.done:
+		if game.all_guessed:
 			return PuzzleStatus("solved", f"Done: {game.score:,} of {total:,} points", best)
 		if game.guesses:
 			return PuzzleStatus("playing", f"{len(game.guesses)} of {len(game.photos)} photos · {game.score:,} points", best)
 		return PuzzleStatus("new", "Not tried yet", best)
 
 	def check_highscore(self, game: Game, now: datetime) -> None:
-		if game.done:
+		if game.all_guessed:
 			self.highscores.record(self.name, game.score, now.date())
 
 	def slides(self, now: datetime) -> list[Slide]:

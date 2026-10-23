@@ -126,6 +126,16 @@ class ProviderTest(unittest.TestCase):
 		self.assertEqual((best["score"], best["new"]), (self.provider.game.score, True))
 		self.assertTrue(self.provider.status(NOW).best.startswith("Highscore: "))
 
+	def test_the_high_score_counts_without_pressing_next_after_the_last_photo(self):
+		for number in range(5):
+			self.provider.action("guess", [BERLIN, "1970"], NOW)
+			if number < 4:
+				self.provider.action("next", [], NOW)
+		self.assertFalse(self.provider.game.done)   # the last answer is still on screen...
+		status = self.provider.status(NOW)
+		self.assertEqual(status.state, "solved")   # ...but the overview counts it
+		self.assertTrue(status.best.startswith(f"Highscore: {self.provider.game.score:,}"))
+
 	def test_slide_data(self):
 		[slide] = self.provider.slides(NOW)
 		self.assertEqual((slide.data["first_year"], slide.data["last_year"], slide.data["total_points"]), (1900, 2026, 50_000))
