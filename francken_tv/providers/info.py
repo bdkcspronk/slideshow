@@ -112,8 +112,9 @@ def feed_image(item: ElementTree.Element) -> str:
 
 def larger_image(url: str) -> str:
 	"""The same picture in a size for the TV: NU.nl's feed has 256x256 squares and the BBC's 240 pixels
-	wide, while both sites also have larger versions at nearly the same address."""
-	url = re.sub(r"_sqr\d+/", "_wd1280/", url) if "images.nu.nl" in url else url
+	wide, while both sites also have larger versions at nearly the same address. NU.nl's square comes
+	with the crop that made it square (x/y/width/height): left out, else the wide version is squeezed."""
+	url = re.sub(r"_sqr\d+/(?:\d+/){4}|_sqr\d+/", "_wd1280/", url) if "images.nu.nl" in url else url
 	return re.sub(r"/standard/\d+/", "/standard/976/", url) if "ichef.bbci.co.uk" in url else url
 
 

@@ -45,7 +45,7 @@ class NewsTest(unittest.TestCase):
 		self.assertEqual(headlines["Newest news"].image_url, "https://images.cdn.nos.nl/a-1024x576.webp")
 		self.assertEqual(headlines["BBC style"].image_url, "https://ichef.bbci.co.uk/ace/standard/976/x.jpg")   # larger than the feed's
 		self.assertEqual(headlines["Older news"].image_url, "")
-		self.assertEqual(larger_image("https://images.nu.nl/m/abc_sqr256/444/0/1/1/x.jpg"), "https://images.nu.nl/m/abc_wd1280/444/0/1/1/x.jpg")
+		self.assertEqual(larger_image("https://images.nu.nl/m/abc_sqr256/444/0/1/1/x.jpg"), "https://images.nu.nl/m/abc_wd1280/x.jpg")   # without the square's crop: not squeezed
 
 	def test_article_page(self):
 		long = "A sentence that is long enough to count as article text, not a menu item."
