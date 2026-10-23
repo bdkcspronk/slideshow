@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "poll", "xkcd", "bieruur_countdown"]
+order = ["images", "activities", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -137,6 +137,12 @@ seconds = 12
 # The confidential contact persons: who they are is in config/confidential.json (personal data, not in
 # git; the format is in francken_tv/providers/confidential.py), their photos in media/confidential/.
 # Without that file the slide is left out.
+seconds = 15
+
+[extern]
+# The extern ("Internship? Job? Thesis?" and how to reach them): the text is in config/extern.json
+# (personal data, not in git; the format is in francken_tv/providers/extern.py), the photo and the
+# background in media/extern/. Without that file the slide is left out.
 seconds = 15
 
 [poll]

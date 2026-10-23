@@ -1,0 +1,19 @@
+{# The extern (providers/extern.py): the questions popping up one after the other, the photo sliding in,
+   then "Ask our extern" and the phone number and email; then it all stands still. Laid out on the
+   1920 x 1080 grid of the poster it replaces (--px, see "Extern" in style.css). #}
+<div class="slide extern-slide"{% if background %} style="background-image: url('{{ background }}')"{% endif %}>
+	<div class="extern-text">
+		{% for question in questions %}
+		<div class="extern-question" style="--i: {{ loop.index0 }}">{{ question }}</div>
+		{% endfor %}
+		{% if ask %}<div class="extern-ask" style="--i: {{ questions | length }}">{{ ask }}</div>{% endif %}
+		<div class="extern-contacts">
+			{% for contact in contacts %}
+			<div class="extern-contact" style="--i: {{ questions | length + loop.index0 }}">
+				<span>{{ contact.label }}</span><span>-</span><span>{{ contact.value }}{% if contact.note %}&ensp;{{ contact.note }}{% endif %}</span>
+			</div>
+			{% endfor %}
+		</div>
+	</div>
+	{% if photo %}<img class="extern-photo" src="{{ photo }}" alt="">{% endif %}
+</div>

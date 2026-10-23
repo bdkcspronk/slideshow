@@ -99,6 +99,7 @@ Copy these to the TV PC by hand:
 | `media/voices/en_US-ryan-high.onnx(.json)` | piper text-to-speech voice |
 | `config/devices.json` | phone MAC addresses → names, chart styles, greetings (personal data!) |
 | `config/confidential.json`, `media/confidential/` | the confidential contact persons: names, email addresses, photos (personal data; the format is in `providers/confidential.py`) |
+| `config/extern.json`, `media/extern/` | the extern's slide: the text, phone number, photo and background (personal data; the format is in `providers/extern.py`) |
 | `~/.config/slideshow/nextcloud.credentials.json` | Nextcloud login |
 
 `data/` is created automatically: the presence database, caches and the downloaded quotes.
