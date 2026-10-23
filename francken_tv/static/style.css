@@ -598,7 +598,8 @@ body.show-cursor button { cursor: pointer; }
 .bus-next div { display: flex; flex-direction: column; gap: calc(6 * var(--px)); min-width: 0; }
 .bus-next span, .bus-next small { font-size: calc(38 * var(--px)); line-height: 1.15; opacity: 0.8; }   /* a long destination wraps */
 .bus-next b { font-size: calc(96 * var(--px)); line-height: 1; }
-.bus-next b.last-call { color: var(--amber); text-transform: uppercase; animation: bus-pulse 1s ease-in-out infinite; }
+.bus-next b.last-call { font-size: calc(64 * var(--px)); color: var(--amber); animation: bus-glow 2.4s ease-in-out infinite; }
+@keyframes bus-glow { 50% { opacity: 0.7; } }   /* a slow, gentle pulse */
 .bus-badge {   /* the line number in the line's colour (Qbuzz); a square with round corners */
 	--size: calc(var(--h) * 0.72);
 	flex: none;

@@ -25,7 +25,7 @@
 			<span class="bus-badge{{ ' long' if next.departure.line | length > 2 }}"{% if next.colors %} style="background: {{ next.colors[0] }}"{% endif %}>{{ next.departure.line }}</span>
 			<div>
 				<span>to {{ next.departure.destination }}</span>
-				<b class="{{ 'last-call' if next.last_call }}">{% if next.last_call %}Last call!{% else %}in {{ next.minutes }} min{% endif %}</b>
+				<b class="{{ 'last-call' if next.last_call }}">{% if next.last_call %}Last call{% else %}in {{ next.minutes }} min{% endif %}</b>
 				{% if next.last_call %}<small>leaves in {{ next.minutes }} min</small>{% endif %}
 			</div>
 		</div>
