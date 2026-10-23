@@ -159,9 +159,15 @@ class EventPhotoRefreshTest(unittest.TestCase):
 class FakeAnnouncer:
 	def __init__(self):
 		self.played = []
+		self.playing = False
 
 	def play_music(self, path):
 		self.played.append(path.name)
+		self.playing = True
+		return True
+
+	def music_playing(self):
+		return self.playing
 
 
 class BieruurSongTest(unittest.TestCase):
@@ -186,6 +192,21 @@ class BieruurSongTest(unittest.TestCase):
 	def test_no_song_when_started_long_after_bieruur(self):
 		self.song.tick(datetime(2026, 10, 14, 17, 0))
 		self.assertEqual(self.announcer.played, [])
+
+	def test_spotify_is_quieter_while_the_song_plays(self):
+		ducks = []
+		self.song.duck = ducks.append
+		self.song.in_background = ducks.append   # (no thread in the test)
+		start = datetime(2026, 10, 14, 15, 59, 21)
+		self.song.tick(start - timedelta(minutes=5))   # the song is chosen
+		self.song.tick(start)
+		self.assertEqual(ducks, [True])   # down once the song started
+		self.song.tick(start + timedelta(seconds=60))
+		self.assertEqual(ducks, [True])   # still playing
+		self.announcer.playing = False
+		self.song.tick(start + timedelta(seconds=200))
+		self.song.tick(start + timedelta(seconds=201))
+		self.assertEqual(ducks, [True, False])   # back up once, when it's over
 
 
 if __name__ == "__main__":

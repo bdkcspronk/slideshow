@@ -149,6 +149,8 @@ def build_app(config: dict, clock: Clock) -> App:
 	puzzles = [available_puzzles[name] for name in puzzle_settings.get("order", list(available_puzzles))]
 
 	activities = ActivitiesProvider(config.get("activities", {}), seconds)
+	spotify = SpotifyProvider(config.get("spotify", {}), project_path(config.get("spotify", {}).get("credentials",
+		"~/.config/slideshow/spotify.json")), seconds)
 	all_providers: list[Provider] = [
 		ImagesProvider(config.get("images", {}), seconds),
 		activities,
@@ -167,8 +169,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),
 		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),
-		SpotifyProvider(config.get("spotify", {}), project_path(config.get("spotify", {}).get("credentials",
-			"~/.config/slideshow/spotify.json")), seconds),
+		spotify,
 	]
 	providers = {provider.name: provider for provider in all_providers}
 	rotation = config.get("rotation", {})
@@ -186,7 +187,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		raise SystemExit(f"Unknown slide types in shortcuts: {unknown}. Known: {list(providers)}")
 
 	takeovers: list[Takeover] = [BieruurTakeover(bieruur), VrijmiboTakeover(config.get("vrijmibo", {}))]
-	jobs: list[Job] = [BieruurSong(bieruur, announcer)]
+	jobs: list[Job] = [BieruurSong(bieruur, announcer, duck=spotify.duck)]   # Spotify quieter during the song
 	jobs.append(Greeter(presence, store, devices, announcer))
 	jobs.append(LineOut(config.get("sound", {})))   # the sound on the speakers, not the TV's HDMI   # quiet if greetings are off in the settings
 

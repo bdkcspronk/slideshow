@@ -18,7 +18,7 @@ The slideshow on the TV in the Francken room. It shows:
 | The latest xkcd comic, with its hover text | xkcd.com | `providers/xkcd.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing \| TimeGuessr, with today's status; tap one to play it. Left out once all are done for the day | nytimes.com, catfishing.net, timeguessr.com (map: OpenStreetMap) | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py`, `timeguessr.py` |
-| Bieruur countdown; full screen from 15:58 to 16:02, with a song | | `providers/bieruur.py` |
+| Bieruur countdown; full screen from 15:58 to 16:02, with a song (Spotify on the TV turns down meanwhile) | | `providers/bieruur.py` |
 | The vrijmibo GIF, every 15 minutes on Fridays | `media/vrijmibo.gif` | `providers/vrijmibo.py` |
 
 Everything you'd want to change (times, durations, order, URLs) is in **`config/config.toml`**.

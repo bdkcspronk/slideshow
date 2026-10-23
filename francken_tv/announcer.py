@@ -75,12 +75,17 @@ class Announcer:
 		if muted:
 			self.stop_music()
 
-	def play_music(self, path: Path) -> None:
+	def play_music(self, path: Path) -> bool:
+		"""Starts the song (in the background); False if it can't play (no player, or muted)."""
 		if self.player is None or self.muted:
-			return
+			return False
 		self.stop_music()
 		log.info("Playing %s", path.name)
 		self.music_process = subprocess.Popen(self.play_command(path), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+		return True
+
+	def music_playing(self) -> bool:
+		return self.music_process is not None and self.music_process.poll() is None
 
 	def stop_music(self) -> None:
 		if self.music_process is not None and self.music_process.poll() is None:

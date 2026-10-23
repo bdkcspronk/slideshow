@@ -117,6 +117,7 @@ speaker = "Francken TV"      # the TV PC's own Spotify speaker (spotifyd, deploy
 show_when_idle = true        # nothing playing: still show the slide, with the last song paused
 play_on_start = true         # when the slideshow starts and nothing plays: resume the last music on the speaker
 start_playlist = ""          # ...or, if there's nothing to resume, this one (a "spotify:playlist:..." uri)
+bieruur_volume = 30          # during the bieruur song: the music this quiet (% of how loud it was), then back
 check_every_seconds = 5
 seconds = 15
 

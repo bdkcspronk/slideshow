@@ -357,6 +357,22 @@ class SpotifyTest(unittest.TestCase):
 		play = request.call_args_list[3]
 		self.assertEqual((play.args[0], play.args[1], play.kwargs["params"]), ("PUT", "https://api.spotify.com/v1/me/player/play", {"device_id": "tv"}))
 
+	def test_quieter_during_the_bieruur_song_on_our_speaker_only(self):
+		self.connect()
+		self.provider.playing.device, self.provider.playing.volume = "Francken TV", 83   # sounds like 50%
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request:
+			self.provider.duck(True)
+			quieter = int(request.call_args.args[1].rsplit("=", 1)[1])
+			self.assertAlmostEqual(heard_volume(quieter), 15, delta=1)   # 30% of 50%
+			self.provider.duck(False)
+			self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/me/player/volume?volume_percent=83")   # back
+			self.provider.duck(False)   # not turned down: nothing to do
+			self.assertEqual(request.call_count, 2)
+		self.provider.playing.device = "Phone"
+		with mock.patch("francken_tv.providers.spotify.requests.request") as request:
+			self.provider.duck(True)
+		request.assert_not_called()   # music elsewhere is left alone
+
 	def test_restarting_the_song_redraws_the_slide(self):
 		self.connect()   # TRACK at 1:01
 		state = self.provider.view()["state"]

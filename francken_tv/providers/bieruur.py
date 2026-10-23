@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import logging
 import random
+import threading
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from typing import Callable
 
 from ..announcer import Announcer
 from ..config import parse_time, parse_weekday, project_path
@@ -119,13 +121,16 @@ class BieruurTakeover(Takeover):
 
 
 class BieruurSong(Job):
-	"""Picks a random song shortly before bieruur and plays it on time."""
+	"""Picks a random song shortly before bieruur and plays it on time. Meanwhile Spotify is turned
+	down (duck(True), e.g. SpotifyProvider.duck), and back up when the song is over (duck(False))."""
 
 	name = "bieruur_song"
 
-	def __init__(self, settings: BieruurSettings, announcer: Announcer) -> None:
+	def __init__(self, settings: BieruurSettings, announcer: Announcer, duck: Callable[[bool], None] | None = None) -> None:
 		self.settings = settings
 		self.announcer = announcer
+		self.duck = duck
+		self.ducked = False
 		self.folder = project_path(settings.songs_folder)
 		self.offsets = settings.song_offsets or {}
 		self.chosen: Path | None = None
@@ -141,6 +146,9 @@ class BieruurSong(Job):
 		return bieruur + timedelta(seconds=self.offsets.get(song.name, 0))
 
 	def tick(self, now: datetime) -> None:
+		if self.ducked and not self.announcer.music_playing():   # the song is over: Spotify back up
+			self.ducked = False
+			self.in_background(False)
 		bieruur = self.settings.bieruur(now)
 		if bieruur is None or self.played_on == now.date():
 			return
@@ -157,5 +165,14 @@ class BieruurSong(Job):
 		if now < start:
 			return
 		self.played_on = now.date()
-		if now - start <= SONG_LATE_START_LIMIT:
-			self.announcer.play_music(self.chosen)
+		if now - start <= SONG_LATE_START_LIMIT and self.announcer.play_music(self.chosen) and self.duck:
+			self.ducked = True
+			self.in_background(True)   # after the song started: asking Spotify can never delay it
+
+	def in_background(self, quieter: bool) -> None:
+		def duck() -> None:
+			try:
+				self.duck(quieter)
+			except Exception:
+				log.exception("Could not turn Spotify %s for the bieruur song", "down" if quieter else "back up")
+		threading.Thread(target=duck, name="bieruur-duck", daemon=True).start()

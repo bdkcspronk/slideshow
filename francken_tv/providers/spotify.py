@@ -277,6 +277,8 @@ class SpotifyProvider(Provider):
 		self.login_state: str | None = None
 		self.scopes: set[str] | None = None   # what the saved login allows (None: not asked yet)
 		self.volume_set: tuple[int, float] | None = None   # (volume, time.monotonic()) of the last volume button
+		self.bieruur_volume = settings.get("bieruur_volume", 30)   # % of how loud it sounded, during the bieruur song
+		self.ducked_from: int | None = None   # the volume before the bieruur song turned it down
 		self.volume_lock = threading.Lock()
 		self.jumps = 0   # how often the song jumped to another position (restart, seek): part of the slide's state
 		self.lyrics: dict[str, Lyrics | None] = {}   # by song id; None: LRCLIB doesn't have them
@@ -635,6 +637,31 @@ class SpotifyProvider(Provider):
 		if response.status_code in (401, 403):
 			return NEW_LOGIN_MESSAGE if self.needs_new_login else "Spotify doesn't allow this: it needs Spotify Premium"
 		return None
+
+	def duck(self, quieter: bool) -> None:
+		"""For the bieruur song (BieruurSong in providers/bieruur.py): music on our own speaker turned down
+		to bieruur_volume % of how loud it sounds, and afterwards back to what it was. Music playing
+		elsewhere (someone's phone) is left alone."""
+		with self.volume_lock:
+			if quieter:
+				playing = self.playing
+				if not playing or not playing.is_playing or playing.device != self.speaker or playing.volume is None:
+					return
+				volume = spotify_volume(round(heard_volume(playing.volume) * self.bieruur_volume / 100))
+				before = playing.volume
+			elif self.ducked_from is None:
+				return
+			else:
+				volume, before = self.ducked_from, None
+			error = self.command("PUT", f"{VOLUME_URL}?volume_percent={volume}")
+			if error:
+				log.warning("Could not set the Spotify volume for the bieruur song: %s", error)
+				return
+			self.ducked_from = before
+			log.info("Spotify %s for the bieruur song (volume %d)", "down" if quieter else "back up", volume)
+			if self.playing:
+				self.playing.volume = volume
+			self.volume_set = (volume, time.monotonic())
 
 	def catch_up(self, now: datetime) -> None:
 		"""After a command: ask what's playing until Spotify reports a change (a new song, paused or
