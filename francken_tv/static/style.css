@@ -122,9 +122,9 @@ body.show-cursor button { cursor: pointer; }
 .photo-caption strong { font-size: 4vh; }
 .photo-caption span { font-size: 2.6vh; opacity: 0.85; }
 
-/* Upcoming activities: a poster in navy and crimson. Soft glows drift over the navy; the title gets a
-   crimson highlighter; cream cards with a crimson date block; today's cards crimson themselves. */
-.activities-slide {
+/* The navy and crimson posters (upcoming activities, news): soft glows drift over the navy (.navy-glows),
+   a crimson label (.poster-pill) and a title with a crimson highlighter behind a word (.poster-marked). */
+.activities-slide, .news-slide {
 	--navy: #0d1f3c;
 	--crimson: #c8102e;
 	--paper: #fdf8ec;
@@ -140,7 +140,7 @@ body.show-cursor button { cursor: pointer; }
 	font-family: "Familjen Grotesk", "DejaVu Sans", sans-serif;
 	font-weight: 700;
 }
-.activities-glows i {   /* big soft circles drifting slowly behind everything */
+.navy-glows i {   /* big soft circles drifting slowly behind everything */
 	position: absolute;
 	width: 70vh;
 	height: 70vh;
@@ -148,11 +148,11 @@ body.show-cursor button { cursor: pointer; }
 	background: radial-gradient(circle, rgba(200, 16, 46, 0.35), transparent 65%);
 	animation: activities-glow 26s ease-in-out infinite alternate;
 }
-.activities-glows i:nth-child(1) { left: -15vh; top: -20vh; }
-.activities-glows i:nth-child(2) { right: -20vh; top: 25vh; background: radial-gradient(circle, rgba(70, 120, 220, 0.3), transparent 65%); animation-duration: 32s; animation-delay: -10s; }
-.activities-glows i:nth-child(3) { left: 35vw; bottom: -40vh; animation-duration: 38s; animation-delay: -20s; }
+.navy-glows i:nth-child(1) { left: -15vh; top: -20vh; }
+.navy-glows i:nth-child(2) { right: -20vh; top: 25vh; background: radial-gradient(circle, rgba(70, 120, 220, 0.3), transparent 65%); animation-duration: 32s; animation-delay: -10s; }
+.navy-glows i:nth-child(3) { left: 35vw; bottom: -40vh; animation-duration: 38s; animation-delay: -20s; }
 @keyframes activities-glow { to { transform: translate(18vh, 12vh) scale(1.2); } }
-.activities-pill {
+.poster-pill {
 	position: relative;
 	align-self: flex-start;
 	padding: 0.9vh 1.4vw;
@@ -163,10 +163,10 @@ body.show-cursor button { cursor: pointer; }
 	text-transform: uppercase;
 	animation: practice-in 0.6s ease-out 0.1s both;
 }
-.activities-title { position: relative; margin: 1.8vh 0 3.5vh; font-size: 8vh; line-height: 1; letter-spacing: -0.1vh; }
-.activities-title span { display: inline-block; animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.25s both; }
-.activities-marked { position: relative; animation-delay: 0.4s !important; }
-.activities-marked::before {   /* the highlighter, wiping in from the left behind the word */
+.poster-title { position: relative; margin: 1.8vh 0 3.5vh; font-size: 8vh; line-height: 1; letter-spacing: -0.1vh; }
+.poster-title span { display: inline-block; animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.25s both; }
+.poster-marked { position: relative; animation-delay: 0.4s !important; }
+.poster-marked::before {   /* the highlighter, wiping in from the left behind the word */
 	content: "";
 	position: absolute;
 	z-index: -1;
@@ -177,6 +177,7 @@ body.show-cursor button { cursor: pointer; }
 	transform-origin: left;
 	animation: practice-wipe 0.7s cubic-bezier(0.6, 0, 0.3, 1) 0.9s both;
 }
+/* Upcoming activities: cream cards with a crimson date block; today's cards crimson themselves. */
 .activities-slide ul {
 	position: relative;
 	list-style: none;
@@ -261,44 +262,67 @@ body.show-cursor button { cursor: pointer; }
 .info-source { position: absolute; bottom: 2.5vh; right: 5vw; margin: 0; font-size: 1.9vh; color: var(--faint); }
 @keyframes info-in { from { opacity: 0; transform: translateY(2vh); } }
 
-/* News: a column per feed. */
-.news-columns { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--feeds), minmax(0, 1fr)); gap: 2.5vw; }
-.news-columns h2 { margin: 0 0 2vh; padding-bottom: 1vh; font-size: 3.4vh; color: var(--blue); border-bottom: 0.4vh solid var(--red); }
-.news-columns ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1.6vh; }
-.news-columns li { animation: info-in 0.8s ease-out calc(0.4s + var(--i) * 0.25s + var(--j) * 0.12s) both; }
+/* News: on the navy poster (.news-slide shares the activities slide's background, see above), a column
+   per feed. The headlines come in as waves: the top row first (with their pictures), column after
+   column, then the second row, then the third. --j is the row, --i the column. */
+.news-slide .poster-title { margin-bottom: 2.6vh; }
+.news-columns { position: relative; flex: 1; min-height: 0; margin-bottom: 3vh; display: grid; grid-template-columns: repeat(var(--feeds), minmax(0, 1fr)); gap: 2.2vw; }
+.news-columns section { min-width: 0; }
+.news-columns h2 {
+	display: inline-block;
+	margin: 0 0 1.4vh;
+	padding: 0.6vh 1vw;
+	border-radius: 0.6vh;
+	background: var(--crimson);
+	font-size: 2.4vh;
+	letter-spacing: 0.15vh;
+	text-transform: uppercase;
+	animation: practice-in 0.6s ease-out calc(0.5s + var(--i) * 0.15s) both;
+}
+.news-columns ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1.4vh; }
+.news-columns li {   /* the wave: a row at a time, each a little after the column to its left */
+	--wave: calc(0.9s + var(--j) * 1.1s + var(--i) * 0.2s);
+	animation: news-wave 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) var(--wave) both;
+}
 .news-columns button {
 	width: 100%;
 	display: flex;
 	flex-direction: column;
 	gap: 0.6vh;
 	padding: 1.5vh 1.2vw;
-	border: 0.15vh solid var(--card-border);
-	border-radius: 0.6vw;
-	background: var(--card);
-	box-shadow: var(--shadow);
-	color: inherit;
+	border: none;
+	border-radius: 1.4vh;
+	background: var(--paper);
+	color: var(--navy);
+	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
 	font-family: inherit;
+	font-weight: inherit;
 	text-align: left;
 	overflow: hidden;
 }
-.news-columns button:active { background: var(--blue-faint); }
+.news-columns button:active { background: #efe7d3; }
 /* The first headline of each feed, with its picture across the top of the card. */
-.news-columns button img {
+.news-picture {
+	display: block;
 	width: calc(100% + 2.4vw);
-	margin: -1.5vh -1.2vw 0.6vh;
-	height: 18vh;
-	object-fit: cover;
-	border-radius: 0.6vw 0.6vw 0 0;
+	height: 16vh;
+	margin: -1.5vh -1.2vw 0.8vh;
 }
+.news-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .news-columns li b {
-	font-size: 2.6vh;
+	font-size: 2.5vh;
 	line-height: 1.25;
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 3;
 	overflow: hidden;
 }
-.news-columns li span { font-size: 1.9vh; color: var(--muted); }
+.news-columns li button > span:last-child { font-size: 1.9vh; font-weight: normal; color: var(--crimson); }
+.news-hint { position: absolute; bottom: 2.5vh; right: 5vw; margin: 0; font-size: 1.9vh; opacity: 0.55; }
+@keyframes news-wave {
+	from { opacity: 0; transform: translateY(6vh) scale(0.94) rotate(-1.5deg); }
+	60% { opacity: 1; }
+}
 
 /* A news article: the title, then the text in one column (lines short enough to read) that scrolls when it's long. */
 .article-header { display: flex; align-items: center; gap: 2vw; margin-bottom: 3vh; font-size: 2.4vh; color: var(--muted); }

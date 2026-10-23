@@ -1,7 +1,11 @@
 {# Info slide, news part (providers/info.py): the latest headlines of each feed, in columns, the first
-   with its picture. Tapping one opens the article (InfoProvider.action(), templates/slides/info_article.html). #}
-<div class="slide info-slide info-news" data-interactive data-provider="info" data-idle-seconds="120">
-	<h1>News</h1>
+   with its picture, on the navy and crimson poster of the activities slide. They come in as waves: first
+   the top row (the pictures), column after column, then the second row, then the third (--j the row,
+   --i the column). Tapping one opens the article (InfoProvider.action(), templates/slides/info_article.html). #}
+<div class="slide news-slide" data-interactive data-provider="info" data-idle-seconds="120">
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="poster-pill">Latest headlines</div>
+	<h1 class="poster-title"><span>In the</span> <span class="poster-marked">news</span></h1>
 	<div class="news-columns" style="--feeds: {{ feeds | length }}">
 		{% for feed in feeds %}
 		<section style="--i: {{ loop.index0 }}">
@@ -10,7 +14,7 @@
 				{% for headline in feed.headlines %}
 				<li style="--j: {{ loop.index0 }}">
 					<button data-action="article" data-value="{{ headline.link }}">
-						{% if loop.first and headline.image %}<img src="{{ headline.image }}" alt="">{% endif %}
+						{% if loop.first and headline.image %}<span class="news-picture"><img src="{{ headline.image }}" alt=""></span>{% endif %}
 						<b>{{ headline.title }}</b><span>{{ headline.ago }}</span>
 					</button>
 				</li>
@@ -19,5 +23,5 @@
 		</section>
 		{% endfor %}
 	</div>
-	<p class="info-source">Tap a headline to read it</p>
+	<p class="news-hint">Tap a headline to read it</p>
 </div>

@@ -4,9 +4,9 @@
    crimson themselves; then the others: down the left column, then the right. They slide in one by one
    (--i): today's from above, the left column from the left, the right column from the right. #}
 <div class="slide activities-slide">
-	<div class="activities-glows" aria-hidden="true"><i></i><i></i><i></i></div>
-	<div class="activities-pill">What's on at Francken</div>
-	<h1 class="activities-title"><span>Upcoming</span> <span class="activities-marked">activities</span></h1>
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="poster-pill">What's on at Francken</div>
+	<h1 class="poster-title"><span>Upcoming</span> <span class="poster-marked">activities</span></h1>
 	{% macro card(activity, cls, i) %}
 		{% set now = activity.day <= today %}
 		<li class="{{ cls }}" style="--i: {{ i }}">
