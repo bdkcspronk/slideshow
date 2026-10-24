@@ -125,7 +125,7 @@ body.show-cursor button { cursor: pointer; }
 /* The navy and crimson posters (upcoming activities, news, the activity chart, the leaderboard, books): soft
    glows drift over the navy (.navy-glows), a crimson label (.poster-pill) and a title with a crimson
    highlighter behind a word (.poster-marked). */
-.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide {
+.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide {
 	--navy: #0d1f3c;
 	--crimson: #c8102e;
 	--paper: #fdf8ec;
@@ -2791,14 +2791,13 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .menu-power-button:focus, .menu-power-button:hover { box-shadow: 0 0 0 0.5vh var(--menu-text); }
 .menu-page-power .menu-hint { text-align: center; }
 
-/* Graafmachine (providers/graafmachine.py): one 14 s film, in SVG. The machine drives in, digs a bucket of
-   earth out of the hole, swings it over to the heap, drops it (the heap grows) and digs again. The
-   boom, stick and bucket turn around their pins (transform-origin, in the SVG's coordinates). */
-.graafmachine-slide { background: #d9eefb; }
-.graafmachine-slide svg { display: block; width: 100%; height: 100%; }
-.graafmachine-slide * { animation-duration: 14s; animation-timing-function: ease-in-out; animation-fill-mode: both; }
-.graaf-cloud { fill: #ffffff; opacity: 0.9; animation: graaf-cloud var(--d) linear both !important; }
-@keyframes graaf-cloud { to { transform: translateX(500px); } }
+/* Graafmachine (providers/graafmachine.py), on the navy poster: one 14 s film in SVG under the title. The
+   machine drives in, digs a bucket of earth out of the hole, swings it over to the heap, drops it (the
+   heap grows) and digs again. The boom, stick and bucket turn around their pins (transform-origin, in
+   the SVG's coordinates). */
+.graafmachine-slide { --sand: #d9b48a; padding-bottom: 0; }
+.graafmachine-slide svg { position: relative; flex: 1; min-height: 0; width: 100vw; margin: 0 -5vw; }   /* edge to edge */
+.graafmachine-slide svg * { animation-duration: 14s; animation-timing-function: ease-in-out; animation-fill-mode: both; }
 .graaf-machine { animation-name: graaf-drive; }
 @keyframes graaf-drive {
 	0% { transform: translateX(-500px); animation-timing-function: ease-out; }
@@ -2847,7 +2846,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 }
 .graaf-load { animation-name: graaf-load; animation-timing-function: step-end; }
 @keyframes graaf-load { 0% { opacity: 0; } 32% { opacity: 1; } 57% { opacity: 0; } 88% { opacity: 1; } }
-.graaf-falling { fill: #7a4e2b; animation-name: graaf-fall; animation-timing-function: ease-in; }
+.graaf-falling { fill: var(--sand); animation-name: graaf-fall; animation-timing-function: ease-in; }
 @keyframes graaf-fall {
 	0%, 56% { opacity: 0; transform: translateY(0); }
 	57% { opacity: 1; transform: translateY(0); }

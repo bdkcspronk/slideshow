@@ -1,26 +1,19 @@
 {#
-	A graafmachine (providers/graafmachine.py): it drives in, digs a bucket of earth out of the hole,
+	A graafmachine (providers/graafmachine.py): on the navy poster (see "The navy and crimson posters" in style.css): it drives in, digs a bucket of earth out of the hole,
 	swings its arm over to the heap and drops it there, then digs again. Side view, drawn in SVG; the
 	boom, stick and bucket each turn around their own pin (see "Graafmachine" in style.css).
 #}
 <div class="slide graafmachine-slide">
-	<svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-		<defs>
-			<linearGradient id="graaf-sky" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0" stop-color="#8ec5ee"/>
-				<stop offset="1" stop-color="#d9eefb"/>
-			</linearGradient>
-		</defs>
-		<rect width="1920" height="1080" fill="url(#graaf-sky)"/>
-		<circle cx="1660" cy="190" r="90" fill="#ffd54a"/>
-		<g class="graaf-cloud" style="--d: 70s"><ellipse cx="300" cy="200" rx="120" ry="40"/><ellipse cx="360" cy="175" rx="80" ry="45"/></g>
-		<g class="graaf-cloud" style="--d: 95s"><ellipse cx="1100" cy="130" rx="150" ry="45"/><ellipse cx="1040" cy="105" rx="80" ry="45"/></g>
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="poster-pill">Work in progress</div>
+	<h1 class="poster-title"><span>Digging</span> <span class="poster-marked">deep</span></h1>
+	<svg viewBox="-250 330 1920 620" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
 
 		{# The ground, the hole (dug where the bucket goes in) and the heap (growing with every drop) #}
-		<rect y="820" width="1920" height="260" fill="#8a5a33"/>
-		<rect y="820" width="1920" height="22" fill="#6e9e3e"/>
-		<path d="M880 820 Q 960 930 1060 820 Z" fill="#5a3a20"/>
-		<g class="graaf-heap"><path d="M1070 822 Q 1185 640 1310 822 Z" fill="#7a4e2b"/></g>
+		<rect x="-400" y="820" width="2600" height="260" fill="rgba(253, 248, 236, 0.08)"/>
+		<rect x="-400" y="820" width="2600" height="6" fill="var(--paper)"/>
+		<path d="M880 823 Q 960 930 1060 823 Z" fill="#081530"/>
+		<g class="graaf-heap"><path d="M1070 822 Q 1185 640 1310 822 Z" fill="var(--sand)"/></g>
 		<g class="graaf-falling">
 			<circle cx="1160" cy="470" r="18"/><circle cx="1195" cy="490" r="13"/><circle cx="1145" cy="510" r="11"/><circle cx="1180" cy="525" r="16"/><circle cx="1210" cy="455" r="10"/>
 		</g>
@@ -28,36 +21,36 @@
 		{# The machine; its own coordinates: the tracks from x 0 to 380, standing on y 820 #}
 		<g class="graaf-machine">
 			<g class="graaf-body">
-				<rect x="0" y="745" width="380" height="75" rx="37" fill="#2b2b2b"/>
-				<g class="graaf-wheels" fill="#666">
+				<rect x="0" y="745" width="380" height="75" rx="37" fill="#3b4f6e"/>
+				<g class="graaf-wheels" fill="#081530">
 					<circle cx="40" cy="782" r="24"/><circle cx="130" cy="790" r="18"/><circle cx="190" cy="790" r="18"/><circle cx="250" cy="790" r="18"/><circle cx="340" cy="782" r="24"/>
 				</g>
-				<rect x="150" y="725" width="90" height="25" fill="#3a3a3a"/>
-				<rect x="10" y="640" width="300" height="90" rx="12" fill="#f3b01f"/>
-				<rect x="10" y="640" width="70" height="90" rx="10" fill="#d99a12"/>
-				<rect x="70" y="595" width="18" height="50" fill="#444"/>
-				<path d="M180 640 V 520 Q 180 505 195 505 H 285 Q 300 505 305 520 L 320 640 Z" fill="#f3b01f"/>
-				<path d="M200 600 V 530 H 280 L 292 600 Z" fill="#bfe3f7" stroke="#2b2b2b" stroke-width="6"/>
-				<circle cx="235" cy="565" r="14" fill="#173249"/>
+				<rect x="150" y="725" width="90" height="25" fill="#081530"/>
+				<rect x="10" y="640" width="300" height="90" rx="12" fill="var(--crimson)"/>
+				<rect x="10" y="640" width="70" height="90" rx="10" fill="#9e0c24"/>
+				<rect x="70" y="595" width="18" height="50" fill="#3b4f6e"/>
+				<path d="M180 640 V 520 Q 180 505 195 505 H 285 Q 300 505 305 520 L 320 640 Z" fill="var(--crimson)"/>
+				<path d="M200 600 V 530 H 280 L 292 600 Z" fill="#2d5f8a" stroke="var(--paper)" stroke-width="6"/>
+				<circle cx="235" cy="565" r="14" fill="var(--paper)"/>
 			</g>
-			<g class="graaf-exhaust" fill="#9a9a9a">
+			<g class="graaf-exhaust" fill="rgba(253, 248, 236, 0.5)">
 				<circle cx="79" cy="580" r="14"/><circle cx="79" cy="580" r="14"/><circle cx="79" cy="580" r="14"/>
 			</g>
 			{# Boom (pin at 300,650), stick (pin at the boom's tip 560,450), bucket (pin at the stick's tip 650,680) #}
 			<g class="graaf-boom">
-				<path d="M285 665 L 300 630 L 560 430 L 585 460 Z" fill="#f3b01f" stroke="#c88a0e" stroke-width="4"/>
-				<rect x="380" y="560" width="120" height="16" rx="8" fill="#9aa0a6" transform="rotate(-38 440 568)"/>
+				<path d="M285 665 L 300 630 L 560 430 L 585 460 Z" fill="var(--crimson)" stroke="#9e0c24" stroke-width="4"/>
+				<rect x="380" y="560" width="120" height="16" rx="8" fill="var(--paper)" transform="rotate(-38 440 568)"/>
 				<g class="graaf-stick">
-					<path d="M550 440 L 580 445 L 665 685 L 640 695 Z" fill="#f3b01f" stroke="#c88a0e" stroke-width="4"/>
-					<circle cx="565" cy="450" r="12" fill="#444"/>
+					<path d="M550 440 L 580 445 L 665 685 L 640 695 Z" fill="var(--crimson)" stroke="#9e0c24" stroke-width="4"/>
+					<circle cx="565" cy="450" r="12" fill="#081530"/>
 					<g class="graaf-bucket">
-						<path d="M640 670 Q 720 690 735 760 L 705 790 L 690 760 Q 660 720 630 700 Z" fill="#555"/>
-						<path d="M705 790 L 715 805 L 725 785 Z M690 760 L 698 780 L 705 770 Z" fill="#888"/>
-						<g class="graaf-load" fill="#7a4e2b"><path d="M640 695 Q 690 680 730 745 Q 690 760 650 715 Z"/><circle cx="672" cy="700" r="22"/><circle cx="700" cy="722" r="20"/><circle cx="660" cy="676" r="13"/></g>
-						<circle cx="652" cy="688" r="11" fill="#444"/>
+						<path d="M640 670 Q 720 690 735 760 L 705 790 L 690 760 Q 660 720 630 700 Z" fill="var(--paper)"/>
+						<path d="M705 790 L 715 805 L 725 785 Z M690 760 L 698 780 L 705 770 Z" fill="#c9ccd2"/>
+						<g class="graaf-load" fill="var(--sand)"><path d="M640 695 Q 690 680 730 745 Q 690 760 650 715 Z"/><circle cx="672" cy="700" r="22"/><circle cx="700" cy="722" r="20"/><circle cx="660" cy="676" r="13"/></g>
+						<circle cx="652" cy="688" r="11" fill="#081530"/>
 					</g>
 				</g>
-				<circle cx="300" cy="650" r="13" fill="#444"/>
+				<circle cx="300" cy="650" r="13" fill="#081530"/>
 			</g>
 		</g>
 	</svg>
