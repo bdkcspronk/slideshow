@@ -11,7 +11,11 @@ The slideshow on the TV in the Francken room. It shows:
 | Who was in the room today (animated chart) | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
 | This week's leaderboard: most time in the room | the ESP32 sniffer | `providers/presence.py` |
 | Second-hand books for sale: three at a time, as 3D books flying onto a shelf, with title and price | professorfrancken.nl/study/books, covers from openlibrary.org | `providers/books.py` |
-| Info, in turn: news (Dagblad van het Noorden, NU.nl, BBC World), weather and rain at Zernike, buses from Aletta Jacobshal, today's Applied Physics timetable | RSS feeds, open-meteo.com, Buienradar, OVapi, rooster.rug.nl | `providers/info.py` |
+| Info, one per round in turn (`rotation.take_turns`): | | |
+| &nbsp;&nbsp;News: Dagblad van het Noorden, NU.nl, BBC World; tap a headline to read it | RSS feeds | `providers/news.py` |
+| &nbsp;&nbsp;Weather and rain at Zernike; after bieruur only a rain warning | open-meteo.com, Buienradar | `providers/weather.py` |
+| &nbsp;&nbsp;Buses from Aletta Jacobshal | OVapi | `providers/buses.py` |
+| &nbsp;&nbsp;Today's Applied Physics timetable | rooster.rug.nl | `providers/timetable.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
 | The commandment of the week by Jeff de Hosson, our honorary member (the next one each Monday) | `config/commandments.txt` | `providers/commandments.py` |
 | The dilemma of the week: vote by tapping A or B, or scan the QR code and vote on your phone | `config/dilemmas.txt`, a Google Form | `providers/poll.py` |
@@ -69,7 +73,7 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
 - http://127.0.0.1:8080/status shows each slide type, when it last refreshed, and its last error.
 - http://127.0.0.1:8080/preview/activities shows one slide (also `quote`, `presence`, `bieruur_countdown`, ...).
 - Keys in the slideshow: →/↓ next, ←/↑ previous, space pause, `m` mute/unmute all sound,
-  `1` Daily puzzles, `2` Spotify, `3` today's activity chart (change these under `[shortcuts]` in
+  `1` Daily puzzles, `2` Spotify, `3` today's activity chart, `4`-`7` news, weather, buses, timetable (change these under `[shortcuts]` in
   `config/config.toml`).
 - **Esc** opens the menu: live previews of those slide types (arrow keys + Enter, or click), plus
   - **Settings**: mute all sound, read quotes aloud, greet people, volume, slide speed, which slide

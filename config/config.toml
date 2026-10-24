@@ -16,15 +16,18 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "info", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
 # or until daytime_until if that's set. Their shortcut keys still work at any time. Outside the
-# daytime, info still shows a rain warning when rain is expected within 2 hours.
-daytime_only = ["info", "books"]
+# daytime, the weather still shows a rain warning when rain is expected within 2 hours.
+daytime_only = ["news", "weather", "buses", "timetable", "books"]
 daytime_from = "08:00"
 daytime_until = "18:00"
+# The info slides: these take turns, one of them per round (the next one that has something to show),
+# in the place of the first of them in the order above.
+take_turns = ["news", "weather", "buses", "timetable"]
 
 [update]
 # Every check_minutes the slideshow looks for new commits on GitHub. If there are, and this copy has
@@ -40,7 +43,10 @@ check_minutes = 10
 "1" = "puzzles"
 "2" = "spotify"
 "3" = "presence"             # today's activity chart from the sniffer
-"4" = "info"                 # news, weather, buses or the timetable (the next one each press)
+"4" = "news"
+"5" = "weather"
+"6" = "buses"
+"7" = "timetable"
 
 [power]
 # The Power button in the menu (Esc). Ubuntu lets the logged-in desktop user do these without a password.
@@ -63,27 +69,34 @@ seconds = 15
 days_ahead = 14
 seconds = 15
 
-[info]
-# One slide per round with, in turn: news, the weather, the next buses and the timetable.
-show = ["news", "weather", "buses", "timetable"]
+# The info slides: news, weather, buses and timetable take turns (rotation.take_turns).
+[news]
 seconds = 15
-timetable_seconds = 25        # the timetable has the most to read
-news_feeds = [
+feeds = [
 	["Dagblad van het Noorden", "https://www.dvhn.nl/rss"],
 	["NU.nl", "https://www.nu.nl/rss/Algemeen"],
 	["BBC World", "https://feeds.bbci.co.uk/news/world/rss.xml"],
 ]
 headlines_per_feed = 3          # the first with its picture
-weather_place = "Zernike campus"
-weather_location = [53.2406, 6.5364]
-bus_stop_name = "Aletta Jacobshal"
-bus_stop_codes = ["10004120"]   # timing point codes: the side towards the city centre (Hoofdstation); the other side is 10004110. OVapi still calls this stop "Crematoriumlaan" (stop_ifopt in the national GTFS stops.txt)
+
+[weather]
+seconds = 15
+place = "Zernike campus"
+location = [53.2406, 6.5364]
+
+[buses]
+seconds = 15
+stop_name = "Aletta Jacobshal"
+stop_codes = ["10004120"]   # timing point codes: the side towards the city centre (Hoofdstation); the other side is 10004110. OVapi still calls this stop "Crematoriumlaan" (stop_ifopt in the national GTFS stops.txt)
 departures_shown = 8
-bus_walk_minutes = 2            # from the association to the stop: buses leaving sooner are left out
-# bus_line_colors = { "1" = ["#00be46", "#000000"] }   # per line [background, text]; default: Qbuzz's Groningen city lines (BUS_LINE_COLORS in providers/info.py)
-timetable_name = "Applied Physics"
-timetable = [["BSc Applied Physics", 1], ["BSc Applied Physics", 2], ["BSc Applied Physics", 3], ["MSc Applied Physics", 1]]
-timetable_next_day_from_hour = 18   # from this hour on, the next day's timetable
+walk_minutes = 2                # from the association to the stop: buses leaving sooner are left out
+# line_colors = { "1" = ["#00be46", "#000000"] }   # per line [background, text]; default: Qbuzz's Groningen city lines (BUS_LINE_COLORS in providers/buses.py)
+
+[timetable]
+seconds = 25                    # the timetable has the most to read
+name = "Applied Physics"
+programmes = [["BSc Applied Physics", 1], ["BSc Applied Physics", 2], ["BSc Applied Physics", 3], ["MSc Applied Physics", 1]]
+next_day_from_hour = 18         # from this hour on, the next day's timetable
 
 [books]
 # Second-hand books for sale on the website: a few per slide, the next few in the next round.

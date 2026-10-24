@@ -327,8 +327,8 @@ class Handler(BaseHTTPRequestHandler):
 		app = self.server.app
 		now = app.clock.now()
 		slide = None
-		if name == "rain" and "info" in app.providers:
-			slide = app.providers["info"].rain_preview(now)
+		if name == "rain" and "weather" in app.providers:
+			slide = app.providers["weather"].rain_preview(now)
 		elif name in app.providers:
 			slide = app.providers[name].shortcut_slide(now)   # e.g. Spotify also when nothing plays
 		elif name in app.takeovers:

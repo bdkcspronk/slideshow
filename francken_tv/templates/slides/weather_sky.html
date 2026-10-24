@@ -1,6 +1,6 @@
-{# The animated sky behind the weather slide and the rain warning (info_weather.html, info_rain.html):
+{# The animated sky behind the weather slide and the rain warning (weather.html, rain.html):
    `scene` (clear, partly, cloudy, fog, drizzle, rain, heavy-rain, snow or storm, see WEATHER_SCENES in
-   providers/info.py) and `is_day` (else the moon and stars). The clouds, drops, flakes and stars are
+   providers/weather.py) and `is_day` (else the moon and stars). The clouds, drops, flakes and stars are
    spread with arithmetic on the loop index, so it looks random but is the same every time. Styles:
    "Weather" in style.css; the slide around it has the classes weather-slide, scene-... and night. #}
 {% set scene = scene | default("cloudy", true) %}{% set is_day = is_day | default(true) %}{# (e.g. new templates with code that hasn't restarted yet) #}

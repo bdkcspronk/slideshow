@@ -70,10 +70,22 @@ class RotationTest(unittest.TestCase):
 		from datetime import time
 		class Info(FixedProvider):
 			def outside_daytime_slides(self, now):
-				return [Slide("info_weather.html", 8, {"name": "rain"})]   # e.g. rain coming
+				return [Slide("rain.html", 8, {"name": "rain"})]   # e.g. rain coming
 		scheduler = Scheduler([FixedProvider("images", 1), Info("info", 1)], [], daytime_only={"info"}, daytime=(time(8, 0), time(16, 0)))
 		self.assertEqual([s.data["name"] for s in scheduler.build_round(at(THURSDAY, "21:00:00"))], ["images0", "rain"])
 		self.assertEqual([s.data["name"] for s in scheduler.build_round(at(THURSDAY, "10:00:00"))], ["images0", "info0"])
+
+	def test_the_info_slides_take_turns(self):
+		info = [FixedProvider(name, 1) for name in ("news", "weather", "buses")]
+		scheduler = Scheduler([FixedProvider("a", 1), *info, FixedProvider("b", 1)], [], take_turns=["news", "weather", "buses"])
+		names = lambda: [slide.data["name"] for slide in scheduler.build_round(at(THURSDAY, "10:00:00"))]
+		self.assertEqual([names() for _ in range(4)], [["a0", "news0", "b0"], ["a0", "weather0", "b0"], ["a0", "buses0", "b0"], ["a0", "news0", "b0"]])
+		info[1].count = 0   # no weather: the next one instead
+		self.assertEqual([names()[1] for _ in range(2)], ["buses0", "news0"])
+		scheduler.hide({"news"})
+		self.assertEqual([names()[1] for _ in range(2)], ["buses0", "buses0"])
+		info[2].count = 0   # nothing to show at all
+		self.assertEqual(names(), ["a0", "b0"])
 
 	def test_broken_provider_is_skipped(self):
 		scheduler = Scheduler([BrokenProvider(), FixedProvider("a", 1)], [])

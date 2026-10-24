@@ -20,7 +20,7 @@ from .config import PROJECT_DIR
 
 
 class PartsFailed(RuntimeError):
-	"""refresh() of a provider with several parts (info, puzzles): some failed, the rest worked. Each
+	"""refresh() of a provider with several parts (puzzles): some failed, the rest worked. Each
 	failure is already logged, so the background runner logs this without a traceback."""
 
 

@@ -31,15 +31,18 @@ from .providers.practice import PracticeSessionsProvider
 from .providers.xkcd import XkcdProvider
 from .providers.puzzles import HighScores, PuzzlesProvider
 from .providers.spotify import SpotifyProvider
+from .providers.timetable import TimetableProvider
 from .providers.timeguessr import TimeGuessrProvider
 from .providers.wordle import WordleProvider
 from .providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
 from .providers.event_photos import EventPhotosProvider
 from .providers.images import ImagesProvider
-from .providers.info import InfoProvider
+from .providers.news import NewsProvider
+from .providers.buses import BusesProvider
 from .providers.presence import Greeter, LeaderboardProvider, PresenceChartProvider
 from .providers.quote import QuoteProvider
 from .providers.vrijmibo import VrijmiboTakeover
+from .providers.weather import WeatherProvider
 from .scheduler import Scheduler
 from .settings import Settings, load_settings, save_settings
 from .system_volume import SystemVolume
@@ -156,7 +159,10 @@ def build_app(config: dict, clock: Clock) -> App:
 		ImagesProvider(config.get("images", {}), seconds),
 		activities,
 		PracticeSessionsProvider(activities, config.get("practice", {}), seconds),
-		InfoProvider(config.get("info", {}), seconds, CACHE_DIR / "news"),
+		NewsProvider(config.get("news", {}), seconds, CACHE_DIR / "news"),
+		WeatherProvider(config.get("weather", {}), seconds),
+		BusesProvider(config.get("buses", {}), seconds),
+		TimetableProvider(config.get("timetable", {})),
 		BooksProvider(config.get("books", {}), CACHE_DIR / "books"),
 		EventPhotosProvider(config.get("event_photos", {}), CACHE_DIR / "event_photos", seconds),
 		PresenceChartProvider(presence, store, devices, project_path("media/nyancat.png"), seconds),
@@ -182,6 +188,9 @@ def build_app(config: dict, clock: Clock) -> App:
 	unknown = [name for name in rotation.get("daytime_only", []) if name not in providers]
 	if unknown:
 		raise SystemExit(f"Unknown slide types in rotation.daytime_only: {unknown}. Known: {list(providers)}")
+	unknown = [name for name in rotation.get("take_turns", []) if name not in providers]
+	if unknown:
+		raise SystemExit(f"Unknown slide types in rotation.take_turns: {unknown}. Known: {list(providers)}")
 	enabled = [providers[name] for name in order]
 	shortcuts = {str(key): name for key, name in config.get("shortcuts", {}).items()}
 	unknown = [name for name in shortcuts.values() if name not in providers]
@@ -207,7 +216,8 @@ def build_app(config: dict, clock: Clock) -> App:
 		takeovers={takeover.name: takeover for takeover in takeovers},
 		jobs=jobs,
 		scheduler=Scheduler(enabled, takeovers, rotation.get("fill_with", "images"), set(rotation.get("daytime_only", [])),
-			(parse_time(rotation.get("daytime_from", "08:00")), parse_time(rotation.get("daytime_until", bieruur.time)))),
+			(parse_time(rotation.get("daytime_from", "08:00")), parse_time(rotation.get("daytime_until", bieruur.time))),
+			rotation.get("take_turns", [])),
 		# Slide types only reachable by a shortcut still need their downloads.
 		runner=BackgroundRunner(clock, enabled + [providers[name] for name in set(shortcuts.values())
 			if providers[name] not in enabled], jobs),

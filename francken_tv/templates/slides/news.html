@@ -1,8 +1,8 @@
-{# Info slide, news part (providers/info.py): the latest headlines of each feed, in columns, the first
+{# News slide (providers/news.py): the latest headlines of each feed, in columns, the first
    with its picture, on the navy and crimson poster of the activities slide. They come in as waves: first
    the top row (the pictures), column after column, then the second row, then the third (--j the row,
-   --i the column). Tapping one opens the article (InfoProvider.action(), templates/slides/info_article.html). #}
-<div class="slide news-slide" data-interactive data-provider="info" data-idle-seconds="120">
+   --i the column). Tapping one opens the article (NewsProvider.action(), news_article.html). #}
+<div class="slide news-slide" data-interactive data-provider="news" data-idle-seconds="120">
 	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
 	<div class="poster-pill">Latest headlines</div>
 	<h1 class="poster-title"><span>In the</span> <span class="poster-marked">news</span></h1>

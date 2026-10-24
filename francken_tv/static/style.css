@@ -248,7 +248,7 @@ body.show-cursor button { cursor: pointer; }
 .activity-details { font-size: 2.3vh; margin-top: 0.6vh; color: #4b5d77; font-weight: normal; }
 .activities-slide li.today .activity-details { color: rgba(255, 255, 255, 0.85); }
 
-/* Info slide (providers/info.py): news, weather, buses or the timetable, in the activities slide's
+/* The info slides (news, weather, buses, timetable: providers/news.py, ...), in the activities slide's
    look. Items slide in one after another (--i, --j). */
 .info-slide {
 	display: flex;
@@ -358,7 +358,7 @@ body.show-cursor button { cursor: pointer; }
 .article-link { color: var(--red-dark); font-style: italic; }
 .article-link span { font-style: normal; color: var(--blue-light); word-break: break-all; }
 
-/* Weather: a poster over an animated sky of the weather now (info_weather.html), on the 1920 x 1080 grid
+/* Weather: a poster over an animated sky of the weather now (weather.html), on the 1920 x 1080 grid
    (--px). The temperature big on the left, the rain chart on a see-through panel on the right, the next
    days as tiles along the bottom. The sky: .scene-clear, -partly, -cloudy, -fog, -drizzle, -rain,
    -heavy-rain, -snow or -storm, and .night; only transforms and opacity move, which the TV PC does easily. */
@@ -585,7 +585,7 @@ body.show-cursor button { cursor: pointer; }
 /* The rain warning after bieruur: dark Francken blue, a big heading and the rain chart across the screen. */
 .rain-umbrella { display: inline-block; animation: rain-sway 2.4s ease-in-out infinite; }
 @keyframes rain-sway { 50% { transform: rotate(-12deg); } }
-/* The rain warning (info_rain.html): the weather slide's sky (as heavy as the rain that's coming), the
+/* The rain warning (rain.html): the weather slide's sky (as heavy as the rain that's coming), the
    warning big on the left, and the rain chart across the screen on a see-through panel. */
 .rain-warning-pill { background: #ffd166; color: var(--blue); }
 .rain-warning-title {
