@@ -75,12 +75,9 @@ class Scheduler:
 		shown = [provider for provider in self.providers if provider.name not in self.hidden]
 		turns = [provider for provider in shown if provider.name in self.take_turns]
 		for provider in shown:
-			if provider.name not in self.take_turns:
-				slides = self.slides_of(provider, now, daytime)
-			elif provider is turns[0]:
-				slides = self.next_turn(turns, now, daytime)
-			else:
-				continue
+			if provider in turns[1:]:
+				continue   # the slide types taking turns share the place of the first of them
+			slides = self.next_turn(turns, now, daytime) if provider in turns else self.slides_of(provider, now, daytime)
 			(filler if provider.name == self.fill_with else special).extend(slides)
 		return spread(filler, special)
 
@@ -120,14 +117,7 @@ def spread(filler: list[Slide], special: list[Slide]) -> list[Slide]:
 	26 posters and 6 special slides: a special slide after about every 4 posters,
 	the last one at the end of the round.
 	"""
-	if not filler or not special:
-		return filler + special
-	result: list[Slide] = []
-	placed = 0
-	for index, slide in enumerate(filler, start=1):
-		result.append(slide)
-		# Place special slides until we're as far through them as through the filler.
-		while placed < len(special) and (placed + 1) * len(filler) <= index * len(special):
-			result.append(special[placed])
-			placed += 1
-	return result + special[placed:]
+	# Special slide k goes after filler slide number ceil((k + 1) * len(filler) / len(special)).
+	places = [(i + 1, 0, i) for i in range(len(filler))]
+	places += [(-(-(k + 1) * len(filler) // len(special)), 1, k) for k in range(len(special))]
+	return [(filler, special)[kind][index] for _, kind, index in sorted(places)]
