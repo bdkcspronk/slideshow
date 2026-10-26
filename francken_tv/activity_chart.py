@@ -39,7 +39,7 @@ TEXT_COLOR = "#ECEFF1"
 FALLBACK_SATURATION_RANGE = (0.65, 0.9)
 FALLBACK_BRIGHTNESS_RANGE = (0.85, 1.0)
 BUCKET = timedelta(minutes=5)          # sightings are grouped per 5 minutes
-MAX_GAP = timedelta(minutes=10)        # gaps up to this long don't split a bar
+MAX_GAP = timedelta(minutes=10)        # an absence up to this long doesn't split a bar
 VEHICLES = ("motorcycle", "mobility")   # ride the front of the bars (templates/<name>.svg)
 SHAPES = {"round corners", "square corners", "striped", "nyan cat", "rainbow", "beer", "board", "portugal"}
 CHART_LEAD = timedelta(hours=1)        # the chart starts this long before the first arrival
@@ -129,11 +129,12 @@ def floor_to_quarter(moment: datetime) -> datetime:
 
 
 def merge_into_blocks(buckets: list[datetime]) -> list[tuple[datetime, datetime]]:
-	"""Sorted 5-minute buckets -> (start, end) stretches, bridging gaps of up to 10 minutes."""
+	"""Sorted 5-minute buckets -> (start, end) stretches, bridging an absence of up to 10 minutes (from the end
+	of one bucket to the start of the next: up to two empty buckets in between)."""
 	blocks = []
 	start = previous = buckets[0]
 	for current in buckets[1:]:
-		if current - previous > MAX_GAP:
+		if current - (previous + BUCKET) > MAX_GAP:
 			blocks.append((start, previous + BUCKET))
 			start = current
 		previous = current

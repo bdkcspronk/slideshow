@@ -98,8 +98,8 @@ class GreeterTest(PresenceTestCase):
 
 class ChartTest(PresenceTestCase):
 	def test_blocks_bridge_gaps_up_to_ten_minutes(self):
-		buckets = [at("09:00"), at("09:05"), at("09:15"), at("09:40")]
-		self.assertEqual(merge_into_blocks(buckets), [(at("09:00"), at("09:20")), (at("09:40"), at("09:45"))])
+		buckets = [at("09:00"), at("09:05"), at("09:20"), at("09:40")]   # away 09:10-09:20 (10 min), then 09:25-09:40 (15)
+		self.assertEqual(merge_into_blocks(buckets), [(at("09:00"), at("09:25")), (at("09:40"), at("09:45"))])
 
 	def test_style_parsing(self):
 		alice = parse_style(DEVICES[0])
