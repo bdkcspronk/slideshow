@@ -265,6 +265,7 @@ class SpotifyProvider(Provider):
 		self.last_query = ""                # for "back to the search" from an album or playlist
 		self.search_kind = "all"            # the chip chosen in the search: a key of SEARCH_KINDS
 		self.search_view: dict = {}         # what the search page shows, to redraw it after adding to the queue
+		self.songs_queued: tuple[str, set[str]] = ("", set())   # (playlist or album uri, its songs added to the queue)
 		self.library_cache: tuple[float, list[dict]] | None = None   # (fetched, all the account's playlists)
 		self.account_id = ""                # the account's username: its own playlists can't be removed
 		self.person: dict = {}                    # the person whose playlists were shown last (a person_card)
@@ -693,7 +694,8 @@ class SpotifyProvider(Provider):
 		"""'playlists' shows the playlists, 'songs' one playlist's songs, 'search' finds songs, playlists, albums
 		and people ('search_kind' picks a chip: all, songs, playlists, albums or people), 'person' someone's
 		playlists, 'lyrics' the lyrics;
-		'play' plays a playlist (values = [its uri]), 'play_song' a song, 'queue' adds one; 'back' returns;
+		'play' plays a playlist (values = [its uri]), 'play_song' a song, 'queue' adds one (from the search, or
+		from a playlist's songs: "song uri|playlist uri|page"); 'back' returns;
 		'previous', 'skip', 'toggle' (pause/play), 'volume_up' and 'volume_down' control the music."""
 		if name == "playlists":
 			page = int(values[0]) if values and values[0].isdigit() else 0
@@ -732,11 +734,13 @@ class SpotifyProvider(Provider):
 				playlist = next((p for p in self.playlists if p["uri"] == uri), {"name": "Playlist", "uri": uri, "cover": None})
 				back = {"action": "playlists", "value": "", "label": "Playlists"}
 			pages = max(1, -(-total // SONGS_PER_PAGE))
+			if self.songs_queued[0] != uri:   # the ticks of another playlist's songs are forgotten
+				self.songs_queued = (uri, set())
 			saved = next((p for p in self.library() if p["uri"] == uri), None) if uri.startswith("spotify:playlist:") else None
 			return Slide("spotify_songs.html", self.seconds, {"playlist": playlist, "songs": songs, "readable": readable,
 				"back": back, "page": page, "pages": pages, "first_number": page * SONGS_PER_PAGE + 1,
 				"is_playlist": uri.startswith("spotify:playlist:"), "saved": bool(saved),
-				"own": bool(saved) and saved["owner_id"] == self.account()}), None
+				"own": bool(saved) and saved["owner_id"] == self.account(), "queued": self.songs_queued[1]}), None
 		if name in ("save", "unsave") and values:   # add a playlist to the account's library, or remove it
 			uri = values[0]
 			error = self.command("PUT" if name == "save" else "DELETE", SAVED_URL, params={"uris": uri})
@@ -790,6 +794,18 @@ class SpotifyProvider(Provider):
 				return None, error
 			self.catch_up(now)
 			return self.now_playing(), None
+		if name == "queue" and values and values[0].count("|") == 2:   # from a playlist's or album's songs
+			song_uri, collection, page = values[0].split("|")
+			error = self.command("POST", QUEUE_ADD_URL, params={"uri": song_uri})
+			if not error:
+				self.next_fetched = (None, 0.0)   # the next song may have changed
+				self.songs_queued = (collection, (self.songs_queued[1] if self.songs_queued[0] == collection else set()) | {song_uri})
+			slide, problem = self.action("songs", [f"{collection}|{page}"], now)   # redrawn with a tick on the song
+			if slide is None:
+				return None, error or problem
+			song = next((song for song in slide.data["songs"] if song["uri"] == song_uri), None)
+			message = error or (f"Added {song['title']} to the queue" if song else "Added to the queue")
+			return replace(slide, data=slide.data | {"message": message}), message
 		if name == "queue" and values:   # from the search page: it's redrawn with a popup, and a tick on the song
 			error = self.command("POST", QUEUE_ADD_URL, params={"uri": values[0]})
 			if not error:

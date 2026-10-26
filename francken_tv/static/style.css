@@ -2011,7 +2011,7 @@ body.show-cursor button { cursor: pointer; }
 .spotify-album-card.person img, .spotify-album-card.person .spotify-playlist-blank, .spotify-pick-cover.person { border-radius: 50%; }
 .spotify-album-card.person .spotify-playlist-blank { display: flex; align-items: center; justify-content: center; font-size: 6vh; font-weight: bold; }
 .spotify-results .spotify-song img, .spotify-results .spotify-song-blank { height: 5vh; }
-.spotify-results .spotify-control { width: 6vh; height: 6vh; flex: none; }
+.spotify-songs .spotify-control { width: 6vh; height: 6vh; flex: none; }   /* + : add to the queue */
 .spotify-search-hint { font-size: 2.6vh; opacity: 0.6; }
 .spotify-control.queued { display: flex; align-items: center; justify-content: center; background: #1db954; color: #121212; font-weight: bold; }
 /* "Added ... to the queue": pops up at the bottom for a moment (like the Connections one). */
@@ -2034,6 +2034,7 @@ body.show-cursor button { cursor: pointer; }
 	pointer-events: none;   /* taps go through to the buttons below */
 	animation: spotify-message 2.5s ease-in forwards;
 }
+.spotify-pick-slide[data-state="songs"] .spotify-message { bottom: 13vh; z-index: 1; }   /* above the page arrows */
 @keyframes spotify-message {
 	0% { opacity: 0; transform: translate(-50%, 1vh); }
 	8%, 80% { opacity: 1; transform: translate(-50%, 0); }
@@ -2961,3 +2962,4 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 }
 .graaf-heap { transform-origin: 1190px 822px; animation-name: graaf-heap; }
 @keyframes graaf-heap { 0%, 58% { transform: scale(0.8, 0.7); } 64%, 100% { transform: scale(1, 1); } }
+

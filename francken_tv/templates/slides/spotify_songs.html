@@ -1,7 +1,8 @@
 {#
 	One playlist's (or album's, from the search) songs, a page at a time (SpotifyProvider.action() in
 	providers/spotify.py).
-	Tapping a song plays the playlist from that song; "Play all" plays it from the start.
+	Tapping a song plays the playlist from that song; "Play all" plays it from the start; + adds a song
+	to the queue (the page comes back with a popup and a tick on the song).
 	Spotify only lets us list the songs of the account's own playlists; others can only be played.
 	"+ Add to library" follows a playlist on the account (its maker then shows up under People in the
 	search); "Remove" unfollows it. The account's own playlists can't be removed here.
@@ -40,6 +41,11 @@
 				<span class="spotify-song-text"><b>{{ song.title }}</b><span>{{ song.artist }}</span></span>
 				<span class="spotify-song-length">{{ song.length }}</span>
 			</button>
+			{% if song.uri in queued %}
+			<span class="spotify-control queued" aria-label="In the queue">&#10003;</span>
+			{% else %}
+			<button class="spotify-control" data-action="queue" data-value="{{ song.uri }}|{{ playlist.uri }}|{{ page }}" aria-label="Add to the queue">+</button>
+			{% endif %}
 		</li>
 		{% endfor %}
 	</ol>
@@ -51,4 +57,5 @@
 	</div>
 	{% endif %}
 	{% endif %}
+	{% if message %}<div class="spotify-message">{{ message }}</div>{% endif %}
 </div>

@@ -175,6 +175,16 @@ class SpotifyTest(unittest.TestCase):
 		self.assertEqual(message, f"Added {slide.data['songs'][0]['title']} to the queue")
 		self.assertEqual((slide.template, slide.data["message"], slide.data["queued"]), ("spotify_search.html", message, {"spotify:track:abc"}))   # the popup and the tick
 
+	def test_queue_a_song_from_a_playlist(self):
+		self.connect()
+		song = {"title": "Live Is Life", "artist": "Opus", "uri": "spotify:track:abc", "cover": None, "length": "4:20"}
+		with mock.patch.object(self.provider, "fetch_songs", return_value=([song], 1)), 				mock.patch.object(self.provider, "login_too_old", return_value=False), 				mock.patch.object(self.provider, "library", return_value=[]), 				mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request:
+			slide, message = self.provider.action("queue", ["spotify:track:abc|spotify:playlist:1|0"], NOW)
+			self.assertEqual(request.call_args.kwargs["params"], {"uri": "spotify:track:abc"})
+			self.assertEqual((slide.template, message, slide.data["queued"]), ("spotify_songs.html", "Added Live Is Life to the queue", {"spotify:track:abc"}))
+			slide, _ = self.provider.action("songs", ["spotify:playlist:2"], NOW)
+			self.assertEqual(slide.data["queued"], set())   # another playlist: no ticks
+
 	def test_playlists_without_permission_ask_for_a_new_login(self):
 		self.connect()
 		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(403)):
