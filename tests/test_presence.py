@@ -137,7 +137,8 @@ class ChartTest(PresenceTestCase):
 		first, last = chart_view(sightings, devices.by_mac(), at("11:00"))["bars"]
 		self.assertEqual((first["shape"], first["gradient_position"], last["gradient_position"]), ("portugal", 0, 100))
 		self.assertEqual(first["gradient_size"], round(90 / 10 * 100, 2))   # the flag: 09:00-10:30, this bar 09:00-09:10
-		self.assertEqual((first["flag_offset"], first["emblem_left"]), (0, None))
+		self.assertEqual((first["run_offset"], first["emblem_left"]), (0, None))
+		self.assertEqual((last["run_offset"], last["run_width"]), (round(last["left"] - first["left"], 3), round(last["left"] + last["width"] - first["left"], 3)))
 		back = first["flag_back"]   # the whole flag behind the bars, for the gap
 		self.assertEqual((back["left"], back["width"], back["gradient_size"]), (first["left"], round(last["left"] + last["width"] - first["left"], 3), 100))
 		self.assertNotIn("flag_back", last)

@@ -213,8 +213,9 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			left, right = gradient_extent.get(key, (100.0, 0.0))
 			gradient_extent[key] = (min(left, percent(bar.start)), max(right, percent(bar.end)))
 
-	# From the start of each person's first bar to the end of their last: a Portuguese flag spans that (the
-	# bars are windows onto one flag), and a motorcycle rides all of it.
+	# From the start of each person's first bar to the end of their last: their bars are windows onto one
+	# run (the stripes, a stripe gradient and a Portuguese flag go on across the gaps), and a motorcycle
+	# rides all of it.
 	extent: dict[int, tuple[float, float]] = {}
 	for bar in data.bars:
 		left, right = extent.get(bar.row, (100.0, 0.0))
@@ -235,6 +236,9 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			"nyan_cat": style.shape == "nyan cat" and bar.is_latest, "cat_offset": style.nyan_cat_x_offset,
 			"motorcycle": None,
 			"paint": style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color,   # the motorcycle's colour
+			# Where this bar is in the person's run, in % of the chart (bar.html: --run-offset, --run-width).
+			"run_offset": round(left - extent[bar.row][0], 3),
+			"run_width": round(max(extent[bar.row][1] - extent[bar.row][0], width), 3),
 		}
 		if style.motorcycle and bar.is_latest:
 			# One ride from the first bar to the end of the last, at the speed the bars grow: always at the
@@ -246,12 +250,11 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			flag_width = max(flag_right - flag_left, width)
 			view["gradient_size"] = round(flag_width / width * 100, 2)
 			view["gradient_position"] = round((left - flag_left) / (flag_width - width) * 100, 2) if flag_width > width else 0
-			view["flag_offset"] = round(left - flag_left, 3)   # keeps the waves in step across the gaps
 			view["emblem_left"] = round(flag_left + 0.4 * flag_width, 3) if bar.is_latest else None   # once, after the last bar
 			if bar.start == min(b.start for b in data.bars if b.row == bar.row) and flag_width > width:
 				# The whole flag at 30% behind the person's bars, showing in the gaps; it grows like a bar.
 				view["flag_back"] = {**view, "left": flag_left, "width": round(flag_width, 3), "gradient_size": 100,
-					"gradient_position": 0, "flag_offset": 0, "emblem_left": None,
+					"gradient_position": 0, "run_offset": 0, "emblem_left": None,
 					"grow": grow_time(flag_width)}
 		elif isinstance(style.color, list) and tuple(style.color) in gradient_extent:
 			group_left, group_right = gradient_extent[tuple(style.color)]

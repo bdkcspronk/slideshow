@@ -6,7 +6,7 @@
 {% macro bar(look, style="") -%}
 <div class="bar {{ look.shape }}{{ ' glow' if look.glow }}" style="{{ style }} background: {{ look.background }};
 	{%- if look.gradient_size %} background-size: {{ look.gradient_size }}% 100%; background-position: {{ look.gradient_position }}% 0;{% endif %}
-	{%- if look.flag_offset %} --flag-offset: {{ look.flag_offset }}cqw;{% endif %}
+	{%- if look.run_width %} --run-offset: {{ look.run_offset }}cqw; --run-width: {{ look.run_width }}cqw;{% endif %}
 	{%- if look.glow_colour %} --glow: {{ look.glow_colour }};{% endif %}">
 	{% if look.stripes %}<span class="bar-stripes" style="background: {{ look.stripes }};{% if look.stripe_width %} --stripe: {{ look.stripe_width }};{% endif %}"></span>{% endif %}
 	{% if look.bubbles %}

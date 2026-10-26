@@ -1390,29 +1390,34 @@ body.show-cursor button { cursor: pointer; }
 /* Portugal: the flag, 2:3 green and red, waving: its top and bottom edges ripple (a mask of one wave,
    repeated and sliding along) and light and dark folds slide along with them. A person's bars are windows
    onto one flag: the colours are sized to the whole flag (background-size and -position from bar.html)
-   and --flag-offset (how far this bar is from the flag's start) keeps the waves in step. */
+   and --run-offset (how far this bar is from the flag's start, bar.html) keeps the waves in step. */
 .bar.portugal {
 	--wave: calc(12vh * 8 / var(--rows, 8));   /* one wave, wider in a chart with fewer rows (taller bars) */
 	border-radius: 0;
 	background-image: linear-gradient(90deg, #060 0 40%, #f00 40%) !important;
-	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--flag-offset, 0px)) 0 / var(--wave) 100% repeat-x;
-	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--flag-offset, 0px)) 0 / var(--wave) 100% repeat-x;
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--run-offset, 0px)) 0 / var(--wave) 100% repeat-x;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--run-offset, 0px)) 0 / var(--wave) 100% repeat-x;
 	animation: bar-grow var(--grow) linear var(--delay) forwards, flag-wave 2.2s linear infinite;
 }
 .bar.portugal::after {
 	content: "";
 	position: absolute;
 	inset: 0;
-	background: linear-gradient(90deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.07) 25%, rgba(0, 0, 0, 0.1) 50%, rgba(255, 255, 255, 0.07) 75%, rgba(0, 0, 0, 0.1)) calc(0px - var(--flag-offset, 0px)) 0 / var(--wave) 100%;
+	background: linear-gradient(90deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.07) 25%, rgba(0, 0, 0, 0.1) 50%, rgba(255, 255, 255, 0.07) 75%, rgba(0, 0, 0, 0.1)) calc(0px - var(--run-offset, 0px)) 0 / var(--wave) 100%;
 	animation: flag-folds 2.2s linear infinite;
 }
-@keyframes flag-wave { to { -webkit-mask-position: calc(var(--wave) - var(--flag-offset, 0px)) 0; mask-position: calc(var(--wave) - var(--flag-offset, 0px)) 0; } }
-@keyframes flag-folds { to { background-position: calc(var(--wave) - var(--flag-offset, 0px)) 0; } }
-/* Stripes: the stripe colour (or gradient), cut into diagonal stripes by a mask. */
+@keyframes flag-wave { to { -webkit-mask-position: calc(var(--wave) - var(--run-offset, 0px)) 0; mask-position: calc(var(--wave) - var(--run-offset, 0px)) 0; } }
+@keyframes flag-folds { to { background-position: calc(var(--wave) - var(--run-offset, 0px)) 0; } }
+/* Stripes: the stripe colour (or gradient), cut into diagonal stripes by a mask. They span the person's
+   whole run (--run-offset and --run-width, from bar.html; the whole bar when not set), and each bar shows
+   its piece of it, so the stripes and a stripe gradient go on across the gaps between their bars. */
 .bar-stripes {
 	--s: var(--stripe, calc(42vh / var(--rows)));
 	position: absolute;
-	inset: 0;
+	top: 0;
+	bottom: 0;
+	left: calc(0px - var(--run-offset, 0px));
+	width: var(--run-width, 100%);
 	-webkit-mask: repeating-linear-gradient(-45deg, #000 0 var(--s), transparent var(--s) calc(2 * var(--s)));
 	mask: repeating-linear-gradient(-45deg, #000 0 var(--s), transparent var(--s) calc(2 * var(--s)));
 }
