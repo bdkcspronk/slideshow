@@ -143,6 +143,16 @@ class ChartTest(PresenceTestCase):
 		self.assertNotIn("flag_back", last)
 		self.assertEqual(last["emblem_left"], round(first["left"] + 0.4 * (last["left"] + last["width"] - first["left"]), 3))
 
+	def test_a_motorcycle_rides_from_the_first_bar_to_the_end_of_the_last(self):
+		(self.dir / "devices.json").write_text(json.dumps(DEVICES + [{"ssid": "Kylian", "mac": "CC:00:00:00:00:03", "style": "motorcycle"}]))
+		devices = DeviceList(self.dir / "devices.json")
+		sightings = [Sighting(at(t), "CC:00:00:00:00:03", "Kylian") for t in ("09:00", "09:05", "10:00", "10:10", "10:20", "10:25")]
+		first, last = chart_view(sightings, devices.by_mac(), at("11:00"))["bars"]
+		self.assertIsNone(first["motorcycle"])   # one motorcycle, on the last bar...
+		ride = last["motorcycle"]                 # ...riding from the start of the first
+		self.assertEqual((ride["from"], ride["to"], ride["delay"]), (first["left"], round(last["left"] + last["width"], 3), first["delay"]))
+		self.assertAlmostEqual(ride["delay"] + ride["grow"], last["delay"] + last["grow"], delta=0.02)   # it arrives as the last bar is done
+
 	def test_chart_starts_an_hour_before_the_first_arrival(self):
 		sightings = [Sighting(at("12:40"), ALICE, "Alice"), Sighting(at("13:10"), BOB, "Bob")]
 		view = chart_view(sightings, self.devices.by_mac(), at("14:00"))

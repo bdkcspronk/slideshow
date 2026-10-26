@@ -213,12 +213,14 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			left, right = gradient_extent.get(key, (100.0, 0.0))
 			gradient_extent[key] = (min(left, percent(bar.start)), max(right, percent(bar.end)))
 
-	# A Portuguese flag spans all of a person's bars (the bars are windows onto one flag).
-	flag_extent: dict[int, tuple[float, float]] = {}
+	# From the start of each person's first bar to the end of their last: a Portuguese flag spans that (the
+	# bars are windows onto one flag), and a motorcycle rides all of it.
+	extent: dict[int, tuple[float, float]] = {}
 	for bar in data.bars:
-		if bar.style.shape == "portugal":
-			left, right = flag_extent.get(bar.row, (100.0, 0.0))
-			flag_extent[bar.row] = (min(left, percent(bar.start)), max(right, percent(bar.end)))
+		left, right = extent.get(bar.row, (100.0, 0.0))
+		extent[bar.row] = (min(left, percent(bar.start)), max(right, percent(bar.end)))
+	grow_delay = lambda left: round(GROW_STARTS + left / 100 * GROW_SECONDS, 2)
+	grow_time = lambda width: round(max(width / 100 * GROW_SECONDS, 0.25), 2)
 
 	bars = []
 	for bar in data.bars:
@@ -228,14 +230,19 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			**bar_look(style, width, seed=f"{bar.row}-{bar.start}"),
 			"row": bar.row, "left": left, "width": width,
 			# Grow at a steady speed from left to right, like time playing back.
-			"delay": round(GROW_STARTS + left / 100 * GROW_SECONDS, 2),
-			"grow": round(max(width / 100 * GROW_SECONDS, 0.25), 2),
+			"delay": grow_delay(left),
+			"grow": grow_time(width),
 			"nyan_cat": style.shape == "nyan cat" and bar.is_latest, "cat_offset": style.nyan_cat_x_offset,
-			"motorcycle": style.motorcycle and bar.is_latest,
+			"motorcycle": None,
 			"paint": style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color,   # the motorcycle's colour
 		}
-		if bar.row in flag_extent:
-			flag_left, flag_right = flag_extent[bar.row]
+		if style.motorcycle and bar.is_latest:
+			# One ride from the first bar to the end of the last, at the speed the bars grow: always at the
+			# growing front, and across the gaps between them.
+			ride_from, ride_to = extent[bar.row]
+			view["motorcycle"] = {"from": ride_from, "to": ride_to, "delay": grow_delay(ride_from), "grow": grow_time(ride_to - ride_from)}
+		if style.shape == "portugal":
+			flag_left, flag_right = extent[bar.row]
 			flag_width = max(flag_right - flag_left, width)
 			view["gradient_size"] = round(flag_width / width * 100, 2)
 			view["gradient_position"] = round((left - flag_left) / (flag_width - width) * 100, 2) if flag_width > width else 0
@@ -245,7 +252,7 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 				# The whole flag at 30% behind the person's bars, showing in the gaps; it grows like a bar.
 				view["flag_back"] = {**view, "left": flag_left, "width": round(flag_width, 3), "gradient_size": 100,
 					"gradient_position": 0, "flag_offset": 0, "emblem_left": None,
-					"grow": round(max(flag_width / 100 * GROW_SECONDS, 0.25), 2)}
+					"grow": grow_time(flag_width)}
 		elif isinstance(style.color, list) and tuple(style.color) in gradient_extent:
 			group_left, group_right = gradient_extent[tuple(style.color)]
 			group_width = max(group_right - group_left, width)
