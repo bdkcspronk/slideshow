@@ -67,9 +67,12 @@ class NewsProviderTest(unittest.TestCase):
 		self.provider.news = {"NOS": [Headline("A", None)], "BBC": [Headline("B", None)], "Empty": [], "NU.nl": [Headline("C", None)]}
 		feeds = [self.provider.slides(SUNDAY_EVENING)[0].data["feed"] for _ in range(4)]
 		self.assertEqual(feeds, ["NOS", "BBC", "NU.nl", "NOS"])   # a feed without headlines is skipped
-		[slide] = self.provider.slides(SUNDAY_EVENING)
-		self.provider.news = {"NU.nl": [Headline("C", None)]}     # BBC gone after a refresh: the first feed instead
-		self.assertEqual(slide.update(SUNDAY_EVENING)["feed"], "NU.nl")
+		for _ in range(3):   # the menu, the shortcut key, the preview: the feed shown last, and the rotation goes on
+			self.assertEqual(self.provider.shortcut_slide(SUNDAY_EVENING).data["feed"], "NOS")
+		self.assertEqual(self.provider.slides(SUNDAY_EVENING)[0].data["feed"], "BBC")
+		[slide] = self.provider.slides(SUNDAY_EVENING)            # NU.nl
+		self.provider.news = {"BBC": [Headline("B", None)]}       # NU.nl gone after a refresh: the first feed instead
+		self.assertEqual(slide.update(SUNDAY_EVENING)["feed"], "BBC")
 
 	def test_open_an_article_and_go_back(self):
 		long = "A sentence that is long enough to count as article text, not a menu item."

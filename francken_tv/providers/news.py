@@ -186,13 +186,23 @@ class NewsProvider(Provider):
 				old.unlink()
 
 	def slides(self, now: datetime) -> list[Slide]:
+		"""The next feed: only the rotation calls this, once each time the slide comes round."""
 		feeds = self.feed_names()
 		if not feeds:
 			return []
-		feed = feeds[self.turn % len(feeds)]   # the next feed each time the slide comes round
+		feed = feeds[self.turn % len(feeds)]
 		self.turn += 1
+		return [self.feed_slide(now, feed)]
+
+	def shortcut_slide(self, now: datetime) -> Slide | None:
+		"""The feed shown last (the first before any): the shortcut key, the menu's preview and its check
+		whether there's news don't move the rotation on to the next feed."""
+		feeds = self.feed_names()
+		return self.feed_slide(now, feeds[(self.turn - 1) % len(feeds)] if self.turn else feeds[0]) if feeds else None
+
+	def feed_slide(self, now: datetime, feed: str) -> Slide:
 		data = self.news_data(now, feed)
-		return [Slide("news.html", self.seconds, data, update=lambda when: self.news_data(when, feed) or data)]
+		return Slide("news.html", self.seconds, data, update=lambda when: self.news_data(when, feed) or data)
 
 	def feed_names(self) -> list[str]:
 		return [name for name, headlines in self.news.items() if headlines]
