@@ -58,6 +58,11 @@ class Provider:
 		slides = self.slides(now)
 		return slides[0] if slides else None
 
+	def has_slide(self, now: datetime) -> bool:
+		"""Whether shortcut_slide() would show something (the menu greys out a preview without). Override
+		it when making the slide has an effect, e.g. moving on to the next news feed."""
+		return self.shortcut_slide(now) is not None
+
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
 		"""For interactive slides: a data-action button was clicked, with the values of the
 		selected data-toggle elements. Return the redrawn slide and an optional message."""

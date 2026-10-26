@@ -65,11 +65,12 @@ class NewsProviderTest(unittest.TestCase):
 
 	def test_the_next_feed_each_time(self):
 		self.provider.news = {"NOS": [Headline("A", None)], "BBC": [Headline("B", None)], "Empty": [], "NU.nl": [Headline("C", None)]}
+		self.provider.turn = 0
 		feeds = [self.provider.slides(SUNDAY_EVENING)[0].data["feed"] for _ in range(4)]
 		self.assertEqual(feeds, ["NOS", "BBC", "NU.nl", "NOS"])   # a feed without headlines is skipped
-		for _ in range(3):   # the menu, the shortcut key, the preview: the feed shown last, and the rotation goes on
-			self.assertEqual(self.provider.shortcut_slide(SUNDAY_EVENING).data["feed"], "NOS")
-		self.assertEqual(self.provider.slides(SUNDAY_EVENING)[0].data["feed"], "BBC")
+		self.assertEqual(self.provider.shortcut_slide(SUNDAY_EVENING).data["feed"], "BBC")   # the shortcut key: the next one too
+		for _ in range(3):
+			self.assertTrue(self.provider.has_slide(SUNDAY_EVENING))   # the menu's check doesn't move on
 		[slide] = self.provider.slides(SUNDAY_EVENING)            # NU.nl
 		self.provider.news = {"BBC": [Headline("B", None)]}       # NU.nl gone after a refresh: the first feed instead
 		self.assertEqual(slide.update(SUNDAY_EVENING)["feed"], "BBC")

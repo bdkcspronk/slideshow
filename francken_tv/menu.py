@@ -26,7 +26,7 @@ def title(provider: Provider) -> str:
 
 def has_slide(provider: Provider, app: App) -> bool:
 	try:
-		return provider.shortcut_slide(app.clock.now()) is not None
+		return provider.has_slide(app.clock.now())
 	except Exception:
 		log.exception("Preview of %s failed", provider.name)
 		return False

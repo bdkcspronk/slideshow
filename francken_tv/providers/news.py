@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import random
 import re
 import xml.etree.ElementTree as ElementTree
 from dataclasses import dataclass, field
@@ -137,7 +138,7 @@ class NewsProvider(Provider):
 		self.feeds = settings.get("feeds", NEWS_FEEDS)
 		self.headlines_per_feed = settings.get("headlines_per_feed", 3)
 		self.news: dict[str, list[Headline]] = {}
-		self.turn = 0   # which feed the slide shows next
+		self.turn = random.randrange(len(self.feeds) or 1)   # which feed the slide shows next: after a restart any of them
 		self.articles: dict[str, list[str]] = {}   # fetched article pages by link (see article_text)
 
 	def refresh(self, now: datetime) -> None:
@@ -186,7 +187,7 @@ class NewsProvider(Provider):
 				old.unlink()
 
 	def slides(self, now: datetime) -> list[Slide]:
-		"""The next feed: only the rotation calls this, once each time the slide comes round."""
+		"""The next feed, each time the slide is shown (in the rotation, by its shortcut key, as a preview)."""
 		feeds = self.feed_names()
 		if not feeds:
 			return []
@@ -194,11 +195,8 @@ class NewsProvider(Provider):
 		self.turn += 1
 		return [self.feed_slide(now, feed)]
 
-	def shortcut_slide(self, now: datetime) -> Slide | None:
-		"""The feed shown last (the first before any): the shortcut key, the menu's preview and its check
-		whether there's news don't move the rotation on to the next feed."""
-		feeds = self.feed_names()
-		return self.feed_slide(now, feeds[(self.turn - 1) % len(feeds)] if self.turn else feeds[0]) if feeds else None
+	def has_slide(self, now: datetime) -> bool:
+		return bool(self.feed_names())   # without moving on to the next feed
 
 	def feed_slide(self, now: datetime, feed: str) -> Slide:
 		data = self.news_data(now, feed)
