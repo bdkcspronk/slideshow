@@ -263,36 +263,42 @@ body.show-cursor button { cursor: pointer; }
 .info-source { position: absolute; bottom: 2.5vh; right: 5vw; margin: 0; font-size: 1.9vh; color: var(--faint); }
 @keyframes info-in { from { opacity: 0; transform: translateY(2vh); } }
 
-/* News: on the navy poster (.news-slide shares the activities slide's background, see above), a column
-   per feed. The headlines come in as waves: the top row first (with their pictures), column after
-   column, then the second row, then the third. --j is the row, --i the column. */
-.news-slide .poster-title { margin-bottom: 2.6vh; }
-.news-columns { position: relative; flex: 1; min-height: 0; margin-bottom: 3vh; display: grid; grid-template-columns: repeat(var(--feeds), minmax(0, 1fr)); gap: 2.2vw; }
-.news-columns section { min-width: 0; }
-.news-columns h2 {
-	display: inline-block;
-	margin: 0 0 1.4vh;
+/* News: on the navy poster (.news-slide shares the activities slide's background, see above), one feed at
+   a time: the feeds in a row (this one in crimson), then its headlines as large cards side by side, each
+   with its picture, coming in one after another (--i). */
+.news-slide .poster-title { margin-bottom: 2.2vh; }
+.news-feeds { display: flex; flex-wrap: wrap; gap: 1vw; margin: 0 0 2.4vh; padding: 0; list-style: none; }
+.news-feeds li {
 	padding: 0.6vh 1vw;
 	border-radius: 0.6vh;
-	background: var(--crimson);
 	font-size: 2.4vh;
 	letter-spacing: 0.15vh;
 	text-transform: uppercase;
-	animation: practice-in 0.6s ease-out calc(0.5s + var(--i) * 0.15s) both;
+	opacity: 0.45;
+	box-shadow: inset 0 0 0 0.2vh rgba(253, 248, 236, 0.5);
+	animation: practice-in 0.6s ease-out calc(0.5s + var(--i) * 0.1s) both;
 }
-.news-columns ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.9vh; }
-.news-columns li {   /* the wave: a row at a time, each a little after the column to its left */
-	--wave: calc(0.9s + var(--j) * 1.1s + var(--i) * 0.2s);
-	animation: news-wave 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) var(--wave) both;
+.news-feeds li.current { opacity: 1; background: var(--crimson); box-shadow: none; font-weight: bold; }
+.news-cards {
+	flex: 1;
+	min-height: 0;
+	margin: 0 0 6vh;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	grid-template-columns: repeat(var(--cards), minmax(0, 1fr));
+	gap: 2.2vw;
 }
-.news-columns button {
+.news-cards li { min-height: 0; animation: news-wave 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(0.9s + var(--i) * 0.35s) both; }
+.news-cards button {
 	width: 100%;
+	height: 100%;
 	display: flex;
 	flex-direction: column;
-	gap: 0.6vh;
-	padding: 1.5vh 1.2vw;
+	gap: 1.2vh;
+	padding: 0 1.6vw 2.4vh;
 	border: none;
-	border-radius: 1.4vh;
+	border-radius: 1.6vh;
 	background: var(--paper);
 	color: var(--navy);
 	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
@@ -301,24 +307,24 @@ body.show-cursor button { cursor: pointer; }
 	text-align: left;
 	overflow: hidden;
 }
-.news-columns button:active { background: #efe7d3; }
-/* The first headline of each feed, with its picture across the top of the card. */
-.news-picture {
+.news-cards button:active { background: #efe7d3; }
+.news-picture {   /* across the top of the card, taking whatever height the text leaves */
 	display: block;
-	width: calc(100% + 2.4vw);
-	height: 16vh;
-	margin: -1.5vh -1.2vw 0.8vh;
+	flex: 1;
+	min-height: 12vh;
+	margin: 0 -1.6vw 0.6vh;
 }
 .news-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.news-columns li b {
-	font-size: 2.5vh;
-	line-height: 1.25;
+.news-cards b {
+	font-size: 3.4vh;
+	line-height: 1.22;
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 3;
+	-webkit-line-clamp: 4;
 	overflow: hidden;
 }
-.news-columns li button > span:last-child { font-size: 1.9vh; font-weight: normal; color: var(--crimson); }
+.news-cards button > b:first-child { margin-top: 2.4vh; }   /* no picture */
+.news-cards button > span:last-child { font-size: 2.2vh; font-weight: normal; color: var(--crimson); }
 .news-hint { position: absolute; bottom: 2.5vh; right: 5vw; margin: 0; font-size: 1.9vh; opacity: 0.55; }
 @keyframes news-wave {
 	from { opacity: 0; transform: translateY(6vh) scale(0.94) rotate(-1.5deg); }

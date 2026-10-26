@@ -3,7 +3,7 @@
    Below it the address of the article. #}
 <div class="slide info-slide info-article" data-interactive data-provider="news" data-idle-seconds="120">
 	<header class="article-header">
-		<button class="article-back" data-action="news">&larr; All news</button>
+		<button class="article-back" data-action="news" data-value="{{ feed }}">&larr; All news</button>
 		<span>{{ feed }}{% if ago %} &middot; {{ ago }}{% endif %}</span>
 	</header>
 	<h1>{{ headline.title }}</h1>

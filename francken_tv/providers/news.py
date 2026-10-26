@@ -1,6 +1,7 @@
 """The news slide: the latest headlines of a few RSS feeds (Dagblad van het Noorden, NU.nl, BBC World by
-default; [news] feeds in config.toml). One of the info slides: the scheduler shows one of news, weather,
-buses and timetable per round (rotation.take_turns).
+default; [news] feeds in config.toml), one feed at a time: each time the slide comes round it shows the
+next feed's headlines, large, each with its picture. One of the info slides: the scheduler shows one of
+news, weather, buses and timetable per round (rotation.take_turns).
 
 Tapping a headline opens the article: from the feed when it has the whole text, else from the article's
 page (BBC), else the feed's summary (NU.nl and DvhN block fetching their pages). The slideshow downloads
@@ -136,6 +137,7 @@ class NewsProvider(Provider):
 		self.feeds = settings.get("feeds", NEWS_FEEDS)
 		self.headlines_per_feed = settings.get("headlines_per_feed", 3)
 		self.news: dict[str, list[Headline]] = {}
+		self.turn = 0   # which feed the slide shows next
 		self.articles: dict[str, list[str]] = {}   # fetched article pages by link (see article_text)
 
 	def refresh(self, now: datetime) -> None:
@@ -184,17 +186,28 @@ class NewsProvider(Provider):
 				old.unlink()
 
 	def slides(self, now: datetime) -> list[Slide]:
-		data = self.news_data(now)
-		return [Slide("news.html", self.seconds, data, update=lambda when: self.news_data(when) or data)] if data else []
+		feeds = self.feed_names()
+		if not feeds:
+			return []
+		feed = feeds[self.turn % len(feeds)]   # the next feed each time the slide comes round
+		self.turn += 1
+		data = self.news_data(now, feed)
+		return [Slide("news.html", self.seconds, data, update=lambda when: self.news_data(when, feed) or data)]
 
-	def news_data(self, now: datetime) -> dict | None:
-		if not self.news:
+	def feed_names(self) -> list[str]:
+		return [name for name, headlines in self.news.items() if headlines]
+
+	def news_data(self, now: datetime, feed: str = "") -> dict | None:
+		"""The headlines of one feed (the first if `feed` has none, e.g. after a refresh)."""
+		feeds = self.feed_names()
+		if not feeds:
 			return None
-		return {"feeds": [{"name": name, "headlines": [{"title": headline.title, "ago": ago(headline.time, now), "link": headline.link,
-			"image": headline.image} for headline in headlines]} for name, headlines in self.news.items() if headlines]}
+		feed = feed if feed in feeds else feeds[0]
+		return {"feed": feed, "feeds": feeds, "headlines": [{"title": headline.title, "ago": ago(headline.time, now),
+			"link": headline.link, "image": headline.image} for headline in self.news[feed]]}
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
-		"""'article' (values = [its link]): the article to read; 'news': back to the headlines."""
+		"""'article' (values = [its link]): the article to read; 'news' (values = [the feed]): back to its headlines."""
 		if name == "article" and values:
 			found = next(((feed, headline) for feed, headlines in self.news.items() for headline in headlines
 				if headline.link == values[0]), None)
@@ -204,7 +217,7 @@ class NewsProvider(Provider):
 			paragraphs, whole = self.article_text(headline)
 			return Slide("news_article.html", self.seconds, {"feed": feed, "headline": headline, "ago": ago(headline.time, now),
 				"paragraphs": paragraphs, "whole": whole}), None
-		data = self.news_data(now)
+		data = self.news_data(now, values[0] if values else "")
 		return (Slide("news.html", self.seconds, data) if data else None), None
 
 	def article_text(self, headline: Headline) -> tuple[list[str], bool]:

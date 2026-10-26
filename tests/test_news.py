@@ -61,7 +61,15 @@ class NewsProviderTest(unittest.TestCase):
 	def test_a_slide_with_the_headlines(self):
 		self.provider.news = {"NOS": [Headline("Nieuws", datetime(2026, 10, 18, 19, 0))]}
 		[slide] = self.provider.slides(SUNDAY_EVENING)
-		self.assertEqual((slide.template, slide.data["feeds"][0]["headlines"][0]["ago"]), ("news.html", "30 min ago"))
+		self.assertEqual((slide.template, slide.data["headlines"][0]["ago"]), ("news.html", "30 min ago"))
+
+	def test_the_next_feed_each_time(self):
+		self.provider.news = {"NOS": [Headline("A", None)], "BBC": [Headline("B", None)], "Empty": [], "NU.nl": [Headline("C", None)]}
+		feeds = [self.provider.slides(SUNDAY_EVENING)[0].data["feed"] for _ in range(4)]
+		self.assertEqual(feeds, ["NOS", "BBC", "NU.nl", "NOS"])   # a feed without headlines is skipped
+		[slide] = self.provider.slides(SUNDAY_EVENING)
+		self.provider.news = {"NU.nl": [Headline("C", None)]}     # BBC gone after a refresh: the first feed instead
+		self.assertEqual(slide.update(SUNDAY_EVENING)["feed"], "NU.nl")
 
 	def test_open_an_article_and_go_back(self):
 		long = "A sentence that is long enough to count as article text, not a menu item."
@@ -82,8 +90,8 @@ class NewsProviderTest(unittest.TestCase):
 		with mock.patch("francken_tv.providers.news.requests.get", return_value=wall):
 			slide, _ = self.provider.action("article", ["https://nu.example/3"], SUNDAY_EVENING)
 		self.assertEqual((slide.data["paragraphs"], slide.data["whole"]), (["Summary only."], False))
-		slide, _ = self.provider.action("news", [], SUNDAY_EVENING)
-		self.assertEqual(slide.template, "news.html")
+		slide, _ = self.provider.action("news", ["NU.nl"], SUNDAY_EVENING)
+		self.assertEqual((slide.template, slide.data["feed"]), ("news.html", "NU.nl"))   # back to the feed of the article
 		self.assertIn("no longer", self.provider.action("article", ["https://gone.example"], SUNDAY_EVENING)[1])
 
 	def test_pictures_are_downloaded_and_old_ones_removed(self):

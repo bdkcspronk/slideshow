@@ -77,7 +77,7 @@ feeds = [
 	["NU.nl", "https://www.nu.nl/rss/Algemeen"],
 	["BBC World", "https://feeds.bbci.co.uk/news/world/rss.xml"],
 ]
-headlines_per_feed = 3          # the first with its picture
+headlines_per_feed = 3          # one feed per slide, the next feed each time it comes round
 
 [weather]
 seconds = 15
