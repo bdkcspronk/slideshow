@@ -2,7 +2,7 @@
 
 This file turns sightings into rows, bars and timings; templates/slides/presence.html and
 the "Activity chart" styles in style.css draw them (the bars grow in, beer fizzes, the nyan
-cat rides its rainbow, a motorcycle rides its bar). Each person gets a row; every stretch of time they were around is a
+cat rides its rainbow, a motorcycle or a mobility scooter rides its bar). Each person gets a row; every stretch of time they were around is a
 bar. The bar's look comes from their entry in config/devices.json:
 
 	"color":           "#fcd303", or a list of colours for a gradient
@@ -12,8 +12,9 @@ bar. The bar's look comes from their entry in config/devices.json:
 	                   person's bars, with the emblem of templates/portugal_flag.svg landing on
 	                   its border once the last bar has grown, and the flag at 30% in
 	                   the gaps between them),
-	                   or a list combining one of those with "glow" and/or "motorcycle"
-	                   (a motorcycle in the bar's colour, templates/motorcycle.svg, rides the front of the bar)
+	                   or a list combining one of those with "glow" and/or a vehicle:
+	                   "motorcycle" or "mobility" (a mobility scooter), in the bar's colour
+	                   (templates/motorcycle.svg, mobility.svg), riding the front of the bars
 	"stripe_color":    colour (or gradient list) of the stripes for "striped"
 	                   (or give "color" as [[bar colours], [stripe colours]])
 	"thickness":       stripe thickness in pixels for "striped"
@@ -39,6 +40,7 @@ FALLBACK_SATURATION_RANGE = (0.65, 0.9)
 FALLBACK_BRIGHTNESS_RANGE = (0.85, 1.0)
 BUCKET = timedelta(minutes=5)          # sightings are grouped per 5 minutes
 MAX_GAP = timedelta(minutes=10)        # gaps up to this long don't split a bar
+VEHICLES = ("motorcycle", "mobility")   # ride the front of the bars (templates/<name>.svg)
 SHAPES = {"round corners", "square corners", "striped", "nyan cat", "rainbow", "beer", "board", "portugal"}
 CHART_LEAD = timedelta(hours=1)        # the chart starts this long before the first arrival
 GROW_SECONDS = 4.0                     # the bars draw themselves across the chart in this time
@@ -50,7 +52,7 @@ class MarkerStyle:
 	color: str | list | None = None
 	shape: str = "round corners"
 	glow: bool = False
-	motorcycle: bool = False
+	vehicle: str | None = None   # one of VEHICLES
 	stripe_color: str | list = TEXT_COLOR
 	stripe_thickness: float | None = None
 	nyan_cat_x_offset: float = 0
@@ -77,7 +79,7 @@ def parse_style(options: dict) -> MarkerStyle:
 	color = options.get("color", options.get("gradient"))
 	configured = options.get("style", "round corners")
 	styles = [configured] if isinstance(configured, str) else configured if isinstance(configured, list) else []
-	style = MarkerStyle(glow="glow" in styles, motorcycle="motorcycle" in styles)
+	style = MarkerStyle(glow="glow" in styles, vehicle=next((v for v in VEHICLES if v in styles), None))
 	style.shape = next((s for s in styles if s in SHAPES), "round corners")
 
 	stripe_color = options.get("stripe_color")
@@ -214,7 +216,7 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			gradient_extent[key] = (min(left, percent(bar.start)), max(right, percent(bar.end)))
 
 	# From the start of each person's first bar to the end of their last: their bars are windows onto one
-	# run (the stripes, a stripe gradient and a Portuguese flag go on across the gaps), and a motorcycle
+	# run (the stripes, a stripe gradient and a Portuguese flag go on across the gaps), and a vehicle
 	# rides all of it.
 	extent: dict[int, tuple[float, float]] = {}
 	for bar in data.bars:
@@ -234,17 +236,17 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			"delay": grow_delay(left),
 			"grow": grow_time(width),
 			"nyan_cat": style.shape == "nyan cat" and bar.is_latest, "cat_offset": style.nyan_cat_x_offset,
-			"motorcycle": None,
-			"paint": style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color,   # the motorcycle's colour
+			"vehicle": None,
+			"paint": style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color,   # the vehicle's colour
 			# Where this bar is in the person's run, in % of the chart (bar.html: --run-offset, --run-width).
 			"run_offset": round(left - extent[bar.row][0], 3),
 			"run_width": round(max(extent[bar.row][1] - extent[bar.row][0], width), 3),
 		}
-		if style.motorcycle and bar.is_latest:
+		if style.vehicle and bar.is_latest:
 			# One ride from the first bar to the end of the last, at the speed the bars grow: always at the
 			# growing front, and across the gaps between them.
 			ride_from, ride_to = extent[bar.row]
-			view["motorcycle"] = {"from": ride_from, "to": ride_to, "delay": grow_delay(ride_from), "grow": grow_time(ride_to - ride_from)}
+			view["vehicle"] = {"kind": style.vehicle, "from": ride_from, "to": ride_to, "delay": grow_delay(ride_from), "grow": grow_time(ride_to - ride_from)}
 		if style.shape == "portugal":
 			flag_left, flag_right = extent[bar.row]
 			flag_width = max(flag_right - flag_left, width)

@@ -1499,6 +1499,14 @@ body.show-cursor button { cursor: pointer; }
 		moto-wheelie 0.9s ease-out var(--delay) both,
 		moto-idle 0.12s linear calc(var(--delay) + var(--grow)) infinite alternate;
 }
+/* A mobility scooter doesn't pop a wheelie, and it gets going slowly: it falls behind the growing bars at
+   first, then speeds up and catches up, reaching the end when the last bar does (the motorcycle keeps up
+   all the way). No exhaust: dust from both wheels while it drives, the last two puffs from the front one. */
+.motorcycle-rider.mobility { animation-timing-function: cubic-bezier(0.65, 0, 0.75, 1); }
+.motorcycle-rider.mobility svg { animation: moto-idle 0.12s linear calc(var(--delay) + var(--grow)) infinite alternate; }
+.motorcycle-rider.mobility .motorcycle-exhaust { display: none; }
+.motorcycle-rider.mobility .motorcycle-dust i { left: 16%; width: 24%; }
+.motorcycle-rider.mobility .motorcycle-dust i:nth-child(n + 4) { left: 62%; width: 22%; }
 .motorcycle-rider .paint[fill] { fill: var(--paint); }
 .motorcycle-rider .paint[stroke] { stroke: var(--paint); }
 .motorcycle-rider .paint-dark { fill: color-mix(in srgb, var(--paint) 45%, #0b1020); }

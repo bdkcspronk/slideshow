@@ -2,7 +2,7 @@
 	Today's activity chart, on the navy and crimson poster (like the activities and news slides). The
 	numbers come from chart_view() in activity_chart.py; the looks and animations ("Activity chart" in
 	style.css): bars grow in from left to right, beer bubbles rise, the nyan cat rides the front of
-	its rainbow, a motorcycle rides its bar kicking up dust, and
+	its rainbow, a motorcycle or a mobility scooter rides its bar kicking up dust, and
 	the Portuguese emblem lands on its flag. Positions are in % of the chart width.
 #}
 {% from "bar.html" import bar as draw_bar %}
@@ -36,15 +36,15 @@
 			<div class="portugal-emblem" style="--row: {{ bar.row }}; left: {{ bar.emblem_left }}%;
 				--delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s">{% include "portugal_flag.svg" %}</div>
 			{% endif %}
-			{% if bar.motorcycle %}
-			{# The motorcycle rides along the front of the person's bars, from the first to the end of the last
+			{% if bar.vehicle %}
+			{# The motorcycle or mobility scooter rides along the front of the person's bars, from the first to the end of the last
 			   (across the gaps), kicking up dust, then idles there puffing exhaust. #}
-			{% set ride = bar.motorcycle %}
-			<div class="motorcycle-rider" style="--row: {{ bar.row }}; --from: {{ ride.from }}%; --to: {{ ride.to }}%;
+			{% set ride = bar.vehicle %}
+			<div class="motorcycle-rider {{ ride.kind }}" style="--row: {{ bar.row }}; --from: {{ ride.from }}%; --to: {{ ride.to }}%;
 				--delay: {{ ride.delay }}s; --grow: {{ ride.grow }}s; --paint: {{ bar.paint }}">
 				<div class="motorcycle-dust"><i></i><i></i><i></i><i></i><i></i></div>
 				<div class="motorcycle-exhaust"><i></i><i></i><i></i></div>
-				{% include "motorcycle.svg" %}
+				{% include ride.kind ~ ".svg" %}
 			</div>
 			{% endif %}
 			{% endfor %}

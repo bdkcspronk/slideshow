@@ -107,7 +107,8 @@ class ChartTest(PresenceTestCase):
 		bob = parse_style(DEVICES[1])
 		self.assertEqual((bob.shape, bob.glow), ("beer", True))
 		rider = parse_style({"style": ["motorcycle", "striped"]})
-		self.assertEqual((rider.shape, rider.motorcycle, alice.motorcycle), ("striped", True, False))
+		self.assertEqual((rider.shape, rider.vehicle, alice.vehicle), ("striped", "motorcycle", None))
+		self.assertEqual(parse_style({"style": ["mobility", "glow"]}).vehicle, "mobility")
 		self.assertEqual(parse_style({"style": "portugal"}).shape, "portugal")
 
 	def test_rows_ordered_by_arrival(self):
@@ -149,8 +150,9 @@ class ChartTest(PresenceTestCase):
 		devices = DeviceList(self.dir / "devices.json")
 		sightings = [Sighting(at(t), "CC:00:00:00:00:03", "Kylian") for t in ("09:00", "09:05", "10:00", "10:10", "10:20", "10:25")]
 		first, last = chart_view(sightings, devices.by_mac(), at("11:00"))["bars"]
-		self.assertIsNone(first["motorcycle"])   # one motorcycle, on the last bar...
-		ride = last["motorcycle"]                 # ...riding from the start of the first
+		self.assertIsNone(first["vehicle"])   # one motorcycle, on the last bar...
+		ride = last["vehicle"]                 # ...riding from the start of the first
+		self.assertEqual(ride["kind"], "motorcycle")
 		self.assertEqual((ride["from"], ride["to"], ride["delay"]), (first["left"], round(last["left"] + last["width"], 3), first["delay"]))
 		self.assertAlmostEqual(ride["delay"] + ride["grow"], last["delay"] + last["grow"], delta=0.02)   # it arrives as the last bar is done
 
