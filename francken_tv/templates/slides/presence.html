@@ -2,7 +2,8 @@
 	Today's activity chart, on the navy and crimson poster (like the activities and news slides). The
 	numbers come from chart_view() in activity_chart.py; the looks and animations ("Activity chart" in
 	style.css): bars grow in from left to right, beer bubbles rise, the nyan cat rides the front of
-	its rainbow, and a motorcycle rides its bar kicking up dust. Positions are in % of the chart width.
+	its rainbow, a motorcycle rides its bar kicking up dust, and
+	the Portuguese emblem lands on its flag. Positions are in % of the chart width.
 #}
 {% from "bar.html" import bar as draw_bar %}
 <div class="slide presence-slide" style="--rows: {{ names | length }}">
@@ -23,6 +24,12 @@
 			<img class="nyan-cat-sprite" src="{{ nyan_cat.url }}" alt="" style="--row: {{ bar.row }}; --from: {{ bar.left }}%;
 				--to: {{ bar.left + bar.width }}%; --delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s;
 				--aspect: {{ nyan_cat.aspect }}; --offset: {{ bar.cat_offset }}%">
+			{% endif %}
+			{% if bar.emblem_left is not none and bar.shape == "portugal" %}
+			{# The flag's emblem, on the border of the green and the red of the person's one flag, once their
+			   last bar has grown. Only the emblem of the flag shows (style.css hides its green and red). #}
+			<div class="portugal-emblem" style="--row: {{ bar.row }}; left: {{ bar.emblem_left }}%;
+				--delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s">{% include "portugal_flag.svg" %}</div>
 			{% endif %}
 			{% if bar.motorcycle %}
 			{# The motorcycle rides along the front of the bar kicking up dust, then idles there puffing exhaust. #}

@@ -108,6 +108,7 @@ class ChartTest(PresenceTestCase):
 		self.assertEqual((bob.shape, bob.glow), ("beer", True))
 		rider = parse_style({"style": ["motorcycle", "striped"]})
 		self.assertEqual((rider.shape, rider.motorcycle, alice.motorcycle), ("striped", True, False))
+		self.assertEqual(parse_style({"style": "portugal"}).shape, "portugal")
 
 	def test_rows_ordered_by_arrival(self):
 		sightings = [Sighting(at("10:00"), BOB, "Bob"), Sighting(at("09:00"), ALICE, "Alice")]
@@ -128,6 +129,16 @@ class ChartTest(PresenceTestCase):
 		self.assertTrue(dave["background"].startswith("#"))        # no device entry: a generated colour
 		self.assertLess(alice["delay"], bob["delay"])                 # earlier bars start growing first
 		self.assertEqual([tick["label"] for tick in view["ticks"]], ["08:00", "09:00", "10:00", "11:00"])   # first arrival 09:00
+
+	def test_one_portuguese_flag_across_a_persons_bars(self):
+		(self.dir / "devices.json").write_text(json.dumps(DEVICES + [{"ssid": "Rui", "mac": "CC:00:00:00:00:03", "style": "portugal"}]))
+		devices = DeviceList(self.dir / "devices.json")
+		sightings = [Sighting(at(t), "CC:00:00:00:00:03", "Rui") for t in ("09:00", "09:05", "10:00", "10:10", "10:20", "10:25")]
+		first, last = chart_view(sightings, devices.by_mac(), at("11:00"))["bars"]
+		self.assertEqual((first["shape"], first["gradient_position"], last["gradient_position"]), ("portugal", 0, 100))
+		self.assertEqual(first["gradient_size"], round(90 / 10 * 100, 2))   # the flag: 09:00-10:30, this bar 09:00-09:10
+		self.assertEqual((first["flag_offset"], first["emblem_left"]), (0, None))
+		self.assertEqual(last["emblem_left"], round(first["left"] + 0.4 * (last["left"] + last["width"] - first["left"]), 3))
 
 	def test_chart_starts_an_hour_before_the_first_arrival(self):
 		sightings = [Sighting(at("12:40"), ALICE, "Alice"), Sighting(at("13:10"), BOB, "Bob")]

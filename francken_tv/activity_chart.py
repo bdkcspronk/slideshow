@@ -8,6 +8,9 @@ bar. The bar's look comes from their entry in config/devices.json:
 	"color":           "#fcd303", or a list of colours for a gradient
 	"style":           "round corners" (default), "square corners", "striped", "nyan cat",
 	                   "rainbow" (nyan cat without the cat), "beer", "board",
+	                   "portugal" (the flag's green and red, waving; one flag across all of a
+	                   person's bars, with the emblem of templates/portugal_flag.svg landing on
+	                   its border once the last bar has grown),
 	                   or a list combining one of those with "glow" and/or "motorcycle"
 	                   (a motorcycle in the bar's colour, templates/motorcycle.svg, rides the front of the bar)
 	"stripe_color":    colour (or gradient list) of the stripes for "striped"
@@ -35,7 +38,7 @@ FALLBACK_SATURATION_RANGE = (0.65, 0.9)
 FALLBACK_BRIGHTNESS_RANGE = (0.85, 1.0)
 BUCKET = timedelta(minutes=5)          # sightings are grouped per 5 minutes
 MAX_GAP = timedelta(minutes=10)        # gaps up to this long don't split a bar
-SHAPES = {"round corners", "square corners", "striped", "nyan cat", "rainbow", "beer", "board"}
+SHAPES = {"round corners", "square corners", "striped", "nyan cat", "rainbow", "beer", "board", "portugal"}
 CHART_LEAD = timedelta(hours=1)        # the chart starts this long before the first arrival
 GROW_SECONDS = 4.0                     # the bars draw themselves across the chart in this time
 GROW_STARTS = 0.8                      # ...starting after the slide has faded in
@@ -204,10 +207,17 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 	# Bars with the same gradient share one gradient across the chart (as in the old chart).
 	gradient_extent: dict[tuple, tuple[float, float]] = {}
 	for bar in data.bars:
-		if isinstance(bar.style.color, list) and bar.style.shape not in ("nyan cat", "rainbow", "beer", "board"):
+		if isinstance(bar.style.color, list) and bar.style.shape not in ("nyan cat", "rainbow", "beer", "board", "portugal"):
 			key = tuple(bar.style.color)
 			left, right = gradient_extent.get(key, (100.0, 0.0))
 			gradient_extent[key] = (min(left, percent(bar.start)), max(right, percent(bar.end)))
+
+	# A Portuguese flag spans all of a person's bars (the bars are windows onto one flag).
+	flag_extent: dict[int, tuple[float, float]] = {}
+	for bar in data.bars:
+		if bar.style.shape == "portugal":
+			left, right = flag_extent.get(bar.row, (100.0, 0.0))
+			flag_extent[bar.row] = (min(left, percent(bar.start)), max(right, percent(bar.end)))
 
 	bars = []
 	for bar in data.bars:
@@ -223,7 +233,14 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			"motorcycle": style.motorcycle and bar.is_latest,
 			"paint": style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color,   # the motorcycle's colour
 		}
-		if isinstance(style.color, list) and tuple(style.color) in gradient_extent:
+		if bar.row in flag_extent:
+			flag_left, flag_right = flag_extent[bar.row]
+			flag_width = max(flag_right - flag_left, width)
+			view["gradient_size"] = round(flag_width / width * 100, 2)
+			view["gradient_position"] = round((left - flag_left) / (flag_width - width) * 100, 2) if flag_width > width else 0
+			view["flag_offset"] = round(left - flag_left, 3)   # keeps the waves in step across the gaps
+			view["emblem_left"] = round(flag_left + 0.4 * flag_width, 3) if bar.is_latest else None   # once, after the last bar
+		elif isinstance(style.color, list) and tuple(style.color) in gradient_extent:
 			group_left, group_right = gradient_extent[tuple(style.color)]
 			group_width = max(group_right - group_left, width)
 			view["gradient_size"] = round(group_width / width * 100, 2)

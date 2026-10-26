@@ -1358,7 +1358,7 @@ body.show-cursor button { cursor: pointer; }
 	justify-content: flex-end;
 	font-size: min(2.6vh, calc(48vh / var(--rows)));
 }
-.chart-plot { position: relative; }
+.chart-plot { position: relative; container-type: inline-size; }   /* cqw: % of the plot width */
 /* Vertical lines: every quarter hour thin, half hours thicker, hours thickest (centred on their time). */
 .chart-grid { position: absolute; top: 0; bottom: 0; width: 0.1vh; transform: translateX(-50%); background: rgba(255, 255, 255, 0.05); }
 .chart-grid.half { width: 0.28vh; background: rgba(255, 255, 255, 0.08); }
@@ -1387,6 +1387,27 @@ body.show-cursor button { cursor: pointer; }
 	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 19' preserveAspectRatio='none' shape-rendering='crispEdges'%3E%3Crect x='0' y='0' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='8' y='1' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='0' y='3' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='8' y='4' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='0' y='6' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='8' y='7' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='0' y='9' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='8' y='10' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='0' y='12' width='8' height='3' fill='%230099ff'/%3E%3Crect x='8' y='13' width='8' height='3' fill='%230099ff'/%3E%3Crect x='0' y='15' width='8' height='3' fill='%236633ff'/%3E%3Crect x='8' y='16' width='8' height='3' fill='%236633ff'/%3E%3C/svg%3E") 0 0 / auto 100% repeat-x !important;
 }
 .bar.beer { background: linear-gradient(90deg, #F3B01F, #F5C340) !important; }
+/* Portugal: the flag, 2:3 green and red, waving: its top and bottom edges ripple (a mask of one wave,
+   repeated and sliding along) and light and dark folds slide along with them. A person's bars are windows
+   onto one flag: the colours are sized to the whole flag (background-size and -position from bar.html)
+   and --flag-offset (how far this bar is from the flag's start) keeps the waves in step. */
+.bar.portugal {
+	--wave: calc(12vh * 8 / var(--rows, 8));   /* one wave, wider in a chart with fewer rows (taller bars) */
+	border-radius: 0;
+	background-image: linear-gradient(90deg, #060 0 40%, #f00 40%) !important;
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--flag-offset, 0px)) 0 / var(--wave) 100% repeat-x;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--flag-offset, 0px)) 0 / var(--wave) 100% repeat-x;
+	animation: bar-grow var(--grow) linear var(--delay) forwards, flag-wave 2.2s linear infinite;
+}
+.bar.portugal::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.07) 25%, rgba(0, 0, 0, 0.1) 50%, rgba(255, 255, 255, 0.07) 75%, rgba(0, 0, 0, 0.1)) calc(0px - var(--flag-offset, 0px)) 0 / var(--wave) 100%;
+	animation: flag-folds 2.2s linear infinite;
+}
+@keyframes flag-wave { to { -webkit-mask-position: calc(var(--wave) - var(--flag-offset, 0px)) 0; mask-position: calc(var(--wave) - var(--flag-offset, 0px)) 0; } }
+@keyframes flag-folds { to { background-position: calc(var(--wave) - var(--flag-offset, 0px)) 0; } }
 /* Stripes: the stripe colour (or gradient), cut into diagonal stripes by a mask. */
 .bar-stripes {
 	--s: var(--stripe, calc(42vh / var(--rows)));
@@ -1430,6 +1451,26 @@ body.show-cursor button { cursor: pointer; }
 	to { left: var(--to); opacity: 1; }
 }
 @keyframes cat-bob { to { margin-top: -0.8vh; } }
+/* Portugal: once the bar has grown, the emblem of templates/portugal_flag.svg spins in on the border of
+   the green and the red. The emblem is half as tall as the flag and centred at 40% of its width, so the
+   whole flag is drawn twice the box's height and shifted until the emblem fills the box; its two
+   coloured rectangles are hidden. */
+.portugal-emblem {
+	position: absolute;
+	top: calc((var(--row) + 0.5) * 100% / var(--rows));
+	height: calc(100% / var(--rows));   /* a whole row: taller than the bar (0.8), not into the bars above and below */
+	aspect-ratio: 1;
+	opacity: 0;
+	transform: translate(-50%, -50%);
+	animation: emblem-in 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) calc(var(--delay) + var(--grow) + 0.15s) forwards;
+}
+.portugal-emblem svg { position: absolute; left: -70%; top: -50%; width: 300%; height: 200%; filter: drop-shadow(0 0.3vh 0.5vh rgba(0, 0, 0, 0.45)); }
+.portugal-emblem svg > rect { display: none; }
+@keyframes emblem-in {
+	from { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(-200deg); }
+	40% { opacity: 1; }
+	to { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+}
 /* The motorcycle ("motorcycle" in devices.json) rides the front of its bar like the cat: a wheelie at the
    start, dust from the back wheel while it rides, then it idles at the end, shaking and puffing exhaust.
    templates/motorcycle.svg faces right with its wheels at the bottom; the puffs are placed for that.
