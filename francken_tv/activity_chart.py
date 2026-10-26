@@ -10,7 +10,8 @@ bar. The bar's look comes from their entry in config/devices.json:
 	                   "rainbow" (nyan cat without the cat), "beer", "board",
 	                   "portugal" (the flag's green and red, waving; one flag across all of a
 	                   person's bars, with the emblem of templates/portugal_flag.svg landing on
-	                   its border once the last bar has grown),
+	                   its border once the last bar has grown, and the flag at 30% in
+	                   the gaps between them),
 	                   or a list combining one of those with "glow" and/or "motorcycle"
 	                   (a motorcycle in the bar's colour, templates/motorcycle.svg, rides the front of the bar)
 	"stripe_color":    colour (or gradient list) of the stripes for "striped"
@@ -240,6 +241,11 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			view["gradient_position"] = round((left - flag_left) / (flag_width - width) * 100, 2) if flag_width > width else 0
 			view["flag_offset"] = round(left - flag_left, 3)   # keeps the waves in step across the gaps
 			view["emblem_left"] = round(flag_left + 0.4 * flag_width, 3) if bar.is_latest else None   # once, after the last bar
+			if bar.start == min(b.start for b in data.bars if b.row == bar.row) and flag_width > width:
+				# The whole flag at 30% behind the person's bars, showing in the gaps; it grows like a bar.
+				view["flag_back"] = {**view, "left": flag_left, "width": round(flag_width, 3), "gradient_size": 100,
+					"gradient_position": 0, "flag_offset": 0, "emblem_left": None,
+					"grow": round(max(flag_width / 100 * GROW_SECONDS, 0.25), 2)}
 		elif isinstance(style.color, list) and tuple(style.color) in gradient_extent:
 			group_left, group_right = gradient_extent[tuple(style.color)]
 			group_width = max(group_right - group_left, width)

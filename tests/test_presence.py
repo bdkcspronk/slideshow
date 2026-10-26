@@ -138,6 +138,9 @@ class ChartTest(PresenceTestCase):
 		self.assertEqual((first["shape"], first["gradient_position"], last["gradient_position"]), ("portugal", 0, 100))
 		self.assertEqual(first["gradient_size"], round(90 / 10 * 100, 2))   # the flag: 09:00-10:30, this bar 09:00-09:10
 		self.assertEqual((first["flag_offset"], first["emblem_left"]), (0, None))
+		back = first["flag_back"]   # the whole flag behind the bars, for the gap
+		self.assertEqual((back["left"], back["width"], back["gradient_size"]), (first["left"], round(last["left"] + last["width"] - first["left"], 3), 100))
+		self.assertNotIn("flag_back", last)
 		self.assertEqual(last["emblem_left"], round(first["left"] + 0.4 * (last["left"] + last["width"] - first["left"]), 3))
 
 	def test_chart_starts_an_hour_before_the_first_arrival(self):
