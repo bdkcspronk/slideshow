@@ -1568,7 +1568,7 @@ body.show-cursor button { cursor: pointer; }
 	--w: 25vh;   /* a book: width, height, thickness */
 	--h: 35vh;
 	--d: 4vh;
-	--stand: 41vh;   /* where the books stand, from the top of .books-row (leaves room under the title) */
+	--stand: 46vh;   /* where the books stand, from the top of .books-row (leaves room under the title) */
 	padding: 5vh 5vw 0;   /* the navy poster's background, label and title: see "The navy and crimson posters" */
 }
 
