@@ -1502,7 +1502,11 @@ body.show-cursor button { cursor: pointer; }
 /* A mobility scooter doesn't pop a wheelie, and it gets going slowly: it falls behind the growing bars at
    first, then speeds up and catches up, reaching the end when the last bar does (the motorcycle keeps up
    all the way). No exhaust: dust from both wheels while it drives, the last two puffs from the front one. */
-.motorcycle-rider.mobility { animation-timing-function: cubic-bezier(0.65, 0, 0.75, 1); }
+.motorcycle-rider.mobility {   /* a row tall and centred on it: the flag and seat stay clear of the rows around it */
+	height: calc(100% / var(--rows));
+	transform: translate(-80%, -50%);
+	animation-timing-function: cubic-bezier(0.65, 0, 0.75, 1);
+}
 .motorcycle-rider.mobility svg { animation: moto-idle 0.12s linear calc(var(--delay) + var(--grow)) infinite alternate; }
 .motorcycle-rider.mobility .motorcycle-exhaust { display: none; }
 .motorcycle-rider.mobility .motorcycle-dust i { left: 16%; width: 24%; }
@@ -3111,8 +3115,8 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .ig-phone {
 	position: relative;
 	flex: none;
-	height: 86vh;
-	aspect-ratio: 9 / 19;
+	height: 90vh;
+	aspect-ratio: 9 / 17;   /* a little wider than a real phone: more room for the posts */
 	box-sizing: border-box;
 	padding: 1.4vh;
 	border-radius: 6vh;
@@ -3126,16 +3130,16 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .ig-feed { animation: ig-scroll var(--scroll) ease-in-out 2.5s both; }
 .ig-feed.still { animation: none; }   /* no posts: nothing to scroll */
 @keyframes ig-scroll { to { transform: translateY(calc(-100% + 100cqh)); } }
-.ig-topbar { padding: 6vh 1.6vh 1.4vh; font-size: 2.4vh; }
-.ig-profile { display: flex; align-items: center; gap: 2vh; padding: 0 1.6vh; }
-.ig-avatar { flex: none; width: 3.6vh; height: 3.6vh; border-radius: 50%; object-fit: cover; background: #ddd; }
-.ig-avatar.big { width: 9vh; height: 9vh; padding: 0.4vh; background: var(--ig-gradient); box-sizing: border-box; border: 0.4vh solid #fff; outline: 0.35vh solid transparent; }
-.ig-counts { display: flex; gap: 3vh; font-size: 1.7vh; color: #444; }
+.ig-topbar { padding: 6vh 2vh 1.6vh; font-size: 2.9vh; }
+.ig-profile { display: flex; align-items: center; gap: 2.4vh; padding: 0 2vh; }
+.ig-avatar { flex: none; width: 4.4vh; height: 4.4vh; border-radius: 50%; object-fit: cover; background: #ddd; }
+.ig-avatar.big { width: 11vh; height: 11vh; padding: 0.4vh; background: var(--ig-gradient); box-sizing: border-box; border: 0.4vh solid #fff; outline: 0.35vh solid transparent; }
+.ig-counts { display: flex; gap: 3.6vh; font-size: 2vh; color: #444; }
 .ig-counts span { display: flex; flex-direction: column; align-items: center; }
-.ig-counts b { font-size: 2.2vh; color: #111; }
-.ig-name { padding: 1.2vh 1.6vh 1.6vh; border-bottom: 0.1vh solid #e5e5e5; font-size: 1.8vh; font-weight: bold; }
+.ig-counts b { font-size: 2.7vh; color: #111; }
+.ig-name { padding: 1.4vh 2vh 1.8vh; border-bottom: 0.1vh solid #e5e5e5; font-size: 2.2vh; font-weight: bold; }
 /* Not connected: a Follow button where the counts go, and empty tiles shimmering where the posts go. */
-.ig-follow-button { flex: 1; padding: 1vh 0; border-radius: 1vh; background: #0095f6; color: #fff; font-size: 1.8vh; font-weight: bold; text-align: center; }
+.ig-follow-button { flex: 1; padding: 1.2vh 0; border-radius: 1.2vh; background: #0095f6; color: #fff; font-size: 2.2vh; font-weight: bold; text-align: center; }
 .ig-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3vh; margin-top: 0.3vh; }
 .ig-tiles i {
 	aspect-ratio: 4 / 5;
@@ -3143,20 +3147,20 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	animation: ig-shimmer 2.4s ease-in-out calc(var(--i) * 0.12s) infinite;
 }
 @keyframes ig-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
-.ig-tiles-hint { margin: 2.4vh 1.6vh; color: #8e8e8e; font-size: 1.7vh; text-align: center; }
+.ig-tiles-hint { margin: 2.6vh 2vh; color: #8e8e8e; font-size: 2vh; text-align: center; }
 .ig-post { padding-bottom: 1.6vh; }
-.ig-post header { display: flex; align-items: center; gap: 1vh; padding: 1.2vh 1.6vh; font-size: 1.7vh; }
-.ig-post header span { margin-left: auto; color: #8e8e8e; font-size: 1.5vh; }
+.ig-post header { display: flex; align-items: center; gap: 1.2vh; padding: 1.4vh 2vh; font-size: 2.1vh; }
+.ig-post header span { margin-left: auto; color: #8e8e8e; font-size: 1.8vh; }
 .ig-picture { position: relative; }
 .ig-picture img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; background: #eee; }
-.ig-kind { position: absolute; top: 1.2vh; right: 1.2vh; color: #fff; font-size: 2.2vh; text-shadow: 0 0 0.6vh rgba(0, 0, 0, 0.6); }
-.ig-actions { display: flex; gap: 2vh; padding: 1.1vh 1.6vh 0.4vh; font-size: 1.7vh; font-weight: bold; }
+.ig-kind { position: absolute; top: 1.4vh; right: 1.4vh; color: #fff; font-size: 2.7vh; text-shadow: 0 0 0.6vh rgba(0, 0, 0, 0.6); }
+.ig-actions { display: flex; gap: 2.4vh; padding: 1.3vh 2vh 0.5vh; font-size: 2.1vh; font-weight: bold; }
 .ig-actions span { display: flex; align-items: center; gap: 0.6vh; }
-.ig-actions svg { width: 2.6vh; height: 2.6vh; fill: none; stroke: #111; stroke-width: 2; stroke-linejoin: round; }
+.ig-actions svg { width: 3.1vh; height: 3.1vh; fill: none; stroke: #111; stroke-width: 2; stroke-linejoin: round; }
 .ig-actions span:first-child svg { fill: #ff3040; stroke: #ff3040; }
 .ig-caption {
-	margin: 0.4vh 1.6vh 0;
-	font-size: 1.6vh;
+	margin: 0.5vh 2vh 0;
+	font-size: 2vh;
 	line-height: 1.35;
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
