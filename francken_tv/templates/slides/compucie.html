@@ -1,0 +1,19 @@
+{#
+	The Compucie's promo (providers/compucie.py), Matrix style: green code rain (data-matrix), and on a
+	glowing panel the name decoding letter by letter (data-decode), then a terminal typing a session
+	(data-terminal: each line's data-command is typed, then its answer appears), then how to join.
+	See "Compucie" in style.css and the widgets in widgets.js.
+#}
+<div class="slide compucie-slide">
+	<canvas data-matrix data-words="COMPUCIE FRANCKEN SUDO GIT|PUSH"></canvas>
+	<div class="compucie-panel">
+		<h1 data-decode="Compucie" data-decode-wait="1.6"></h1>
+		<div class="compucie-terminal" data-terminal data-terminal-wait="3.6" data-prompt="compucie@francken:~$">
+			<div data-command="whoami">the IT committee of T.F.V. 'Professor Francken'</div>
+			<div data-command="ls ~/projects"><b>website/</b>&nbsp; <b>app/</b>&nbsp; <b>francken-tv/</b>&nbsp; <b>servers/</b></div>
+			<div data-command="cat ~/projects/francken-tv/README">yes, we built the screen you're looking at</div>
+		</div>
+		<div class="compucie-join">&gt; Like code? Join us: <b>compuciefrancken@gmail.com</b></div>
+	</div>
+	<div class="compucie-scan"></div>
+</div>

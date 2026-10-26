@@ -2963,3 +2963,73 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .graaf-heap { transform-origin: 1190px 822px; animation-name: graaf-heap; }
 @keyframes graaf-heap { 0%, 58% { transform: scale(0.8, 0.7); } 64%, 100% { transform: scale(1, 1); } }
 
+/* Compucie (providers/compucie.py), Matrix style: green code rain on a canvas (data-matrix), a glowing
+   panel rising out of it with the name decoding (data-decode), a terminal typing a session
+   (data-terminal) and, once that's done (.typed), how to join. The panel keeps its size throughout: the
+   terminal has room for the whole session from the start. A scan line drifts down like an old monitor. */
+.compucie-slide {
+	--green: #00ff41;
+	--dim: #00a82b;
+	position: relative;
+	overflow: hidden;
+	background: #000;
+	color: var(--green);
+	font-family: Consolas, "DejaVu Sans Mono", "Courier New", monospace;
+}
+.compucie-slide canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.compucie-panel {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 62vw;
+	box-sizing: border-box;
+	padding: 5vh 4vw 4.5vh;
+	transform: translate(-50%, -50%);
+	background: rgba(0, 10, 3, 0.82);
+	border: 0.25vh solid rgba(0, 255, 65, 0.55);
+	border-radius: 1.2vh;
+	box-shadow: 0 0 4vh rgba(0, 255, 65, 0.35), inset 0 0 6vh rgba(0, 255, 65, 0.08);
+	opacity: 0;
+	animation: compucie-panel-in 1.2s ease-out 1.2s forwards;
+}
+@keyframes compucie-panel-in {
+	from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
+	to { opacity: 1; transform: translate(-50%, -50%); }
+}
+.compucie-panel h1 {
+	margin: 0 0 3.5vh;
+	font-size: 13vh;
+	line-height: 1;
+	letter-spacing: 0.4vh;
+	white-space: nowrap;
+	text-shadow: 0 0 1.2vh var(--green), 0 0 4vh rgba(0, 255, 65, 0.6);
+}
+.compucie-panel h1 .settled { color: #d8ffe0; }
+.compucie-terminal { font-size: 3vh; line-height: 1.55; height: calc(7 * 3vh * 1.55); }   /* room for the whole session */
+.terminal-prompt { color: var(--dim); }
+.terminal-answer { color: #b9ffc8; padding-left: 2.2vw; }
+.terminal-answer b { color: var(--green); }
+.terminal-cursor { display: inline-block; width: 1.4vh; height: 3vh; margin-left: 0.3vh; vertical-align: -0.4vh; background: var(--green); animation: terminal-blink 1s steps(1) infinite; }
+@keyframes terminal-blink { 50% { opacity: 0; } }
+.compucie-join {
+	margin-top: 3vh;
+	padding-top: 2.5vh;
+	border-top: 0.2vh dashed rgba(0, 255, 65, 0.35);
+	font-size: 3.2vh;
+	white-space: nowrap;
+	opacity: 0;
+	transition: opacity 0.8s;
+}
+.compucie-slide.typed .compucie-join { opacity: 1; }
+.compucie-join b { padding: 0.2vh 0.8vw; background: var(--green); color: #000; box-shadow: 0 0 2vh var(--green); }
+.compucie-scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(transparent 0 0.3vh, rgba(0, 0, 0, 0.18) 0.3vh 0.6vh); }
+.compucie-scan::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 18vh;
+	background: linear-gradient(transparent, rgba(0, 255, 65, 0.06), transparent);
+	animation: compucie-sweep 6s linear infinite;
+}
+@keyframes compucie-sweep { from { top: -18vh; } to { top: 100vh; } }

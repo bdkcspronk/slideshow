@@ -21,6 +21,7 @@ The slideshow on the TV in the Francken room. It shows:
 | The dilemma of the week: vote by tapping A or B, or scan the QR code and vote on your phone | `config/dilemmas.txt`, a Google Form | `providers/poll.py` |
 | The latest xkcd comic, with its hover text | xkcd.com | `providers/xkcd.py` |
 | An animated graafmachine digging a hole and dumping the earth on a heap | | `providers/graafmachine.py` |
+| The Compucie's promo, Matrix style: code rain, the name decoding, a terminal typing who we are | | `providers/compucie.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing \| TimeGuessr, with today's status; tap one to play it. Left out once all are done for the day | nytimes.com, catfishing.net, timeguessr.com (map: OpenStreetMap) | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py`, `timeguessr.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song (Spotify on the TV turns down meanwhile) | | `providers/bieruur.py` |

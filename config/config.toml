@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -158,6 +158,10 @@ seconds = 12
 [graafmachine]
 # An animated graafmachine digging a hole and dumping the earth on a heap.
 seconds = 14   # the length of the animation
+
+[compucie]
+# The Compucie's promo, Matrix style (the text is in templates/slides/compucie.html).
+seconds = 18   # the terminal has typed everything after about 12 s
 
 [confidential]
 # The confidential contact persons: who they are is in config/confidential.json (personal data, not in

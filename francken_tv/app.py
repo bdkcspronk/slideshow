@@ -24,6 +24,7 @@ from .providers.catfishing import CatfishingProvider
 from .providers.commandments import CommandmentsProvider
 from .providers.confidential import ConfidentialProvider
 from .providers.extern import ExternProvider
+from .providers.compucie import CompucieProvider
 from .providers.graafmachine import GraafmachineProvider
 from .providers.connections import ConnectionsProvider
 from .providers.poll import PollProvider
@@ -174,6 +175,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		PollProvider(config.get("poll", {}), seconds, DATA_DIR / "poll.json"),
 		XkcdProvider(config.get("xkcd", {}), CACHE_DIR / "xkcd", seconds),
 		GraafmachineProvider(config.get("graafmachine", {})),
+		CompucieProvider(config.get("compucie", {})),
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),
 		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),

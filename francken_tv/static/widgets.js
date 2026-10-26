@@ -18,6 +18,13 @@
 //   e.g. TimeGuessr): two fingers or the mouse wheel zoom, dragging moves it, data-zoom-by buttons zoom
 //   by that factor (0: back to the whole photo). A tap without dragging still toggles full screen.
 // - data-qr: a QR code of the link in data-qr (static/vendor/qrcode), e.g. the weekly dilemma's form.
+// - data-matrix: Matrix code rain on a <canvas>; now and then a column spells one of data-words
+//   (separated by spaces; | for a space inside a word). The Compucie slide.
+// - data-decode: a title that decodes: each letter of data-decode flickers through random glyphs and
+//   settles, left to right, starting after data-decode-wait seconds.
+// - data-terminal: a terminal session that types itself after data-terminal-wait seconds: each child's
+//   data-command is typed after data-prompt, then the child (its answer) appears. When it's done the
+//   slide gets .typed (e.g. to show what comes after).
 
 const maps = new Set();
 
@@ -34,6 +41,9 @@ function setupWidgets(root) {
 	root.querySelectorAll("[data-marquee-up]").forEach(setupMarqueeUp);
 	root.querySelectorAll("[data-qr]").forEach(setupQr);
 	root.querySelectorAll("[data-zoom]").forEach(setupZoom);
+	root.querySelectorAll("canvas[data-matrix]").forEach(setupMatrix);
+	root.querySelectorAll("[data-decode]").forEach(setupDecode);
+	root.querySelectorAll("[data-terminal]").forEach(setupTerminal);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
 		input.addEventListener("input", () => fieldChanged(input));
 		fieldChanged(input);
@@ -270,3 +280,115 @@ document.addEventListener("click", (event) => {
 	input.value = Number(input.value) + Number(nudge.dataset.by);   // the range keeps it within min..max
 	fieldChanged(input);
 });
+
+const MATRIX_GLYPHS = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ΣΔΨπ∫{}<>=+";
+const randomGlyph = () => MATRIX_GLYPHS[Math.floor(Math.random() * MATRIX_GLYPHS.length)];
+
+function setupMatrix(canvas) {
+	// Columns of glyphs falling each at their own speed: a bright head that turns green as it moves on,
+	// leaving a trail that fades. One glyph per cell (the cell is cleared first), so glyphs never stack.
+	const ctx = canvas.getContext("2d");
+	const words = (canvas.dataset.words || "").split(" ").filter(Boolean).map((word) => word.replaceAll("|", " "));
+	let size = 0, drops = [];
+	const speed = () => 0.18 + Math.random() * 0.35;   // cells per frame
+	const resize = () => {
+		canvas.width = canvas.clientWidth * devicePixelRatio;
+		canvas.height = canvas.clientHeight * devicePixelRatio;
+		size = Math.max(8, Math.round(canvas.height / 40));
+		drops = Array.from({ length: Math.ceil(canvas.width / size) }, () => ({ y: -Math.random() * 25, speed: speed(), word: null, i: 0, last: null }));
+		ctx.fillStyle = "#000";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+	};
+	resize();
+	const frame = () => {
+		if (!document.contains(canvas)) return;   // the slide is gone
+		if (canvas.width !== canvas.clientWidth * devicePixelRatio) resize();
+		ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.font = `${size}px Consolas, "DejaVu Sans Mono", monospace`;
+		ctx.textAlign = "center";
+		drops.forEach((drop, x) => {
+			const before = Math.floor(drop.y);
+			drop.y += drop.speed;
+			const row = Math.floor(drop.y);
+			if (row === before) return;
+			let glyph = randomGlyph();
+			if (drop.word) {
+				glyph = drop.word[drop.i++] || glyph;
+				if (drop.i >= drop.word.length) drop.word = null;
+			}
+			const draw = (text, y, colour) => {
+				ctx.fillStyle = "#000";
+				ctx.fillRect(x * size, (y - 1) * size, size, size * 1.15);
+				ctx.fillStyle = colour;
+				ctx.fillText(text, x * size + size / 2, y * size - size * 0.15);
+			};
+			if (drop.last) draw(drop.last, row - 1, "#00ff41");   // the previous head settles into green
+			draw(glyph, row, "#c8ffd4");                          // the new head, bright
+			drop.last = glyph;
+			if (drop.y * size > canvas.height && Math.random() > 0.975) {   // past the bottom: again from the top
+				Object.assign(drop, { y: 0, speed: speed(), i: 0, last: null,
+					word: words.length && Math.random() < 0.08 ? words[Math.floor(Math.random() * words.length)] : null });
+			}
+		});
+		requestAnimationFrame(frame);
+	};
+	requestAnimationFrame(frame);
+}
+
+function setupDecode(element) {
+	const text = element.dataset.decode;
+	const begin = performance.now() + Number(element.dataset.decodeWait || 0) * 1000;
+	const settleAt = (i) => 250 + i * 140;   // ms after the start, per letter
+	element.innerHTML = "&nbsp;";
+	const frame = (now) => {
+		if (!document.contains(element)) return;
+		const t = now - begin;
+		if (t >= 0) {
+			element.replaceChildren(...[...text].map((letter, i) => {
+				const span = document.createElement("span");
+				span.textContent = t >= settleAt(i) ? letter : randomGlyph();
+				span.classList.toggle("settled", t >= settleAt(i));
+				return span;
+			}));
+		}
+		if (t < settleAt(text.length)) requestAnimationFrame(frame);
+	};
+	requestAnimationFrame(frame);
+}
+
+async function setupTerminal(element) {
+	const lines = [...element.children].map((child) => ({ command: child.dataset.command, answer: child.innerHTML }));
+	const prompt = element.dataset.prompt || "$";
+	element.replaceChildren();
+	const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+	const promptLine = () => {
+		const line = document.createElement("div");
+		const label = document.createElement("span");
+		label.className = "terminal-prompt";
+		label.textContent = prompt + " ";
+		const cursor = document.createElement("span");
+		cursor.className = "terminal-cursor";
+		line.append(label, cursor);
+		element.append(line);
+		return cursor;
+	};
+	await wait(Number(element.dataset.terminalWait || 0) * 1000);
+	for (const { command, answer } of lines) {
+		if (!document.contains(element)) return;   // the slide is gone
+		const cursor = promptLine();
+		for (const ch of command) {
+			cursor.before(ch);
+			await wait(45 + Math.random() * 60);
+		}
+		await wait(350);
+		cursor.remove();
+		const out = document.createElement("div");
+		out.className = "terminal-answer";
+		out.innerHTML = answer;
+		element.append(out);
+		await wait(900);
+	}
+	promptLine();
+	element.closest(".slide")?.classList.add("typed");
+}
