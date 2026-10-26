@@ -2726,9 +2726,24 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .menu-hint { margin: 4vh 0 0; color: var(--menu-muted); font-size: 2.2vh; }
 
 /* The overview: one card per slide type, like the window overview on Ubuntu. */
-/* One row; the cards are 27vw wide but share the screen's width when there are more of them. */
-.menu-cards { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 27vw); gap: 2.5vw; max-width: 94vw; }
-.menu-card { display: flex; flex-direction: column; align-items: center; gap: 2.2vh; min-width: 0; }
+/* A grid of --columns cards to a row (menuColumns() in player.js: up to 4 in one row, more in rows of up to 4),
+   the last row centred. The cards share the width, but stay low enough for two rows and the buttons below. */
+.menu-cards {
+	--gap: 2.5vw;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 4vh var(--gap);
+	width: 94vw;
+}
+.menu-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2.2vh;
+	min-width: 0;
+	width: min(27vw, calc((94vw - (var(--columns) - 1) * var(--gap)) / var(--columns)), 52vh);   /* 52vh: two rows fit */
+}
 .menu-preview {
 	position: relative;
 	display: flex;

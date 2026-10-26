@@ -505,9 +505,15 @@ function showMenuPage(page, focus) {
 	menuActivity();
 }
 
+// How many previews side by side in the overview: up to 4 in one row, more in rows of (nearly) equal
+// length, at most 4 to a row (7: 4 and 3).
+function menuColumns(count) {
+	return count <= 4 ? Math.max(count, 1) : Math.ceil(count / Math.ceil(count / 4));
+}
+
 const menuPages = {
 	overview: (data) => `
-		<div class="menu-cards">${data.previews.map((preview) => `
+		<div class="menu-cards" style="--columns: ${menuColumns(data.previews.length)}">${data.previews.map((preview) => `
 			<button class="menu-card" data-focus="slide-${escapeHtml(preview.key)}" data-menu="jump"
 				data-value="${escapeHtml(preview.key)}"${preview.available ? "" : " disabled"}>
 				<span class="menu-preview">${preview.available
