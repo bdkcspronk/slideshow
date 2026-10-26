@@ -22,6 +22,7 @@ The slideshow on the TV in the Francken room. It shows:
 | The latest xkcd comic, with its hover text | xkcd.com | `providers/xkcd.py` |
 | An animated graafmachine digging a hole and dumping the earth on a heap | | `providers/graafmachine.py` |
 | The Compucie's promo, Matrix style: code rain, the name decoding, a terminal typing who we are | | `providers/compucie.py` |
+| Our latest Instagram posts on a phone, with a QR code to follow us | Instagram (a Meta app) | `providers/instagram.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing \| TimeGuessr, with today's status; tap one to play it. Left out once all are done for the day | nytimes.com, catfishing.net, timeguessr.com (map: OpenStreetMap) | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py`, `timeguessr.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song (Spotify on the TV turns down meanwhile) | | `providers/bieruur.py` |
@@ -108,6 +109,7 @@ Copy these to the TV PC by hand:
 | `config/confidential.json`, `media/confidential/` | the confidential contact persons: names, email addresses, photos (personal data; the format is in `providers/confidential.py`) |
 | `config/extern.json`, `media/extern/` | the extern's slide: the text, phone number, photo and background (personal data; the format is in `providers/extern.py`) |
 | `~/.config/slideshow/nextcloud.credentials.json` | Nextcloud login |
+| `~/.config/slideshow/instagram.json` | the Instagram token (see "Instagram") |
 
 `data/` is created automatically: the presence database, caches and the downloaded quotes.
 
@@ -139,6 +141,33 @@ it. The buttons need Spotify Premium, and music already playing on some device. 
    `data/spotifyd.log`). The PC is then a Spotify speaker called "Francken TV"; when nothing plays,
    the slide starts music there, and "Play on TV" moves music playing elsewhere to it. Without it,
    songs only play when a Spotify app somewhere is already playing.
+
+## Instagram
+
+The Instagram slide shows our latest posts on a phone, with a QR code to the account. It reads them
+with Meta's *Instagram API with Instagram Login*, which only works for a **professional** account
+(Business or Creator; switch in the Instagram app under Settings → Account type and tools). One-time
+setup:
+
+1. Register as a Meta developer (once per Facebook account): logged into Facebook, go to
+   https://developers.facebook.com/async/registration (or https://developers.facebook.com and
+   **Get Started**), agree, and verify your phone number and email. Only then does the App
+   Dashboard (https://developers.facebook.com/apps) work.
+2. **Create First App** (at the end of the registration) or **Create App** in the App Dashboard:
+   use case **Other**, app type **Business**, any name and your email. Skip connecting a business.
+   In the new app, find the **Instagram** product and click **Set up**; this adds **API setup with
+   Instagram login**.
+3. There, under **Generate access tokens**, **Add account** and log in with our Instagram account
+   (it must be public), then **Generate token** next to it and copy the token.
+4. On the TV PC, copy `config/instagram.example.json` to `~/.config/slideshow/instagram.json` and
+   paste the token in place of `PASTE-THE-TOKEN-FROM-META-HERE` (keep the quotes):
+   `mkdir -p ~/.config/slideshow && cp config/instagram.example.json ~/.config/slideshow/instagram.json`
+
+The slideshow renews the token every week by itself (a token is valid for 60 days), and writes the
+new one to that file, so it keeps working. If the slide disappears and http://127.0.0.1:8080/status
+shows an Instagram error (e.g. the TV PC was off for two months, or the password changed), generate
+a new token as in step 3. The app can stay in development mode (no App Review, no business
+verification): it only reads our own account, which is added to it as a tester in step 3.
 
 ## Weekly dilemma
 

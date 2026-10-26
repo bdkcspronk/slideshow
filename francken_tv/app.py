@@ -26,6 +26,7 @@ from .providers.confidential import ConfidentialProvider
 from .providers.extern import ExternProvider
 from .providers.compucie import CompucieProvider
 from .providers.graafmachine import GraafmachineProvider
+from .providers.instagram import InstagramProvider
 from .providers.connections import ConnectionsProvider
 from .providers.poll import PollProvider
 from .providers.practice import PracticeSessionsProvider
@@ -176,6 +177,8 @@ def build_app(config: dict, clock: Clock) -> App:
 		XkcdProvider(config.get("xkcd", {}), CACHE_DIR / "xkcd", seconds),
 		GraafmachineProvider(config.get("graafmachine", {})),
 		CompucieProvider(config.get("compucie", {})),
+		InstagramProvider(config.get("instagram", {}), project_path(config.get("instagram", {}).get("credentials",
+			"~/.config/slideshow/instagram.json")), CACHE_DIR / "instagram", seconds),
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),
 		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),
