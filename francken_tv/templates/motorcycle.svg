@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" aria-hidden="true">
+	<!-- Kylian's supermoto (a white 50cc with number 101), facing right, wheels at the bottom (the dust and
+	     exhaust in style.css are placed for this). Drawn inline by presence.html: the class="paint" parts
+	     take the person's colour (--paint), the class="paint-dark" parts a darker shade of it. -->
+	<!-- Two-stroke exhaust: from the cylinder, round under the engine, to the silencer under the seat -->
+	<path d="M92 56 Q 102 62 99 72 Q 96 80 86 80" fill="none" stroke="#9a9ea6" stroke-width="4.5" stroke-linecap="round"/>
+	<path d="M60 62 L 40 46 L 44 42 L 64 56 Z" fill="#2a2c31"/>
+	<!-- Swingarm (aluminium) with the chain adjuster, and the kickstand -->
+	<path d="M30 73 L 70 61 L 72 67 L 36 80 Z" fill="#c9ccd2"/>
+	<rect class="paint" x="31" y="72" width="8" height="6" rx="1" transform="rotate(-18 35 75)" fill="#2a4bd7"/>
+	<path d="M66 72 L 58 92" stroke="#1b1b1f" stroke-width="2.5" stroke-linecap="round"/>
+	<!-- Wheels: black spoked rims on street tyres, a gold disc at the back and a steel disc at the front -->
+	<g fill="none">
+		<circle cx="34" cy="76" r="19.5" stroke="#1b1b1f" stroke-width="6"/>
+		<circle cx="126" cy="76" r="19.5" stroke="#1b1b1f" stroke-width="6"/>
+		<circle cx="34" cy="76" r="15.5" stroke="#2a2c31" stroke-width="2"/>
+		<circle cx="126" cy="76" r="15.5" stroke="#2a2c31" stroke-width="2"/>
+		<path d="M34 61 V 91 M19 76 H 49 M23 65 L 45 87 M45 65 L 23 87 M126 61 V 91 M111 76 H 141 M115 65 L 137 87 M137 65 L 115 87" stroke="#55585f" stroke-width="0.9"/>
+		<circle cx="34" cy="76" r="8" stroke="#d4a72c" stroke-width="3.5" stroke-dasharray="2.5 1.2"/>
+		<circle cx="126" cy="76" r="9" stroke="#b5b8be" stroke-width="3.5" stroke-dasharray="2.5 1.2"/>
+	</g>
+	<g fill="#1b1b1f"><circle cx="34" cy="76" r="3"/><circle cx="126" cy="76" r="3"/></g>
+	<!-- Engine: crankcase and the finned cylinder leaning forward -->
+	<path d="M68 60 H 90 L 92 74 Q 90 80 82 80 H 74 Q 66 80 66 72 Z" fill="#3b3f47"/>
+	<path d="M80 46 L 94 48 L 94 60 L 82 60 Z" fill="#55585f"/>
+	<path d="M82 50 H 94 M82 54 H 94 M82 58 H 94" stroke="#2a2c31" stroke-width="1.2"/>
+	<!-- White frame: from the steering head down past the engine, and back under the seat to the swingarm pivot -->
+	<path d="M108 30 L 96 46 L 92 64 M108 30 L 72 40 L 70 64 M72 40 L 44 36" fill="none" stroke="#fdf8ec" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+	<circle cx="70" cy="64" r="3" fill="#8a8d93"/>
+	<!-- Conventional fork: silver tubes into darker lower legs -->
+	<path d="M108 26 L 126 76" stroke="#d6d9de" stroke-width="5.5" stroke-linecap="round"/>
+	<path d="M117 51 L 126 76" stroke="#6d7179" stroke-width="7" stroke-linecap="round"/>
+	<!-- Low front fender with a stripe -->
+	<path d="M110 60 Q 126 49 142 60 L 139 63 Q 126 55 113 63 Z" fill="#fdf8ec"/>
+	<path class="paint" d="M114 59 Q 126 52 138 59 L 137 60.5 Q 126 54 115 60.5 Z" fill="#2a4bd7"/>
+	<!-- Licence plate holder under the tail -->
+	<path d="M9 30 L 18 32 L 16 46 L 7 44 Z" fill="#1b1b1f"/>
+	<!-- The big side panel sweeping up to the tail, with the race number -->
+	<path class="paint" d="M6 24 L 32 30 L 72 40 L 68 55 L 38 53 L 22 38 Z" fill="#2a4bd7"/>
+	<path d="M6 24 L 32 30 L 72 40 L 71 43 L 32 34 Z" fill="#fdf8ec"/>
+	<text x="49" y="51" transform="skewX(-12)" transform-origin="49 51" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="13" fill="#fdf8ec" stroke="#1b1b1f" stroke-width="1.6" paint-order="stroke">101</text>
+	<!-- Long flat seat -->
+	<path class="paint-dark" d="M26 28 Q 30 25 40 27 L 98 33 Q 103 34 101 38 L 72 37 L 34 31 Z" fill="#1d2a5a"/>
+	<!-- White tank shroud with stripes -->
+	<path d="M78 34 L 104 34 L 108 40 L 100 56 L 90 58 L 82 46 Z" fill="#fdf8ec"/>
+	<path class="paint" d="M86 40 L 104 38 L 100 46 L 88 48 Z" fill="#2a4bd7"/>
+	<path d="M88 50 L 99 48 L 97 52 L 90 54 Z" fill="#8a8d93"/>
+	<!-- Handlebar with round mirrors -->
+	<path d="M104 14 L 108 22 M98 16 L 104 22 M100 21 L 116 25 M107 22 L 109 28" stroke="#1b1b1f" stroke-width="2.2" stroke-linecap="round"/>
+	<circle cx="103" cy="12" r="3.5" fill="#1b1b1f"/>
+	<circle cx="97" cy="14" r="3.2" fill="#2a2c31"/>
+	<!-- Front number plate with the headlight -->
+	<path d="M108 21 Q 116 17 123 22 L 128 46 Q 126 53 120 51 L 110 40 Z" fill="#fdf8ec"/>
+	<path d="M112 28 Q 117 25 122 28 L 124 41 Q 120 44 116 42 Z" fill="#2a2c31"/>
+	<path d="M114.5 30 Q 117.5 28.5 120.5 30 L 121.5 38.5 Q 119 40.5 117 39.5 Z" fill="#d6e4f0"/>
+	<path class="paint" d="M120 44 L 125 43 L 125.5 47 Q 123 50 120 48 Z" fill="#2a4bd7"/>
+</svg>

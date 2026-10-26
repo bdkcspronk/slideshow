@@ -1424,6 +1424,56 @@ body.show-cursor button { cursor: pointer; }
 	to { left: var(--to); opacity: 1; }
 }
 @keyframes cat-bob { to { margin-top: -0.8vh; } }
+/* The motorcycle ("motorcycle" in devices.json) rides the front of its bar like the cat: a wheelie at the
+   start, dust from the back wheel while it rides, then it idles at the end, shaking and puffing exhaust.
+   templates/motorcycle.svg faces right with its wheels at the bottom; the puffs are placed for that.
+   Its class="paint" parts (side panel, stripes) take the bar's colour, the seat a darker shade. */
+.motorcycle-rider {
+	position: absolute;
+	top: calc((var(--row) + 0.5) * 100% / var(--rows));
+	height: calc(1.3 * 100% / var(--rows));
+	transform: translate(-80%, -62%);
+	opacity: 0;
+	animation: cat-ride var(--grow) linear var(--delay) forwards;
+}
+.motorcycle-rider svg {
+	position: relative;
+	display: block;
+	height: 100%;
+	aspect-ratio: 160 / 100;
+	filter: drop-shadow(0 0 0.25vh #081530) drop-shadow(0 0 0.25vh #081530);   /* stands out on a bar of its own colour */
+	transform-origin: 25% 90%;   /* the back wheel */
+	animation:
+		moto-wheelie 0.9s ease-out var(--delay) both,
+		moto-idle 0.12s linear calc(var(--delay) + var(--grow)) infinite alternate;
+}
+.motorcycle-rider .paint[fill] { fill: var(--paint); }
+.motorcycle-rider .paint[stroke] { stroke: var(--paint); }
+.motorcycle-rider .paint-dark { fill: color-mix(in srgb, var(--paint) 45%, #0b1020); }
+@keyframes moto-wheelie { 0% { transform: rotate(0); } 25% { transform: rotate(-14deg); } 100% { transform: rotate(0); } }
+@keyframes moto-idle { from { transform: translateY(0); } to { transform: translateY(-0.25vh); } }
+.motorcycle-dust, .motorcycle-exhaust { position: absolute; inset: 0; }
+.motorcycle-dust { animation: moto-dust var(--grow) linear var(--delay) both; }
+@keyframes moto-dust { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+.motorcycle-exhaust { animation: moto-exhaust 0.6s ease-in calc(var(--delay) + var(--grow)) both; }
+@keyframes moto-exhaust { from { opacity: 0; } to { opacity: 1; } }
+.motorcycle-dust i, .motorcycle-exhaust i { position: absolute; aspect-ratio: 1; border-radius: 50%; }
+.motorcycle-dust i { left: 10%; bottom: -5%; width: 28%; background: rgba(217, 180, 138, 0.75); animation: dust-puff 0.7s ease-out infinite; }
+.motorcycle-dust i:nth-child(2) { animation-delay: -0.14s; bottom: 5%; }
+.motorcycle-dust i:nth-child(3) { animation-delay: -0.28s; width: 22%; }
+.motorcycle-dust i:nth-child(4) { animation-delay: -0.42s; bottom: 0; }
+.motorcycle-dust i:nth-child(5) { animation-delay: -0.56s; width: 32%; }
+@keyframes dust-puff {
+	from { opacity: 0.9; transform: translate(0, 0) scale(0.4); }
+	to { opacity: 0; transform: translate(-220%, -50%) scale(1.5); }
+}
+.motorcycle-exhaust i { left: 14%; bottom: 44%; width: 16%; background: rgba(236, 239, 241, 0.55); animation: exhaust-puff 1.8s ease-out infinite; }
+.motorcycle-exhaust i:nth-child(2) { animation-delay: -0.6s; }
+.motorcycle-exhaust i:nth-child(3) { animation-delay: -1.2s; }
+@keyframes exhaust-puff {
+	from { opacity: 0.8; transform: translate(0, 0) scale(0.3); }
+	to { opacity: 0; transform: translate(-150%, -160%) scale(1.6); }
+}
 
 /* Weekly leaderboard, on the navy poster: a cream card per person sliding in one after another (like the
    practice tickets), with a gold, silver or bronze place for the top three and their bar growing in. */

@@ -106,6 +106,8 @@ class ChartTest(PresenceTestCase):
 		self.assertEqual((alice.shape, alice.color, alice.stripe_color), ("striped", ["#36e0c1", "#18f566"], ["#1c03fc", "#e036b9"]))
 		bob = parse_style(DEVICES[1])
 		self.assertEqual((bob.shape, bob.glow), ("beer", True))
+		rider = parse_style({"style": ["motorcycle", "striped"]})
+		self.assertEqual((rider.shape, rider.motorcycle, alice.motorcycle), ("striped", True, False))
 
 	def test_rows_ordered_by_arrival(self):
 		sightings = [Sighting(at("10:00"), BOB, "Bob"), Sighting(at("09:00"), ALICE, "Alice")]
@@ -121,6 +123,7 @@ class ChartTest(PresenceTestCase):
 		self.assertEqual(alice["left"], 28.571)                     # 09:00 on a 08:00-11:30 axis: 60 of 210 minutes
 		self.assertEqual((alice["shape"], bob["shape"]), ("striped", "beer"))
 		self.assertTrue(alice["stripes"].startswith("linear-gradient"))
+		self.assertEqual(alice["paint"], "#18f566")                # a motorcycle takes the middle of a gradient
 		self.assertTrue(bob["glow"] and bob["bubbles"])
 		self.assertTrue(dave["background"].startswith("#"))        # no device entry: a generated colour
 		self.assertLess(alice["delay"], bob["delay"])                 # earlier bars start growing first

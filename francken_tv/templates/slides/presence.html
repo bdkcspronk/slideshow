@@ -1,8 +1,8 @@
 {#
 	Today's activity chart, on the navy and crimson poster (like the activities and news slides). The
 	numbers come from chart_view() in activity_chart.py; the looks and animations ("Activity chart" in
-	style.css): bars grow in from left to right, beer bubbles rise, and the nyan cat rides the front of
-	its rainbow. Positions are in % of the chart width.
+	style.css): bars grow in from left to right, beer bubbles rise, the nyan cat rides the front of
+	its rainbow, and a motorcycle rides its bar kicking up dust. Positions are in % of the chart width.
 #}
 {% from "bar.html" import bar as draw_bar %}
 <div class="slide presence-slide" style="--rows: {{ names | length }}">
@@ -23,6 +23,15 @@
 			<img class="nyan-cat-sprite" src="{{ nyan_cat.url }}" alt="" style="--row: {{ bar.row }}; --from: {{ bar.left }}%;
 				--to: {{ bar.left + bar.width }}%; --delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s;
 				--aspect: {{ nyan_cat.aspect }}; --offset: {{ bar.cat_offset }}%">
+			{% endif %}
+			{% if bar.motorcycle %}
+			{# The motorcycle rides along the front of the bar kicking up dust, then idles there puffing exhaust. #}
+			<div class="motorcycle-rider" style="--row: {{ bar.row }}; --from: {{ bar.left }}%; --to: {{ bar.left + bar.width }}%;
+				--delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s; --paint: {{ bar.paint }}">
+				<div class="motorcycle-dust"><i></i><i></i><i></i><i></i><i></i></div>
+				<div class="motorcycle-exhaust"><i></i><i></i><i></i></div>
+				{% include "motorcycle.svg" %}
+			</div>
 			{% endif %}
 			{% endfor %}
 		</div>

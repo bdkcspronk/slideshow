@@ -2,13 +2,14 @@
 
 This file turns sightings into rows, bars and timings; templates/slides/presence.html and
 the "Activity chart" styles in style.css draw them (the bars grow in, beer fizzes, the nyan
-cat rides its rainbow). Each person gets a row; every stretch of time they were around is a
+cat rides its rainbow, a motorcycle rides its bar). Each person gets a row; every stretch of time they were around is a
 bar. The bar's look comes from their entry in config/devices.json:
 
 	"color":           "#fcd303", or a list of colours for a gradient
 	"style":           "round corners" (default), "square corners", "striped", "nyan cat",
 	                   "rainbow" (nyan cat without the cat), "beer", "board",
-	                   or a list combining one of those with "glow"
+	                   or a list combining one of those with "glow" and/or "motorcycle"
+	                   (a motorcycle in the bar's colour, templates/motorcycle.svg, rides the front of the bar)
 	"stripe_color":    colour (or gradient list) of the stripes for "striped"
 	                   (or give "color" as [[bar colours], [stripe colours]])
 	"thickness":       stripe thickness in pixels for "striped"
@@ -45,6 +46,7 @@ class MarkerStyle:
 	color: str | list | None = None
 	shape: str = "round corners"
 	glow: bool = False
+	motorcycle: bool = False
 	stripe_color: str | list = TEXT_COLOR
 	stripe_thickness: float | None = None
 	nyan_cat_x_offset: float = 0
@@ -71,7 +73,7 @@ def parse_style(options: dict) -> MarkerStyle:
 	color = options.get("color", options.get("gradient"))
 	configured = options.get("style", "round corners")
 	styles = [configured] if isinstance(configured, str) else configured if isinstance(configured, list) else []
-	style = MarkerStyle(glow="glow" in styles)
+	style = MarkerStyle(glow="glow" in styles, motorcycle="motorcycle" in styles)
 	style.shape = next((s for s in styles if s in SHAPES), "round corners")
 
 	stripe_color = options.get("stripe_color")
@@ -218,6 +220,8 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			"delay": round(GROW_STARTS + left / 100 * GROW_SECONDS, 2),
 			"grow": round(max(width / 100 * GROW_SECONDS, 0.25), 2),
 			"nyan_cat": style.shape == "nyan cat" and bar.is_latest, "cat_offset": style.nyan_cat_x_offset,
+			"motorcycle": style.motorcycle and bar.is_latest,
+			"paint": style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color,   # the motorcycle's colour
 		}
 		if isinstance(style.color, list) and tuple(style.color) in gradient_extent:
 			group_left, group_right = gradient_extent[tuple(style.color)]
