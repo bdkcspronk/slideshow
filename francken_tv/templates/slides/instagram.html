@@ -1,14 +1,15 @@
 {#
 	Our Instagram (providers/instagram.py): on the left "Follow us" with a QR code to the account (data-qr,
 	widgets.js); on the right a phone showing the profile and the latest posts, which scroll slowly up
-	while the slide is shown (--scroll). See "Instagram" in style.css.
+	while the slide is shown (--scroll). Without a connection to Instagram (no posts) the phone shows the
+	profile with empty tiles (`tiles`). See "Instagram" in style.css.
 #}
 <div class="slide instagram-slide" style="--scroll: {{ scroll_seconds }}s">
 	<div class="ig-glows" aria-hidden="true"><i></i><i></i><i></i></div>
 	<div class="ig-follow">
 		<div class="ig-pill">Follow us on Instagram</div>
 		<h1 class="ig-handle" style="--chars: {{ username | length + 1 }}">@{{ username }}</h1>
-		<p class="ig-stats"><b>{{ post_count }}</b> posts &middot; <b>{{ followers }}</b> followers</p>
+		{% if followers %}<p class="ig-stats"><b>{{ post_count }}</b> posts &middot; <b>{{ followers }}</b> followers</p>{% endif %}
 		<div class="ig-qr-card">
 			<div class="ig-qr" data-qr="{{ link }}"></div>
 			<span>Scan to follow</span>
@@ -16,16 +17,24 @@
 	</div>
 	<div class="ig-phone">
 		<div class="ig-screen">
-			<div class="ig-feed">
+			<div class="ig-feed{{ ' still' if not posts }}">
 				<div class="ig-topbar"><b>{{ username }}</b></div>
 				<div class="ig-profile">
 					{% if picture %}<img class="ig-avatar big" src="{{ picture }}" alt="">{% else %}<span class="ig-avatar big"></span>{% endif %}
+					{% if followers %}
 					<div class="ig-counts">
 						<span><b>{{ post_count }}</b>posts</span>
 						<span><b>{{ followers }}</b>followers</span>
 					</div>
+					{% else %}
+					<div class="ig-follow-button">Follow</div>
+					{% endif %}
 				</div>
-				<div class="ig-name">{{ name }}</div>
+				<div class="ig-name">{{ name or "@" ~ username }}</div>
+				{% if tiles %}
+				<div class="ig-tiles">{% for _ in range(tiles) %}<i style="--i: {{ loop.index0 }}"></i>{% endfor %}</div>
+				<p class="ig-tiles-hint">Scan the code to see our posts</p>
+				{% endif %}
 				{% for post in posts %}
 				<article class="ig-post">
 					<header>

@@ -3124,6 +3124,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .ig-phone::before { content: ""; position: absolute; z-index: 2; top: 2.6vh; left: 50%; width: 9vh; height: 2.4vh; margin-left: -4.5vh; border-radius: 99vh; background: #000; }
 .ig-screen { position: relative; height: 100%; overflow: hidden; border-radius: 4.8vh; background: #ffffff; color: #111111; container-type: size; }
 .ig-feed { animation: ig-scroll var(--scroll) ease-in-out 2.5s both; }
+.ig-feed.still { animation: none; }   /* no posts: nothing to scroll */
 @keyframes ig-scroll { to { transform: translateY(calc(-100% + 100cqh)); } }
 .ig-topbar { padding: 6vh 1.6vh 1.4vh; font-size: 2.4vh; }
 .ig-profile { display: flex; align-items: center; gap: 2vh; padding: 0 1.6vh; }
@@ -3133,6 +3134,16 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .ig-counts span { display: flex; flex-direction: column; align-items: center; }
 .ig-counts b { font-size: 2.2vh; color: #111; }
 .ig-name { padding: 1.2vh 1.6vh 1.6vh; border-bottom: 0.1vh solid #e5e5e5; font-size: 1.8vh; font-weight: bold; }
+/* Not connected: a Follow button where the counts go, and empty tiles shimmering where the posts go. */
+.ig-follow-button { flex: 1; padding: 1vh 0; border-radius: 1vh; background: #0095f6; color: #fff; font-size: 1.8vh; font-weight: bold; text-align: center; }
+.ig-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3vh; margin-top: 0.3vh; }
+.ig-tiles i {
+	aspect-ratio: 4 / 5;
+	background: linear-gradient(110deg, #ececf0 30%, #f7f7fa 50%, #ececf0 70%) 0 0 / 300% 100%;
+	animation: ig-shimmer 2.4s ease-in-out calc(var(--i) * 0.12s) infinite;
+}
+@keyframes ig-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.ig-tiles-hint { margin: 2.4vh 1.6vh; color: #8e8e8e; font-size: 1.7vh; text-align: center; }
 .ig-post { padding-bottom: 1.6vh; }
 .ig-post header { display: flex; align-items: center; gap: 1vh; padding: 1.2vh 1.6vh; font-size: 1.7vh; }
 .ig-post header span { margin-left: auto; color: #8e8e8e; font-size: 1.5vh; }

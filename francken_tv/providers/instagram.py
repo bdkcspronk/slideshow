@@ -6,6 +6,10 @@ needs a professional (Business or Creator) account. The access token from Meta's
 The token lives in the credentials file ({"access_token": "..."}), together with when it was renewed.
 
 The posts' pictures are downloaded (data/cache/instagram): Instagram's links to them expire.
+
+Without a connection (no token yet, or Instagram never answered) the slide is shown all the same, for the
+account in [instagram] username: "Follow us" with the QR code, and on the phone a profile with empty
+tiles instead of posts.
 """
 
 from __future__ import annotations
@@ -72,7 +76,7 @@ def count(number: int | None) -> str:
 class InstagramProvider(Provider):
 	name = "instagram"
 	title = "Instagram"
-	nothing_to_show = 'Not connected to Instagram (README, "Instagram")'
+	nothing_to_show = 'No Instagram account set ([instagram] username in config.toml)'
 	refresh_seconds = 30 * 60
 
 	def __init__(self, settings: dict, credentials_path: Path, image_folder: Path, default_seconds: float) -> None:
@@ -80,6 +84,7 @@ class InstagramProvider(Provider):
 		self.image_folder = image_folder
 		self.seconds = settings.get("seconds", default_seconds)
 		self.posts_shown = settings.get("posts", 6)
+		self.username = settings.get("username", "").lstrip("@")   # for the slide without a connection
 		self.profile: dict = {}
 		self.posts: list[Post] = []
 		self.captions = True   # Instagram may refuse captions to this kind of app; then we stop asking
@@ -164,8 +169,12 @@ class InstagramProvider(Provider):
 		return result
 
 	def slides(self, now: datetime) -> list[Slide]:
-		if not self.profile or not self.posts:
-			return []
+		if not self.profile or not self.posts:   # not connected: the account all the same, without its posts
+			if not self.username:
+				return []
+			return [Slide("instagram.html", self.seconds, {"username": self.username, "name": "", "picture": "", "followers": "",
+				"post_count": "", "link": f"https://www.instagram.com/{self.username}/", "scroll_seconds": 0, "posts": [],
+				"tiles": 9})]
 		username = self.profile.get("username", "")
 		return [Slide("instagram.html", self.seconds, {
 			"username": username,

@@ -47,7 +47,7 @@ class InstagramTest(unittest.TestCase):
 	def setUp(self):
 		self.folder = Path(tempfile.mkdtemp())
 		self.credentials = self.folder / "instagram.json"
-		self.provider = InstagramProvider({"posts": 6}, self.credentials, self.folder / "pictures", 20)
+		self.provider = InstagramProvider({"posts": 6, "username": "@tfvprofessorfrancken"}, self.credentials, self.folder / "pictures", 20)
 		patcher = mock.patch("francken_tv.providers.instagram.media_url", side_effect=lambda path: f"/files/{path.name}")
 		patcher.start()
 		self.addCleanup(patcher.stop)
@@ -64,7 +64,11 @@ class InstagramTest(unittest.TestCase):
 	def test_not_connected(self):
 		with self.assertRaises(RuntimeError):
 			self.provider.refresh(NOW)
-		self.assertEqual(self.provider.slides(NOW), [])
+		[slide] = self.provider.slides(NOW)   # the account all the same, with empty tiles instead of posts
+		self.assertEqual((slide.data["username"], slide.data["link"], slide.data["posts"], slide.data["tiles"]),
+			("tfvprofessorfrancken", "https://www.instagram.com/tfvprofessorfrancken/", [], 9))
+		no_account = InstagramProvider({}, self.credentials, self.folder / "pictures", 20)
+		self.assertEqual(no_account.slides(NOW), [])
 
 	def test_refresh_renews_the_token_and_shows_the_posts(self):
 		self.credentials.write_text(json.dumps({"access_token": "from-the-dashboard"}))
