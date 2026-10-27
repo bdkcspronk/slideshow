@@ -41,7 +41,7 @@ in the project folder `~/slideshow/` (the cloned repository, with these files ad
 |---|---|---|
 | `media/slides/` | the posters | large files |
 | `media/vrijmibo.gif`, `media/bieruur/*.mp3` | the vrijmibo GIF and bieruur songs | large files |
-| `media/quote_background.png`, `media/nyancat.png` | images for the quote slide and chart | large files |
+| `media/quote_background.png` | the image for the quote slide | large files |
 | `media/voices/` | the text-to-speech voice | large files; **not in the backup** either: the slideshow downloads it again by itself ([6. The TV PC](06-tv-pc.md#the-text-to-speech-voice)) |
 | `config/devices.json` | phone MAC addresses → names | personal data |
 | `config/confidential.json`, `media/confidential/` | the confidential contact persons | personal data |
