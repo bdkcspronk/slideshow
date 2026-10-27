@@ -167,7 +167,7 @@ seconds = 18   # the terminal has typed everything after about 12 s
 # Our latest Instagram posts on a phone, with a QR code to the account. Setup: README, section "Instagram".
 username = "tfvprofessorfrancken"   # shown (with the QR code) while not connected; once connected, from Instagram
 credentials = "~/.config/slideshow/instagram.json"
-posts = 6          # the latest this many, scrolling by on the phone
+posts = 4          # the latest this many, scrolling by on the phone (fewer: slower)
 seconds = 20
 
 [confidential]
