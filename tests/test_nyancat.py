@@ -1,6 +1,7 @@
 """The nyan cat is pixel art in two frames, templates/nyancat.svg and nyancat1.svg, drawn inline in the activity chart."""
 
 import json
+import re
 import unittest
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +24,8 @@ class NyanCatTest(unittest.TestCase):
 			svg = frame.read_text(encoding="utf-8")
 			self.assertIn('viewBox="0 0 33 20"', svg, frame.name)
 			self.assertTrue(svg.startswith("<svg"), f"{frame.name}: no XML header, it's drawn inside the page")
+			shapes = " ".join(re.findall(r'\b(?:x|y|width|height|d)="([^"]*)"', svg))
+			self.assertEqual(re.findall(r"\d*\.\d+", shapes), [], f"{frame.name}: everything on whole pixels, or seams show")
 
 	def test_the_chart_draws_the_cat_inline_on_the_latest_bar(self):
 		with TemporaryDirectory() as folder:
