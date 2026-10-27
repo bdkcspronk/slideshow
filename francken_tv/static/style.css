@@ -1246,8 +1246,8 @@ body.show-cursor button { cursor: pointer; }
 @keyframes practice-ticket { from { opacity: 0; transform: translateX(calc(320 * var(--px))) rotate(5deg); } }
 @keyframes practice-drift { to { translate: calc(40 * var(--px)) calc(-30 * var(--px)); } }
 
-/* Bieruur: the countdown on a background filling up with beer; a party at bieruur itself. White and red on dark
-   Francken blue (no white background); the beer stays beer-coloured, with blue text on it. */
+/* Bieruur: the countdown on a background filling up with beer; a party at bieruur itself. Dark blue text on
+   white, which stays readable on the beer too; the foam is off-white, so it still shows on the white. */
 .bieruur-slide {
 	display: flex;
 	align-items: center;
@@ -1256,8 +1256,8 @@ body.show-cursor button { cursor: pointer; }
 	padding: 0 3vw;
 	position: relative;
 	overflow: hidden;
-	background: radial-gradient(ellipse at 50% 35%, #21445f, var(--blue) 70%);
-	color: #ffffff;
+	background: #ffffff;
+	color: var(--blue);
 }
 
 .bieruur-info { text-align: center; flex: 1; min-width: 0; }
@@ -1266,7 +1266,6 @@ body.show-cursor button { cursor: pointer; }
 	font-weight: bold;
 	letter-spacing: 0.4vh;
 	text-transform: uppercase;
-	color: var(--red);
 }
 .bieruur-countdown {
 	font-size: min(30vh, 17vw);
@@ -1295,8 +1294,8 @@ body.show-cursor button { cursor: pointer; }
 	height: 6vh;
 	/* a row of bubbly foam on a solid band */
 	background:
-		radial-gradient(circle at 50% 70%, #fff8e7 55%, transparent 57%) 0 0 / 5vh 5vh repeat-x,
-		linear-gradient(transparent 45%, #fff8e7 45%);
+		radial-gradient(circle at 50% 70%, #efe3c4 55%, transparent 57%) 0 0 / 5vh 5vh repeat-x,
+		linear-gradient(transparent 45%, #efe3c4 45%);
 	animation: foam-drift 7s linear infinite;
 }
 @keyframes foam-drift { to { transform: translateX(-5vh); } }   /* one foam bubble along, so it loops */
@@ -1314,13 +1313,9 @@ body.show-cursor button { cursor: pointer; }
 	50% { transform: translateX(0.6vh); }
 	to { bottom: 100%; opacity: 0.4; transform: translateX(-0.4vh); }
 }
-/* Once the beer is behind the countdown, the text stays blue, the label turns dark red to stay readable. */
-.bieruur-info.on-beer { color: var(--blue); }
-.bieruur-info.on-beer .bieruur-label { color: var(--red-dark); }
 
 /* The last two minutes: the countdown pulses. */
-.bieruur-final .bieruur-countdown { color: var(--red); animation: pulse 1s ease-in-out infinite; }
-.bieruur-final .on-beer .bieruur-countdown { color: var(--blue); }
+.bieruur-final .bieruur-countdown { animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse {
 	50% { transform: scale(1.06); }
 }

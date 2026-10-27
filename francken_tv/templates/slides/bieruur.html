@@ -26,7 +26,7 @@
 {% else %}
 <div class="slide bieruur-slide bieruur-{{ state }}" data-state="{{ state }}">
 	{{ beer(beer_level, live=true) }}
-	<div class="bieruur-info{{ ' on-beer' if beer_level > 40 }}" data-live="info">   {# dark text once the beer is behind it #}
+	<div class="bieruur-info" data-live="info">
 		<div class="bieruur-label">{{ "Bijna bieruur!" if state == "final" else "Bieruur in" }}</div>
 		<div class="bieruur-countdown" data-live="countdown">{{ countdown }}</div>
 	</div>
