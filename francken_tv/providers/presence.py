@@ -5,16 +5,13 @@ from __future__ import annotations
 import logging
 from dataclasses import replace
 from datetime import date, datetime, time, timedelta
-from pathlib import Path
-
-from PIL import Image
 
 from ..activity_chart import MarkerStyle, bar_look, chart_view, generate_bright_color, parse_style, time_in_room
 from ..announcer import Announcer
 from ..config import parse_time
 from ..devices import DeviceList
 from ..presence_store import PresenceStore
-from ..slides import Job, Provider, Slide, media_url
+from ..slides import Job, Provider, Slide
 
 log = logging.getLogger(__name__)
 
@@ -30,16 +27,11 @@ class PresenceChartProvider(Provider):
 	title = "Activity chart"
 	nothing_to_show = "Nobody seen yet today"
 
-	def __init__(self, settings: dict, store: PresenceStore, devices: DeviceList, nyan_cat_path: Path,
-			default_seconds: float) -> None:
+	def __init__(self, settings: dict, store: PresenceStore, devices: DeviceList, default_seconds: float) -> None:
 		self.store = store
 		self.devices = devices
 		self.seconds = settings.get("seconds", default_seconds)
 		self.day_starts_at = parse_time(settings.get("day_starts_at", "04:00"))
-		self.nyan_cat = None
-		if nyan_cat_path.is_file():
-			with Image.open(nyan_cat_path) as image:
-				self.nyan_cat = {"url": media_url(nyan_cat_path), "aspect": round(image.width / image.height, 3)}
 
 	def slides(self, now: datetime) -> list[Slide]:
 		# The chart shows the whole day until day_starts_at (04:00), so a late night doesn't start over at midnight.
@@ -47,7 +39,7 @@ class PresenceChartProvider(Provider):
 		chart = chart_view(self.store.known_sightings(day_start, now), self.devices.by_mac(), now)
 		if chart is None:
 			return []   # nobody seen yet today
-		return [Slide("presence.html", self.seconds, {**chart, "nyan_cat": self.nyan_cat})]
+		return [Slide("presence.html", self.seconds, chart)]
 
 
 class LeaderboardProvider(Provider):

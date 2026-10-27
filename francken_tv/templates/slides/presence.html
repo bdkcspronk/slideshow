@@ -24,11 +24,11 @@
 			{{ draw_bar(back, "--row: %s; left: %s%%; width: %s%%; --delay: %ss; --grow: %ss; opacity: 0.3;" | format(back.row, back.left, back.width, back.delay, back.grow)) }}
 			{% endif %}
 			{{ draw_bar(bar, "--row: %s; left: %s%%; width: %s%%; --delay: %ss; --grow: %ss;" | format(bar.row, bar.left, bar.width, bar.delay, bar.grow)) }}
-			{% if bar.nyan_cat and nyan_cat %}
-			{# The cat rides along the front of the bar while it grows, then keeps bobbing at the end. #}
-			<img class="nyan-cat-sprite" src="{{ nyan_cat.url }}" alt="" style="--row: {{ bar.row }}; --from: {{ bar.left }}%;
+			{% if bar.nyan_cat %}
+			{# The cat (templates/nyancat.svg, pixel art) rides along the front of the bar while it grows, then keeps bobbing at the end. #}
+			<div class="nyan-cat-sprite" style="--row: {{ bar.row }}; --from: {{ bar.left }}%;
 				--to: {{ bar.left + bar.width }}%; --delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s;
-				--aspect: {{ nyan_cat.aspect }}; --offset: {{ bar.cat_offset }}%">
+				--offset: {{ bar.cat_offset }}%">{% include "nyancat.svg" %}</div>
 			{% endif %}
 			{% if bar.emblem_left is not none and bar.shape == "portugal" %}
 			{# The flag's emblem, on the border of the green and the red of the person's one flag, once their

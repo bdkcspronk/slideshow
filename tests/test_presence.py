@@ -168,7 +168,7 @@ class ChartTest(PresenceTestCase):
 		for sighting in (at("20:00"), at("23:50"), at("23:55") + timedelta(minutes=10)):   # the last one at 00:05
 			self.store.add_sighting(sighting, ALICE, "Alice", -50, 1)
 		self.store.add_sighting(at("03:00"), BOB, "Bob", -50, 1)   # last night: not part of today
-		provider = PresenceChartProvider({}, self.store, self.devices, self.dir / "no-cat.png", 8)
+		provider = PresenceChartProvider({}, self.store, self.devices, 8)
 		[slide] = provider.slides(at("00:30") + timedelta(days=1))
 		self.assertEqual(slide.data["names"], ["Alice"])
 		self.assertEqual(slide.data["ticks"][0]["label"], "19:00")   # an hour before the first arrival at 20:00

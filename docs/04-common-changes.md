@@ -68,6 +68,16 @@ Take its name out of `rotation.order`. That's enough; the code can stay.
 See [2. Accounts and secrets](02-accounts-and-secrets.md); each row says where the login is and how
 to renew it.
 
+## The nyan cat
+
+The cat in the activity chart is `francken_tv/templates/nyancat.svg`, drawn inline like the motorcycle and the
+mobility scooter. It is pixel art: `tools/nyancat.png` is the original (33 x 20 art pixels, each 8 x 8 pixels in
+the PNG) and the SVG has one rectangle per run of equal pixels, with no smoothing so it stays sharp at any size.
+`tests/test_nyancat.py` fails if the SVG and the PNG drift apart, so change both together. If new art has another
+size, change `aspect-ratio: 33 / 20` under `.nyan-cat-sprite` in `static/style.css` and the `viewBox` check in
+the test. Which people get the cat is set in `config/devices.json` (`"style": "nyan cat"`, and `x_offset` to move
+it along its rainbow).
+
 ## Run it on your laptop to try something
 
 ```sh

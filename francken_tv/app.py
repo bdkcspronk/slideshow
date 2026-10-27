@@ -171,7 +171,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		TimetableProvider(config.get("timetable", {})),
 		BooksProvider(config.get("books", {}), CACHE_DIR / "books"),
 		EventPhotosProvider(config.get("event_photos", {}), CACHE_DIR / "event_photos", seconds),
-		PresenceChartProvider(presence, store, devices, project_path("media/nyancat.png"), seconds),
+		PresenceChartProvider(presence, store, devices, seconds),
 		LeaderboardProvider(config.get("leaderboard", {}), store, devices, seconds),
 		QuoteProvider(config.get("quote", {}), DATA_DIR / "quotes.csv", announcer, seconds),
 		CommandmentsProvider(config.get("commandments", {}), seconds),
