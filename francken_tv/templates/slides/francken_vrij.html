@@ -1,0 +1,46 @@
+{#
+	The latest Francken Vrij (providers/francken_vrij.py), on the navy poster: the magazine's pages turning by
+	themselves, like a paperback. A leaf is a sheet with a page on each side; the leaves lie stacked on the right
+	half of the book and turn over to the left one after the other (--at: when, from timeline()), pausing on the
+	cover, the contents and the start of each article. A leaf is cut into `strips` vertical strips, each hinged
+	on the one before: at rest they're bent and slanted a little (--r, --k), so the page rises out of the binding
+	and arches down to its outer edge like an open paperback, and while a leaf turns they bend a little more
+	each (--curl), so the paper curls. Each strip shows its part of the page, shaded darker towards the spine.
+	The closed magazine sits in the middle and slides aside as it opens (--opens), and back for the back cover
+	(--closes). See "Francken Vrij" in style.css.
+#}
+{% set strips = 12 %}
+{% set rest = [-26, 10, 7, 4, 3, 2] %}   {# degrees, each strip turned relative to the one before: the page's curve #}
+{% set slant = [-18, 6, 5, 4, 3, 2, 2, 1, 1, 1, 1, 1] %}   {# degrees, each strip slanted relative to the one before: its arched edges #}
+{% macro shade(x) %}rgba(0, 0, 0, {{ (0.32 * (1 - x) ** 5) | round(3) }}){% endmacro %}
+{% macro strip(leaf, i) %}
+{# Strip i covers the page from i/strips to (i+1)/strips, counted from the spine; the back is mirrored. #}
+<div class="fv-strip" style="--r: {{ rest[i] if i < rest | length else 0 }}deg; --k: {{ slant[i] if i < slant | length else 0 }}deg">
+	<div class="fv-face" style="background-image: linear-gradient(90deg, {{ shade(i / strips) }}, {{ shade((i + 1) / strips) }}), url('{{ leaf.front }}');
+		background-position: 0 0, {{ (i / (strips - 1) * 100) | round(3) }}% 0"></div>
+	<div class="fv-face fv-face-back" style="background-image: linear-gradient(270deg, {{ shade(i / strips) }}, {{ shade((i + 1) / strips) }}){% if leaf.back %}, url('{{ leaf.back }}'){% endif %};
+		background-position: 0 0, {{ ((strips - 1 - i) / (strips - 1) * 100) | round(3) }}% 0"></div>
+	{% if i + 1 < strips %}{{ strip(leaf, i + 1) }}{% endif %}
+</div>
+{% endmacro %}
+<div class="slide francken-vrij-slide" style="--turn: {{ turn }}s; --aspect: {{ aspect }}; --strips: {{ strips }}">
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="fv-info">
+		<div class="poster-pill">Latest issue</div>
+		<h1 class="poster-title"><span>Francken</span> <span class="poster-marked">Vrij</span></h1>
+		<p class="fv-issue">{{ title }}</p>
+	</div>
+	<div class="fv-stage">
+		<div class="fv-book{{ ' opens' if opens_at is not none }}{{ ' closes' if closes_at is not none }}"
+			style="{% if opens_at is not none %}--opens: {{ opens_at }}s;{% endif %}{% if closes_at is not none %} --closes: {{ closes_at }}s;{% endif %}">
+			<div class="fv-stack fv-stack-left" aria-hidden="true"></div>
+			<div class="fv-stack fv-stack-right" aria-hidden="true"></div>
+			{% for leaf in leaves %}
+			<div class="fv-leaf" style="--z: {{ leaves | length - loop.index0 }};{% if leaf.turns_at is not none %} --at: {{ leaf.turns_at }}s;{% endif %}"
+				{%- if leaf.turns_at is not none %} data-turns{% endif %}>{{ strip(leaf, 0) }}</div>
+			{% endfor %}
+		</div>
+		{# The pages as images too, so the slide only appears once they're loaded (player.js waits for <img>s). #}
+		{% for leaf in leaves %}<img class="fv-preload" src="{{ leaf.front }}" alt="">{% if leaf.back %}<img class="fv-preload" src="{{ leaf.back }}" alt="">{% endif %}{% endfor %}
+	</div>
+</div>

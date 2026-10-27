@@ -9,6 +9,16 @@ are read again every round: no restart.
 Copy the image into `media/slides/` on the TV PC. It shows up in the next round. Delete it to remove it.
 GIFs and short animations work; their length decides how long they're shown.
 
+## A new Francken Vrij
+
+Copy the PDF into `media/francken-vrij/` on the TV PC; the newest PDF there is shown (delete the old one or
+leave it). Within ten minutes the slideshow has turned its pages into images and the next round shows it. Name
+it like the website does, e.g. `29-3.pdf` for volume 29, issue 3, and the slide says "Volume 29 · Issue 3".
+The pages turn by themselves and pause on the cover, a table of contents among the first pages (a page saying
+"Contents" or "Inhoud") and the first page of each bookmark in the PDF, so export it with bookmarks for the
+articles (most layout programs do with "create bookmarks"). The times are under `[francken_vrij]` in
+`config/config.toml`. It needs poppler (`sudo apt install poppler-utils`); without it `/status` says so.
+
 ## The weekly dilemma
 
 Add a line to `config/dilemmas.txt`: `question | option A | option B`. One per line; the slideshow

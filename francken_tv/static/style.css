@@ -125,7 +125,7 @@ body.show-cursor button { cursor: pointer; }
 /* The navy and crimson posters (upcoming activities, news, the activity chart, the leaderboard, books): soft
    glows drift over the navy (.navy-glows), a crimson label (.poster-pill) and a title with a crimson
    highlighter behind a word (.poster-marked). */
-.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide {
+.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide, .francken-vrij-slide {
 	--navy: #0d1f3c;
 	--crimson: #c8102e;
 	--paper: #fdf8ec;
@@ -3179,3 +3179,84 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	-webkit-line-clamp: 3;
 	overflow: hidden;
 }
+
+/* Francken Vrij (providers/francken_vrij.py), on the navy poster: the title on the left, and the magazine whose
+   pages turn by themselves like a paperback. The book is two pages wide (--aspect: a page's width / height); its
+   leaves lie on the right half and turn over to the left around the spine (--at, from timeline()), each on top
+   while it turns; the turned ones stay on top of each other in order (later in the page, so on top). A leaf is
+   --strips strips, each hinged on the one before (nested). At rest an open page is curved: the strips are turned
+   by --r and slanted by --k (so its top and bottom edges rise out of the binding and arch down to the outer edge,
+   as an open paperback looks from a little above), times --open (0 closed, 1 open: a closed magazine is flat);
+   the turn is also times --rest (1 on the right; a turning leaf takes it to -1, so it faces the right way on the
+   left; the slant mirrors by itself). While a leaf turns, --curl goes up and back down: every strip bends 6 degrees more, so the paper curls.
+   Closed, the cover is in the middle of the book (shifted a quarter to the left); opening slides it back
+   (--opens), and for the back cover alone a quarter to the right (--closes). The page edges on either side give
+   it some thickness, and the whole magazine leans back a little, as if it's lying on a table. */
+@property --curl { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --rest { syntax: "<number>"; inherits: true; initial-value: 1; }
+@property --open { syntax: "<number>"; inherits: true; initial-value: 0; }
+.francken-vrij-slide { flex-direction: row; align-items: center; gap: 3vw; padding: 5vh 4vw; }
+.fv-info { flex: none; width: 30vw; display: flex; flex-direction: column; align-items: flex-start; }
+.francken-vrij-slide .poster-title { white-space: nowrap; }
+.fv-issue { margin: 1vh 0 0; font-size: 3.6vh; opacity: 0.85; }
+.fv-stage { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center; transform: perspective(200vh) rotateX(14deg); }
+.fv-preload { display: none; }
+.fv-book {
+	position: relative;
+	height: min(82vh, calc(50vw / (2 * var(--aspect))));   /* open, it fits next to the title */
+	aspect-ratio: calc(2 * var(--aspect));
+	perspective: 240vh;
+	transform: translateX(-25%);
+	filter: drop-shadow(0 2.5vh 3vh rgba(0, 0, 0, 0.5));
+}
+.fv-book.opens { animation: fv-open var(--turn) ease-in-out var(--opens) forwards; }
+.fv-book.opens.closes { animation: fv-open var(--turn) ease-in-out var(--opens) forwards, fv-close var(--turn) ease-in-out var(--closes) forwards; }
+@keyframes fv-open { to { transform: translateX(0); --open: 1; } }
+@keyframes fv-close { from { transform: translateX(0); --open: 1; } to { transform: translateX(25%); --open: 0; } }
+.fv-leaf {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	width: 50%;
+	height: 100%;
+	z-index: var(--z);
+	transform-origin: left center;
+	transform-style: preserve-3d;
+}
+.fv-leaf[data-turns] { animation: fv-turn var(--turn) ease-in-out var(--at) forwards; }
+@keyframes fv-turn {
+	0% { z-index: 1000; transform: rotateY(0); --curl: 0; --rest: 1; }
+	35% { --curl: 1; }
+	100% { z-index: 1000; transform: rotateY(-180deg); --curl: 0; --rest: -1; }
+}
+.fv-strip {
+	position: absolute;
+	top: 0;
+	left: 100%;
+	width: 100%;
+	height: 100%;
+	transform-origin: left center;
+	transform-style: preserve-3d;
+	transform: rotateY(calc(var(--curl) * 6deg + var(--r) * var(--open) * var(--rest))) skewY(calc(var(--k) * var(--open)));
+}
+.fv-leaf > .fv-strip { left: 0; width: calc(100% / var(--strips)); }
+.fv-face {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: -1px;   /* a hair over the next strip: no seams */
+	background-color: #fdf8ec;
+	background-repeat: no-repeat;
+	background-size: 100% 100%, calc(var(--strips) * 100%) 100%;
+	backface-visibility: hidden;
+}
+.fv-face-back { transform: rotateY(180deg); }
+/* The page edges: a few sheets peeking out on the outer sides, on the right while it's closed, on both sides open. */
+.fv-stack { position: absolute; top: 0.3%; bottom: 0.3%; width: 50%; background: #e9e2d0; }
+.fv-stack-right { left: 50%; box-shadow: 0.25vh 0.2vh 0 #d9d0bb, 0.5vh 0.4vh 0 #ece5d4, 0.75vh 0.6vh 0 #d4cab3; }
+.fv-stack-left { left: 0; opacity: 0; box-shadow: -0.25vh 0.2vh 0 #d9d0bb, -0.5vh 0.4vh 0 #ece5d4, -0.75vh 0.6vh 0 #d4cab3; }
+.fv-book.opens .fv-stack-left { animation: fv-fade-in 0.2s ease-out calc(var(--opens) + var(--turn) * 0.9) forwards; }   /* once the first page has landed on it */
+.fv-book.opens.closes .fv-stack-right { animation: fv-fade-out var(--turn) ease-in-out var(--closes) forwards; }
+@keyframes fv-fade-in { to { opacity: 1; } }
+@keyframes fv-fade-out { from { opacity: 1; } to { opacity: 0; } }

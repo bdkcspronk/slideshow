@@ -8,7 +8,7 @@ commit whose tests fail is not taken; the log says why. A commit made on the TV 
 up the same way (once nothing is left uncommitted). Switch it off with `[update] auto = false`.
 
 ```sh
-sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial python3-venv ffmpeg firefox
+sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial python3-venv ffmpeg firefox poppler-utils
 sudo usermod -aG dialout $USER                      # serial port access for the sniffer; log in again after
 git clone <this repo> ~/slideshow && cd ~/slideshow
 python3 -m venv --system-site-packages .venv        # uses the apt packages above

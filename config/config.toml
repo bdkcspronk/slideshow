@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "instagram", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "instagram", "francken_vrij", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -162,6 +162,15 @@ seconds = 14   # the length of the animation
 [compucie]
 # The Compucie's promo, Matrix style (the text is in templates/slides/compucie.html).
 seconds = 18   # the terminal has typed everything after about 12 s
+
+[francken_vrij]
+# The latest Francken Vrij, its pages turning by themselves, pausing on the cover, the contents and each article's
+# start (its bookmarks). The newest PDF in the folder is shown; without one there's no slide. The slide lasts as long
+# as the pages take. Needs poppler (sudo apt install poppler-utils). How: docs/04-common-changes.md, "A new Francken Vrij".
+folder = "media/francken-vrij"
+turn_seconds = 0.9     # one page turning over
+pause_seconds = 5      # on the cover, the contents and the start of each article
+glance_seconds = 0.7   # on the other pages
 
 [instagram]
 # Our latest Instagram posts on a phone, with a QR code to the account. Setup: docs/setup/instagram.md.
