@@ -34,7 +34,6 @@ for file in audio/*; do
 	move "$file" "media/bieruur/$(basename "$file")"
 done
 move quotes/images/background.png media/quote_background.png
-move Sniffer/resources/nyancat.png media/nyancat.png
 for file in Sniffer/voicefiles/*; do
 	move "$file" "media/voices/$(basename "$file")"
 done

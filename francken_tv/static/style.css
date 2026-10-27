@@ -1381,10 +1381,11 @@ body.show-cursor button { cursor: pointer; }
 .bar.board { background: #D62828 !important; }
 .bar.rainbow { background: linear-gradient(#E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787) !important; }
 /* The nyan cat's rainbow, like the meme's pixel trail: six stripes in its colours, in blocks that
-   step up and down (an SVG tile two blocks wide, as tall as the bar), with square ends. */
+   step up and down (an SVG tile two blocks wide, as tall as the bar), with square ends. The tile has two
+   frames, the steps one way and the other, that take turns (SMIL <animate> inside it): the rainbow waves. */
 .bar.nyan-cat {
 	border-radius: 0;
-	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 19' preserveAspectRatio='none' shape-rendering='crispEdges'%3E%3Crect x='0' y='0' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='8' y='1' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='0' y='3' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='8' y='4' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='0' y='6' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='8' y='7' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='0' y='9' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='8' y='10' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='0' y='12' width='8' height='3' fill='%230099ff'/%3E%3Crect x='8' y='13' width='8' height='3' fill='%230099ff'/%3E%3Crect x='0' y='15' width='8' height='3' fill='%236633ff'/%3E%3Crect x='8' y='16' width='8' height='3' fill='%236633ff'/%3E%3C/svg%3E") 0 0 / auto 100% repeat-x !important;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 19' shape-rendering='crispEdges'%3E%3Cg%3E%3Crect x='0' y='0' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='8' y='1' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='0' y='3' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='8' y='4' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='0' y='6' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='8' y='7' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='0' y='9' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='8' y='10' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='0' y='12' width='8' height='3' fill='%230099ff'/%3E%3Crect x='8' y='13' width='8' height='3' fill='%230099ff'/%3E%3Crect x='0' y='15' width='8' height='3' fill='%236633ff'/%3E%3Crect x='8' y='16' width='8' height='3' fill='%236633ff'/%3E%3Canimate attributeName='visibility' values='visible;hidden' dur='0.4s' calcMode='discrete' repeatCount='indefinite'/%3E%3C/g%3E%3Cg%3E%3Crect x='0' y='1' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='8' y='0' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='0' y='4' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='8' y='3' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='0' y='7' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='8' y='6' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='0' y='10' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='8' y='9' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='0' y='13' width='8' height='3' fill='%230099ff'/%3E%3Crect x='8' y='12' width='8' height='3' fill='%230099ff'/%3E%3Crect x='0' y='16' width='8' height='3' fill='%236633ff'/%3E%3Crect x='8' y='15' width='8' height='3' fill='%236633ff'/%3E%3Canimate attributeName='visibility' values='hidden;visible' dur='0.4s' calcMode='discrete' repeatCount='indefinite'/%3E%3C/g%3E%3C/svg%3E") 0 0 / auto 100% repeat-x !important;
 }
 .bar.beer { background: linear-gradient(90deg, #F3B01F, #F5C340) !important; }
 /* Portugal: the flag, 2:3 green and red, waving: its top and bottom edges ripple (a mask of one wave,
@@ -1444,14 +1445,17 @@ body.show-cursor button { cursor: pointer; }
 	position: absolute;
 	top: calc((var(--row) + 0.5) * 100% / var(--rows));
 	height: calc(1.04 * 100% / var(--rows));
-	aspect-ratio: 33 / 20;   /* templates/nyancat.svg */
+	aspect-ratio: 33 / 20;   /* templates/nyancat.svg and nyancat1.svg */
 	transform: translate(var(--offset), -50%);
 	opacity: 0;
 	animation:
 		cat-ride var(--grow) linear var(--delay) forwards,
 		cat-bob 0.45s ease-in-out calc(var(--delay) + var(--grow)) infinite alternate;
 }
-.nyan-cat-sprite svg { display: block; width: 100%; height: 100%; }
+/* Its two frames on top of each other, taking turns (0.2 s each, the rainbow's rhythm): it runs. */
+.nyan-cat-sprite svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; animation: nyan-frame 0.4s steps(1) infinite; }
+.nyan-cat-sprite svg:last-child { animation-delay: -0.2s; }
+@keyframes nyan-frame { 50% { visibility: hidden; } }
 @keyframes cat-ride {
 	from { left: var(--from); opacity: 1; }
 	to { left: var(--to); opacity: 1; }

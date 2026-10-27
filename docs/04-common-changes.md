@@ -70,12 +70,12 @@ to renew it.
 
 ## The nyan cat
 
-The cat in the activity chart is `francken_tv/templates/nyancat.svg`, drawn inline like the motorcycle and the
-mobility scooter. It is pixel art: `tools/nyancat.png` is the original (33 x 20 art pixels, each 8 x 8 pixels in
-the PNG) and the SVG has one rectangle per run of equal pixels, with no smoothing so it stays sharp at any size.
-`tests/test_nyancat.py` fails if the SVG and the PNG drift apart, so change both together. If new art has another
-size, change `aspect-ratio: 33 / 20` under `.nyan-cat-sprite` in `static/style.css` and the `viewBox` check in
-the test. Which people get the cat is set in `config/devices.json` (`"style": "nyan cat"`, and `x_offset` to move
+The cat in the activity chart is two frames of pixel art, `francken_tv/templates/nyancat.svg` and
+`nyancat1.svg` (33 x 20 art pixels each), drawn inline like the motorcycle and the mobility scooter and shown in
+turn, 0.2 s each (`nyan-frame` in `static/style.css`), so it runs; its rainbow waves in the same rhythm. Edit the
+SVGs themselves to change the cat: keep both the same size, on whole pixels, with `shape-rendering="crispEdges"`
+(so they stay sharp) and without an XML header (they're drawn inside the page). If they get another size, change
+`aspect-ratio: 33 / 20` under `.nyan-cat-sprite` and the `viewBox` checks in `tests/test_nyancat.py`. Which people get the cat is set in `config/devices.json` (`"style": "nyan cat"`, and `x_offset` to move
 it along its rainbow).
 
 ## Run it on your laptop to try something

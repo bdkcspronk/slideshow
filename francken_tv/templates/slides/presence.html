@@ -25,10 +25,11 @@
 			{% endif %}
 			{{ draw_bar(bar, "--row: %s; left: %s%%; width: %s%%; --delay: %ss; --grow: %ss;" | format(bar.row, bar.left, bar.width, bar.delay, bar.grow)) }}
 			{% if bar.nyan_cat %}
-			{# The cat (templates/nyancat.svg, pixel art) rides along the front of the bar while it grows, then keeps bobbing at the end. #}
+			{# The cat (templates/nyancat.svg and nyancat1.svg, two frames of pixel art that take turns) rides along the
+			   front of the bar while it grows, then keeps bobbing at the end. #}
 			<div class="nyan-cat-sprite" style="--row: {{ bar.row }}; --from: {{ bar.left }}%;
 				--to: {{ bar.left + bar.width }}%; --delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s;
-				--offset: {{ bar.cat_offset }}%">{% include "nyancat.svg" %}</div>
+				--offset: {{ bar.cat_offset }}%">{% include "nyancat.svg" %}{% include "nyancat1.svg" %}</div>
 			{% endif %}
 			{% if bar.emblem_left is not none and bar.shape == "portugal" %}
 			{# The flag's emblem, on the border of the green and the red of the person's one flag, once their
