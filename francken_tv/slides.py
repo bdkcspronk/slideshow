@@ -48,6 +48,11 @@ class Provider:
 	def slides(self, now: datetime) -> list[Slide]:
 		raise NotImplementedError
 
+	def warnings(self, now: datetime) -> list[str]:
+		"""Things that will go wrong soon, for /status and /health (e.g. a login that is about to expire).
+		Must be fast and must not use the network. Usually nothing."""
+		return []
+
 	def outside_daytime_slides(self, now: datetime) -> list[Slide]:
 		"""For slide types in rotation.daytime_only: what to show outside the daytime anyway (e.g. the
 		weather when it's going to rain). Usually nothing."""

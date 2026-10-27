@@ -8,7 +8,7 @@ every week's dilemma and votes, so the slide can show last week's outcome.
 The Google Form needs one multiple-choice question. Its answers are either the same texts as the
 options in dilemmas.txt (then the form has to be changed along every week), or just "A" and "B"
 ("A: theory" is fine too), so the form can stay the same. Only responses from this week (by their
-timestamp) count. See README, "Weekly dilemma".
+timestamp) count. See docs/setup/weekly-dilemma.md.
 """
 
 from __future__ import annotations

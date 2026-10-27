@@ -1,6 +1,10 @@
 # Francken TV
 
-The slideshow on the TV in the Francken room. It shows:
+The slideshow on the TV in the Francken room.
+
+**Maintaining it? The manual is in [docs/](docs/README.md)**: handover, accounts and logins, what to do when something breaks, and how to change things.
+
+It shows:
 
 | Slide | Where it comes from | Code |
 |---|---|---|
@@ -16,6 +20,8 @@ The slideshow on the TV in the Francken room. It shows:
 | &nbsp;&nbsp;Weather and rain at Zernike; after bieruur only a rain warning | open-meteo.com, Buienradar | `providers/weather.py` |
 | &nbsp;&nbsp;Buses from Aletta Jacobshal | OVapi | `providers/buses.py` |
 | &nbsp;&nbsp;Today's Applied Physics timetable | rooster.rug.nl | `providers/timetable.py` |
+| The confidential contact persons: who they are and how to reach them (left out without the data file) | `config/confidential.json` (personal data, not in git) | `providers/confidential.py` |
+| The extern: "Internship? Job? Thesis?" and how to reach them (left out without the data file) | `config/extern.json` (personal data, not in git) | `providers/extern.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
 | The commandment of the week by Jeff de Hosson, our honorary member (the next one each Monday) | `config/commandments.txt` | `providers/commandments.py` |
 | The dilemma of the week: vote by tapping A or B, or scan the QR code and vote on your phone | `config/dilemmas.txt`, a Google Form | `providers/poll.py` |
@@ -97,134 +103,4 @@ Run the tests with `python3 -m unittest`.
 
 ## Files that are not in git
 
-Copy these to the TV PC by hand:
-
-| Path | What |
-|---|---|
-| `media/slides/` | posters shown in the slideshow |
-| `media/vrijmibo.gif` | the vrijmibo GIF |
-| `media/bieruur/*.mp3` | bieruur songs (start offsets in `config.toml`) |
-| `media/quote_background.png`, `media/nyancat.png` | images for the quote slide and chart |
-| `media/voices/en_US-ryan-high.onnx(.json)` | piper text-to-speech voice |
-| `config/devices.json` | phone MAC addresses → names, chart styles, greetings (personal data!) |
-| `config/confidential.json`, `media/confidential/` | the confidential contact persons: names, email addresses, photos (personal data; the format is in `providers/confidential.py`) |
-| `config/extern.json`, `media/extern/` | the extern's slide: the text, phone number, photo and background (personal data; the format is in `providers/extern.py`) |
-| `~/.config/slideshow/nextcloud.credentials.json` | Nextcloud login |
-| `~/.config/slideshow/instagram.json` | the Instagram token (see "Instagram") |
-
-`data/` is created automatically: the presence database, caches and the downloaded quotes.
-
-## Spotify
-
-The Spotify slide shows what's playing and the next song. When nothing plays, it shows the last
-played song paused where it stopped (▶ continues it); before anything has played, there is no slide.
-Its buttons skip songs, pause and change the volume; **Playlists** shows the account's playlists and
-their songs, and **Search** finds songs, albums, playlists and people by typing. Tapping a song plays
-it. The buttons need Spotify Premium, and music already playing on some device. One-time setup:
-
-1. At https://developer.spotify.com/dashboard, log in and **Create app**. Any name and description;
-   **Redirect URI**: `http://127.0.0.1:8080/spotify/callback` (exactly this; `127.0.0.1`, not
-   `localhost`); tick **Web API**.
-2. Open the app's **Settings** and put its **Client ID** and **Client secret** in
-   `~/.config/slideshow/spotify.json` on the TV PC:
-   `{"client_id": "...", "client_secret": "..."}`
-3. Start the slideshow and open http://127.0.0.1:8080/spotify/login **on the TV PC**; log in with
-   the Spotify account whose music should be shown. The slideshow adds a refresh token to that
-   file (no password is stored). It keeps working after restarts. Connected before changing
-   playlists or showing the last played song was possible? Log in once more, so Spotify allows it.
-   Spotify doesn't let the app search people or see their profiles: **People** finds the makers of
-   the account's playlists by name. A playlist's page has **+ Add to library** (its maker then
-   shows up under People) and **Remove** (not for the account's own playlists).
-4. So music plays from the PC itself (not from a Spotify tab somewhere): `deploy/install_spotifyd.sh`
-   installs [spotifyd](https://github.com/Spotifyd/spotifyd) as `~/.local/bin/spotifyd` and logs it
-   in once (open the link it prints on that PC; `--login` logs in again). The TV PC runs it with
-   `francken-tv-spotifyd.service` (see "Running on the TV PC"); elsewhere `start.sh` starts it (log:
-   `data/spotifyd.log`). The PC is then a Spotify speaker called "Francken TV"; when nothing plays,
-   the slide starts music there, and "Play on TV" moves music playing elsewhere to it. Without it,
-   songs only play when a Spotify app somewhere is already playing.
-
-## Instagram
-
-The Instagram slide shows our latest posts on a phone, with a QR code to the account. It reads them
-with Meta's *Instagram API with Instagram Login*, which only works for a **professional** account
-(Business or Creator; switch in the Instagram app under Settings → Account type and tools). One-time
-setup:
-
-1. Register as a Meta developer (once per Facebook account): logged into Facebook, go to
-   https://developers.facebook.com/async/registration (or https://developers.facebook.com and
-   **Get Started**), agree, and verify your phone number and email. Only then does the App
-   Dashboard (https://developers.facebook.com/apps) work.
-2. **Create First App** (at the end of the registration) or **Create App** in the App Dashboard:
-   use case **Other**, app type **Business**, any name and your email. Skip connecting a business.
-   In the new app, find the **Instagram** product and click **Set up**; this adds **API setup with
-   Instagram login**.
-3. There, under **Generate access tokens**, **Add account** and log in with our Instagram account
-   (it must be public), then **Generate token** next to it and copy the token.
-4. On the TV PC, copy `config/instagram.example.json` to `~/.config/slideshow/instagram.json` and
-   paste the token in place of `PASTE-THE-TOKEN-FROM-META-HERE` (keep the quotes):
-   `mkdir -p ~/.config/slideshow && cp config/instagram.example.json ~/.config/slideshow/instagram.json`
-
-The slideshow renews the token every week by itself (a token is valid for 60 days), and writes the
-new one to that file, so it keeps working. If the slide disappears and http://127.0.0.1:8080/status
-shows an Instagram error (e.g. the TV PC was off for two months, or the password changed), generate
-a new token as in step 3. The app can stay in development mode (no App Review, no business
-verification): it only reads our own account, which is added to it as a tester in step 3.
-
-## Weekly dilemma
-
-The dilemmas are in `config/dilemmas.txt` (`question | option A | option B`, one per line, the next
-one every Monday). Tapping A or B on the TV counts a vote. To also vote on phones (the QR code):
-
-1. Make a Google Form with one multiple-choice question, e.g. "Answer", with the answers **A)** and
-   **B)** ("A", "A: ..." work too): then the same form works every week, and only `dilemmas.txt`
-   decides what A and B are. (Answers with the options' own texts also count, but then the form has
-   to be changed every Monday.) Don't collect email addresses, and don't restrict it to an
-   organisation: then it needs no login.
-2. *Responses* -> *Link to Sheets*: a new sheet. Share that sheet as "Anyone with the link can view".
-3. In `config/config.toml`, `[poll]`: `form_url` = the form's link (*Send* -> link, shortened is fine),
-   `sheet_id` = the long code in the sheet's link (`/spreadsheets/d/<sheet_id>/edit`).
-4. Restart the slideshow. Only this week's responses count (by their timestamp), so the same form
-   works every week. The date order of the sheet's timestamps is worked out from the sheet; for the first
-   days of a month it uses `timestamp_day_first` (false: American dates, 10/19/2026).
-
-Both kinds of votes are added up on the slide, with last week's outcome below. `data/poll.json` keeps
-every week's dilemma and votes (keep it when moving the slideshow to another PC).
-
-## Running on the TV PC
-
-The slideshow updates itself: every 10 minutes it checks GitHub for new commits, pulls them (only
-when the TV PC has no changes of its own), runs the tests and restarts, never during bieruur. A
-commit whose tests fail is not taken; the log says why. A commit made on the TV PC itself is picked
-up the same way (once nothing is left uncommitted). Switch it off with `[update] auto = false`.
-
-```sh
-sudo apt install python3-jinja2 python3-requests python3-bs4 python3-pil python3-serial python3-venv ffmpeg firefox
-sudo usermod -aG dialout $USER                      # serial port access for the sniffer; log in again after
-git clone <this repo> ~/slideshow && cd ~/slideshow
-python3 -m venv --system-site-packages .venv        # uses the apt packages above
-.venv/bin/pip install piper-tts tomli               # text-to-speech; tomli is only needed on Python 3.10
-deploy/install_spotifyd.sh                          # the "Francken TV" Spotify speaker; open the login link it prints
-mkdir -p ~/.config/systemd/user && cp deploy/*.service ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable --now francken-tv francken-tv-sniffer francken-tv-kiosk francken-tv-spotifyd
-sudo loginctl enable-linger $USER                   # keep running without anyone logged in
-```
-
-Logs: `journalctl --user -u francken-tv -f` (or `-u francken-tv-sniffer`).
-After changing `config.toml`: `systemctl --user restart francken-tv`.
-Closed the full-screen slideshow with Alt+F4? It stays closed; bring it back with `systemctl --user start francken-tv-kiosk`
-(`stop` to close it from a terminal). Starting `francken-tv` also opens it, and starts the Spotify speaker
-(`francken-tv-spotifyd`); stopping `francken-tv` stops the speaker too.
-The internet gone for minutes at a time ("Temporary failure in name resolution" in the log)?
-`deploy/fix_dns.sh` makes the PC skip its unreliable IPv6 DNS server (`--undo` to switch back).
-
-### In a terminal instead (Ctrl+C, Ctrl+M and Ctrl+R at hand)
-
-Set up as above, then run `deploy/install_autostart.sh` once. From then on, logging in on the TV PC
-opens a terminal running `./start.sh --fullscreen`: the full-screen slideshow is on top, Alt+Tab
-gets to the terminal. If the slideshow stops, the terminal stays and Enter starts it again. This
-needs the TV PC to log in by itself (Settings -> Users -> Automatic login). The script switches the
-`francken-tv`, `francken-tv-sniffer` and `francken-tv-kiosk` services off (they'd run a second
-slideshow); `deploy/install_autostart.sh --undo` switches them back on.
-
-The sniffer firmware lives in `firmware/` (PlatformIO).
+Media, personal data and logins live only on the TV PC. The list, and what to do if it dies: [docs/01-handover.md](docs/01-handover.md#not-everything-is-in-git).

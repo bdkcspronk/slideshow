@@ -224,7 +224,7 @@ class SpotifyTest(unittest.TestCase):
 		provider = self.idle_provider()
 		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, {"devices": []})):
 			slide, message = provider.action("toggle", [], NOW)
-		self.assertEqual((slide, message), (None, "The Francken TV speaker isn't running (see the README, \"Spotify\")"))
+		self.assertEqual((slide, message), (None, "The Francken TV speaker isn't running (see docs/setup/spotify.md)"))
 		speaker = FakeResponse(200, {"devices": [{"id": "tv", "name": "Francken TV"}]})
 		with mock.patch("francken_tv.providers.spotify.requests.request", side_effect=[speaker, FakeResponse(204)]) as request, \
 				mock.patch.object(provider, "catch_up"):

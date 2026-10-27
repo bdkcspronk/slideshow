@@ -1,4 +1,4 @@
-# The slideshow server. Install: see README.md ("Running on the TV PC").
+# The slideshow server. Install: see docs/06-tv-pc.md.
 [Unit]
 Description=Francken TV slideshow server
 After=network-online.target

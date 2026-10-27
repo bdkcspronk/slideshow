@@ -7,9 +7,12 @@ from __future__ import annotations
 import logging
 import subprocess
 import threading
+from datetime import datetime
+from typing import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from . import backup
 from .announcer import Announcer
 from .background import BackgroundRunner
 from .clock import Clock
@@ -70,6 +73,7 @@ class App:
 	power_commands: dict[str, list[str]] = field(default_factory=dict)   # "shutdown"/"restart" -> command
 	system_volume: SystemVolume | None = None   # the volume and mute in the settings, also for Spotify
 	tiles: TileCache | None = None              # map tiles for maps in slides (/tiles/..., maptiles.py)
+	backup_warnings: Callable[[datetime], list[str]] | None = None   # backups not set up or stopped (backup.py), for /status
 	updater: object | None = None               # updating from GitHub (updater.py, set in __main__.py), for /status
 	settings_lock: threading.Lock = field(default_factory=threading.Lock)   # the server handles requests in parallel
 	def toggle_quotes(self) -> None:
@@ -233,6 +237,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		power_commands={"shutdown": power.get("shutdown", ["systemctl", "poweroff"]),
 			"restart": power.get("restart", ["systemctl", "reboot"])},
 		system_volume=SystemVolume(),
+		backup_warnings=backup.warnings,
 		tiles=TileCache(CACHE_DIR / "tiles", config.get("maps", {}).get("tiles", TILES)),
 	)
 	app.read_sound()

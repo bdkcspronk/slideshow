@@ -14,6 +14,19 @@
 	<h1>Francken TV</h1>
 	<p>Time: {{ app.clock.now().strftime("%A %Y-%m-%d %H:%M:%S") }}
 		&middot; Quotes read aloud: {{ "on" if app.announcer.quotes_enabled else "off" }}</p>
+	<h2>Problems</h2>
+	{% if problems %}
+	<table>
+		<tr><th>Where</th><th>What</th><th>Read</th></tr>
+		{% for problem in problems %}
+		<tr><td>{{ problem.what }}</td><td class="error">{{ problem.detail }}</td><td>{{ problem.manual }}</td></tr>
+		{% endfor %}
+	</table>
+	{% else %}
+	<p>None: every slide type works.</p>
+	{% endif %}
+	<p>Something wrong that isn't listed? The manual is in the <code>docs/</code> folder:
+		<code>docs/03-when-something-breaks.md</code>.</p>
 	<h2>Slide types</h2>
 	<table>
 		<tr><th>Name</th><th>Last refresh</th><th>Last error</th><th>Preview</th></tr>

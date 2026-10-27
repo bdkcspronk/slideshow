@@ -1,4 +1,4 @@
-# Spotify Connect speaker "Francken TV" (spotifyd). Install: see README.md ("Spotify").
+# Spotify Connect speaker "Francken TV" (spotifyd). Install: see docs/setup/spotify.md.
 # Part of the slideshow: starts and stops with francken-tv.service.
 [Unit]
 Description=Francken TV Spotify speaker

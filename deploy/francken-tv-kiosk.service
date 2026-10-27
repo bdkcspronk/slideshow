@@ -1,4 +1,4 @@
-# Shows the slideshow full-screen in a browser once the desktop is up. Install: see README.md.
+# Shows the slideshow full-screen in a browser once the desktop is up. Install: see docs/06-tv-pc.md.
 # Also opens when francken-tv starts (e.g. after Alt+F4 closed it), if the desktop is up by then.
 [Unit]
 Description=Francken TV kiosk browser

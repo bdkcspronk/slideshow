@@ -1,0 +1,10 @@
+# Backs up what is not in git to Nextcloud, encrypted (francken_tv/backup.py). Started by the timer.
+# Install: see docs/06-tv-pc.md. Look at the result: journalctl --user -u francken-tv-backup
+[Unit]
+Description=Francken TV backup to Nextcloud
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/slideshow
+ExecStart=%h/slideshow/.venv/bin/python -m francken_tv.backup backup

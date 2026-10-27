@@ -124,7 +124,7 @@ day_starts_at = "04:00"           # a new day (new greetings, an empty activity 
 
 [spotify]
 # What's playing on Spotify and the next song; tap to change the playlist. Only shown while something
-# plays. Setup: README, section "Spotify".
+# plays. Setup: docs/setup/spotify.md.
 credentials = "~/.config/slideshow/spotify.json"
 redirect_uri = "http://127.0.0.1:8080/spotify/callback"   # must match the app at developer.spotify.com
 speaker = "Francken TV"      # the TV PC's own Spotify speaker (spotifyd, deploy/spotifyd.conf)
@@ -164,7 +164,7 @@ seconds = 14   # the length of the animation
 seconds = 18   # the terminal has typed everything after about 12 s
 
 [instagram]
-# Our latest Instagram posts on a phone, with a QR code to the account. Setup: README, section "Instagram".
+# Our latest Instagram posts on a phone, with a QR code to the account. Setup: docs/setup/instagram.md.
 username = "tfvprofessorfrancken"   # shown (with the QR code) while not connected; once connected, from Instagram
 credentials = "~/.config/slideshow/instagram.json"
 posts = 4          # the latest this many, scrolling by on the phone (fewer: slower)
@@ -183,7 +183,7 @@ seconds = 15
 seconds = 15
 
 [poll]
-# The weekly dilemma: vote on the TV, or scan the QR code and vote on a Google Form (README, "Weekly dilemma").
+# The weekly dilemma: vote on the TV, or scan the QR code and vote on a Google Form (docs/setup/weekly-dilemma.md).
 file = "config/dilemmas.txt"   # one per line: question | option A | option B; the next one every Monday
 form_url = "https://forms.gle/TkEbfZ8BVj4Q7LJ38"   # the Google Form's link (the QR code); empty: no QR code, TV votes only
 sheet_id = "1z4w-yIFYOSmDGzTRwJ77JXkWqafn8zo5RpLvt9GMVbY"   # the form's responses sheet, shared as "anyone with the link can view"
@@ -252,6 +252,14 @@ voice = "en_US-ryan-high"        # piper voice, stored in voices_folder
 voices_folder = "media/voices"
 volume = 100
 length_scale = 1.2               # speaking speed: higher is slower
+download_voice = true            # the voice model missing: download it by itself (nothing is spoken until it is there)
+
+[backup]
+# The weekly backup to Nextcloud of what isn't in git: media, personal data, logins, encrypted with the
+# passphrase in ~/.config/slideshow/backup.passphrase (docs/01-handover.md, "Not everything is in git").
+# Run by deploy/francken-tv-backup.timer, with the Nextcloud login of [event_photos] above.
+folder = "backups/francken-tv"   # on Nextcloud: keep it private: the backups hold logins (encrypted all the same)
+keep = 1                         # how many backups of each part stay on Nextcloud: only the newest, a new one replaces it
 
 [sniffer]
 port = "/dev/ttyUSB0"

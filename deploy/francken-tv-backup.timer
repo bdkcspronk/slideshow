@@ -1,0 +1,11 @@
+# Runs francken-tv-backup.service every Monday night. Persistent: after a night the PC was off, at the next start.
+[Unit]
+Description=Weekly Francken TV backup
+
+[Timer]
+OnCalendar=Mon *-*-* 03:30
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

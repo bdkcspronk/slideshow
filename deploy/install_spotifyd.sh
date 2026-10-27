@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installs spotifyd as ~/.local/bin/spotifyd and logs it in once, so this PC becomes the Spotify speaker
 # "Francken TV" (deploy/spotifyd.conf). Run it again to update to VERSION; with --login to log in again.
-# Started by francken-tv-spotifyd.service on the TV PC, or by start.sh elsewhere. See README.md ("Spotify").
+# Started by francken-tv-spotifyd.service on the TV PC, or by start.sh elsewhere. See docs/setup/spotify.md.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

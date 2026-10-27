@@ -7,7 +7,7 @@ Tapping a person shows their public playlists (spotify_playlists.html).
 Tapping a song plays it. "Lyrics" shows the song's lyrics, the line being sung lit up when LRCLIB
 has them synced (spotify_lyrics.html, lyrics.py). The buttons need Spotify Premium.
 
-Uses Spotify's Web API. One-time setup (see README, "Spotify"):
+Uses Spotify's Web API. One-time setup (see docs/setup/spotify.md):
 1. Create an app at https://developer.spotify.com/dashboard with redirect URI
    http://127.0.0.1:8080/spotify/callback, and put its keys in ~/.config/slideshow/spotify.json:
    {"client_id": "...", "client_secret": "..."}
@@ -243,7 +243,7 @@ def minutes(ms: int) -> str:
 class SpotifyProvider(Provider):
 	name = "spotify"
 	title = "Spotify"
-	nothing_to_show = "Spotify is not connected (see README.md)"
+	nothing_to_show = "Spotify is not connected (see docs/setup/spotify.md)"
 
 	def __init__(self, settings: dict, credentials_path: Path, default_seconds: float) -> None:
 		self.credentials_path = credentials_path
@@ -838,7 +838,7 @@ class SpotifyProvider(Provider):
 			except requests.RequestException:
 				speaker = None
 			if speaker is None:
-				return None, f"The {self.speaker} speaker isn't running (see the README, \"Spotify\")"
+				return None, f"The {self.speaker} speaker isn't running (see docs/setup/spotify.md)"
 			error = self.command("PUT", PLAYER_URL, json={"device_ids": [speaker], "play": True})
 			if error:
 				return None, error

@@ -1,4 +1,4 @@
-# Reads the ESP32 sniffer into the presence database. Install: see README.md.
+# Reads the ESP32 sniffer into the presence database. Install: see docs/06-tv-pc.md.
 # The user needs serial port access: sudo usermod -aG dialout $USER (then log in again).
 [Unit]
 Description=Francken TV presence sniffer

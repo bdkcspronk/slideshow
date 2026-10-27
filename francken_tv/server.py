@@ -12,6 +12,7 @@
 	/preview/<name> one slide of a provider or takeover, for checking templates
 	/preview/rain   the rain warning of the evening (an example shower when it stays dry)
 	/status         what every provider is doing, and the last error
+	/health         only the problems, one line each, with the page of the manual (docs/) to read
 	/spotify/login  connect the slideshow to a Spotify account (once; see providers/spotify.py)
 	/files/...      images from media/ and data/cache/ (large images are scaled down)
 	/tiles/<z>/<x>/<y>.png  a map tile, fetched once and kept (maptiles.py)
@@ -36,7 +37,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image
 
-from . import menu
+from . import health, menu
 from .config import CACHE_DIR, PROJECT_DIR
 from .slides import Slide
 
@@ -233,7 +234,11 @@ class Handler(BaseHTTPRequestHandler):
 		elif path.startswith("/preview/"):
 			self.send_preview(path.removeprefix("/preview/"))
 		elif path == "/status":
-			self.send_html(renderer.templates.get_template("status.html").render(app=self.server.app))
+			app = self.server.app
+			self.send_html(renderer.templates.get_template("status.html").render(app=app, problems=health.problems(app, app.clock.now())))
+		elif path == "/health":
+			app = self.server.app
+			self.send_body(health.as_text(app, app.clock.now()).encode("utf-8"), "text/plain; charset=utf-8")
 		elif path.startswith("/static/"):
 			self.send_file(STATIC_DIR / path.removeprefix("/static/"), [STATIC_DIR], cache="no-cache")
 		elif path.startswith("/files/"):
@@ -264,7 +269,7 @@ class Handler(BaseHTTPRequestHandler):
 			url = spotify.login_url()
 			if url is None:
 				self.send_html(f"<h1>Spotify</h1><p>First put the keys of your Spotify app in <code>{spotify.credentials_path}</code>: "
-					'<code>{"client_id": "...", "client_secret": "..."}</code>. See the README, section "Spotify".</p>')
+					'<code>{"client_id": "...", "client_secret": "..."}</code>. See docs/setup/spotify.md.</p>')
 				return
 			self.send_response(HTTPStatus.FOUND)
 			self.send_header("Location", url)

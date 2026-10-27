@@ -1,4 +1,4 @@
-"""A tiny Nextcloud (WebDAV) client: list folders and download files."""
+"""A tiny Nextcloud (WebDAV) client: list folders, download and upload files, delete them."""
 
 from __future__ import annotations
 
@@ -60,3 +60,19 @@ class Nextcloud:
 		temporary = destination.with_suffix(destination.suffix + ".part")
 		temporary.write_bytes(response.content)
 		temporary.replace(destination)
+
+	def make_folder(self, path: str) -> None:
+		"""Creates the folder and the folders above it; fine if they exist already."""
+		parts = [part for part in path.strip("/").split("/") if part]
+		for number in range(1, len(parts) + 1):
+			response = self.session.request("MKCOL", self.root + quote("/".join(parts[:number])), timeout=30)
+			if response.status_code != 405:   # 405: it exists already
+				response.raise_for_status()
+
+	def upload(self, path: str, source: Path) -> None:
+		with source.open("rb") as file:   # streamed: the archive of the media can be large
+			response = self.session.put(self.root + quote(path), data=file, timeout=600)
+		response.raise_for_status()
+
+	def delete(self, path: str) -> None:
+		self.session.request("DELETE", self.root + quote(path), timeout=30).raise_for_status()

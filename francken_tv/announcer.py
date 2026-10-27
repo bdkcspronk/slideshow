@@ -2,6 +2,9 @@
 
 Speech is queued and played one sentence at a time in a background thread.
 Music plays immediately, independently of speech.
+
+The voice is a piper model in media/voices/. If it is missing it is downloaded, once (tried again
+every 10 minutes if that fails); until it is there nothing is spoken. /status and /health say so.
 """
 
 from __future__ import annotations
@@ -15,14 +18,27 @@ import re
 import shutil
 import subprocess
 import threading
+import time
 import wave
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
+import requests
 
 log = logging.getLogger(__name__)
 
 # Silence before and after speech, so the speaker doesn't cut off the first word.
 PADDING_SECONDS = 0.3
+
+VOICES_URL = "https://huggingface.co/rhasspy/piper-voices/resolve/main"
+DOWNLOAD_RETRY_SECONDS = 600   # a voice that couldn't be downloaded is tried again this often (when something is spoken)
+
+
+def voice_urls(voice: str) -> list[str]:
+	"""Where piper's voice "en_US-ryan-high" is: the .onnx.json first, so a .onnx on disk is always complete."""
+	language, name, quality = voice.split("-", 2)
+	base = f"{VOICES_URL}/{language.split('_')[0]}/{language}/{name}/{quality}/{voice}"
+	return [base + ".onnx.json", base + ".onnx"]
 
 
 class Announcer:
@@ -43,13 +59,19 @@ class Announcer:
 		self.player = shutil.which("ffplay")
 		self.has_piper = importlib.util.find_spec("piper") is not None
 		self.voice_model = None   # loaded once; loading takes a few seconds
+		self.download_voice = settings.get("download_voice", True)   # fetch a missing voice model by itself
+		self.download_lock = threading.Lock()
+		self.last_download_try: float | None = None   # time.monotonic()
 		if self.player is None:
 			log.warning("ffplay not found: sound is disabled (install ffmpeg)")
 		if not self.has_piper:
 			log.warning("piper not found: speech is disabled (pip install piper-tts)")
+		elif not self.voice_file().exists():
+			log.warning("Voice model %s is missing from %s: %s", self.voice, self.voices_folder,
+				"downloading it; nothing is spoken until then" if self.download_voice else "nothing is spoken (set [announcer] download_voice = true)")
 		threading.Thread(target=self.speech_loop, name="speech", daemon=True).start()
 		if self.has_piper:
-			self.preparer.submit(self.load_voice)
+			self.preparer.submit(self.prepare_voice)
 
 	# Public API -------------------------------------------------------------
 
@@ -91,7 +113,57 @@ class Announcer:
 		if self.music_process is not None and self.music_process.poll() is None:
 			self.music_process.terminate()
 
+	def warnings(self) -> list[str]:
+		"""For /status and /health: speech that can't work because the voice model is missing."""
+		if self.player is None or not self.has_piper or self.voice_file().exists():
+			return []   # no sound or no piper at all (a laptop): logged at startup, not a problem to report
+		return [f"nothing can be spoken: the voice model {self.voice} is missing from {self.voices_folder} and could not be "
+			f"downloaded (docs/06-tv-pc.md, \"The text-to-speech voice\")"]
+
 	# Internals --------------------------------------------------------------
+
+	def voice_file(self) -> Path:
+		return self.voices_folder / f"{self.voice}.onnx"
+
+	def prepare_voice(self) -> None:
+		"""In the background: get the voice model if it's missing, then load it."""
+		if not self.voice_file().exists():
+			self.fetch_voice()
+		if self.voice_file().exists():
+			self.load_voice()
+
+	def download_again_later(self) -> None:
+		"""A voice that is still missing is tried again every few minutes, when something wants to be said."""
+		if not self.download_voice or self.download_lock.locked():
+			return
+		if self.last_download_try is None or time.monotonic() - self.last_download_try >= DOWNLOAD_RETRY_SECONDS:
+			self.last_download_try = time.monotonic()
+			self.preparer.submit(self.prepare_voice)
+
+	def fetch_voice(self) -> bool:
+		if not self.download_voice:
+			return False
+		with self.download_lock:
+			if self.voice_file().exists():
+				return True
+			self.last_download_try = time.monotonic()
+			try:
+				self.voices_folder.mkdir(parents=True, exist_ok=True)
+				for url in voice_urls(self.voice):
+					target = self.voices_folder / url.rsplit("/", 1)[-1]
+					temporary = target.with_name(target.name + ".part")
+					log.info("Downloading %s", url)
+					with requests.get(url, stream=True, timeout=60) as response:
+						response.raise_for_status()
+						with temporary.open("wb") as file:
+							for chunk in response.iter_content(1 << 20):
+								file.write(chunk)
+					temporary.replace(target)
+			except (requests.RequestException, OSError, ValueError) as error:
+				log.warning("Could not download the voice %s: %s. Trying again in %d minutes", self.voice, error, DOWNLOAD_RETRY_SECONDS // 60)
+				return False
+			log.info("Downloaded the voice %s: speech works", self.voice)
+			return True
 
 	def speech_loop(self) -> None:
 		while True:
@@ -128,6 +200,9 @@ class Announcer:
 		path = self.speech_path(text)
 		if path.exists() or not self.has_piper:
 			return path if path.exists() else None
+		if not self.voice_file().exists():
+			self.download_again_later()   # nothing to speak with yet: it is fetched in the background
+			return None
 		voice = self.load_voice()
 		with self.synthesize_lock:
 			if path.exists():

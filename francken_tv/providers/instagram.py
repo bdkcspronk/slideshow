@@ -1,6 +1,6 @@
 """Our Instagram: the latest posts on a phone, with a QR code to the account (templates/slides/instagram.html).
 
-Read with the Instagram API with Instagram Login (a Meta app; setup: README, section "Instagram"). That
+Read with the Instagram API with Instagram Login (a Meta app; setup: docs/setup/instagram.md). That
 needs a professional (Business or Creator) account. The access token from Meta's dashboard is valid for
 60 days; the slideshow renews it every week (REFRESH_EVERY), so it keeps working without logging in again.
 The token lives in the credentials file ({"access_token": "..."}), together with when it was renewed.
@@ -34,6 +34,7 @@ REFRESH_URL = "https://graph.instagram.com/refresh_access_token"
 PROFILE_FIELDS = "user_id,username,name,profile_picture_url,followers_count,media_count"
 POST_FIELDS = "id,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count"
 REFRESH_EVERY = timedelta(days=7)      # renew the token (valid 60 days) this often
+EXPIRY_WARNING = timedelta(days=14)    # warn on /status when the token is this close to expiring
 RETRY_REFRESH = timedelta(days=1)      # a token can only be renewed once it's a day old
 
 
@@ -100,6 +101,18 @@ class InstagramProvider(Provider):
 		self.credentials_path.write_text(json.dumps(credentials, indent=1), encoding="utf-8")
 		os.chmod(self.credentials_path, 0o600)   # only readable by this user
 
+	def warnings(self, now: datetime) -> list[str]:
+		"""The token is renewed weekly; if it's close to expiring, that has stopped working."""
+		expires_at = self.credentials().get("expires_at")
+		if not expires_at:
+			return []
+		left = datetime.fromisoformat(expires_at) - now
+		if left < timedelta(0):
+			return [f"the Instagram token expired on {expires_at[:10]}: generate a new one (docs/setup/instagram.md)"]
+		if left < EXPIRY_WARNING:
+			return [f"the Instagram token expires in {left.days} days and is not being renewed (docs/setup/instagram.md)"]
+		return []
+
 	def keep_token_fresh(self, credentials: dict, now: datetime) -> dict:
 		"""Renew the token every week, so it never reaches its 60 days. Returns the credentials to use."""
 		last = credentials.get("renewed_at") or credentials.get("renew_tried_at")
@@ -121,7 +134,7 @@ class InstagramProvider(Provider):
 	def refresh(self, now: datetime) -> None:
 		credentials = self.credentials()
 		if not credentials.get("access_token"):
-			raise RuntimeError(f"no Instagram token in {self.credentials_path} (README, \"Instagram\")")
+			raise RuntimeError(f"no Instagram token in {self.credentials_path} (docs/setup/instagram.md)")
 		credentials = self.keep_token_fresh(credentials, now)
 		token = credentials["access_token"]
 		response = requests.get(f"{API}/me", params={"fields": PROFILE_FIELDS, "access_token": token}, timeout=20)
