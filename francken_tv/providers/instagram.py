@@ -169,14 +169,19 @@ class InstagramProvider(Provider):
 		return result
 
 	def slides(self, now: datetime) -> list[Slide]:
+		data = self.slide_data(now)
+		# Drawn with the newest data when it's shown: a round is put together in advance, maybe before the
+		# first posts came in (right after a restart), and should still show them.
+		return [Slide("instagram.html", self.seconds, data, update=lambda when: self.slide_data(when) or data)] if data else []
+
+	def slide_data(self, now: datetime) -> dict | None:
 		if not self.profile or not self.posts:   # not connected: the account all the same, without its posts
 			if not self.username:
-				return []
-			return [Slide("instagram.html", self.seconds, {"username": self.username, "name": "", "picture": "", "followers": "",
-				"post_count": "", "link": f"https://www.instagram.com/{self.username}/", "scroll_seconds": 0, "posts": [],
-				"tiles": 9})]
+				return None
+			return {"username": self.username, "name": "", "picture": "", "followers": "", "post_count": "",
+				"link": f"https://www.instagram.com/{self.username}/", "scroll_seconds": 0, "posts": [], "tiles": 9}
 		username = self.profile.get("username", "")
-		return [Slide("instagram.html", self.seconds, {
+		return {
 			"username": username,
 			"name": self.profile.get("name") or username,
 			"picture": self.profile.get("picture", ""),
@@ -186,4 +191,4 @@ class InstagramProvider(Provider):
 			"scroll_seconds": max(self.seconds - 5, 5),   # the posts scroll by, after a moment and with a moment left
 			"posts": [{"picture": post.picture, "likes": count(post.likes), "comments": count(post.comments), "caption": post.caption,
 				"ago": ago(post.time, now), "kind": post.kind} for post in self.posts],
-		})]
+		}

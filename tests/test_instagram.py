@@ -90,6 +90,14 @@ class InstagramTest(unittest.TestCase):
 		self.assertFalse(any("refresh_access_token" in call.args[0] for call in get.call_args_list))
 		self.assertEqual(json.loads(self.credentials.read_text())["access_token"], "fresh")
 
+	def test_a_slide_made_before_the_posts_came_in_shows_them(self):
+		[slide] = self.provider.slides(NOW)   # e.g. the first round after a restart: not fetched yet
+		self.assertEqual(slide.data["posts"], [])
+		self.credentials.write_text(json.dumps({"access_token": "t", "renewed_at": NOW.isoformat()}))
+		with mock.patch("francken_tv.providers.instagram.requests.get", side_effect=instagram):
+			self.provider.refresh(NOW)
+		self.assertEqual(len(slide.update(NOW)["posts"]), 2)   # when it's shown, it has the posts
+
 	def test_a_token_too_young_to_renew_is_tried_again_the_next_day(self):
 		self.credentials.write_text(json.dumps({"access_token": "new"}))
 		too_young = lambda url, **kwargs: Response(400, {"error": {"message": "too young"}}) if "refresh" in url else instagram(url, **kwargs)
