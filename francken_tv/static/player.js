@@ -58,6 +58,7 @@ async function show(slide, { canRefresh = true } = {}) {
 	const old = layers[front];
 	back.classList.add("visible");
 	old.classList.remove("visible");
+	startVideos(back, true);   // so they start with the slide, not while it is still loading
 	front = 1 - front;
 	// Empty the old layer after the fade, unless a newer slide is already loading into it.
 	setTimeout(() => { if (mine === showCount) old.innerHTML = ""; }, 1000);

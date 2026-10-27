@@ -25,6 +25,9 @@
 // - data-terminal: a terminal session that types itself after data-terminal-wait seconds: each child's
 //   data-command is typed after data-prompt, then the child (its answer) appears. When it's done the
 //   slide gets .typed (e.g. to show what comes after).
+// - data-play-at-start: a <video> that plays from the start of its slide, also while it is out of view
+//   (a post further down the Instagram feed): the browser holds back a video with the autoplay
+//   attribute until it is on screen. startVideos() is called when the slide is drawn and again when it fades in.
 
 const maps = new Set();
 
@@ -44,10 +47,18 @@ function setupWidgets(root) {
 	root.querySelectorAll("canvas[data-matrix]").forEach(setupMatrix);
 	root.querySelectorAll("[data-decode]").forEach(setupDecode);
 	root.querySelectorAll("[data-terminal]").forEach(setupTerminal);
+	startVideos(root);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
 		input.addEventListener("input", () => fieldChanged(input));
 		fieldChanged(input);
 	});
+}
+
+function startVideos(root, fromStart = false) {
+	for (const video of root.querySelectorAll("video[data-play-at-start]")) {
+		if (fromStart) video.currentTime = 0;
+		video.play().catch(() => {});   // e.g. a video that isn't there
+	}
 }
 
 function setupZoom(element) {
