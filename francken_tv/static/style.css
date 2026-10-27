@@ -3073,7 +3073,8 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 
 /* Instagram (providers/instagram.py): Instagram's colours glowing on near-black; on the left "Follow us",
    our handle and a QR code to the account, on the right a phone with the profile and the latest posts,
-   which scroll slowly up (.ig-feed, over --scroll; the screen is a container, so 100cqh is its height). */
+   shown from the bottom (the oldest) scrolling slowly up to the newest and the profile (.ig-feed, over --scroll;
+   the screen is a container, so 100cqh is its height). */
 .instagram-slide {
 	--ig-purple: #833ab4;
 	--ig-pink: #e1306c;
@@ -3134,7 +3135,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .ig-screen { position: relative; height: 100%; overflow: hidden; border-radius: 4.8vh; background: #ffffff; color: #111111; container-type: size; }
 .ig-feed { animation: ig-scroll var(--scroll) ease-in-out 2.5s both; }
 .ig-feed.still { animation: none; }   /* no posts: nothing to scroll */
-@keyframes ig-scroll { to { transform: translateY(calc(-100% + 100cqh)); } }
+@keyframes ig-scroll { from { transform: translateY(calc(-100% + 100cqh)); } }   /* from the bottom to the top */
 .ig-topbar { padding: 6vh 2vh 1.6vh; font-size: 2.9vh; }
 .ig-profile { display: flex; align-items: center; gap: 2.4vh; padding: 0 2vh; }
 .ig-avatar { flex: none; width: 4.4vh; height: 4.4vh; border-radius: 50%; object-fit: cover; background: #ddd; }
