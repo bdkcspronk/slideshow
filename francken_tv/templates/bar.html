@@ -4,9 +4,12 @@
 	"Activity chart" in style.css. `style` adds where the bar goes and when it grows.
 #}
 {% macro bar(look, style="") -%}
+{#- The frisian tile (frisian.svg) goes into the bar as a data URI: templates aren't served as files. -#}
+{% if look.shape == "frisian" %}{% set tile %}{% include "frisian.svg" %}{% endset %}{% endif %}
 <div class="bar {{ look.shape }}{{ ' glow' if look.glow }}" style="{{ style }} background: {{ look.background }};
 	{%- if look.gradient_size %} background-size: {{ look.gradient_size }}% 100%; background-position: {{ look.gradient_position }}% 0;{% endif %}
 	{%- if look.run_width %} --run-offset: {{ look.run_offset }}cqw; --run-width: {{ look.run_width }}cqw;{% endif %}
+	{%- if tile %} background-image: url('data:image/svg+xml,{{ tile | urlencode }}') !important;{% endif %}
 	{%- if look.glow_colour %} --glow: {{ look.glow_colour }};{% endif %}">
 	{% if look.stripes %}<span class="bar-stripes" style="background: {{ look.stripes }};{% if look.stripe_width %} --stripe: {{ look.stripe_width }};{% endif %}"></span>{% endif %}
 	{% if look.bubbles %}

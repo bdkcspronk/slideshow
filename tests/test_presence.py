@@ -110,6 +110,7 @@ class ChartTest(PresenceTestCase):
 		self.assertEqual((rider.shape, rider.vehicle, alice.vehicle), ("striped", "motorcycle", None))
 		self.assertEqual(parse_style({"style": ["mobility", "glow"]}).vehicle, "mobility")
 		self.assertEqual(parse_style({"style": "portugal"}).shape, "portugal")
+		self.assertEqual(parse_style({"style": "frisian"}).shape, "frisian")
 
 	def test_rows_ordered_by_arrival(self):
 		sightings = [Sighting(at("10:00"), BOB, "Bob"), Sighting(at("09:00"), ALICE, "Alice")]

@@ -12,6 +12,9 @@ bar. The bar's look comes from their entry in config/devices.json:
 	                   person's bars, with the emblem of templates/portugal_flag.svg landing on
 	                   its border once the last bar has grown, and the flag at 30% in
 	                   the gaps between them),
+	                   "frisian" (blue and white stripes, slanted like the Frisian flag's, with one
+	                   pompeblad in each white stripe; they keep their size, so a longer bar gets more
+	                   stripes: templates/frisian.svg),
 	                   or a list combining one of those with "glow" and/or a vehicle:
 	                   "motorcycle" or "mobility" (a mobility scooter), in the bar's colour
 	                   (templates/motorcycle.svg, mobility.svg), riding the front of the bars
@@ -41,7 +44,7 @@ FALLBACK_BRIGHTNESS_RANGE = (0.85, 1.0)
 BUCKET = timedelta(minutes=5)          # sightings are grouped per 5 minutes
 MAX_GAP = timedelta(minutes=10)        # an absence up to this long doesn't split a bar
 VEHICLES = ("motorcycle", "mobility")   # ride the front of the bars (templates/<name>.svg)
-SHAPES = {"round corners", "square corners", "striped", "nyan cat", "rainbow", "beer", "board", "portugal"}
+SHAPES = {"round corners", "square corners", "striped", "nyan cat", "rainbow", "beer", "board", "portugal", "frisian"}
 CHART_LEAD = timedelta(hours=1)        # the chart starts this long before the first arrival
 GROW_SECONDS = 4.0                     # the bars draw themselves across the chart in this time
 GROW_STARTS = 0.8                      # ...starting after the slide has faded in
@@ -211,7 +214,7 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 	# Bars with the same gradient share one gradient across the chart (as in the old chart).
 	gradient_extent: dict[tuple, tuple[float, float]] = {}
 	for bar in data.bars:
-		if isinstance(bar.style.color, list) and bar.style.shape not in ("nyan cat", "rainbow", "beer", "board", "portugal"):
+		if isinstance(bar.style.color, list) and bar.style.shape not in ("nyan cat", "rainbow", "beer", "board", "portugal", "frisian"):
 			key = tuple(bar.style.color)
 			left, right = gradient_extent.get(key, (100.0, 0.0))
 			gradient_extent[key] = (min(left, percent(bar.start)), max(right, percent(bar.end)))

@@ -1404,6 +1404,17 @@ body.show-cursor button { cursor: pointer; }
 }
 @keyframes flag-wave { to { -webkit-mask-position: calc(var(--wave) - var(--run-offset, 0px)) 0; mask-position: calc(var(--wave) - var(--run-offset, 0px)) 0; } }
 @keyframes flag-folds { to { background-position: calc(var(--wave) - var(--run-offset, 0px)) 0; } }
+/* Frisian: blue and white stripes slanted like the flag's, a pompeblad in each white one (the tile is
+   templates/frisian.svg, its pompeblad the one of the Frisian flag; bar.html puts it in as the background
+   image, as templates aren't served). The tile is as tall as the bar and repeats at that size, so a longer
+   bar gets more stripes rather than bigger ones. A person's bars are windows onto one run of them (--run-offset, bar.html). */
+.bar.frisian {
+	border-radius: 0;
+	background-color: #244994 !important;
+	background-size: auto 100% !important;
+	background-repeat: repeat-x !important;
+	background-position: calc(0px - var(--run-offset, 0px)) 0 !important;
+}
 /* Stripes: the stripe colour (or gradient), cut into diagonal stripes by a mask. They span the person's
    whole run (--run-offset and --run-width, from bar.html; the whole bar when not set), and each bar shows
    its piece of it, so the stripes and a stripe gradient go on across the gaps between their bars. */
