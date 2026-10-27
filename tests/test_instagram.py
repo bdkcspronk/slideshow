@@ -17,10 +17,14 @@ MEDIA = {"data": [
 
 
 class Response:
-	def __init__(self, status=200, data=None, content=b"jpeg"):
+	def __init__(self, status=200, data=None, content=b"jpeg", size=None):
 		self.status_code, self.data, self.content = status, data, content
 		self.ok = status < 400
 		self.text = json.dumps(data) if data is not None else ""
+		self.headers = {"Content-Length": str(size if size is not None else len(content))}
+
+	def iter_content(self, chunk_size):
+		yield self.content
 
 	def json(self):
 		return self.data
@@ -40,6 +44,8 @@ def instagram(url, params=None, **kwargs):
 			"profile_picture_url": "https://cdn.example/me.jpg", "followers_count": 812, "media_count": 140})
 	if url.endswith("/me/media"):
 		return Response(data=MEDIA)
+	if url.startswith("https://cdn.example/v.mp4"):
+		return Response(content=b"video")
 	return Response(content=b"picture")
 
 
@@ -56,6 +62,7 @@ class InstagramTest(unittest.TestCase):
 		image, video = parse_posts(MEDIA)
 		self.assertEqual((image.picture_url, image.likes, image.caption), ("https://cdn.example/a.jpg?x=1", 12345, "Borrel!"))
 		self.assertEqual((video.picture_url, video.likes, video.kind), ("https://cdn.example/v.jpg", None, "VIDEO"))   # a video: its cover
+		self.assertEqual((video.video_url, image.video_url), ("https://cdn.example/v.mp4", ""))   # ...and its file, to play
 		self.assertEqual(image.time.date(), datetime(2026, 10, 26).date())
 
 	def test_count(self):
@@ -81,7 +88,8 @@ class InstagramTest(unittest.TestCase):
 		self.assertEqual([post["likes"] for post in slide.data["posts"]], ["12.3K", ""])
 		self.assertRegex(slide.data["posts"][0]["ago"], r"^\d hours ago$")   # 17:00 UTC: how many hours depends on the time zone
 		self.assertTrue(all(post["picture"].startswith("/files/") for post in slide.data["posts"]))
-		self.assertEqual(len(list((self.folder / "pictures").iterdir())), 3)   # the profile picture and two posts
+		self.assertEqual(len(list((self.folder / "pictures").iterdir())), 4)   # the profile picture, two posts and the video
+		self.assertEqual([post["video"][-4:] for post in slide.data["posts"]], ["", ".mp4"])   # the video plays on the phone
 
 	def test_the_token_is_renewed_once_a_week(self):
 		self.credentials.write_text(json.dumps({"access_token": "fresh", "renewed_at": (NOW - timedelta(days=3)).isoformat()}))
@@ -89,6 +97,15 @@ class InstagramTest(unittest.TestCase):
 			self.provider.refresh(NOW)
 		self.assertFalse(any("refresh_access_token" in call.args[0] for call in get.call_args_list))
 		self.assertEqual(json.loads(self.credentials.read_text())["access_token"], "fresh")
+
+	def test_a_video_too_big_shows_its_cover(self):
+		self.credentials.write_text(json.dumps({"access_token": "t", "renewed_at": NOW.isoformat()}))
+		huge = lambda url, **kwargs: Response(content=b"", size=200 * 1024 * 1024) if url.endswith(".mp4") else instagram(url, **kwargs)
+		with mock.patch("francken_tv.providers.instagram.requests.get", side_effect=huge):
+			self.provider.refresh(NOW)
+		video = self.provider.slides(NOW)[0].data["posts"][1]
+		self.assertEqual((video["kind"], video["video"]), ("VIDEO", ""))
+		self.assertTrue(video["picture"])   # its cover instead
 
 	def test_a_slide_made_before_the_posts_came_in_shows_them(self):
 		[slide] = self.provider.slides(NOW)   # e.g. the first round after a restart: not fetched yet

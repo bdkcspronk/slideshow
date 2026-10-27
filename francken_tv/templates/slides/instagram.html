@@ -1,7 +1,7 @@
 {#
 	Our Instagram (providers/instagram.py): on the left "Follow us" with a QR code to the account (data-qr,
 	widgets.js); on the right a phone showing the profile and the latest posts, which scroll slowly up
-	while the slide is shown (--scroll). Without a connection to Instagram (no posts) the phone shows the
+	while the slide is shown (--scroll); a video plays in its post, muted and over and over. Without a connection to Instagram (no posts) the phone shows the
 	profile with empty tiles (`tiles`). See "Instagram" in style.css.
 #}
 <div class="slide instagram-slide" style="--scroll: {{ scroll_seconds }}s">
@@ -42,7 +42,8 @@
 						<b>{{ username }}</b><span>{{ post.ago }}</span>
 					</header>
 					<div class="ig-picture">
-						<img src="{{ post.picture }}" alt="">
+						{% if post.video %}<video src="{{ post.video }}" poster="{{ post.picture }}" autoplay muted loop playsinline></video>
+						{% else %}<img src="{{ post.picture }}" alt="">{% endif %}
 						{% if post.kind == "VIDEO" %}<span class="ig-kind" aria-label="Video">&#9654;</span>
 						{% elif post.kind == "CAROUSEL_ALBUM" %}<span class="ig-kind" aria-label="More photos">&#10064;</span>{% endif %}
 					</div>

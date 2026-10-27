@@ -5,7 +5,9 @@ needs a professional (Business or Creator) account. The access token from Meta's
 60 days; the slideshow renews it every week (REFRESH_EVERY), so it keeps working without logging in again.
 The token lives in the credentials file ({"access_token": "..."}), together with when it was renewed.
 
-The posts' pictures are downloaded (data/cache/instagram): Instagram's links to them expire.
+The posts' pictures and videos are downloaded (data/cache/instagram): Instagram's links to them expire.
+A video plays muted on the phone; one bigger than MAX_DOWNLOAD (or that Instagram gives no file for, e.g.
+with licensed music) shows its cover.
 
 Without a connection (no token yet, or Instagram never answered) the slide is shown all the same, for the
 account in [instagram] username: "Follow us" with the QR code, and on the phone a profile with empty
@@ -33,6 +35,7 @@ API = "https://graph.instagram.com/v26.0"
 REFRESH_URL = "https://graph.instagram.com/refresh_access_token"
 PROFILE_FIELDS = "user_id,username,name,profile_picture_url,followers_count,media_count"
 POST_FIELDS = "id,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count"
+MAX_DOWNLOAD = 50 * 1024 * 1024        # a bigger video isn't downloaded: it shows its cover
 REFRESH_EVERY = timedelta(days=7)      # renew the token (valid 60 days) this often
 EXPIRY_WARNING = timedelta(days=14)    # warn on /status when the token is this close to expiring
 RETRY_REFRESH = timedelta(days=1)      # a token can only be renewed once it's a day old
@@ -48,6 +51,8 @@ class Post:
 	caption: str = ""
 	kind: str = "IMAGE"     # IMAGE, VIDEO or CAROUSEL_ALBUM
 	picture: str = ""       # the downloaded copy, as a /files/ url
+	video_url: str = ""     # Instagram's link to a video's file, "" if there's none
+	video: str = ""         # the downloaded copy, as a /files/ url
 
 
 def parse_posts(data: dict) -> list[Post]:
@@ -61,7 +66,8 @@ def parse_posts(data: dict) -> list[Post]:
 		except (KeyError, ValueError):
 			time = None
 		posts.append(Post(picture or item.get("thumbnail_url") or "", item.get("permalink", ""), time,
-			item.get("like_count"), item.get("comments_count", 0), (item.get("caption") or "").strip(), kind))
+			item.get("like_count"), item.get("comments_count", 0), (item.get("caption") or "").strip(), kind,
+			video_url=item.get("media_url", "") if kind == "VIDEO" else ""))
 	return posts
 
 
@@ -141,9 +147,11 @@ class InstagramProvider(Provider):
 		response.raise_for_status()
 		profile = response.json()
 		posts = self.fetch_posts(token)
-		profile["picture"], *pictures = self.download([profile.get("profile_picture_url") or ""] + [post.picture_url for post in posts])
-		for post, picture in zip(posts, pictures):
-			post.picture = picture
+		pictures = [profile.get("profile_picture_url") or ""] + [post.picture_url for post in posts]
+		files = self.download([(url, ".jpg") for url in pictures] + [(post.video_url, ".mp4") for post in posts])
+		profile["picture"], *post_pictures = files[:len(pictures)]
+		for post, picture, video in zip(posts, post_pictures, files[len(pictures):]):
+			post.picture, post.video = picture, video
 		self.profile, self.posts = profile, [post for post in posts if post.picture]   # a post without its picture is left out
 
 	def fetch_posts(self, token: str) -> list[Post]:
@@ -155,23 +163,30 @@ class InstagramProvider(Provider):
 		response.raise_for_status()
 		return parse_posts(response.json())
 
-	def download(self, urls: list[str]) -> list[str]:
-		"""Download pictures (once each), as /files/ urls ("" for one that can't be fetched), and delete the
-		ones no longer needed."""
+	def download(self, files: list[tuple[str, str]]) -> list[str]:
+		"""Download pictures and videos ((url, ".jpg" or ".mp4"), once each), as /files/ urls ("" for one that
+		can't be fetched or is over MAX_DOWNLOAD), and delete the ones no longer needed."""
 		self.image_folder.mkdir(parents=True, exist_ok=True)
 		names, result = set(), []
-		for url in urls:
+		for url, suffix in files:
 			if not url:
 				result.append("")
 				continue
-			path = self.image_folder / (hashlib.sha1(url.split("?")[0].encode()).hexdigest()[:16] + ".jpg")
+			path = self.image_folder / (hashlib.sha1(url.split("?")[0].encode()).hexdigest()[:16] + suffix)
 			if not path.exists():
 				try:
-					response = requests.get(url, timeout=20)
+					response = requests.get(url, timeout=60, stream=True)
 					response.raise_for_status()
-					path.write_bytes(response.content)
-				except requests.RequestException as error:
-					log.warning("Could not fetch an Instagram picture: %s", error)
+					if int(response.headers.get("Content-Length") or 0) > MAX_DOWNLOAD:
+						raise ValueError("too big")
+					content = bytearray()
+					for chunk in response.iter_content(1 << 16):
+						content += chunk
+						if len(content) > MAX_DOWNLOAD:
+							raise ValueError("too big")
+					path.write_bytes(content)
+				except (requests.RequestException, ValueError) as error:
+					log.warning("Could not fetch an Instagram %s: %s", "video" if suffix == ".mp4" else "picture", error)
 					result.append("")
 					continue
 			names.add(path.name)
@@ -203,5 +218,5 @@ class InstagramProvider(Provider):
 			"link": f"https://www.instagram.com/{username}/",
 			"scroll_seconds": max(self.seconds - 5, 5),   # the posts scroll by, after a moment and with a moment left
 			"posts": [{"picture": post.picture, "likes": count(post.likes), "comments": count(post.comments), "caption": post.caption,
-				"ago": ago(post.time, now), "kind": post.kind} for post in self.posts],
+				"ago": ago(post.time, now), "kind": post.kind, "video": post.video} for post in self.posts],
 		}
