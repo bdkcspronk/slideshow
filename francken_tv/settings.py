@@ -24,6 +24,7 @@ class Settings:
 	volume: int = 100            # 0-100, the TV PC's main volume, Spotify too (system_volume.py)
 	speed: float = 1.0           # see SPEEDS
 	hidden: list[str] = field(default_factory=list)   # slide types left out of the rotation
+	permanent_pause: bool = False   # space pauses until it's pressed again; otherwise the slideshow goes on after 4 minutes
 
 	def changed(self, changes: dict) -> Settings:
 		"""A copy with `changes` (from the menu) applied; unknown names and wrong types raise ValueError."""
@@ -32,7 +33,7 @@ class Settings:
 		for name, value in changes.items():
 			if name not in known:
 				raise ValueError(f"unknown setting {name!r}")
-			if name in ("muted", "quotes_aloud", "greetings"):
+			if name in ("muted", "quotes_aloud", "greetings", "permanent_pause"):
 				if not isinstance(value, bool):
 					raise ValueError(f"{name} must be true or false")
 			elif name == "volume":

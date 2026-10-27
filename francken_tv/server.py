@@ -127,6 +127,7 @@ class SlideRenderer:
 			log.exception("Could not render %s", slide.template)
 			response = {"html": "", "seconds": 0.1, "refresh": None}   # skip it
 		response["version"] = static_version()
+		response["permanent_pause"] = self.app.settings.permanent_pause   # how long a pause lasts (player.js)
 		self.count += 1
 		response["id"] = self.count
 		self.recent[self.count] = slide

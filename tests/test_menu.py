@@ -41,6 +41,8 @@ class Puzzle(Provider):
 
 class SettingsTest(unittest.TestCase):
 	def test_changes_are_checked(self):
+		self.assertFalse(Settings().permanent_pause)   # a pause ends by itself unless this is switched on
+		self.assertTrue(Settings().changed({"permanent_pause": True}).permanent_pause)
 		settings = Settings().changed({"muted": True, "volume": 140, "speed": 1.5})
 		self.assertEqual((settings.muted, settings.volume, settings.speed), (True, 100, 1.5))
 		for wrong in [{"muted": "yes"}, {"speed": 3}, {"volume": True}, {"hidden": "quote"}, {"colour": "red"}]:

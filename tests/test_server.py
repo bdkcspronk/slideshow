@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from PIL import Image
 
 from francken_tv import server
+from francken_tv.settings import Settings
 
 DAY = 24 * 3600
 
@@ -55,7 +56,7 @@ class GoingBackTest(unittest.TestCase):
 		music = Slide("empty.html", 10, update=lambda now: {"volume": volume["now"]}, refresh_seconds=1)
 		poster = Slide("empty.html", 10)
 		slides = iter([music, poster])
-		app = SimpleNamespace(clock=SimpleNamespace(now=datetime.now), announcer=None,
+		app = SimpleNamespace(clock=SimpleNamespace(now=datetime.now), announcer=None, settings=Settings(),
 			scheduler=SimpleNamespace(next_slide=lambda now: next(slides)))
 		renderer = server.SlideRenderer(app)
 		first, second = renderer.next_slide(), renderer.next_slide()
@@ -79,11 +80,12 @@ class ShortcutTest(unittest.TestCase):
 			def slides(self, now):
 				return []   # nobody seen yet today
 
-		app = SimpleNamespace(clock=SimpleNamespace(now=datetime.now), announcer=None,
+		app = SimpleNamespace(clock=SimpleNamespace(now=datetime.now), announcer=None, settings=Settings(permanent_pause=True),
 			providers={"puzzles": Puzzles(), "presence": Chart()}, shortcuts={"1": "puzzles", "3": "presence"})
 		renderer = server.SlideRenderer(app)
 		shown = renderer.shortcut("1")
 		self.assertEqual((shown["id"], shown["seconds"], renderer.current), (1, 20, puzzles))
+		self.assertTrue(shown["permanent_pause"])   # the player learns how long a pause lasts with every slide
 		self.assertEqual(renderer.again(1)["id"], 1)   # it's in the history, like any other slide
 		self.assertIn("message", renderer.shortcut("3"))
 		self.assertIsNone(renderer.shortcut("7"))

@@ -2,7 +2,8 @@
 // What is shown, and for how long, is decided in Python (francken_tv/scheduler.py);
 // this file only loads each slide, fades it in, and waits.
 //
-// Keys: right/down = next, left/up = previous, space = pause (or the slide's data-space-action,
+// Keys: right/down = next, left/up = previous, space = pause for 4 minutes, or until space again with
+// Settings → "Pause until unpaused" (or the slide's data-space-action,
 // e.g. pausing the music on the Spotify slide), m = read quotes aloud on/off,
 // number keys = jump to a slide type, e.g. 1 = Daily puzzles (see [shortcuts] in config.toml),
 // Esc = the menu: previews of those slide types, Settings and Power (see "The menu" below).
@@ -14,6 +15,8 @@ let front = 0;
 let nextTimer = null;
 let refreshTimer = null;
 let paused = false;
+let pauseTimer = null;         // ends a pause by itself (PAUSE_SECONDS), unless the pause is permanent
+let permanentPause = false;    // Settings → "Pause until unpaused" (sent with every slide and by the menu)
 let current = null;
 const history = [];      // recently shown slides, for the left arrow key
 let historyIndex = -1;
@@ -21,6 +24,7 @@ let interacting = false;   // someone is playing an interactive slide
 let idleTimer = null;
 let takeoverTimer = null;
 const IDLE_SECONDS = 240;   // continue the slideshow after this long without clicks (data-idle-seconds on a slide overrides it)
+const PAUSE_SECONDS = 240;  // a pause (space) ends by itself after this long, unless permanentPause
 let showCount = 0;       // every slide change gets a number; only the newest may touch the screen
 let loadedVersion = null;   // of style.css and player.js; when they change on disk, the page reloads
 
@@ -36,6 +40,7 @@ async function show(slide, { canRefresh = true } = {}) {
 	stopInteracting();
 	clearTimeout(nextTimer);
 	clearInterval(refreshTimer);
+	if (slide.permanent_pause !== undefined) setPermanentPause(slide.permanent_pause);
 	const back = layers[1 - front];
 	back.innerHTML = slide.html;
 	setupWidgets(back);
@@ -405,15 +410,36 @@ document.addEventListener("keydown", async (event) => {
 		const values = button?.dataset.value ? [button.dataset.value] : [];   // what the button sends, e.g. "lyrics" to stay in that view
 		sendAction(slide, slide.dataset.spaceAction, values).finally(() => button?.classList.remove("busy"));
 	} else if (event.key === " ") {
-		paused = !paused;
-		if (paused) clearTimeout(nextTimer);
-		else if (current) nextTimer = setTimeout(next, current.seconds * 1000);
+		setPaused(!paused);
 	} else if (/^[0-9]$/.test(event.key) && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		jumpTo(event.key);
 	} else if (event.key === "m") {
 		await getJson("/api/narration", { method: "POST" });
 	}
 });
+
+// Space pauses the slideshow; a pause ends by itself after PAUSE_SECONDS (with the next slide), unless
+// "Pause until unpaused" is on in the settings. Pressing space again goes on as usual.
+function setPaused(on) {
+	paused = on;
+	clearTimeout(pauseTimer);
+	if (paused) {
+		clearTimeout(nextTimer);
+		if (!permanentPause) pauseTimer = setTimeout(() => { paused = false; next(); }, PAUSE_SECONDS * 1000);
+	} else if (current) {
+		nextTimer = setTimeout(next, current.seconds * 1000);
+	}
+}
+
+// The setting changed (in the menu, or on another screen): a pause that's on now follows it.
+function setPermanentPause(on) {
+	if (on === permanentPause) return;
+	permanentPause = on;
+	if (paused) {
+		clearTimeout(pauseTimer);
+		if (!permanentPause) pauseTimer = setTimeout(() => { paused = false; next(); }, PAUSE_SECONDS * 1000);
+	}
+}
 
 // ---- The menu --------------------------------------------------------------------------------
 // Esc opens it: previews of the slide types in [shortcuts] (config.toml), the sound (mute and volume),
@@ -462,6 +488,7 @@ function menuIsOpen() {
 async function openMenu() {
 	try {
 		menuData = await getJson("/api/menu");
+		setPermanentPause(menuData.settings.permanent_pause);
 	} catch (error) {
 		console.error(error);
 		return;   // the menu isn't available right now
@@ -579,6 +606,7 @@ const menuPages = {
 						</span>
 					</div>
 					<p class="menu-note">2&times; = every slide is shown half as long</p>
+					${toggle("permanent_pause", "Pause until unpaused", "Space pauses the slideshow; when this is off it goes on by itself after 4 minutes")}
 					<h3>Shown in the slideshow</h3>
 					<div class="menu-chips">${data.slide_types.map((type) => `
 						<button class="menu-chip" data-focus="type-${type.name}" data-menu="slide_type" data-value="${type.name}"
@@ -652,6 +680,7 @@ async function sendMenu(button, command, value) {
 			body: JSON.stringify({ command, value }),
 		});
 		menuData = answer.menu;
+		setPermanentPause(menuData.settings.permanent_pause);
 		if (menuIsOpen() && menuPage !== "overview") showMenuPage(menuPage, button.dataset.focus);
 		else if (menuIsOpen()) {   // the overview: only the sound controls, so the previews keep playing
 			menu.querySelector(".menu-sound")?.replaceWith(...htmlElements(soundControls(menuData.settings)));
