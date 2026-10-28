@@ -56,9 +56,31 @@ function setupWidgets(root) {
 
 function startVideos(root, fromStart = false) {
 	for (const video of root.querySelectorAll("video[data-play-at-start]")) {
-		if (fromStart) video.currentTime = 0;
+		if (fromStart || video.dataset.startedAt === undefined) {
+			video.currentTime = 0;
+			video.dataset.startedAt = performance.now();
+		}
 		video.play().catch(() => {});   // e.g. a video that isn't there
+		if (!video.dataset.syncing) {
+			video.dataset.syncing = "1";
+			syncVideo(video);
+		}
 	}
+}
+
+// The browser may keep a video paused while it is scrolling into view (or only let it play once the
+// scrolling has stopped). Meanwhile we seek it along with the slide's clock, so it still moves.
+function syncVideo(video) {
+	const tick = () => {
+		if (!document.contains(video)) return;
+		if (video.paused && video.duration) {
+			const elapsed = (performance.now() - Number(video.dataset.startedAt)) / 1000;
+			video.currentTime = elapsed % video.duration;
+			video.play().catch(() => {});
+		}
+		setTimeout(tick, 100);
+	};
+	tick();
 }
 
 function setupZoom(element) {
