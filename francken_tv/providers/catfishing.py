@@ -205,11 +205,12 @@ class CatfishingProvider(Provider):
 
 	def articles(self, day: date) -> list[Article]:
 		"""A day's articles, downloaded once (raises if catfishing.net can't be reached)."""
-		if day not in self.games:
-			self.games[day] = self.fetch(day)
-			for old in sorted(self.games)[:-ARCHIVE_DAYS_KEPT]:   # only the last few days opened
-				del self.games[old]
-		return self.games[day]
+		articles = self.games.pop(day) if day in self.games else self.fetch(day)
+		self.games[day] = articles   # at the end: the most recently used
+		newest = max(self.games)     # today's game, which is never dropped
+		for old in [d for d in self.games if d not in (day, newest)][:-ARCHIVE_DAYS_KEPT + 2]:
+			del self.games[old]      # only the last few days opened, not the oldest dates
+		return articles
 
 	def refresh(self, now: datetime) -> None:
 		"""Download today's ten articles once; afterwards this does nothing until tomorrow."""

@@ -175,6 +175,13 @@ class CatfishingArchiveTest(unittest.TestCase):
 		self.assertEqual(self.act("archive", "2020-01").data["month"], date(2024, 7, 1))
 		self.assertTrue(self.act("open_day", "2024-06-30").data["today"])   # before the archive: today's game instead
 
+	def test_an_older_day_can_be_opened_after_several_newer_ones(self):
+		for day in ["2026-10-10", "2026-10-11", "2026-10-12", "2026-10-13"]:
+			self.act("open_day", day)
+		slide = self.act("open_day", "2026-09-01")   # older than every day kept: was dropped at once (KeyError)
+		self.assertEqual(slide.data["day_label"], "1 Sep 2026")
+		self.assertIn(NOW.date(), self.provider.games)   # today's game is never the one dropped
+
 	def test_starting_today_over_forgets_it_in_the_history(self):
 		self.act("skip")
 		self.assertIn("2026-10-14", json.loads(self.history.read_text()))
