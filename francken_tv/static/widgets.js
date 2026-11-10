@@ -14,6 +14,11 @@
 // - data-lyrics: synced lyrics (Spotify): lines with data-time (seconds into the song). The line being
 //   sung gets .current (lines before it .past) and is kept in view, counting on from data-start
 //   while data-playing is set. The server redraws the slide when the song changes, pauses or jumps.
+// - data-lyric-video: a lyric video (providers/lyric_video.py): of the lines in its hidden list (data-time:
+//   seconds into the song), the one being sung is shown big, each line in one of LYRIC_STYLES and the next
+//   of LYRIC_PALETTES; its words pop in one by one over the time until the next line (about as they're
+//   sung), the line before flies out. An empty line (a pause) shows bouncing notes. Counts on from
+//   data-start while data-playing is set; [data-lyric-video-bar] is the song's progress (data-total).
 // - data-zoom: a photo (an <img> in a .zoom-view) that can be zoomed while it's full screen (.selected,
 //   e.g. TimeGuessr): two fingers or the mouse wheel zoom, dragging moves it, data-zoom-by buttons zoom
 //   by that factor (0: back to the whole photo). A tap without dragging still toggles full screen.
@@ -40,6 +45,7 @@ function setupWidgets(root) {
 	}
 	root.querySelectorAll("[data-map]").forEach(setupMap);
 	root.querySelectorAll("[data-lyrics]").forEach(setupLyrics);
+	root.querySelectorAll("[data-lyric-video]").forEach(setupLyricVideo);
 	root.querySelectorAll("[data-marquee]").forEach(setupMarquee);
 	root.querySelectorAll("[data-marquee-up]").forEach(setupMarqueeUp);
 	root.querySelectorAll("[data-qr]").forEach(setupQr);
@@ -281,6 +287,147 @@ function setupLyrics(element) {
 	};
 	const timer = setInterval(follow, 200);
 	follow();
+}
+
+// The styles a line can get (.lv-style-... in style.css). by: what pops in one by one, words or letters.
+// stack: one word per row, each as wide as the screen (only for lines of a few words).
+const LYRIC_STYLES = [
+	{ name: "slam", by: "word" },
+	{ name: "rise", by: "word" },
+	{ name: "stack", by: "word", maxWords: 5 },
+	{ name: "sticker", by: "word" },
+	{ name: "outline", by: "word" },
+	{ name: "wave", by: "letter" },
+	{ name: "type", by: "letter" },
+];
+// [background, text, accent]: Francken's own colours among them.
+const LYRIC_PALETTES = [
+	["#173249", "#ffffff", "#ff5a6a"],
+	["#ffd23f", "#141414", "#e4002b"],
+	["#ff4f9a", "#ffffff", "#24124a"],
+	["#101010", "#f4f4f4", "#1ed760"],
+	["#f3ece0", "#173249", "#dc3545"],
+	["#5b2bff", "#ffffff", "#ffd23f"],
+	["#00c2a8", "#0b1d26", "#ffffff"],
+	["#dc3545", "#ffffff", "#ffd23f"],
+];
+
+function setupLyricVideo(stage) {
+	const slide = stage.closest(".lyric-video");
+	const lines = [...stage.querySelectorAll("li[data-time]")].map((item) => ({
+		time: parseFloat(item.dataset.time),
+		text: item.textContent.replace(/<\d+:\d+(?:\.\d+)?>/g, "").replace(/\s+/g, " ").trim(),   // without word times
+	}));
+	const start = parseFloat(stage.dataset.start || "0");
+	const total = parseFloat(stage.dataset.total || "0");
+	const playing = stage.hasAttribute("data-playing");
+	const bar = slide.querySelector("[data-lyric-video-bar]");
+	const shownAt = performance.now();
+	let current, shown = null, lastStyle = null, colour = Math.floor(start / 7) % LYRIC_PALETTES.length;
+
+	const hash = (text) => [...text.toLowerCase()].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 7);
+	const pickStyle = (text, words) => {   // the same line (a chorus) gets the same style each time it comes back
+		const fitting = LYRIC_STYLES.filter((style) => !style.maxWords || words <= style.maxWords);
+		let style = fitting[hash(text) % fitting.length];
+		if (style === lastStyle) style = fitting[(fitting.indexOf(style) + 1) % fitting.length];
+		return (lastStyle = style);
+	};
+
+	const show = (index) => {
+		const line = lines[index];
+		const next = lines[index + 1];
+		const seconds = Math.min(8, Math.max(1, (next ? next.time : line ? line.time + 4 : 4) - (line ? line.time : 0)));
+		const element = document.createElement("div");
+		if (!line || !line.text) {   // before the first line, or a pause in the singing
+			element.className = "lv-line lv-pause";
+			element.innerHTML = "<span>&#9834;</span><span>&#9835;</span><span>&#9834;</span>";
+		} else {
+			const words = line.text.split(" ");
+			const style = pickStyle(line.text, words.length);
+			element.className = `lv-line lv-style-${style.name}`;
+			// The words (or letters) come in over most of the line's time, in proportion to their length.
+			const spread = Math.min(seconds * 0.7, 0.35 * words.length + 0.4);
+			const letters = line.text.replace(/ /g, "").length || 1;
+			const longest = words.reduce((best, word) => (word.replace(/\W/g, "").length > best.replace(/\W/g, "").length ? word : best), "");
+			let before = 0;
+			words.forEach((word, w) => {
+				const span = document.createElement("span");
+				span.className = "lv-word" + (word === longest && words.length > 2 ? " lv-key" : "");
+				span.style.setProperty("--delay", `${(before / letters) * spread}s`);
+				span.style.setProperty("--i", w);
+				if (style.by === "letter") {
+					[...word].forEach((char, c) => {
+						const letter = document.createElement("span");
+						letter.className = "lv-letter";
+						letter.textContent = char;
+						letter.style.setProperty("--delay", `${((before + c) / letters) * spread}s`);
+						letter.style.setProperty("--c", c + w * 3);
+						span.append(letter);
+					});
+				} else {
+					span.textContent = word;
+				}
+				before += word.length;
+				element.append(span, " ");
+			});
+		}
+		if (shown) {   // the line before flies out
+			const old = shown;
+			old.classList.add("leaving");
+			setTimeout(() => old.remove(), 700);
+		}
+		colour = (colour + 1) % LYRIC_PALETTES.length;
+		const [background, text, accent] = LYRIC_PALETTES[colour];
+		slide.style.setProperty("--lv-bg", background);
+		slide.style.setProperty("--lv-fg", text);
+		slide.style.setProperty("--lv-accent", accent);
+		stage.append(element);
+		fitLyricLine(element, stage);
+		shown = element;
+	};
+
+	const follow = () => {
+		if (!document.contains(stage)) return clearInterval(timer);   // the slide is gone
+		const seconds = start + (playing ? (performance.now() - shownAt) / 1000 : 0);
+		if (bar && total) bar.style.width = `${Math.min(100, (seconds / total) * 100)}%`;
+		const index = lines.findLastIndex((line) => line.time <= seconds + 0.1);   // a little early: the words take a moment to pop in
+		if (index === current) return;
+		current = index;
+		show(index);
+	};
+	const timer = setInterval(follow, 100);
+	follow();
+	document.fonts?.ready.then(() => shown && fitLyricLine(shown, stage));   // measured again in the real fonts
+}
+
+// The biggest font size at which the line fits the stage; a stacked line sizes each word to the width.
+// Measured without the animations: a word that starts at twice its size would count as too wide.
+function fitLyricLine(line, stage) {
+	line.classList.add("lv-measuring");
+	measureLyricLine(line, stage);
+	line.offsetWidth;   // (applies the sizes before the animations come back)
+	line.classList.remove("lv-measuring");
+}
+
+function measureLyricLine(line, stage) {
+	const width = stage.clientWidth, height = stage.clientHeight;
+	if (line.classList.contains("lv-style-stack")) {
+		const words = [...line.querySelectorAll(".lv-word")];
+		for (const word of words) {
+			word.style.fontSize = "10vh";
+			word.style.fontSize = `${Math.min(height / words.length / 0.9, (10 * window.innerHeight / 100) * (width * 0.92) / word.scrollWidth)}px`;
+		}
+		for (let tries = 0; line.scrollHeight > height && tries < 15; tries++) {   // too tall together: all a little smaller
+			for (const word of words) word.style.fontSize = `${parseFloat(word.style.fontSize) * 0.92}px`;
+		}
+		return;
+	}
+	let size = Math.min(height * 0.42, width * 0.13);
+	line.style.fontSize = `${size}px`;
+	while ((line.scrollWidth > width || line.scrollHeight > height) && size > 20) {
+		size *= 0.92;
+		line.style.fontSize = `${size}px`;
+	}
 }
 
 function mapPin(latlng, kind) {

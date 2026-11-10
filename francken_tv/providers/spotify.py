@@ -585,6 +585,11 @@ class SpotifyProvider(Provider):
 					del self.lyrics[next(iter(self.lyrics))]
 			return self.lyrics[playing.id]
 
+	def cached_lyrics(self, playing: NowPlaying) -> Lyrics | None:
+		"""The song's lyrics if they've been looked up already (fast: no network), else None."""
+		with self.lyrics_lock:
+			return self.lyrics.get(playing.id)
+
 	def lyrics_view(self) -> dict:
 		playing = self.playing or self.last
 		lyrics = self.song_lyrics(playing)

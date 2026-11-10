@@ -37,6 +37,7 @@ from .providers.practice import PracticeSessionsProvider
 from .providers.xkcd import XkcdProvider
 from .providers.puzzles import HighScores, PuzzlesProvider
 from .providers.spotify import SpotifyProvider
+from .providers.lyric_video import LyricVideoProvider
 from .providers.timetable import TimetableProvider
 from .providers.timeguessr import TimeGuessrProvider
 from .providers.wordle import WordleProvider
@@ -189,6 +190,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),
 		spotify,
+		LyricVideoProvider(config.get("lyric_video", {}), spotify),
 	]
 	providers = {provider.name: provider for provider in all_providers}
 	rotation = config.get("rotation", {})

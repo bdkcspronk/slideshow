@@ -1,0 +1,31 @@
+{#
+	A lyric video of the song playing on Spotify (providers/lyric_video.py). The lines are in a hidden
+	list; widgets.js (data-lyric-video) shows the one being sung, big, each line in its own style and
+	colours, counting on from data-start while data-playing is set. The server redraws the slide when
+	the song changes, pauses or jumps (data-state). Without synced lyrics: the song's title, big.
+#}
+<div class="slide lyric-video" data-state="{{ state }}">
+	{% if cover %}<div class="lyric-video-cover" style="background-image: url('{{ cover }}')"></div>{% endif %}
+	<div class="lyric-video-backtext" aria-hidden="true"><span>{% for _ in range(6) %}{{ title }} &#9679; {% endfor %}</span></div>
+	{% if lines %}
+	<div class="lyric-video-stage" data-lyric-video data-start="{{ progress_seconds }}" data-total="{{ total_seconds }}"
+		{%- if is_playing %} data-playing{% endif %}>
+		<ol class="lyric-video-lines" hidden>
+			{% for line in lines %}<li data-time="{{ line.time }}">{{ line.text }}</li>{% endfor %}
+		</ol>
+	</div>
+	{% else %}
+	<div class="lyric-video-stage">
+		<div class="lv-line lv-style-slam lyric-video-title"><span class="lv-word">{{ title }}</span></div>
+	</div>
+	{% endif %}
+	<footer class="lyric-video-song">
+		{% if cover %}<img src="{{ cover }}" alt="">{% endif %}
+		<div class="lyric-video-song-text">
+			<b>{{ title }}</b>
+			<span>{{ artist }}{% if not is_playing %} &middot; paused{% endif %}</span>
+		</div>
+		<div class="lyric-video-progress"><i data-lyric-video-bar style="width: {{ percent }}%"></i></div>
+		<small>Lyrics from lrclib.net</small>
+	</footer>
+</div>

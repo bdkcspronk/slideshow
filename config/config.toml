@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "instagram", "francken_vrij", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "instagram", "francken_vrij", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -134,6 +134,12 @@ start_playlist = ""          # ...or, if there's nothing to resume, this one (a 
 bieruur_volume = 30          # during the bieruur song: the music this quiet (% of how loud it was), then back
 check_every_seconds = 5
 seconds = 15
+
+[lyric_video]
+# The song playing on Spotify as a lyric video: the line being sung, big, each line in its own style.
+# Only while a song plays that has synced lyrics (from lrclib.net). Uses the [spotify] login.
+seconds = 30
+check_every_seconds = 5      # how soon after a song starts its lyrics are looked up
 
 [leaderboard]
 # Who spent the most time in the room this week (since Monday).
