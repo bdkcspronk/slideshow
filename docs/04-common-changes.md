@@ -85,8 +85,9 @@ The cat in the activity chart is two frames of pixel art, `francken_tv/templates
 turn, 0.2 s each (`nyan-frame` in `static/style.css`), so it runs; its rainbow waves in the same rhythm. Edit the
 SVGs themselves to change the cat: keep both the same size, on whole pixels, with `shape-rendering="crispEdges"`
 (so they stay sharp) and without an XML header (they're drawn inside the page). If they get another size, change
-`aspect-ratio: 33 / 20` under `.nyan-cat-sprite` and the `viewBox` checks in `tests/test_nyancat.py`. Which people get the cat is set in `config/devices.json` (`"style": "nyan cat"`, and `x_offset` to move
-it along its rainbow).
+`aspect-ratio: 33 / 20` under `.nyan-cat-sprite` and the `viewBox` checks in `tests/test_nyancat.py`. Which people get the cat is set in `config/devices.json` (`"style": "nyan cat"`). The cat's bottom sits on the end of its rainbow: the
+`calc(-700% / 33)` in `.nyan-cat-sprite` is where its poptart starts in the art (column 7 of 33), so change it
+if the cat's shape changes.
 
 ## Run it on your laptop to try something
 

@@ -1367,10 +1367,14 @@ body.show-cursor button { cursor: pointer; }
 	box-sizing: border-box;
 	border-radius: 8px;
 	overflow: hidden;
-	clip-path: inset(-3vh 100% -3vh 0);
-	animation: bar-grow var(--grow) linear var(--delay) forwards;
+	clip-path: inset(-3vh 100% -3vh -3vh);
+	animation: bar-grow var(--grow) linear var(--delay) forwards, bar-grown 0s var(--grow-end) forwards;
+	--grow-end: calc(var(--delay) + var(--grow));
 }
-@keyframes bar-grow { to { clip-path: inset(-3vh -3vh -3vh -3vh); } }
+/* The growing edge goes exactly to the bar's end, so it keeps pace with a nyan cat or a vehicle riding
+   it; only once the bar has grown does the clip open 3vh to the right too, for a glow. */
+@keyframes bar-grow { to { clip-path: inset(-3vh 0 -3vh -3vh); } }
+@keyframes bar-grown { to { clip-path: inset(-3vh -3vh -3vh -3vh); } }
 .bar.square-corners { border-radius: 0; }
 .bar.glow { filter: drop-shadow(0 0 1.2vh var(--glow)) drop-shadow(0 0 0.4vh var(--glow)); }   /* outside the bar, which stays clipped */
 .bar.board { background: #D62828 !important; }
@@ -1393,7 +1397,7 @@ body.show-cursor button { cursor: pointer; }
 	background-image: linear-gradient(90deg, #060 0 40%, #f00 40%) !important;
 	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--run-offset, 0px)) 0 / var(--wave) 100% repeat-x;
 	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--run-offset, 0px)) 0 / var(--wave) 100% repeat-x;
-	animation: bar-grow var(--grow) linear var(--delay) forwards, flag-wave 2.2s linear infinite;
+	animation: bar-grow var(--grow) linear var(--delay) forwards, bar-grown 0s var(--grow-end) forwards, flag-wave 2.2s linear infinite;
 }
 .bar.portugal::after {
 	content: "";
@@ -1446,13 +1450,15 @@ body.show-cursor button { cursor: pointer; }
 	90% { opacity: 0.8; }
 	to { left: calc(100% - var(--foam)); opacity: 0; transform: translateY(0.2vh); }   /* fades into the foam */
 }
-/* The nyan cat rides the front of its rainbow while it grows, then keeps bobbing. */
+/* The nyan cat rides the front of its rainbow while it grows, then keeps bobbing. Its bottom sits on the
+   end of the rainbow: the poptart starts 7 of the art's 33 pixels in (the tail and back paw stick out
+   behind it, over the rainbow), and the shift is in % of the cat's own width, so it fits on any screen. */
 .nyan-cat-sprite {
 	position: absolute;
 	top: calc((var(--row) + 0.5) * 100% / var(--rows));
 	height: calc(1.04 * 100% / var(--rows));
 	aspect-ratio: 33 / 20;   /* templates/nyancat.svg and nyancat1.svg */
-	transform: translate(var(--offset), -50%);
+	transform: translate(calc(-700% / 33), -50%);
 	opacity: 0;
 	animation:
 		cat-ride var(--grow) linear var(--delay) forwards,

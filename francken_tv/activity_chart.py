@@ -20,7 +20,6 @@ bar. The bar's look comes from their entry in config/devices.json:
 	"stripe_color":    colour (or gradient list) of the stripes for "striped"
 	                   (or give "color" as [[bar colours], [stripe colours]])
 	"thickness":       stripe thickness in pixels for "striped"
-	"x_offset":        horizontal offset of the nyan cat, in % of its width
 	"foam_max_width":  maximum width of the beer foam in pixels
 
 People without a colour get a stable random bright one.
@@ -57,7 +56,6 @@ class MarkerStyle:
 	vehicle: str | None = None   # one of VEHICLES
 	stripe_color: str | list = TEXT_COLOR
 	stripe_thickness: float | None = None
-	nyan_cat_x_offset: float = 0
 	beer_foam_max_width: float | None = None
 
 
@@ -103,9 +101,6 @@ def parse_style(options: dict) -> MarkerStyle:
 	thickness = options.get("thickness")
 	if isinstance(thickness, (int, float)) and thickness > 0:
 		style.stripe_thickness = thickness
-	x_offset = options.get("x_offset", 0)
-	if isinstance(x_offset, (int, float)):
-		style.nyan_cat_x_offset = x_offset
 	foam = options.get("foam_max_width")
 	if isinstance(foam, (int, float)) and foam > 0:
 		style.beer_foam_max_width = foam
@@ -245,18 +240,22 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			# Grow at a steady speed from left to right, like time playing back.
 			"delay": grow_delay(left),
 			"grow": grow_time(width),
-			"nyan_cat": style.shape == "nyan cat" and bar.is_latest, "cat_offset": style.nyan_cat_x_offset,
+			"nyan_cat": None,
 			"vehicle": None,
 			"paint": style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color,   # the vehicle's colour
 			# Where this bar is in the person's run, in % of the chart (bar.html: --run-offset, --run-width).
 			"run_offset": round(left - extent[bar.row][0], 3),
 			"run_width": round(max(extent[bar.row][1] - extent[bar.row][0], width), 3),
 		}
-		if style.vehicle and bar.is_latest:
+		if bar.is_latest and (style.vehicle or style.shape == "nyan cat"):
 			# One ride from the first bar to the end of the last, at the speed the bars grow: always at the
-			# growing front, and across the gaps between them.
+			# growing front (the rainbow comes out of the cat), and across the gaps between them.
 			ride_from, ride_to = extent[bar.row]
-			view["vehicle"] = {"kind": style.vehicle, "from": ride_from, "to": ride_to, "delay": grow_delay(ride_from), "grow": grow_time(ride_to - ride_from)}
+			ride = {"from": ride_from, "to": ride_to, "delay": grow_delay(ride_from), "grow": grow_time(ride_to - ride_from)}
+			if style.vehicle:
+				view["vehicle"] = {"kind": style.vehicle, **ride}
+			if style.shape == "nyan cat":
+				view["nyan_cat"] = ride
 		run_left, run_right = extent[bar.row]
 		run_width = max(run_right - run_left, width)
 		if style.shape == "portugal":

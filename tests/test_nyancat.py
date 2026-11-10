@@ -30,7 +30,7 @@ class NyanCatTest(unittest.TestCase):
 	def test_the_chart_draws_the_cat_inline_on_the_latest_bar(self):
 		with TemporaryDirectory() as folder:
 			devices = Path(folder) / "devices.json"
-			devices.write_text(json.dumps([{"ssid": "Cat", "mac": CAT, "style": "nyan cat", "x_offset": 5}]))
+			devices.write_text(json.dumps([{"ssid": "Cat", "mac": CAT, "style": "nyan cat"}]))
 			day = datetime(2026, 10, 14, 12)
 			sightings = [Sighting(day, CAT, "Cat"), Sighting(day.replace(minute=10), CAT, "Cat")]
 			chart = chart_view(sightings, DeviceList(devices).by_mac(), day.replace(hour=13))
@@ -39,6 +39,20 @@ class NyanCatTest(unittest.TestCase):
 		self.assertEqual(html.count('class="nyan-cat-sprite"'), 1)
 		self.assertEqual(html.count('viewBox="0 0 33 20"'), 2)   # both frames, inline, not an <img> of a file in media/
 		self.assertNotIn("<img", html)
+
+
+	def test_the_cat_rides_from_the_first_bar_to_the_end_of_the_last(self):
+		with TemporaryDirectory() as folder:
+			devices = Path(folder) / "devices.json"
+			devices.write_text(json.dumps([{"ssid": "Cat", "mac": CAT, "style": "nyan cat"}]))
+			day = datetime(2026, 10, 14, 12)
+			sightings = [Sighting(day.replace(minute=m), CAT, "Cat") for m in (0, 5, 40, 45)]
+			first, last = chart_view(sightings, DeviceList(devices).by_mac(), day.replace(hour=13))["bars"]
+		ride = last["nyan_cat"]
+		self.assertIsNone(first["nyan_cat"])
+		self.assertEqual((ride["from"], ride["to"]), (first["left"], round(last["left"] + last["width"], 3)))
+		self.assertEqual(ride["delay"], first["delay"])   # it sets off with the first bar, at the bars' speed
+		self.assertEqual(ride["grow"], first["back"]["grow"])   # and keeps pace with the faded run behind them
 
 
 if __name__ == "__main__":

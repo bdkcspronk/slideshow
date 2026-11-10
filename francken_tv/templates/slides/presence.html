@@ -27,10 +27,11 @@
 			{{ draw_bar(bar, "--row: %s; left: %s%%; width: %s%%; --delay: %ss; --grow: %ss;" | format(bar.row, bar.left, bar.width, bar.delay, bar.grow)) }}
 			{% if bar.nyan_cat %}
 			{# The cat (templates/nyancat.svg and nyancat1.svg, two frames of pixel art that take turns) rides along the
-			   front of the bar while it grows, then keeps bobbing at the end. #}
-			<div class="nyan-cat-sprite" style="--row: {{ bar.row }}; --from: {{ bar.left }}%;
-				--to: {{ bar.left + bar.width }}%; --delay: {{ bar.delay }}s; --grow: {{ bar.grow }}s;
-				--offset: {{ bar.cat_offset }}%">{% include "nyancat.svg" %}{% include "nyancat1.svg" %}</div>
+			   front of the person's bars while they grow, from the first to the end of the last (across the gaps),
+			   the rainbow coming out behind it, then keeps bobbing at the end. #}
+			{% set ride = bar.nyan_cat %}
+			<div class="nyan-cat-sprite" style="--row: {{ bar.row }}; --from: {{ ride.from }}%;
+				--to: {{ ride.to }}%; --delay: {{ ride.delay }}s; --grow: {{ ride.grow }}s">{% include "nyancat.svg" %}{% include "nyancat1.svg" %}</div>
 			{% endif %}
 			{% if bar.emblem_left is not none and bar.shape == "portugal" %}
 			{# The flag's emblem, on the border of the green and the red of the person's one flag, once their
