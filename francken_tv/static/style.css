@@ -29,6 +29,9 @@ html, body {
 }
 body.show-cursor { cursor: default; }
 body.show-cursor button { cursor: pointer; }
+/* On an interactive slide (the puzzles, Spotify, ...: data-interactive) the pointer always shows. */
+body:has(.layer.visible [data-interactive]) { cursor: default; }
+body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 
 .layer {
 	position: fixed;

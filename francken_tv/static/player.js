@@ -346,7 +346,8 @@ async function checkTakeover() {   // bieruur interrupts even a paused puzzle
 	}
 }
 
-// Show the mouse pointer while it moves; hide it again after 3 seconds.
+// Show the mouse pointer while it moves; hide it again after 3 seconds (except on interactive
+// slides, where it always shows: see style.css).
 let cursorTimer = null;
 document.addEventListener("mousemove", () => {
 	document.body.classList.add("show-cursor");
