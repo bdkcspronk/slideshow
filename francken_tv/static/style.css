@@ -245,7 +245,17 @@ body.show-cursor button { cursor: pointer; }
 	overflow: hidden;
 	text-overflow: ellipsis;   /* long names end in "..." on one line */
 }
-.activity-details { font-size: 2.3vh; margin-top: 0.6vh; color: #4b5d77; font-weight: normal; }
+.activity-details {
+	font-size: 2.3vh;
+	margin-top: 0.6vh;
+	color: #4b5d77;
+	font-weight: normal;
+	display: -webkit-box;   /* at most two lines; a long location or end date ends in "..." */
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+}
 .activities-slide li.today .activity-details { color: rgba(255, 255, 255, 0.85); }
 
 /* The info slides (news, weather, buses, timetable: providers/news.py, ...), in the activities slide's
