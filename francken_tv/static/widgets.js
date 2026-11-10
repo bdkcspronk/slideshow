@@ -23,6 +23,7 @@
 //   e.g. TimeGuessr): two fingers or the mouse wheel zoom, dragging moves it, data-zoom-by buttons zoom
 //   by that factor (0: back to the whole photo). A tap without dragging still toggles full screen.
 // - data-qr: a QR code of the link in data-qr (static/vendor/qrcode), e.g. the weekly dilemma's form.
+//   data-qr-level="H" makes it readable with a picture over its middle (the membership slide's professor).
 // - data-matrix: Matrix code rain on a <canvas>; now and then a column spells one of data-words
 //   (separated by spaces; | for a space inside a word). The Compucie slide.
 // - data-decode: a title that decodes: each letter of data-decode flickers through random glyphs and
@@ -171,7 +172,7 @@ function setupZoom(element) {
 
 function setupQr(element) {
 	if (typeof qrcode === "undefined") return;   // the QR library didn't load
-	const qr = qrcode(0, "M");   // 0: as small as the link allows; M: still readable when a bit dirty
+	const qr = qrcode(0, element.dataset.qrLevel || "M");   // 0: as small as the link allows; M: still readable when a bit dirty
 	qr.addData(element.dataset.qr);
 	qr.make();
 	element.innerHTML = qr.createSvgTag({ cellSize: 1, margin: 2, scalable: true });

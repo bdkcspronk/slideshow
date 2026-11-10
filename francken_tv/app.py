@@ -31,6 +31,7 @@ from .providers.compucie import CompucieProvider
 from .providers.francken_vrij import FranckenVrijProvider
 from .providers.graafmachine import GraafmachineProvider
 from .providers.instagram import InstagramProvider
+from .providers.membership import MembershipProvider
 from .providers.connections import ConnectionsProvider
 from .providers.poll import PollProvider
 from .providers.practice import PracticeSessionsProvider
@@ -183,6 +184,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		XkcdProvider(config.get("xkcd", {}), CACHE_DIR / "xkcd", seconds),
 		GraafmachineProvider(config.get("graafmachine", {})),
 		CompucieProvider(config.get("compucie", {})),
+		MembershipProvider(config.get("membership", {})),
 		FranckenVrijProvider(config.get("francken_vrij", {}), CACHE_DIR / "francken_vrij"),
 		InstagramProvider(config.get("instagram", {}), project_path(config.get("instagram", {}).get("credentials",
 			"~/.config/slideshow/instagram.json")), CACHE_DIR / "instagram", seconds),

@@ -1,0 +1,45 @@
+{#
+	Become a member (providers/membership.py), on the navy poster like the upcoming activities: the title with
+	the crimson highlighter, the price big, the other reasons as lines with a crimson icon, each coming in once;
+	on the right a QR code to the sign-up form (data-qr, widgets.js; level H, so the professor in the middle,
+	templates/francken_portrait.svg, doesn't hurt). Our logo (templates/francken_logo.svg) is faint behind it all.
+	See "Become a member" in style.css.
+#}
+<div class="slide membership-slide">
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="member-watermark" aria-hidden="true">{% include "francken_logo.svg" %}</div>
+
+	<div class="member-body">
+		<div class="member-reasons">
+			<h1 class="poster-title"><span>Become a</span> <span class="poster-marked">member</span></h1>
+			<p class="member-price"><b>€5</b><span>a year</span></p>
+			<ul>
+				<li style="--i: 0">
+					<svg viewBox="0 0 64 64" aria-hidden="true">
+						<g class="member-steam"><path d="M22 22 q-5 -6 0 -12 t0 -12"/><path d="M32 22 q-5 -6 0 -12 t0 -12"/><path d="M42 22 q-5 -6 0 -12 t0 -12"/></g>
+						<path d="M10 28 h44 v8 a18 18 0 0 1 -18 18 h-8 a18 18 0 0 1 -18 -18 Z"/>
+						<path class="member-handle" d="M54 32 h3 a7 7 0 0 1 0 14 h-5"/>
+						<rect x="8" y="57" width="48" height="4" rx="2"/>
+					</svg>
+					Free coffee
+				</li>
+				<li style="--i: 1">
+					<svg viewBox="0 0 64 64" aria-hidden="true">
+						<path d="M12 12 h40 a6 6 0 0 1 6 6 v34 a6 6 0 0 1 -6 6 h-40 a6 6 0 0 1 -6 -6 v-34 a6 6 0 0 1 6 -6 Z M10 26 v26 a2 2 0 0 0 2 2 h40 a2 2 0 0 0 2 -2 v-26 Z"/>
+						<rect x="16" y="5" width="6" height="14" rx="3"/><rect x="42" y="5" width="6" height="14" rx="3"/>
+						<rect x="15" y="31" width="8" height="7"/><rect x="28" y="31" width="8" height="7"/><rect x="41" y="31" width="8" height="7"/><rect x="15" y="42" width="8" height="7"/><rect x="28" y="42" width="8" height="7"/>
+					</svg>
+					Social, career and educational events
+				</li>
+			</ul>
+		</div>
+
+		<div class="member-signup">
+			<div class="member-qr-card">
+				<div class="member-qr" data-qr="{{ link }}" data-qr-level="H"></div>
+				<div class="member-tile">{% include "francken_portrait.svg" %}</div>
+			</div>
+			<p><b>Scan to sign up</b>{{ link | replace("https://", "") }}</p>
+		</div>
+	</div>
+</div>

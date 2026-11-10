@@ -28,6 +28,7 @@ It shows:
 | The latest xkcd comic, with its hover text | xkcd.com | `providers/xkcd.py` |
 | An animated graafmachine digging a hole and dumping the earth on a heap | | `providers/graafmachine.py` |
 | The Compucie's promo, Matrix style: code rain, the name decoding, a terminal typing who we are | | `providers/compucie.py` |
+| Become a member: €5 a year, free coffee, events, and a QR code to the sign-up form, animated | professorfrancken.nl/register | `providers/membership.py` |
 | The latest Francken Vrij, its pages turning by themselves, pausing on the cover, the contents and each article | a PDF in `media/francken-vrij/` | `providers/francken_vrij.py` |
 | Our latest Instagram posts on a phone, with a QR code to follow us | Instagram (a Meta app) | `providers/instagram.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |

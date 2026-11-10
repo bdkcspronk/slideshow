@@ -125,10 +125,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .photo-caption strong { font-size: 4vh; }
 .photo-caption span { font-size: 2.6vh; opacity: 0.85; }
 
-/* The navy and crimson posters (upcoming activities, news, the activity chart, the leaderboard, books): soft
+/* The navy and crimson posters (upcoming activities, news, the activity chart, the leaderboard, books, membership): soft
    glows drift over the navy (.navy-glows), a crimson label (.poster-pill) and a title with a crimson
    highlighter behind a word (.poster-marked). */
-.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide, .francken-vrij-slide {
+.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide, .francken-vrij-slide, .membership-slide {
 	--navy: #0d1f3c;
 	--crimson: #c8102e;
 	--paper: #fdf8ec;
@@ -3430,3 +3430,51 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .fv-book.opens.closes .fv-stack-right { animation: fv-fade-out var(--turn) ease-in-out var(--closes) forwards; }
 @keyframes fv-fade-in { to { opacity: 1; } }
 @keyframes fv-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+/* Become a member (providers/membership.py): the navy poster (see "The navy and crimson posters"), without the
+   label. On the left the title, the price big in cream with "a year" in crimson, and the other reasons as lines
+   with a crimson icon, coming up one by one; on the right the QR code in navy on cream with the professor on its
+   middle. Our logo sits big and faint on the left, centred top to bottom. Everything comes in once; only the coffee steams. */
+.member-watermark { position: absolute; left: -8vw; top: 50%; width: 70vw; color: #ffffff; opacity: 0.05; transform: translateY(-50%); }
+.member-watermark svg { display: block; width: 100%; }
+.member-body { position: relative; flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 5vw; }
+.member-reasons { min-width: 0; }
+.member-reasons .poster-title { margin: 0 0 4vh; font-size: 10vh; }
+.member-price { display: flex; align-items: baseline; gap: 1.6vw; margin: 0 0 4.5vh; line-height: 0.85; animation: member-up 0.8s ease-out 1.3s both; }
+.member-price b { font-size: 26vh; letter-spacing: -1vh; }
+.member-price span { font-size: 6vh; color: var(--crimson); }
+.member-reasons ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2.8vh; }
+.member-reasons li {
+	display: flex;
+	align-items: center;
+	gap: 1.6vw;
+	padding-top: 2.8vh;
+	border-top: 0.25vh solid rgba(253, 248, 236, 0.15);
+	font-size: 4.6vh;
+	animation: member-up 0.8s ease-out calc(1.8s + var(--i) * 0.4s) both;
+}
+.member-reasons li svg { flex: none; width: 6vh; height: 6vh; fill: var(--crimson); overflow: visible; }
+@keyframes member-up { from { transform: translateY(3vh); opacity: 0; } }
+.member-handle { fill: none; stroke: var(--crimson); stroke-width: 5; }
+.member-steam path { fill: none; stroke: var(--paper); stroke-width: 3; stroke-linecap: round; opacity: 0; animation: member-steam 3s ease-out infinite; }
+.member-steam path:nth-child(2) { animation-delay: 1s; }
+.member-steam path:nth-child(3) { animation-delay: 2s; }
+@keyframes member-steam { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 0.6; } 100% { transform: translateY(-12px); opacity: 0; } }
+
+.member-signup { flex: none; display: flex; flex-direction: column; align-items: center; gap: 3vh; margin-right: 2vw; animation: member-up 0.8s ease-out 0.8s both; }
+.member-qr-card { position: relative; width: 52vh; height: 52vh; padding: 2.4vh; border-radius: 2.4vh; background: var(--paper); box-shadow: 0 2.4vh 6vh rgba(0, 0, 0, 0.45); }
+.member-qr { width: 100%; height: 100%; }
+.member-qr svg { display: block; width: 100%; height: 100%; }
+.member-qr rect { fill: var(--paper); }
+.member-qr path { fill: var(--navy); }
+.member-tile {   /* the professor (templates/francken_portrait.svg) on a cream tile in the middle of the code */
+	position: absolute;
+	inset: 37%;
+	padding: 1%;
+	border-radius: 1.2vh;
+	background: var(--paper);
+	color: var(--navy);
+}
+.member-tile svg { display: block; width: 100%; height: 100%; }
+.member-signup p { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.8vh; font-size: 2.6vh; color: rgba(253, 248, 236, 0.75); }
+.member-signup p b { font-size: 4.4vh; color: var(--paper); }
