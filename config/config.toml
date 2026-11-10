@@ -172,6 +172,7 @@ seconds = 18   # the terminal has typed everything after about 12 s
 [membership]
 # Become a member: what it costs and gives (the text is in templates/slides/membership.html) and a QR code to the form.
 link = "https://professorfrancken.nl/register"
+months = [8, 9, 10, 2]   # only in these months (1 is January): the start of the academic year and of the second semester
 seconds = 15   # everything is in after about 5 s
 
 [francken_vrij]

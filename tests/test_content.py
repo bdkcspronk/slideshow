@@ -209,5 +209,13 @@ class BieruurSongTest(unittest.TestCase):
 		self.assertEqual(ducks, [True, False])   # back up once, when it's over
 
 
+class MembershipMonthsTest(unittest.TestCase):
+	def test_only_in_the_sign_up_months(self):
+		from francken_tv.providers.membership import MembershipProvider
+		provider = MembershipProvider({})
+		shown = [month for month in range(1, 13) if provider.slides(datetime(2026, month, 15, 12))]
+		self.assertEqual(shown, [2, 8, 9, 10])
+
+
 if __name__ == "__main__":
 	unittest.main()
