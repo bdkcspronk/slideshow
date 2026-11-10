@@ -1387,19 +1387,19 @@ body.show-cursor button { cursor: pointer; }
 	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 19' shape-rendering='crispEdges'%3E%3Cg%3E%3Crect x='0' y='0' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='8' y='1' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='0' y='3' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='8' y='4' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='0' y='6' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='8' y='7' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='0' y='9' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='8' y='10' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='0' y='12' width='8' height='3' fill='%230099ff'/%3E%3Crect x='8' y='13' width='8' height='3' fill='%230099ff'/%3E%3Crect x='0' y='15' width='8' height='3' fill='%236633ff'/%3E%3Crect x='8' y='16' width='8' height='3' fill='%236633ff'/%3E%3Canimate attributeName='visibility' values='visible;hidden' dur='0.4s' calcMode='discrete' repeatCount='indefinite'/%3E%3C/g%3E%3Cg%3E%3Crect x='0' y='1' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='8' y='0' width='8' height='3' fill='%23ff0000'/%3E%3Crect x='0' y='4' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='8' y='3' width='8' height='3' fill='%23ff9900'/%3E%3Crect x='0' y='7' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='8' y='6' width='8' height='3' fill='%23ffff00'/%3E%3Crect x='0' y='10' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='8' y='9' width='8' height='3' fill='%2333ff00'/%3E%3Crect x='0' y='13' width='8' height='3' fill='%230099ff'/%3E%3Crect x='8' y='12' width='8' height='3' fill='%230099ff'/%3E%3Crect x='0' y='16' width='8' height='3' fill='%236633ff'/%3E%3Crect x='8' y='15' width='8' height='3' fill='%236633ff'/%3E%3Canimate attributeName='visibility' values='hidden;visible' dur='0.4s' calcMode='discrete' repeatCount='indefinite'/%3E%3C/g%3E%3C/svg%3E") 0 0 / auto 100% repeat-x !important;
 }
 .bar.beer { background: linear-gradient(90deg, #F3B01F, #F5C340) !important; }
-/* Portugal: the flag, 2:3 green and red, waving: its top and bottom edges ripple (a mask of one wave,
+/* Portugal (and Frisian): the flag, 2:3 green and red, waving: its top and bottom edges ripple (a mask of one wave,
    repeated and sliding along) and light and dark folds slide along with them. A person's bars are windows
    onto one flag: the colours are sized to the whole flag (background-size and -position from bar.html)
    and --run-offset (how far this bar is from the flag's start, bar.html) keeps the waves in step. */
-.bar.portugal {
+.bar.portugal, .bar.frisian {
 	--wave: calc(12vh * 8 / var(--rows, 8));   /* one wave, wider in a chart with fewer rows (taller bars) */
 	border-radius: 0;
-	background-image: linear-gradient(90deg, #060 0 40%, #f00 40%) !important;
 	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--run-offset, 0px)) 0 / var(--wave) 100% repeat-x;
 	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q25 1 50 9 T100 9 L100 91 Q75 99 50 91 T0 91 Z'/%3E%3C/svg%3E") calc(0px - var(--run-offset, 0px)) 0 / var(--wave) 100% repeat-x;
 	animation: bar-grow var(--grow) linear var(--delay) forwards, bar-grown 0s var(--grow-end) forwards, flag-wave 2.2s linear infinite;
 }
-.bar.portugal::after {
+.bar.portugal { background-image: linear-gradient(90deg, #060 0 40%, #f00 40%) !important; }
+.bar.portugal::after, .bar.frisian::after {
 	content: "";
 	position: absolute;
 	inset: 0;
@@ -1411,9 +1411,9 @@ body.show-cursor button { cursor: pointer; }
 /* Frisian: blue and white stripes slanted like the flag's, a pompeblad in each white one (the tile is
    templates/frisian.svg, its pompeblad the one of the Frisian flag; bar.html puts it in as the background
    image, as templates aren't served). The tile is as tall as the bar and repeats at that size, so a longer
-   bar gets more stripes rather than bigger ones. A person's bars are windows onto one run of them (--run-offset, bar.html). */
+   bar gets more stripes rather than bigger ones. A person's bars are windows onto one run of them (--run-offset, bar.html).
+   It waves like the Portuguese flag (the mask and folds above). */
 .bar.frisian {
-	border-radius: 0;
 	background-color: #244994 !important;
 	background-size: auto 100% !important;
 	background-repeat: repeat-x !important;
