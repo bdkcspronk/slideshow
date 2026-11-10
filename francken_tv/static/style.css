@@ -3467,3 +3467,55 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .member-tile svg { display: block; width: 100%; height: 100%; }
 .member-signup p { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.8vh; font-size: 2.6vh; color: rgba(253, 248, 236, 0.75); }
 .member-signup p b { font-size: 4.4vh; color: var(--paper); }
+
+/* The Borrelcie (providers/borrelcie.py), after the Beatles: a piano keyboard plays the verse of Let It Be with our words
+   (keys lighting up, the words rising out of them), goes, THE comes in and then BORRELCIE letter by letter, the second R's leg reaching
+   out last like the T in the Beatles' logo. Everything is SVG in 1920x1080 coordinates. */
+.borrelcie-slide { position: relative; overflow: hidden; background: #0e1429; }
+.borrelcie-slide svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.borrelcie-slide svg * { transform-box: view-box; }
+.bc-keyboard { animation: bc-keyboard 9.6s ease-in-out both; }
+@keyframes bc-keyboard {   /* up from under the screen, playing, back down as THE comes in */
+	0% { opacity: 0; transform: translateY(320px); }
+	10%, 91% { opacity: 1; transform: translateY(0); }
+	100% { opacity: 0; transform: translateY(320px); }
+}
+.bc-case { fill: #05070f; }
+.bc-fallboard { fill: #1a2238; }
+.bc-felt { fill: #8c1d2c; }
+.bc-white { fill: #f6f3ea; }
+.bc-black { fill: #10141f; }
+.bc-black-shine { fill: #2a3146; }
+/* Let It Be with our words, once: each note lights its key (a gold copy over it, .bc-lit) at its moment (--t) for as
+   long as it lasts (--len), and the word sung on it rises out of that key at the same moment */
+.bc-lit { opacity: 0; fill: #ffd77a; animation: bc-lit var(--len) linear calc(0.9s + var(--t)) both; }
+.bc-lit-black { fill: #e0a93a; }
+@keyframes bc-lit { 0% { opacity: 0; } 5%, 75% { opacity: 1; } 100% { opacity: 0; } }
+.bc-words { animation: bc-words 9.6s linear both; }
+@keyframes bc-words { 0%, 91% { opacity: 1; } 98%, 100% { opacity: 0; } }
+.bc-word {
+	opacity: 0;
+	fill: #fdf8ec;
+	font: 600 42px Georgia, "DejaVu Serif", serif;
+	text-anchor: middle;
+	animation: bc-word 1.4s linear calc(0.9s + var(--t)) both;   /* at one speed, so words from one key keep apart */
+}
+.bc-word:nth-child(even) { fill: #ffd77a; }
+@keyframes bc-word {
+	0% { opacity: 0; transform: translate(var(--x), 585px); }
+	10% { opacity: 1; }
+	70% { opacity: 0.9; }
+	100% { opacity: 0; transform: translate(calc(var(--x) + var(--drift)), 110px); }
+}
+.bc-title { fill: #ffffff; }
+.bc-letter { animation: bc-drop 0.75s cubic-bezier(0.3, 1.4, 0.5, 1) calc(9.7s + var(--i) * 0.13s) both; }   /* after THE */
+@keyframes bc-drop {
+	0% { opacity: 0; transform: translateY(-180px) scaleY(1.15); }   /* in the letters' own coordinates, 0.65 the size */
+	40% { opacity: 1; }
+	100% { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+/* the second R's leg reaching out, once all letters are in: the clip of it grows down past the baseline */
+.bc-leg-clip { transform-origin: 0 0; animation: bc-reach 2.4s cubic-bezier(0.45, 0, 0.3, 1) 11.5s both;   /* slowly */ }
+@keyframes bc-reach { 0% { transform: scaleY(1); } 100% { transform: scaleY(1.15); } }
+.bc-the { animation: bc-the 0.7s ease-out 9s both; }   /* first, as the keyboard goes */
+@keyframes bc-the { 0% { opacity: 0; transform: translateY(-220px); }   /* in THE's own coordinates, 0.22 the size */ 100% { opacity: 1; transform: translateY(0); } }

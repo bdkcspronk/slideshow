@@ -28,6 +28,7 @@ from .providers.commandments import CommandmentsProvider
 from .providers.confidential import ConfidentialProvider
 from .providers.extern import ExternProvider
 from .providers.compucie import CompucieProvider
+from .providers.borrelcie import BorrelcieProvider
 from .providers.francken_vrij import FranckenVrijProvider
 from .providers.graafmachine import GraafmachineProvider
 from .providers.instagram import InstagramProvider
@@ -184,6 +185,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		XkcdProvider(config.get("xkcd", {}), CACHE_DIR / "xkcd", seconds),
 		GraafmachineProvider(config.get("graafmachine", {})),
 		CompucieProvider(config.get("compucie", {})),
+		BorrelcieProvider(config.get("borrelcie", {})),
 		MembershipProvider(config.get("membership", {})),
 		FranckenVrijProvider(config.get("francken_vrij", {}), CACHE_DIR / "francken_vrij"),
 		InstagramProvider(config.get("instagram", {}), project_path(config.get("instagram", {}).get("credentials",
