@@ -10,8 +10,7 @@ bar. The bar's look comes from their entry in config/devices.json:
 	                   "rainbow" (nyan cat without the cat), "beer", "board",
 	                   "portugal" (the flag's green and red, waving; one flag across all of a
 	                   person's bars, with the emblem of templates/portugal_flag.svg landing on
-	                   its border once the last bar has grown, and the flag at 30% in
-	                   the gaps between them),
+	                   its border once the last bar has grown),
 	                   "frisian" (blue and white stripes, slanted like the Frisian flag's, with one
 	                   pompeblad in each white stripe; they keep their size, so a longer bar gets more
 	                   stripes: templates/frisian.svg),
@@ -199,6 +198,13 @@ def bar_look(style: MarkerStyle, width: float, seed: str) -> dict:
 	return look
 
 
+def shared_gradient(group: tuple[float, float], left: float, width: float) -> dict:
+	"""background-size and -position that show this bar's piece of a gradient spread over `group` (left, right)."""
+	group_width = max(group[1] - group[0], width)
+	return {"gradient_size": round(group_width / width * 100, 2),
+		"gradient_position": round((left - group[0]) / (group_width - width) * 100, 2) if group_width > width else 0}
+
+
 def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datetime) -> dict | None:
 	"""Everything templates/slides/presence.html needs, or None if nobody was seen today."""
 	data = prepare(sightings, devices)
@@ -251,22 +257,24 @@ def chart_view(sightings: list[Sighting], devices: dict[str, Device], now: datet
 			# growing front, and across the gaps between them.
 			ride_from, ride_to = extent[bar.row]
 			view["vehicle"] = {"kind": style.vehicle, "from": ride_from, "to": ride_to, "delay": grow_delay(ride_from), "grow": grow_time(ride_to - ride_from)}
+		run_left, run_right = extent[bar.row]
+		run_width = max(run_right - run_left, width)
 		if style.shape == "portugal":
-			flag_left, flag_right = extent[bar.row]
-			flag_width = max(flag_right - flag_left, width)
-			view["gradient_size"] = round(flag_width / width * 100, 2)
-			view["gradient_position"] = round((left - flag_left) / (flag_width - width) * 100, 2) if flag_width > width else 0
-			view["emblem_left"] = round(flag_left + 0.4 * flag_width, 3) if bar.is_latest else None   # once, after the last bar
-			if bar.start == min(b.start for b in data.bars if b.row == bar.row) and flag_width > width:
-				# The whole flag at 30% behind the person's bars, showing in the gaps; it grows like a bar.
-				view["flag_back"] = {**view, "left": flag_left, "width": round(flag_width, 3), "gradient_size": 100,
-					"gradient_position": 0, "run_offset": 0, "emblem_left": None,
-					"grow": grow_time(flag_width)}
+			view["gradient_size"] = round(run_width / width * 100, 2)
+			view["gradient_position"] = round((left - run_left) / (run_width - width) * 100, 2) if run_width > width else 0
+			view["emblem_left"] = round(run_left + 0.4 * run_width, 3) if bar.is_latest else None   # once, after the last bar
 		elif isinstance(style.color, list) and tuple(style.color) in gradient_extent:
-			group_left, group_right = gradient_extent[tuple(style.color)]
-			group_width = max(group_right - group_left, width)
-			view["gradient_size"] = round(group_width / width * 100, 2)
-			view["gradient_position"] = round((left - group_left) / (group_width - width) * 100, 2) if group_width > width else 0
+			view.update(shared_gradient(gradient_extent[tuple(style.color)], left, width))
+		if bar.start == min(b.start for b in data.bars if b.row == bar.row) and run_width > width:
+			# The person's whole run at 30% behind their bars, connecting them across the gaps; it grows like a bar.
+			back = {**view, **bar_look(style, run_width, seed=f"{bar.row}-back"), "glow": False, "glow_colour": None,
+				"left": run_left, "width": round(run_width, 3), "run_offset": 0, "grow": grow_time(run_width),
+				"nyan_cat": False, "vehicle": None, "emblem_left": None, "gradient_size": None, "gradient_position": None}
+			if style.shape == "portugal":
+				back.update(gradient_size=100, gradient_position=0)
+			elif isinstance(style.color, list) and tuple(style.color) in gradient_extent:
+				back.update(shared_gradient(gradient_extent[tuple(style.color)], run_left, run_width))
+			view["back"] = back
 		bars.append(view)
 
 	hour = start.replace(minute=0, second=0, microsecond=0)

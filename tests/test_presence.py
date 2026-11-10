@@ -141,10 +141,20 @@ class ChartTest(PresenceTestCase):
 		self.assertEqual(first["gradient_size"], round(90 / 10 * 100, 2))   # the flag: 09:00-10:30, this bar 09:00-09:10
 		self.assertEqual((first["run_offset"], first["emblem_left"]), (0, None))
 		self.assertEqual((last["run_offset"], last["run_width"]), (round(last["left"] - first["left"], 3), round(last["left"] + last["width"] - first["left"], 3)))
-		back = first["flag_back"]   # the whole flag behind the bars, for the gap
+		back = first["back"]   # the whole flag behind the bars, for the gap
 		self.assertEqual((back["left"], back["width"], back["gradient_size"]), (first["left"], round(last["left"] + last["width"] - first["left"], 3), 100))
-		self.assertNotIn("flag_back", last)
+		self.assertNotIn("back", last)
 		self.assertEqual(last["emblem_left"], round(first["left"] + 0.4 * (last["left"] + last["width"] - first["left"]), 3))
+
+	def test_every_style_connects_its_bars_across_the_gaps(self):
+		(self.dir / "devices.json").write_text(json.dumps(DEVICES + [{"ssid": "Kim", "mac": "CC:00:00:00:00:03", "color": "#ff0000", "style": ["beer", "glow"]}]))
+		devices = DeviceList(self.dir / "devices.json")
+		sightings = [Sighting(at(t), "CC:00:00:00:00:03", "Kim") for t in ("09:00", "09:05", "10:00", "10:10", "10:20", "10:25")]
+		first, last = chart_view(sightings, devices.by_mac(), at("11:00"))["bars"]
+		back = first["back"]
+		self.assertEqual((back["left"], back["width"], back["shape"]), (first["left"], round(last["left"] + last["width"] - first["left"], 3), "beer"))
+		self.assertFalse(back["glow"])
+		self.assertNotIn("back", last)
 
 	def test_a_motorcycle_rides_from_the_first_bar_to_the_end_of_the_last(self):
 		(self.dir / "devices.json").write_text(json.dumps(DEVICES + [{"ssid": "Kylian", "mac": "CC:00:00:00:00:03", "style": "motorcycle"}]))
