@@ -239,6 +239,7 @@ seconds = 15
 # waits for a name, or it died); the menu (Esc) shows it any time. Its state is in data/pet.json (delete it to start over).
 seconds = 20
 presence_minutes = 10
+streep_credentials = "~/.config/slideshow/streep.json"   # {"password": "..."} of the streep system: each streep feeds it (+1) and it says thank you
 cry_minutes = 20   # below half health it cries on the speakers about this often (not while muted or during bieruur)
 
 [poll]

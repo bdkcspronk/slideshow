@@ -760,4 +760,21 @@ menu.addEventListener("click", (event) => {
 });
 menu.addEventListener("mousemove", menuActivity);
 
+// ---- Overlays -----------------------------------------------------------------------------------
+// Every few seconds: anything to show over whatever slide is on (the Francken pet thanking for a streep,
+// providers/pet.py)? It goes in #overlay (above the slides, not in the way of taps) for its seconds.
+const overlay = document.getElementById("overlay");
+let overlayTimer = null;
+setInterval(async () => {
+	try {
+		const shown = await getJson("/api/overlay");
+		if (!shown.html) return;
+		overlay.innerHTML = shown.html;   // a new one replaces one still showing (its animation starts over)
+		clearTimeout(overlayTimer);
+		overlayTimer = setTimeout(() => { overlay.innerHTML = ""; }, shown.seconds * 1000);
+	} catch (error) {
+		console.error(error);
+	}
+}, 5000);
+
 next();

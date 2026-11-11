@@ -9,6 +9,7 @@
 	/api/menu       the menu (Esc): GET what it shows, POST a choice (see menu.py)
 	/api/action     POST: a button on an interactive slide (the puzzle) was clicked
 	/api/takeover   whether a takeover should interrupt a paused interactive slide
+	/api/overlay    something to show over whatever slide is on, for a few seconds (the pet thanking for a streep)
 	/preview/<name> one slide of a provider or takeover, for checking templates
 	/preview/rain   the rain warning of the evening (an example shower when it stays dry)
 	/status         what every provider is doing, and the last error
@@ -220,6 +221,8 @@ class Handler(BaseHTTPRequestHandler):
 			now = self.server.app.clock.now()
 			due = any(t.interrupts_paused and t.due(now) for t in self.server.app.takeovers.values())
 			self.send_json({"due": due})
+		elif path == "/api/overlay":
+			self.send_json(self.overlay())
 		elif path.startswith("/api/slide/") and path.removeprefix("/api/slide/").isdigit():
 			again = renderer.again(int(path.removeprefix("/api/slide/")))
 			if again is None:
@@ -328,6 +331,20 @@ class Handler(BaseHTTPRequestHandler):
 		if slide is not None:
 			self.server.renderer.current = slide
 		self.send_json({"html": self.server.renderer.render(slide) if slide else None, "message": message})
+
+	def overlay(self) -> dict:
+		"""The first thing an overlay source has to show: {"html", "seconds"}, or {} for nothing."""
+		app = self.server.app
+		for source in app.overlays:
+			try:
+				shown = source.overlay(app.clock.now())
+			except Exception:
+				log.exception("Overlay of %s failed", getattr(source, "name", source))
+				continue
+			if shown:
+				html = self.server.renderer.templates.get_template(shown["template"]).render(**shown["data"])
+				return {"html": html, "seconds": shown["seconds"]}
+		return {}
 
 	def send_preview(self, name: str) -> None:
 		app = self.server.app

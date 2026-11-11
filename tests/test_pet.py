@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 from unittest import mock
 
 from francken_tv.providers.pet import MAX_DRAIN_PER_DAY, PetCry, PetProvider, advance, cheer_on_puzzles, clean_name, new_pet, numbered_name
+from francken_tv.providers.pet_streep import StreepFeed, listing
 from francken_tv.providers.puzzles import PuzzleStatus
 from francken_tv.slides import Provider, Slide
 
@@ -227,7 +228,7 @@ class PetTest(unittest.TestCase):
 		self.assertNotIn("pet_cameo", slide.data)   # not finished yet
 		slide, _ = puzzle.action("submit", [], START)
 		self.assertEqual(slide.data["board"], 2)   # the puzzle's own data is still there
-		self.assertEqual((slide.data["pet_cameo"]["name"], slide.data["pet_cameo"]["fun"]), ("Bob", 30))
+		self.assertEqual((slide.data["pet_cameo"]["name"], slide.data["pet_cameo"]["plus"]), ("Bob", "+30 fun"))
 		self.assertIn("solved Wordle", slide.data["pet_cameo"]["said"])
 		self.assertAlmostEqual(self.provider.state["pet"]["fun"], 50, places=1)
 		slide, _ = puzzle.action("submit", [], START)   # a tap on the finished puzzle: no second time
@@ -244,3 +245,74 @@ class PetTest(unittest.TestCase):
 		puzzle = FakePuzzle(moves=1)
 		cheer_on_puzzles(self.provider, [puzzle])   # still waiting for a name
 		self.assertNotIn("pet_cameo", puzzle.action("submit", [], START)[0].data)
+
+
+class FakeResponse:
+	def __init__(self, body, status=200):
+		self.body, self.status_code = body, status
+
+	def json(self):
+		return self.body
+
+	def raise_for_status(self):
+		if self.status_code >= 400:
+			raise RuntimeError(self.status_code)
+
+
+class FakeStreepSystem:
+	"""The streep system's API: a password, products, and the recent orders (a list the test adds to)."""
+
+	def __init__(self):
+		self.orders = [{"id": 1, "member_id": 7, "product_id": 3, "ordered_at": "2026-11-11 11:00:00"}]
+		self.logins = 0
+
+	def post(self, url, json, timeout):
+		self.logins += 1
+		return FakeResponse({"token": "t"} if json["password"] == "secret" else {}, 200 if json["password"] == "secret" else 401)
+
+	def get(self, url, headers, timeout):
+		if url.endswith("/products"):
+			return FakeResponse({"products": [{"id": "3", "naam": "Twix", "categorie": "Snoep"}, {"id": "4", "naam": "Hertog Jan", "categorie": "Bier"}]})
+		return FakeResponse({"orders": list(self.orders)})
+
+
+class StreepTest(unittest.TestCase):
+	def setUp(self):
+		self.folder = TemporaryDirectory()
+		folder = Path(self.folder.name)
+		(folder / "streep.json").write_text('{"password": "secret"}', encoding="utf-8")
+		self.api = FakeStreepSystem()
+		self.feed = StreepFeed(folder / "streep.json", self.api)
+		self.pet = PetProvider({}, lambda now: 3, folder / "pet.json", self.feed)
+		self.pet.action("name", ["Bob"], START)
+
+	def tearDown(self):
+		self.folder.cleanup()
+
+	def streep(self, product_id, at):
+		self.api.orders.append({"id": len(self.api.orders) + 1, "member_id": 9, "product_id": product_id, "ordered_at": at})
+
+	def test_each_streep_feeds_it_one_and_it_says_thank_you(self):
+		self.pet.refresh(START)   # the first time: the orders already there only count as seen
+		self.assertIsNone(self.pet.overlay(START))
+		food = self.pet.state["pet"]["food"]
+		self.streep(3, "2026-11-11 12:00:10")
+		self.streep(4, "2026-11-11 12:00:20")
+		self.pet.refresh(START + timedelta(seconds=30))
+		self.assertAlmostEqual(self.pet.state["pet"]["food"], food + 2, delta=0.3)   # minus a little drain in those 30 s
+		shown = self.pet.overlay(START + timedelta(seconds=31))
+		self.assertEqual(shown["template"], "pet_cameo.html")
+		cameo = shown["data"]["pet_cameo"]
+		self.assertEqual((cameo["plus"], cameo["said"], cameo["name"]), ("+2", "Thank you for the Twix and Hertog Jan!", "Bob"))
+		self.assertIsNone(self.pet.overlay(START + timedelta(seconds=36)))   # once
+		self.pet.refresh(START + timedelta(seconds=60))   # the same orders again: nothing new
+		self.assertIsNone(self.pet.overlay(START + timedelta(seconds=61)))
+		self.assertEqual(self.api.logins, 1)
+
+	def test_without_the_password_file_nothing_happens(self):
+		self.feed.credentials = Path(self.folder.name) / "missing.json"
+		self.assertEqual(self.feed.poll(START), 0)
+
+	def test_listing(self):
+		self.assertEqual(listing(["Twix"]), "Twix")
+		self.assertEqual(listing(["Twix", "Mars", "Cola", "Tuc", "Bueno"]), "Twix, Mars, Cola and 2 more")

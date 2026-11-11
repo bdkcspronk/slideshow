@@ -30,6 +30,7 @@ from ..announcer import Announcer
 from ..config import PROJECT_DIR
 from ..presence_store import PresenceStore
 from ..slides import Job, Provider, Slide
+from .pet_streep import listing
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ NEGLECT_HOURS = 2          # one empty need takes all health in this long (two e
 RECOVER_HOURS = 4          # with no empty need, health comes back in this long
 CRY_BELOW = 50             # health below which it cries now and then
 SHOW_BELOW = 50            # only in the slideshow once a bar (a need or health) is below this
+STREEP_FOOD = 1            # every snack or drink streeped in the streep system feeds it this much (pet_streep.py)
 PUZZLE_FUN = 30            # finishing a daily puzzle (solved or lost) is as much fun for it as being played with
 MAX_STEP = timedelta(minutes=5)   # a longer gap between updates: the slideshow was off, nothing happened
 TAP_COOLDOWN = timedelta(seconds=2)   # the same button tapped faster than this counts once
@@ -196,7 +198,7 @@ class PetProvider(Provider):
 	refresh_seconds = 60
 	nothing_to_show = "Doing fine: it shows up once one of its bars is below half"
 
-	def __init__(self, settings: dict, count_people: Callable[[datetime], int], state_path: Path | None = None) -> None:
+	def __init__(self, settings: dict, count_people: Callable[[datetime], int], state_path: Path | None = None, streep=None) -> None:
 		self.seconds = settings.get("seconds", 20)
 		self.cry_minutes = settings.get("cry_minutes", 20)   # below half health, about this long between cries
 		self.count_people = count_people
@@ -207,6 +209,9 @@ class PetProvider(Provider):
 		self.last_any_tap: datetime | None = None
 		self.said: tuple[str, datetime] | None = None   # its answer to the last tap, until when
 		self.next_cry: datetime | None = None
+		self.streep = streep   # a StreepFeed (pet_streep.py): new orders in the streep system feed it
+		if streep is not None and streep.configured:
+			self.refresh_seconds = 30   # so a "thank you" comes soon after streeping
 		self.lock = threading.Lock()   # taps arrive from the web server's threads, refresh() from the background
 
 	# ---- the state ------------------------------------------------------------------------------
@@ -259,6 +264,19 @@ class PetProvider(Provider):
 		with self.lock:
 			self.step(now)   # up to now with the old count, then the new count from here on
 			self.people = people
+			self.save()
+		if self.streep is not None:
+			new = self.streep.poll(now)   # may raise (offline, wrong password): shows in /status, the pet goes on
+			if new:
+				self.fed_by_streep(new, now)
+
+	def fed_by_streep(self, count: int, now: datetime) -> None:
+		"""`count` snacks and drinks were streeped: STREEP_FOOD food each, for a living pet."""
+		with self.lock:
+			pet = self.step(now)
+			if pet is None or pet["died"]:
+				return
+			pet["food"] = min(100.0, pet["food"] + STREEP_FOOD * count)
 			self.save()
 
 	def cry_due(self, now: datetime) -> bool:
@@ -376,6 +394,22 @@ class PetProvider(Provider):
 		return self.make_slide(now, anim), None
 
 
+	def overlay(self, now: datetime) -> dict | None:
+		"""Something to show over whatever slide is on (/api/overlay, player.js): the pet popping up in the corner
+		to thank for what was streeped since the last time. None if nothing was, or there's no living pet."""
+		if self.streep is None:
+			return None
+		bought = self.streep.take()
+		if not bought:
+			return None
+		with self.lock:
+			pet = self.step(now)
+			if pet is None or pet["died"]:
+				return None
+			cameo = look(pet) | {"name": pet["name"], "plus": f"+{len(bought)}",
+				"said": f"Thank you for the {listing([item['name'] for item in bought])}!"}
+		return {"template": "pet_cameo.html", "data": {"pet_cameo": cameo}, "seconds": 10}
+
 	def puzzle_finished(self, title: str, won: bool, now: datetime) -> dict | None:
 		"""A daily puzzle was just finished on the TV: the pet watched, and had fun (PUZZLE_FUN). Returns what its
 		cameo on the puzzle's slide needs (templates/pet_cameo.html), or None without a living pet."""
@@ -388,7 +422,7 @@ class PetProvider(Provider):
 			said = f"You solved {title}! So fun!" if won else f"Aww, {title} was hard. Fun though!"
 			self.said = (said, now + SAY_SECONDS)
 			self.save()
-			return look(pet) | {"name": pet["name"], "said": said, "fun": PUZZLE_FUN}
+			return look(pet) | {"name": pet["name"], "said": said, "plus": f"+{PUZZLE_FUN} fun"}
 
 
 def cheer_on_puzzles(pet: PetProvider, puzzles: list[Provider]) -> None:

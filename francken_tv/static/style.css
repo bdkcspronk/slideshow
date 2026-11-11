@@ -4087,3 +4087,6 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pet-cameo-bubble::after { content: ""; position: absolute; right: -1.6vh; bottom: 1.6vh; border: 1vh solid transparent; border-left: 1.6vh solid #fdf8ec; }
 .pet-cameo-plus { position: absolute; left: 50%; top: 0; transform: translateX(-50%); color: #3fae5a; font-size: 4vh; text-shadow: 0 0.3vh 0 #fff, 0 0 1.2vh rgba(255, 255, 255, 0.9); white-space: nowrap; animation: pet-cameo-plus 2.2s ease-out 1.6s both; }
 @keyframes pet-cameo-plus { 0% { opacity: 0; transform: translate(-50%, 2vh); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -10vh); } }
+
+/* Over any slide (player.js, "Overlays"): e.g. the pet thanking for a streep. Never in the way of taps. */
+#overlay { position: fixed; inset: 0; z-index: 40; pointer-events: none; }

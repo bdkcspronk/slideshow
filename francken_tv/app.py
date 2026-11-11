@@ -39,6 +39,7 @@ from .providers.streep import StreepProvider
 from .providers.francken_vrij_subscribe import FranckenVrijSubscribeProvider
 from .providers.connections import ConnectionsProvider
 from .providers.pet import PetCry, PetProvider, cheer_on_puzzles, people_in_room
+from .providers.pet_streep import StreepFeed
 from .providers.poll import PollProvider
 from .providers.practice import PracticeSessionsProvider
 from .providers.xkcd import XkcdProvider
@@ -82,6 +83,7 @@ class App:
 	power_commands: dict[str, list[str]] = field(default_factory=dict)   # "shutdown"/"restart" -> command
 	system_volume: SystemVolume | None = None   # the volume and mute in the settings, also for Spotify
 	tiles: TileCache | None = None              # map tiles for maps in slides (/tiles/..., maptiles.py)
+	overlays: list = field(default_factory=list)   # things with overlay(now) -> {"template", "data", "seconds"} or None: shown over any slide (/api/overlay)
 	backup_warnings: Callable[[datetime], list[str]] | None = None   # backups not set up or stopped (backup.py), for /status
 	updater: object | None = None               # updating from GitHub (updater.py, set in __main__.py), for /status
 	settings_lock: threading.Lock = field(default_factory=threading.Lock)   # the server handles requests in parallel
@@ -170,7 +172,9 @@ def build_app(config: dict, clock: Clock) -> App:
 	activities = ActivitiesProvider(config.get("activities", {}), seconds)
 	spotify = SpotifyProvider(config.get("spotify", {}), project_path(config.get("spotify", {}).get("credentials",
 		"~/.config/slideshow/spotify.json")), seconds)
-	pet = PetProvider(config.get("pet", {}), people_in_room(store, config.get("pet", {}).get("presence_minutes", 10)), DATA_DIR / "pet.json")
+	pet_settings = config.get("pet", {})
+	pet = PetProvider(pet_settings, people_in_room(store, pet_settings.get("presence_minutes", 10)), DATA_DIR / "pet.json",
+		StreepFeed(project_path(pet_settings.get("streep_credentials", "~/.config/slideshow/streep.json"))))
 	francken_vrij = FranckenVrijProvider(config.get("francken_vrij", {}), CACHE_DIR / "francken_vrij")
 	all_providers: list[Provider] = [
 		ImagesProvider(config.get("images", {}), seconds),
@@ -263,6 +267,8 @@ def build_app(config: dict, clock: Clock) -> App:
 		backup_warnings=backup.warnings,
 		tiles=TileCache(CACHE_DIR / "tiles", config.get("maps", {}).get("tiles", TILES)),
 	)
+	if "pet" in order:
+		app.overlays.append(pet)   # thanks for what was streeped, over any slide
 	app.read_sound()
 	app.apply_settings()
 	return app
