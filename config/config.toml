@@ -235,7 +235,8 @@ seconds = 15
 # The Francken pet: a tamagotchi people feed, play with and clean by tapping the TV, or it dies. Its needs only go
 # down while people are in the room (known devices the sniffer saw in the last presence_minutes), faster with more
 # people, but at most so much a day that three visits a day keep it alive (providers/pet.py). The first time and
-# after it died, the slide asks for its name. Its state is in data/pet.json (delete it to start over).
+# after it died, the slide asks for its name. It's only in the slideshow while one of its bars is below half (or it
+# waits for a name, or it died); the menu (Esc) shows it any time. Its state is in data/pet.json (delete it to start over).
 seconds = 20
 presence_minutes = 10
 cry_minutes = 20   # below half health it cries on the speakers about this often (not while muted or during bieruur)

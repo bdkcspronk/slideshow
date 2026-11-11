@@ -51,6 +51,7 @@ FULL = 92                  # above this a need can't be filled more ("I'm full!"
 NEGLECT_HOURS = 2          # one empty need takes all health in this long (two empty needs: twice as fast)
 RECOVER_HOURS = 4          # with no empty need, health comes back in this long
 CRY_BELOW = 50             # health below which it cries now and then
+SHOW_BELOW = 50            # only in the slideshow once a bar (a need or health) is below this
 MAX_STEP = timedelta(minutes=5)   # a longer gap between updates: the slideshow was off, nothing happened
 TAP_COOLDOWN = timedelta(seconds=2)   # the same button tapped faster than this counts once
 AWAKE_AFTER_TAP = timedelta(minutes=5)   # a tap wakes it up even if the sniffer sees nobody
@@ -192,6 +193,7 @@ class PetProvider(Provider):
 	name = "pet"
 	title = "Francken pet"
 	refresh_seconds = 60
+	nothing_to_show = "Doing fine: it shows up once one of its bars is below half"
 
 	def __init__(self, settings: dict, count_people: Callable[[datetime], int], state_path: Path | None = None) -> None:
 		self.seconds = settings.get("seconds", 20)
@@ -308,8 +310,18 @@ class PetProvider(Provider):
 		slide.update = lambda later: self.data(later)   # the bars move while it's shown, without the tap's animation
 		return slide
 
+	def needs_attention(self, now: datetime) -> bool:
+		"""Whether it belongs in the slideshow: waiting for a name, dead (its grave, and a new one), or one of its
+		bars below SHOW_BELOW. A happy pet stays out of the way."""
+		with self.lock:
+			pet = self.step(now)
+		return pet is None or bool(pet["died"]) or any(pet[key] < SHOW_BELOW for key in (*NEEDS, "health"))
+
 	def slides(self, now: datetime) -> list[Slide]:
-		return [self.make_slide(now)]
+		return [self.make_slide(now)] if self.needs_attention(now) else []
+
+	def shortcut_slide(self, now: datetime) -> Slide | None:
+		return self.make_slide(now)   # the menu's preview: always
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
 		"""'feed', 'play' or 'clean' a living pet; 'bury' a dead one (then the slide asks for a new one). Picking the

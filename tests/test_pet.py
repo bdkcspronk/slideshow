@@ -77,7 +77,7 @@ class PetTest(unittest.TestCase):
 		self.assertEqual(pet["cause"], "died of boredom")   # fun drains fastest
 
 	def test_first_it_asks_for_a_name(self):
-		data = self.provider.slides(START)[0].data
+		data = self.provider.slides(START)[0].data   # in the slideshow while it waits for a name
 		self.assertEqual((data["state"], data["first"]), ("choosing", True))
 		self.assertEqual(self.provider.action("next", [], START)[0].data["state"], "naming")
 		self.assertEqual(self.provider.action("name", ["  "], START), (None, "Type a name first"))
@@ -115,7 +115,7 @@ class PetTest(unittest.TestCase):
 
 	def test_a_tap_wakes_it(self):
 		self.hatch(now=START - timedelta(hours=1))
-		self.assertEqual(self.provider.slides(START)[0].data["state"], "asleep")
+		self.assertEqual(self.provider.shortcut_slide(START).data["state"], "asleep")
 		slide, _ = self.provider.action("play", [], START)
 		self.assertEqual(slide.data["state"], "awake")
 
@@ -168,7 +168,7 @@ class PetTest(unittest.TestCase):
 		slide = self.hatch("Inky", START + timedelta(seconds=5))
 		self.assertEqual((slide.data["species"], slide.data["color"]), ("octopus", "green"))
 		again = PetProvider({}, lambda now: 0, self.state)   # after a restart too
-		self.assertEqual(again.slides(START)[0].data["species"], "octopus")
+		self.assertEqual(again.shortcut_slide(START).data["species"], "octopus")
 
 	def test_a_name_used_before_gets_a_number(self):
 		graves = [{"name": "Bob"}, {"name": "Alice"}, {"name": "bob II", "base": "bob"}]
@@ -182,3 +182,13 @@ class PetTest(unittest.TestCase):
 		self.provider.state["graves"].append({"name": "Bob", "base": "Bob", "hatched": START.isoformat(), "died": START.isoformat()})
 		self.provider.action("bury", [], START + timedelta(seconds=5))
 		self.assertEqual(self.hatch("Bob II", START + timedelta(seconds=10)).data["name"], "Bob II")   # typed with a number: still II
+
+	def test_only_in_the_slideshow_when_it_needs_something(self):
+		self.assertEqual(len(self.provider.slides(START)), 1)   # waiting for a name
+		self.hatch()
+		self.assertEqual(self.provider.slides(START), [])   # all bars at 80 or more
+		self.assertIsNotNone(self.provider.shortcut_slide(START))   # the menu's preview still shows it
+		self.provider.state["pet"]["fun"] = 49
+		self.assertEqual(len(self.provider.slides(START)), 1)
+		self.provider.state["pet"].update(fun=80, died=START.isoformat(), cause="starved")
+		self.assertEqual(len(self.provider.slides(START)), 1)   # its grave

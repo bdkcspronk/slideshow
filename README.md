@@ -25,7 +25,7 @@ It shows:
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
 | The commandment of the week by Jeff de Hosson, our honorary member (the next one each Monday) | `config/commandments.txt` | `providers/commandments.py` |
 | The dilemma of the week: vote by tapping A or B, or scan the QR code and vote on your phone | `config/dilemmas.txt`, a Google Form | `providers/poll.py` |
-| The Francken pet: a tamagotchi to feed, play with and clean by tapping. Pick its shape, colour and name (a name used before gets II, III, ...); it gets needy faster the more people are in the room (but three visits a day are always enough), sleeps when nobody's there, cries on the speakers below half health, and dies when neglected | the ESP32 sniffer, `data/pet.json` | `providers/pet.py` |
+| The Francken pet: a tamagotchi to feed, play with and clean by tapping. Pick its shape, colour and name (a name used before gets II, III, ...); it gets needy faster the more people are in the room (but three visits a day are always enough), sleeps when nobody's there, cries on the speakers below half health, and dies when neglected. Only shown while a bar is below half | the ESP32 sniffer, `data/pet.json` | `providers/pet.py` |
 | The latest xkcd comic, with its hover text | xkcd.com | `providers/xkcd.py` |
 | An animated graafmachine digging a hole and dumping the earth on a heap | | `providers/graafmachine.py` |
 | The Compucie's promo, Matrix style: code rain, the name decoding, a terminal typing who we are | | `providers/compucie.py` |
