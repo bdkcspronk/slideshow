@@ -100,30 +100,31 @@ class StreepFeed:
 				continue
 		self.products, self.products_read = products, now
 
-	def poll(self, now: datetime) -> int:
-		"""Fetch the orders; returns how many are new (0 the first time: those are only remembered)."""
+	def poll(self, now: datetime) -> list[dict]:
+		"""Fetch the orders; returns the new ones as {"name", "kind"} (none the first time: those are only remembered)."""
 		if not self.configured:
-			return 0
+			return []
 		self.read_products(now)
 		orders = self.get("/orders").get("orders") or []
 		keys = {order_key(order): order for order in orders if isinstance(order, dict)}
 		with self.lock:
 			if self.seen is None:
 				self.seen = set(keys)
-				return 0
+				return []
 			new = [order for key, order in keys.items() if key not in self.seen]
 			self.seen |= set(keys)
 			if len(self.seen) > 5000:
 				self.seen = set(keys)   # keep it small; what's still listed is all that matters
+			bought = []
 			for order in new:
 				try:
-					product = self.products.get(int(order.get("product_id")), {"name": "something", "kind": "food"})
+					bought.append(self.products.get(int(order.get("product_id")), {"name": "something", "kind": "food"}))
 				except (TypeError, ValueError):
-					product = {"name": "something", "kind": "food"}
-				self.pending.append(product)
-		if new:
-			log.info("Streep system: %d new order(s) for the pet", len(new))
-		return len(new)
+					bought.append({"name": "something", "kind": "food"})
+			self.pending += bought
+		if bought:
+			log.info("Streep system: %d new order(s) for the pet", len(bought))
+		return bought
 
 	def take(self) -> list[dict]:
 		with self.lock:

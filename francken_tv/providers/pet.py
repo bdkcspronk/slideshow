@@ -34,8 +34,9 @@ from .pet_streep import listing
 
 log = logging.getLogger(__name__)
 
-NEEDS = ("food", "fun", "clean")
-LABELS = {"food": "Food", "fun": "Fun", "clean": "Clean", "health": "Health"}
+DRAINING = ("food", "fun", "clean")   # these go down by themselves while people are in the room
+NEEDS = (*DRAINING, "sober")          # sober only goes down with every beer streeped (pet_streep.py)
+LABELS = {"food": "Food", "fun": "Fun", "clean": "Clean", "sober": "Sober", "health": "Health"}
 # With one person in the room, a full bar empties in this many hours; with ten people ten times as fast...
 HOURS_PER_PERSON = {"food": 16, "fun": 12, "clean": 24}
 # ...but never more than this a day (from 04:00 to 04:00). Three taps on a button fill 90 (clean: 120); feeding
@@ -47,7 +48,12 @@ ACTIONS = {
 	"feed": ("food", 30, "Yum!"),
 	"play": ("fun", 30, "Wheee!"),
 	"clean": ("clean", 40, "So fresh!"),
+	"water": ("sober", 25, "Ahh, water!"),
 }
+FULL_SAYS = {"food": "I'm full!", "fun": "I'm tired, later!", "clean": "I'm already clean!", "sober": "Sober as a judge!"}
+BEER_SOBER = 3             # every beer streeped (category Bier) makes it this much less sober...
+SOBER_PER_HOUR = 4         # ...and it sobers up by itself this fast, also asleep (sleeping it off)
+DRUNK_BELOW = 40           # below this sober it sways and hiccups
 FULL = 92                  # above this a need can't be filled more ("I'm full!")
 NEGLECT_HOURS = 2          # one empty need takes all health in this long (two empty needs: twice as fast)
 RECOVER_HOURS = 4          # with no empty need, health comes back in this long
@@ -59,7 +65,7 @@ MAX_STEP = timedelta(minutes=5)   # a longer gap between updates: the slideshow 
 TAP_COOLDOWN = timedelta(seconds=2)   # the same button tapped faster than this counts once
 AWAKE_AFTER_TAP = timedelta(minutes=5)   # a tap wakes it up even if the sniffer sees nobody
 SAY_SECONDS = timedelta(seconds=4)   # how long its answer to a tap stays in the speech bubble
-CAUSES = {"food": "starved", "fun": "died of boredom", "clean": "died of filth"}
+CAUSES = {"food": "starved", "fun": "died of boredom", "clean": "died of filth", "sober": "drank itself to death"}
 MAX_NAME = 16
 # What a new pet can look like: its shape (the parts in templates/pet_creature.svg) and its colour (body, and the
 # darker arms and feet). Picked on the slide before it's named.
@@ -134,24 +140,27 @@ def look(thing: dict) -> dict:
 
 def new_pet(name: str, generation: int, now: datetime, species: str = "blob", color: str = "crimson") -> dict:
 	return {"name": name, "generation": generation, "species": species, "color": color, "hatched": now.isoformat(timespec="seconds"),
-		"updated": now.isoformat(timespec="seconds"), "food": 80.0, "fun": 80.0, "clean": 80.0, "health": 100.0,
+		"updated": now.isoformat(timespec="seconds"), "food": 80.0, "fun": 80.0, "clean": 80.0, "sober": 100.0, "health": 100.0,
 		"died": None, "cause": None, "drained": {"day": day_of(now)}}
 
 
 def advance(pet: dict, now: datetime, people: int) -> None:
 	"""Move the pet on from its last update to now, with `people` in the room all that time."""
+	pet.setdefault("sober", 100.0)   # a pet from before there was a sober bar
 	last = datetime.fromisoformat(pet["updated"])
 	pet["updated"] = now.isoformat(timespec="seconds")
 	if pet["died"] or now <= last:
 		return
 	hours = min(now - last, MAX_STEP).total_seconds() / 3600
+	if pet["sober"] > 0:   # once at zero, only water helps
+		pet["sober"] = min(100.0, pet["sober"] + SOBER_PER_HOUR * hours)
 	if people <= 0:
 		return   # asleep: nothing changes
 	drained = pet.setdefault("drained", {})
 	if drained.get("day") != day_of(now):
 		drained.clear()
 		drained["day"] = day_of(now)
-	for need in NEEDS:
+	for need in DRAINING:
 		amount = min(100 / HOURS_PER_PERSON[need] * people * hours, MAX_DRAIN_PER_DAY - drained.get(need, 0))
 		if amount > 0:
 			pet[need] = max(0.0, pet[need] - amount)
@@ -172,14 +181,16 @@ def advance(pet: dict, now: datetime, people: int) -> None:
 def done_for_today(pet: dict, now: datetime) -> bool:
 	"""Whether every need has gone down as much as it can today."""
 	drained = pet.get("drained", {})
-	return drained.get("day") == day_of(now) and all(drained.get(need, 0) >= MAX_DRAIN_PER_DAY - 0.01 for need in NEEDS)
+	return drained.get("day") == day_of(now) and all(drained.get(need, 0) >= MAX_DRAIN_PER_DAY - 0.01 for need in DRAINING)
 
 
 def mood(pet: dict) -> str:
-	"""happy, okay, sad or sick: how it looks, from its emptiest need and its health."""
+	"""happy, okay, sad, drunk or sick: how it looks, from its emptiest need and its health."""
 	lowest = min(pet[need] for need in NEEDS)
 	if lowest <= 0 or pet["health"] < 50:
 		return "sick"
+	if pet["sober"] < DRUNK_BELOW:
+		return "drunk"
 	return "happy" if lowest > 60 else "okay" if lowest > 25 else "sad"
 
 
@@ -188,8 +199,8 @@ def complaint(pet: dict) -> str:
 	need = min(NEEDS, key=lambda need: pet[need])
 	if pet[need] > 60:
 		return "Life is good!"
-	return {"food": "I'm hungry...", "fun": "I'm so bored...", "clean": "I'm getting stinky..."}[need] if pet[need] > 25 \
-		else {"food": "FEED ME!", "fun": "Play with me!!", "clean": "I smell terrible!"}[need]
+	return {"food": "I'm hungry...", "fun": "I'm so bored...", "clean": "I'm getting stinky...", "sober": "*hic* One more!"}[need] if pet[need] > 25 \
+		else {"food": "FEED ME!", "fun": "Play with me!!", "clean": "I smell terrible!", "sober": "Water... *hic* please..."}[need]
 
 
 class PetProvider(Provider):
@@ -270,13 +281,16 @@ class PetProvider(Provider):
 			if new:
 				self.fed_by_streep(new, now)
 
-	def fed_by_streep(self, count: int, now: datetime) -> None:
-		"""`count` snacks and drinks were streeped: STREEP_FOOD food each, for a living pet."""
+	def fed_by_streep(self, bought: list[dict], now: datetime) -> None:
+		"""Snacks and drinks were streeped ({"name", "kind"} each): STREEP_FOOD food each, and every beer makes it
+		BEER_SOBER less sober. For a living pet."""
 		with self.lock:
 			pet = self.step(now)
 			if pet is None or pet["died"]:
 				return
-			pet["food"] = min(100.0, pet["food"] + STREEP_FOOD * count)
+			pet["food"] = min(100.0, pet["food"] + STREEP_FOOD * len(bought))
+			beers = sum(1 for item in bought if item.get("kind") == "beer")
+			pet["sober"] = max(0.0, pet.get("sober", 100.0) - BEER_SOBER * beers)
 			self.save()
 
 	def cry_due(self, now: datetime) -> bool:
@@ -379,7 +393,7 @@ class PetProvider(Provider):
 			elif name in ACTIONS and pet is not None and not pet["died"]:
 				need, amount, said = ACTIONS[name]
 				if pet[need] >= FULL:
-					said, anim = {"food": "I'm full!", "fun": "I'm tired, later!", "clean": "I'm already clean!"}[need], "no"
+					said, anim = FULL_SAYS[need], "no"
 				else:
 					pet[need] = min(100.0, pet[need] + amount)
 					anim = name
@@ -406,8 +420,9 @@ class PetProvider(Provider):
 			pet = self.step(now)
 			if pet is None or pet["died"]:
 				return None
+			hic = " *hic*" if any(item.get("kind") == "beer" for item in bought) else ""
 			cameo = look(pet) | {"name": pet["name"], "plus": f"+{len(bought)}",
-				"said": f"Thank you for the {listing([item['name'] for item in bought])}!"}
+				"said": f"Thank you for the {listing([item['name'] for item in bought])}!{hic}"}
 		return {"template": "pet_cameo.html", "data": {"pet_cameo": cameo}, "seconds": 10}
 
 	def puzzle_finished(self, title: str, won: bool, now: datetime) -> dict | None:

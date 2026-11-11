@@ -276,7 +276,9 @@ class FakeStreepSystem:
 		return FakeResponse({"orders": list(self.orders)})
 
 
-class StreepTest(unittest.TestCase):
+class WithStreepSystem(unittest.TestCase):
+	"""A pet named Bob, fed by a (fake) streep system."""
+
 	def setUp(self):
 		self.folder = TemporaryDirectory()
 		folder = Path(self.folder.name)
@@ -292,6 +294,8 @@ class StreepTest(unittest.TestCase):
 	def streep(self, product_id, at):
 		self.api.orders.append({"id": len(self.api.orders) + 1, "member_id": 9, "product_id": product_id, "ordered_at": at})
 
+
+class StreepTest(WithStreepSystem):
 	def test_each_streep_feeds_it_one_and_it_says_thank_you(self):
 		self.pet.refresh(START)   # the first time: the orders already there only count as seen
 		self.assertIsNone(self.pet.overlay(START))
@@ -303,7 +307,7 @@ class StreepTest(unittest.TestCase):
 		shown = self.pet.overlay(START + timedelta(seconds=31))
 		self.assertEqual(shown["template"], "pet_cameo.html")
 		cameo = shown["data"]["pet_cameo"]
-		self.assertEqual((cameo["plus"], cameo["said"], cameo["name"]), ("+2", "Thank you for the Twix and Hertog Jan!", "Bob"))
+		self.assertEqual((cameo["plus"], cameo["said"], cameo["name"]), ("+2", "Thank you for the Twix and Hertog Jan! *hic*", "Bob"))
 		self.assertIsNone(self.pet.overlay(START + timedelta(seconds=36)))   # once
 		self.pet.refresh(START + timedelta(seconds=60))   # the same orders again: nothing new
 		self.assertIsNone(self.pet.overlay(START + timedelta(seconds=61)))
@@ -311,8 +315,37 @@ class StreepTest(unittest.TestCase):
 
 	def test_without_the_password_file_nothing_happens(self):
 		self.feed.credentials = Path(self.folder.name) / "missing.json"
-		self.assertEqual(self.feed.poll(START), 0)
+		self.assertEqual(self.feed.poll(START), [])
 
 	def test_listing(self):
 		self.assertEqual(listing(["Twix"]), "Twix")
 		self.assertEqual(listing(["Twix", "Mars", "Cola", "Tuc", "Bueno"]), "Twix, Mars, Cola and 2 more")
+
+
+class SoberTest(WithStreepSystem):
+	def test_beer_makes_it_less_sober_and_water_helps(self):
+		self.pet.refresh(START)
+		for i in range(10):
+			self.streep(4, f"2026-11-11 12:01:{i:02d}")   # ten Hertog Jans
+		self.pet.refresh(START + timedelta(seconds=30))
+		pet = self.pet.state["pet"]
+		self.assertAlmostEqual(pet["sober"], 70, delta=0.5)
+		self.assertIn("*hic*", self.pet.overlay(START + timedelta(seconds=31))["data"]["pet_cameo"]["said"])
+		pet["sober"] = 30
+		self.assertEqual(self.pet.shortcut_slide(START + timedelta(seconds=32)).data["mood"], "drunk")
+		slide, _ = self.pet.action("water", [], START + timedelta(seconds=33))
+		self.assertEqual(slide.data["anim"], "water")
+		self.assertAlmostEqual(pet["sober"], 55, delta=0.5)
+
+	def test_it_sobers_up_by_itself_and_dies_of_drink_when_left_at_zero(self):
+		pet = new_pet("A", 1, START)
+		pet["sober"] = 50
+		run(pet, 0, 5)   # asleep: sleeping it off
+		self.assertAlmostEqual(pet["sober"], 70, places=1)
+		pet["sober"] = 0
+		run(pet, 3, 3, start=START + timedelta(hours=5))   # nobody gives it water
+		self.assertEqual(pet["cause"], "drank itself to death")
+
+	def test_a_pet_from_before_the_sober_bar(self):
+		self.pet.state["pet"].pop("sober")
+		self.assertEqual(self.pet.shortcut_slide(START).data["bars"][3]["key"], "sober")
