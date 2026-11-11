@@ -142,7 +142,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	padding: 5vh 5vw;
 	background:
 		repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 28px),
-		linear-gradient(160deg, #13294f, var(--navy) 60%);
+		linear-gradient(160deg, #1d3c6e, #142c55 60%);   /* a little brighter than --navy, which text on cream uses */
 	color: var(--paper);
 	font-family: "Familjen Grotesk", "DejaVu Sans", sans-serif;
 	font-weight: 700;
@@ -152,11 +152,11 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	width: 70vh;
 	height: 70vh;
 	border-radius: 50%;
-	background: radial-gradient(circle, rgba(200, 16, 46, 0.35), transparent 65%);
+	background: radial-gradient(circle, rgba(220, 30, 60, 0.6), transparent 65%);
 	animation: activities-glow 26s ease-in-out infinite alternate;
 }
 .navy-glows i:nth-child(1) { left: -15vh; top: -20vh; }
-.navy-glows i:nth-child(2) { right: -20vh; top: 25vh; background: radial-gradient(circle, rgba(70, 120, 220, 0.3), transparent 65%); animation-duration: 32s; animation-delay: -10s; }
+.navy-glows i:nth-child(2) { right: -20vh; top: 25vh; background: radial-gradient(circle, rgba(80, 140, 240, 0.38), transparent 65%); animation-duration: 32s; animation-delay: -10s; }
 .navy-glows i:nth-child(3) { left: 35vw; bottom: -40vh; animation-duration: 38s; animation-delay: -20s; }
 @keyframes activities-glow { to { transform: translate(18vh, 12vh) scale(1.2); } }
 .poster-title { position: relative; margin: 1.8vh 0 3.5vh; font-size: 8vh; line-height: 1; letter-spacing: -0.1vh; }
