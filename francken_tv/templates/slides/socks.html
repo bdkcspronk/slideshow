@@ -1,0 +1,30 @@
+{#
+	Francken socks for sale (providers/socks.py), on the navy poster like the membership slide: the title with the
+	crimson highlighter, a pair of legs in our socks rising up out of it, the price big; on the right a QR code that
+	opens WhatsApp to the seller (data-qr, widgets.js; level H, for the professor in the middle) under a cream
+	"Text to buy!" label with a pair of socks hanging out of it. The socks are cut out of the old poster
+	(static/socks/). See "Francken socks" in style.css.
+#}
+<div class="slide socks-slide">
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+
+	<div class="socks-body">
+		<div class="socks-pitch">
+			<div class="socks-rise" aria-hidden="true"><img src="/static/socks/socks-up.png" alt=""></div>
+			<h1 class="poster-title"><span>Francken</span> <span class="poster-marked">socks</span></h1>
+			<p class="socks-line">Show your love for Francken on your feet</p>
+			<p class="socks-price"><span>only</span><b>{{ price }}</b></p>
+		</div>
+
+		<div class="socks-buy">
+			<div class="member-qr-card socks-qr-card">
+				<div class="member-qr" data-qr="{{ link }}" data-qr-level="H"></div>
+				<div class="member-tile">{% include "francken_portrait.svg" %}</div>
+			</div>
+			<div class="socks-label">
+				<p><b>Text to buy!</b>Scan to message us on WhatsApp</p>
+				<div class="socks-hang" aria-hidden="true"><img src="/static/socks/socks-down.png" alt=""></div>
+			</div>
+		</div>
+	</div>
+</div>

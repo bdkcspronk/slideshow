@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "borrelcie", "membership", "instagram", "francken_vrij", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "borrelcie", "membership", "socks", "instagram", "francken_vrij", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -177,6 +177,12 @@ seconds = 17   # the leg has grown out after about 14 s
 link = "https://professorfrancken.nl/register"
 months = [8, 9, 10, 2]   # only in these months (1 is January): the start of the academic year and of the second semester
 seconds = 15   # everything is in after about 5 s
+
+[socks]
+# Francken socks for sale: the price and a QR code that opens WhatsApp to the seller (the text is in templates/slides/socks.html).
+link = "https://wa.me/31653346489"
+price = "€7,20"
+seconds = 15   # everything is in after about 4 s
 
 [francken_vrij]
 # The latest Francken Vrij, its pages turning by themselves, pausing on the cover, the contents and each article's
