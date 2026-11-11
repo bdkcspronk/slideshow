@@ -838,11 +838,24 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .lecture.current { border-left-color: var(--red); outline: 0.3vh solid var(--red); }
 .no-lectures { margin: 0; font-size: 2.4vh; color: var(--faint); }
 
-/* Quotes: blue text on white, with our logo (templates/francken_logo_balls.svg) grey behind it. The logo builds
-   itself in the middle: the coat of arms fades in, then the balls inflate layer by layer (the five at the back,
-   the four in the middle, the five in front), a little past their size and back (their radius grows, so the outline is the same all the way). The balls are white with a grey
-   outline, so the front ones hide those behind. The logo then stays, and the quote is typed over it (at --start,
-   from providers/quote.py). */
+/* Our logo building itself (.logo-build around templates/francken_logo_balls.svg; the quote and membership slides):
+   the coat of arms fades in, then the balls inflate layer by layer (the five at the back, the four in the middle,
+   the five in front), a little past their size and back. Their radius grows rather than a scale, so the outline
+   keeps its width all the way. The balls are filled with the background (--logo-fill) and outlined in the colour
+   of the logo, so the front ones hide those behind. Done after about 2.7 seconds. */
+.logo-build svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.logo-build .logo-arms { opacity: 0; animation: logo-build-arms 0.8s ease-out 0.3s forwards; }
+.logo-build .logo-ball {
+	fill: var(--logo-fill, var(--bg));
+	stroke: currentColor;
+	r: 0;
+	animation: logo-build-ball 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) calc(0.7s + var(--layer) * 0.6s + var(--i) * 0.07s) forwards;
+}
+@keyframes logo-build-arms { to { opacity: 1; } }
+@keyframes logo-build-ball { to { r: 24.063px; } }
+
+/* Quotes: blue text on white, with our logo building itself in light grey behind it (see "Our logo building
+   itself"); it stays, and the quote is typed over it once it's done (at --start, from providers/quote.py). */
 .quote-slide {
 	position: relative;
 	overflow: hidden;
@@ -856,19 +869,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	left: 50%;
 	top: 50%;
 	height: 80vh;
+	aspect-ratio: 200 / 158;
 	color: #d3d7dc;
 	transform: translate(-50%, -50%);
 }
-.quote-watermark svg { display: block; height: 100%; width: auto; overflow: visible; }
-.quote-watermark .logo-arms { opacity: 0; animation: quote-logo-arms 0.8s ease-out 0.3s forwards; }
-.quote-watermark .logo-ball {
-	fill: var(--bg);
-	stroke: currentColor;
-	r: 0;
-	animation: quote-logo-ball 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) calc(0.7s + var(--layer) * 0.6s + var(--i) * 0.07s) forwards;
-}
-@keyframes quote-logo-arms { to { opacity: 1; } }
-@keyframes quote-logo-ball { to { r: 24.063px; } }   /* the radius, not a scale: the outline keeps its width */
 .quote-slide blockquote {
 	position: relative;
 	width: 80%;
@@ -3448,9 +3452,8 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 /* Become a member (providers/membership.py): the navy poster (see "The navy and crimson posters"), without the
    label. On the left the title, the price big in cream with "a year" in crimson, and the other reasons as lines
    with a crimson icon, coming up one by one; on the right the QR code in navy on cream with the professor on its
-   middle. Our logo sits big and faint on the left, centred top to bottom. Everything comes in once; only the coffee steams. */
-.member-watermark { position: absolute; left: -8vw; top: 50%; width: 70vw; color: #ffffff; opacity: 0.05; transform: translateY(-50%); }
-.member-watermark svg { display: block; width: 100%; }
+   middle. Our logo builds itself big and faint on the left, centred top to bottom (see "Our logo building itself"). Everything comes in once; only the coffee steams. */
+.member-watermark { position: absolute; left: -8vw; top: 50%; width: 70vw; aspect-ratio: 200 / 158; color: #ffffff; opacity: 0.05; transform: translateY(-50%); --logo-fill: var(--navy); }
 .member-body { position: relative; flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 5vw; }
 .member-reasons { min-width: 0; }
 .member-reasons .poster-title { margin: 0 0 4vh; font-size: 10vh; }

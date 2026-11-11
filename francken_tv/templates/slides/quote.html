@@ -5,7 +5,7 @@
 #}
 {% set text = "\u201c" ~ quote[:1] | upper ~ quote[1:] ~ "\u201d" %}
 <div class="slide quote-slide" style="--start: {{ start_ms }}ms; --letter: {{ letter_ms }}ms; --typed: {{ typing_ms }}ms">
-	<div class="quote-watermark" aria-hidden="true">{% include "francken_logo_balls.svg" %}</div>
+	<div class="quote-watermark logo-build" aria-hidden="true">{% include "francken_logo_balls.svg" %}</div>
 	<blockquote>
 		<span class="quote-text">{% for letter in text %}<span style="--i: {{ loop.index0 }}"{% if loop.last %} class="last"{% endif %}>{{ letter }}</span>{% endfor %}</span>
 		{% if author %}<footer>~ {{ author | title }}</footer>{% endif %}
