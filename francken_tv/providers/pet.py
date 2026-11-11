@@ -307,7 +307,10 @@ class PetProvider(Provider):
 
 	def make_slide(self, now: datetime, anim: str | None = None) -> Slide:
 		slide = Slide("pet.html", self.seconds, self.data(now, anim), refresh_seconds=2)
-		slide.update = lambda later: self.data(later)   # the bars move while it's shown, without the tap's animation
+		# The server draws the slide with update(), also right after a tap: that first time with the tap's animation,
+		# after that (the bars following along every 2 s) without, or it would play again.
+		pending = [anim]
+		slide.update = lambda later: self.data(later, pending.pop() if pending else None)
 		return slide
 
 	def needs_attention(self, now: datetime) -> bool:

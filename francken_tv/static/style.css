@@ -3866,6 +3866,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pet-left, .pet-right { position: relative; display: flex; flex-direction: column; }
 .pet-left { flex: 1.15; }
 .pet-right { flex: 0.85; justify-content: center; gap: 3.5vh; }
+.pet-head { margin-top: 4vh; }
 .pet-name { margin: 0; font-size: 9vh; line-height: 1; letter-spacing: -0.2vh; }
 .pet-age { margin: 1vh 0 0; font-size: 3vh; opacity: 0.7; }
 

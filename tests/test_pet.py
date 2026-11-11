@@ -192,3 +192,10 @@ class PetTest(unittest.TestCase):
 		self.assertEqual(len(self.provider.slides(START)), 1)
 		self.provider.state["pet"].update(fun=80, died=START.isoformat(), cause="starved")
 		self.assertEqual(len(self.provider.slides(START)), 1)   # its grave
+
+	def test_the_redrawn_slide_after_a_tap_has_its_animation_once(self):
+		self.hatch()
+		self.provider.state["pet"]["food"] = 20
+		slide, _ = self.provider.action("feed", [], START + timedelta(seconds=5))
+		self.assertEqual(slide.update(START + timedelta(seconds=5))["anim"], "feed")   # the server draws it with update()
+		self.assertIsNone(slide.update(START + timedelta(seconds=7))["anim"])   # the refresh 2 s later: not again
