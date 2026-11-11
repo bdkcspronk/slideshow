@@ -271,6 +271,9 @@ class FakeStreepSystem:
 		return FakeResponse({"token": "t"} if json["password"] == "secret" else {}, 200 if json["password"] == "secret" else 401)
 
 	def get(self, url, headers, timeout):
+		if url.endswith("/members"):
+			return FakeResponse({"members": [{"id": "9", "voornaam": "Alice", "achternaam": "Jansen", "bijnaam": ""},
+				{"id": "7", "voornaam": "Robert", "achternaam": "Smit", "bijnaam": "Bobby"}]})
 		if url.endswith("/products"):
 			return FakeResponse({"products": [{"id": "3", "naam": "Twix", "categorie": "Snoep"}, {"id": "4", "naam": "Hertog Jan", "categorie": "Bier"}]})
 		return FakeResponse({"orders": list(self.orders)})
@@ -299,15 +302,16 @@ class StreepTest(WithStreepSystem):
 	def test_each_streep_feeds_it_one_and_it_says_thank_you(self):
 		self.pet.refresh(START)   # the first time: the orders already there only count as seen
 		self.assertIsNone(self.pet.overlay(START))
-		food = self.pet.state["pet"]["food"]
-		self.streep(3, "2026-11-11 12:00:10")
-		self.streep(4, "2026-11-11 12:00:20")
+		food, fun = self.pet.state["pet"]["food"], self.pet.state["pet"]["fun"]
+		self.streep(3, "2026-11-11 12:00:10")   # a Twix: food
+		self.streep(4, "2026-11-11 12:00:20")   # a Hertog Jan: fun, not food
 		self.pet.refresh(START + timedelta(seconds=30))
-		self.assertAlmostEqual(self.pet.state["pet"]["food"], food + 2, delta=0.3)   # minus a little drain in those 30 s
+		self.assertAlmostEqual(self.pet.state["pet"]["food"], food + 1, delta=0.3)   # minus a little drain in those 30 s
+		self.assertAlmostEqual(self.pet.state["pet"]["fun"], fun + 1, delta=0.3)
 		shown = self.pet.overlay(START + timedelta(seconds=31))
 		self.assertEqual(shown["template"], "pet_cameo.html")
 		cameo = shown["data"]["pet_cameo"]
-		self.assertEqual((cameo["plus"], cameo["said"], cameo["name"]), ("+2", "Thank you for the Twix and Hertog Jan! *hic*", "Bob"))
+		self.assertEqual((cameo["plus"], cameo["said"], cameo["name"]), ("+1 food +1 fun", "Thank you for the Twix! And thank you Alice for the Hertog Jan! *hic*", "Bob"))
 		self.assertIsNone(self.pet.overlay(START + timedelta(seconds=36)))   # once
 		self.pet.refresh(START + timedelta(seconds=60))   # the same orders again: nothing new
 		self.assertIsNone(self.pet.overlay(START + timedelta(seconds=61)))
@@ -349,3 +353,17 @@ class SoberTest(WithStreepSystem):
 	def test_a_pet_from_before_the_sober_bar(self):
 		self.pet.state["pet"].pop("sober")
 		self.assertEqual(self.pet.shortcut_slide(START).data["bars"][3]["key"], "sober")
+
+
+	def test_only_alcohol_is_thanked_by_name(self):
+		self.pet.refresh(START)
+		self.streep(4, "2026-11-11 12:00:10")   # Alice: a beer
+		self.api.orders.append({"id": 99, "member_id": 7, "product_id": 4, "ordered_at": "2026-11-11 12:00:12"})   # Bobby: a beer
+		self.api.orders.append({"id": 100, "member_id": 42, "product_id": 4, "ordered_at": "2026-11-11 12:00:14"})   # someone unknown
+		self.pet.refresh(START + timedelta(seconds=30))
+		said = self.pet.overlay(START + timedelta(seconds=31))["data"]["pet_cameo"]["said"]
+		self.assertEqual(said, "Thank you Alice and Bobby for the 3 Hertog Jan! *hic*")   # nickname, or else first name
+		self.assertNotIn("Jansen", said)
+		self.api.orders.append({"id": 101, "member_id": 7, "product_id": 3, "ordered_at": "2026-11-11 12:01:00"})   # Bobby: a Twix
+		self.pet.refresh(START + timedelta(seconds=60))
+		self.assertEqual(self.pet.overlay(START + timedelta(seconds=61))["data"]["pet_cameo"]["said"], "Thank you for the Twix!")

@@ -1,6 +1,7 @@
 """The streep system feeds the Francken pet: every snack or drink streeped at consumption-counter.professorfrancken.nl
 (the PC next to the fridge) gives it food, and it pops up in the corner of whatever slide is on to say thank you
-("Thank you for the Twix!", "+1": PetProvider.overlay()). Who streeped is never shown, only what.
+("Thank you for the Twix!", "+1 food": PetProvider.overlay()). For alcohol it also says who streeped it, by
+nickname, or else first name (as set in the streep system), never the surname: "Thank you Bobby for the Hertog Jan!".
 
 The streep system's API (the one its web app uses, https://professorfrancken.nl/api/plus-one) needs its password,
 in ~/.config/slideshow/streep.json on the TV PC: {"password": "..."} (docs/02-accounts-and-secrets.md). Without
@@ -22,7 +23,7 @@ import requests
 log = logging.getLogger(__name__)
 
 API = "https://professorfrancken.nl/api/plus-one"
-PRODUCTS_EVERY = timedelta(hours=6)   # the product list (names, categories) changes rarely
+PRODUCTS_EVERY = timedelta(hours=6)   # the product and member lists (names, categories) change rarely
 MAX_NAMED = 3                          # "Twix, Cola and Hertog Jan", more: "and 2 more"
 
 
@@ -41,6 +42,14 @@ def order_key(order: dict) -> str:
 	if order.get("id") is not None:
 		return f"id:{order['id']}"
 	return f"{order.get('member_id')}|{order.get('product_id')}|{order.get('ordered_at')}"
+
+
+def counted(names: list[str]) -> list[str]:
+	"""["Twix", "Cola", "Twix"] -> ["2 Twix", "Cola"]: each once, in order, with how many if more than one."""
+	counts = dict.fromkeys(names, 0)
+	for name in names:
+		counts[name] += 1
+	return [f"{count} {name}" if count > 1 else name for name, count in counts.items()]
 
 
 def listing(names: list[str]) -> str:
@@ -62,6 +71,7 @@ class StreepFeed:
 		self.token: str | None = None
 		self.products: dict[int, dict] = {}   # id -> {"name", "kind"}
 		self.products_read: datetime | None = None
+		self.members: dict[int, str] = {}     # id -> the name to thank: nickname, or else first name
 		self.seen: set[str] | None = None     # the orders already counted; None until the first poll
 		self.pending: list[dict] = []         # new orders, not shown yet: {"name", "kind"}
 		self.lock = threading.Lock()
@@ -98,10 +108,18 @@ class StreepFeed:
 					"kind": kind_of(product.get("categorie") or product.get("category") or "")}
 			except (KeyError, TypeError, ValueError):
 				continue
-		self.products, self.products_read = products, now
+		members = {}
+		for member in self.get("/members").get("members", []):
+			try:
+				name = (member.get("bijnaam") or member.get("voornaam") or "").strip()
+				if name:
+					members[int(member["id"])] = name
+			except (KeyError, TypeError, ValueError, AttributeError):
+				continue
+		self.products, self.members, self.products_read = products, members, now
 
 	def poll(self, now: datetime) -> list[dict]:
-		"""Fetch the orders; returns the new ones as {"name", "kind"} (none the first time: those are only remembered)."""
+		"""Fetch the orders; returns the new ones as {"name", "kind", "who"} (none the first time: those are only remembered)."""
 		if not self.configured:
 			return []
 		self.read_products(now)
@@ -118,9 +136,14 @@ class StreepFeed:
 			bought = []
 			for order in new:
 				try:
-					bought.append(self.products.get(int(order.get("product_id")), {"name": "something", "kind": "food"}))
+					item = dict(self.products.get(int(order.get("product_id")), {"name": "something", "kind": "food"}))
 				except (TypeError, ValueError):
-					bought.append({"name": "something", "kind": "food"})
+					item = {"name": "something", "kind": "food"}
+				try:
+					item["who"] = self.members.get(int(order.get("member_id")))
+				except (TypeError, ValueError):
+					item["who"] = None
+				bought.append(item)
 			self.pending += bought
 		if bought:
 			log.info("Streep system: %d new order(s) for the pet", len(bought))

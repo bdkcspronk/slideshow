@@ -3970,7 +3970,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pet-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; margin-top: 1vh; }
 .pet-button { display: flex; flex-direction: column; align-items: center; gap: 1.2vh; padding: 2.4vh 1vw; border: 0; border-radius: 2.4vh; background: #fdf8ec; color: #0d1f3c; font: inherit; font-size: 3.6vh; box-shadow: 0 1.2vh 3vh rgba(0, 0, 0, 0.35); transition: transform 0.1s; }
 .pet-button:active { transform: scale(0.94); }
-.pet-button svg { height: 6vh; width: auto; overflow: visible; }
+.pet-button svg { width: 6vh; height: 6vh; overflow: visible; }   /* the same box for every icon (the kroket is wide, the ball round) */
 .pet-button svg rect, .pet-button svg circle { fill: #c8102e; }
 .pet-button svg path { fill: none; stroke: #fdf8ec; stroke-width: 2; }
 .pet-footer { margin: 0; font-size: 2.3vh; opacity: 0.6; }
@@ -4094,7 +4094,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 /* Sober (providers/pet.py: every beer streeped lowers it, water and time bring it back): its bar, the Water
    button, a glass pouring into its open mouth, and, below DRUNK_BELOW, swaying with rosy cheeks and droopy eyes. */
 .pet-bar-sober { --bar: #a78bfa; }
-.pet-buttons:has(.pet-button-water) { grid-template-columns: repeat(4, 1fr); gap: 1.2vw; }
+.pet-buttons:has(.pet-button-water) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.2vw; }   /* four equal columns, whatever is in them */
 .pet-button .pet-glass, .pet-water .pet-glass { fill: rgba(200, 225, 255, 0.35); stroke: #0d1f3c; stroke-width: 2; }
 .pet-button svg .pet-glass { stroke: #c8102e; }
 .pet-button svg path.pet-glass-water, .pet-glass-water { fill: #57c4e5; stroke: none; }

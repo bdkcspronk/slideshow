@@ -30,7 +30,7 @@ from ..announcer import Announcer
 from ..config import PROJECT_DIR
 from ..presence_store import PresenceStore
 from ..slides import Job, Provider, Slide
-from .pet_streep import listing
+from .pet_streep import counted, listing
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +59,8 @@ NEGLECT_HOURS = 2          # one empty need takes all health in this long (two e
 RECOVER_HOURS = 4          # with no empty need, health comes back in this long
 CRY_BELOW = 50             # health below which it cries now and then
 SHOW_BELOW = 50            # only in the slideshow once a bar (a need or health) is below this
-STREEP_FOOD = 1            # every snack or drink streeped in the streep system feeds it this much (pet_streep.py)
+STREEP_FOOD = 1            # every snack or drink streeped in the streep system feeds it this much (pet_streep.py)...
+BEER_FUN = 1               # ...except beer: that's fun instead (and makes it less sober, BEER_SOBER)
 PUZZLE_FUN = 30            # finishing a daily puzzle (solved or lost) is as much fun for it as being played with
 MAX_STEP = timedelta(minutes=5)   # a longer gap between updates: the slideshow was off, nothing happened
 TAP_COOLDOWN = timedelta(seconds=2)   # the same button tapped faster than this counts once
@@ -282,14 +283,15 @@ class PetProvider(Provider):
 				self.fed_by_streep(new, now)
 
 	def fed_by_streep(self, bought: list[dict], now: datetime) -> None:
-		"""Snacks and drinks were streeped ({"name", "kind"} each): STREEP_FOOD food each, and every beer makes it
-		BEER_SOBER less sober. For a living pet."""
+		"""Snacks and drinks were streeped ({"name", "kind"} each): STREEP_FOOD food each, but a beer gives BEER_FUN
+		fun instead and makes it BEER_SOBER less sober. For a living pet."""
 		with self.lock:
 			pet = self.step(now)
 			if pet is None or pet["died"]:
 				return
-			pet["food"] = min(100.0, pet["food"] + STREEP_FOOD * len(bought))
 			beers = sum(1 for item in bought if item.get("kind") == "beer")
+			pet["food"] = min(100.0, pet["food"] + STREEP_FOOD * (len(bought) - beers))
+			pet["fun"] = min(100.0, pet["fun"] + BEER_FUN * beers)
 			pet["sober"] = max(0.0, pet.get("sober", 100.0) - BEER_SOBER * beers)
 			self.save()
 
@@ -420,9 +422,18 @@ class PetProvider(Provider):
 			pet = self.step(now)
 			if pet is None or pet["died"]:
 				return None
-			hic = " *hic*" if any(item.get("kind") == "beer" for item in bought) else ""
-			cameo = look(pet) | {"name": pet["name"], "plus": f"+{len(bought)}",
-				"said": f"Thank you for the {listing([item['name'] for item in bought])}!{hic}"}
+			beer = [item for item in bought if item.get("kind") == "beer"]
+			other = [item for item in bought if item.get("kind") != "beer"]
+			said = []
+			if other:   # food and fris: without a name
+				said.append(f"Thank you for the {listing(counted([item['name'] for item in other]))}!")
+			if beer:    # alcohol: with who streeped it (nickname or first name, each once)
+				people = list(dict.fromkeys(item["who"] for item in beer if item.get("who")))
+				who = f" {listing(people)} " if people else " "
+				said.append(f"{'And thank you' if other else 'Thank you'}{who}for the {listing(counted([item['name'] for item in beer]))}! *hic*")
+			gains = [f"+{STREEP_FOOD * len(other)} food"] if other else []
+			gains += [f"+{BEER_FUN * len(beer)} fun"] if beer else []
+			cameo = look(pet) | {"name": pet["name"], "plus": " ".join(gains), "said": " ".join(said)}
 		return {"template": "pet_cameo.html", "data": {"pet_cameo": cameo}, "seconds": 10}
 
 	def puzzle_finished(self, title: str, won: bool, now: datetime) -> dict | None:
