@@ -1,0 +1,163 @@
+{#
+	The Francken pet (providers/pet.py), on the navy poster: the pet on the left with a speech bubble, its bars
+	and three buttons on the right. Every 2 s the bars, its mood (the class on .pet-creature) and the bubble
+	follow along (data-live); naming/awake/asleep/dead (data-state) redraws all of it. A tap's answer comes with
+	data-anim on .pet-stage: a kroket dropping in, a ball bouncing, bubbles, an egg hatching, or a head shake.
+	A new pet, in two steps: choosing (its shape and colour, each tap redraws the slide), then naming (an egg and
+	a name typed on the keyboard: data-input-text, data-key, see typeKey() in player.js; sent as the "name" action).
+	Its look: species-... on the creature (which parts of pet_creature.svg show) and --pet-body/--pet-dark.
+	See "The Francken pet" in style.css.
+#}
+<div class="slide pet-slide pet-{{ state }}" data-interactive data-provider="pet" data-idle-seconds="{{ 60 if state in ('naming', 'choosing') else 20 }}" data-state="{{ state }}"{% if state == "naming" %} data-submit-action="name"{% endif %}>
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+
+	{% if state == "choosing" %}
+	<div class="pet-left">
+		<header class="pet-head">
+			<h1 class="pet-name">{{ "Meet the Francken pet" if first else "A new pet!" }}</h1>
+			<p class="pet-age">{% if first %}Pick how it looks, then give it a name{% else %}{{ last }} is gone. Who's next?{% endif %}</p>
+		</header>
+		<div class="pet-stage">
+			<div class="pet-creature mood-happy species-{{ species }}" style="--pet-body: {{ body }}; --pet-dark: {{ dark }}">{% include "pet_creature.svg" %}</div>
+			<div class="pet-shadow"></div>
+		</div>
+	</div>
+	<div class="pet-right">
+		<div class="pet-pick">
+			<p class="pet-pick-label">Shape</p>
+			<div class="pet-species">
+				{% for option in species_list %}
+				<button class="pet-species-option{{ ' chosen' if option.key == species }}" data-action="species" data-value="{{ option.key }}">
+					<span class="pet-mini species-{{ option.key }}" style="--pet-body: {{ option.body }}; --pet-dark: {{ option.dark }}">{% include "pet_creature.svg" %}</span>
+					<span>{{ option.label }}</span>
+				</button>
+				{% endfor %}
+			</div>
+		</div>
+		<div class="pet-pick">
+			<p class="pet-pick-label">Colour</p>
+			<div class="pet-colors">
+				{% for option in colors %}
+				<button class="pet-color{{ ' chosen' if option.key == color }}" data-action="color" data-value="{{ option.key }}" style="--swatch: {{ option.body }}" aria-label="{{ option.key }}"></button>
+				{% endfor %}
+			</div>
+		</div>
+		<button class="pet-button pet-name-go pet-next" data-action="next">Next: give it a name &rarr;</button>
+	</div>
+	{% elif state == "naming" %}
+	<div class="pet-left">
+		<header class="pet-head">
+			<h1 class="pet-name">{{ "Meet the Francken pet" if first else "A new egg!" }}</h1>
+			<p class="pet-age">A {{ species_name | lower }} is about to hatch</p>
+		</header>
+		<div class="pet-stage">
+			<div class="pet-bubble"><span>Name me!</span></div>
+			<svg class="pet-egg pet-egg-waiting" style="--spots: {{ body }}" viewBox="0 0 120 150" aria-hidden="true"><path class="pet-egg-left" d="M60 4 C20 4 6 70 6 92 a54 54 0 0 0 54 54 V70 l-12 -10 l14 -12 l-10 -14 Z"/><path class="pet-egg-right" d="M60 4 C100 4 114 70 114 92 a54 54 0 0 1 -54 54 V70 l-12 -10 l14 -12 l-10 -14 Z"/></svg>
+			<div class="pet-shadow"></div>
+		</div>
+	</div>
+	<div class="pet-right">
+		<p class="pet-people">{% if first %}Feed it, play with it and keep it clean, or it dies. The more people in the room, the more care it needs.{% else %}Look after this one better: three visits a day are enough.{% endif %}</p>
+		<p class="pet-dead-small">A name used before gets a number: Bob, Bob II, Bob III...</p>
+		<div class="pet-name-input">
+			<div class="pet-name-text" data-input-text></div>
+			<button class="pet-button pet-name-go" data-key="ENTER">Hatch</button>
+		</div>
+		<div class="pet-keyboard">
+			{% for row in keyboard %}
+			<div class="pet-keyboard-row">
+				{% for letter in row %}<button class="pet-key" data-key="{{ letter }}">{{ letter }}</button>{% endfor %}
+				{% if loop.last %}<button class="pet-key wide" data-key="BACK" aria-label="Delete">&#9003;</button>{% endif %}
+			</div>
+			{% endfor %}
+			<div class="pet-keyboard-row"><button class="pet-key space" data-key="SPACE">space</button></div>
+		</div>
+		<p class="pet-footer"><button class="pet-back" data-action="back">&larr; Change how it looks</button>{% if graves %} &middot; {{ graves }} {{ 'pet' if graves == 1 else 'pets' }} died so far &middot; longest life {{ record }}{% endif %}</p>
+	</div>
+	{% else %}
+	<div class="pet-left">
+		<header class="pet-head">
+			<h1 class="pet-name">{{ name }}</h1>
+			<p class="pet-age">{% if state == "dead" %}lived {{ age }}{% else %}age <span data-live="age">{{ age }}</span>{% endif %}</p>
+		</header>
+
+		<div class="pet-stage"{% if anim %} data-anim="{{ anim }}"{% endif %}>
+			{% if state == "dead" %}
+			<div class="pet-grave">
+				<svg viewBox="0 0 200 220" aria-hidden="true">
+					<path class="pet-grave-stone" d="M40 210 V90 a60 60 0 0 1 120 0 V210 Z"/>
+					<text x="100" y="105" text-anchor="middle" class="pet-grave-rip">RIP</text>
+					<path class="pet-grave-grass" d="M20 210 q10 -18 14 0 q8 -22 14 0 q10 -16 14 0 q8 -20 14 0 q10 -18 14 0 q8 -22 14 0 q10 -16 14 0 q8 -20 14 0 q10 -18 14 0 q8 -22 14 0 q8 -14 12 0 Z"/>
+				</svg>
+				<div class="pet-ghost species-{{ species }}">{% include "pet_creature.svg" %}</div>
+			</div>
+			<p class="pet-cause">{{ name }} {{ cause }}.</p>
+			{% else %}
+			<div class="pet-bubble"><span data-live="said">{{ said }}</span></div>
+			<div class="pet-creature mood-{{ mood }} species-{{ species }}" data-live="creature" style="--dirt: {{ (100 - bars[2].value) / 100 }}; --pet-body: {{ body }}; --pet-dark: {{ dark }}">
+				{% include "pet_creature.svg" %}
+				<div class="pet-stink" aria-hidden="true"><i></i><i></i><i></i></div>
+				<div class="pet-zzz" aria-hidden="true"><i>z</i><i>z</i><i>Z</i></div>
+			</div>
+			<div class="pet-shadow"></div>
+			<div class="pet-props" aria-hidden="true">
+				<svg class="pet-kroket" viewBox="0 0 60 26"><rect x="2" y="2" width="56" height="22" rx="11"/><path d="M14 8 l3 3 M26 7 l3 3 M38 9 l3 3 M20 15 l3 3 M33 16 l3 3 M45 14 l3 3"/></svg>
+				<svg class="pet-ball" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18"/><path d="M2 20 h36 M20 2 a12 18 0 0 1 0 36 M20 2 a12 18 0 0 0 0 36"/></svg>
+				<div class="pet-bubbles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+				<svg class="pet-egg" viewBox="0 0 120 150"><path class="pet-egg-left" d="M60 4 C20 4 6 70 6 92 a54 54 0 0 0 54 54 V70 l-12 -10 l14 -12 l-10 -14 Z"/><path class="pet-egg-right" d="M60 4 C100 4 114 70 114 92 a54 54 0 0 1 -54 54 V70 l-12 -10 l14 -12 l-10 -14 Z"/></svg>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+
+	<div class="pet-right">
+		{% if state == "dead" %}
+		<div class="pet-dead-card">
+			<p>Nobody looked after {{ name }}.</p>
+			<p class="pet-dead-small">With more people in the room, it needs more care.</p>
+		</div>
+		<button class="pet-button pet-hatch" data-action="bury">
+			<svg viewBox="0 0 40 50" aria-hidden="true"><path d="M20 2 C6 2 2 26 2 32 a18 18 0 0 0 36 0 C38 26 34 2 20 2 Z"/></svg>
+			<span>A new pet</span>
+		</button>
+		{% else %}
+		<p class="pet-people">
+			{% if state == "asleep" %}
+			Nobody here, so {{ name }} is asleep
+			{% elif done_today %}
+			{{ name }} won't get any needier today
+			{% else %}
+			<b data-live="people">{{ people }}</b> {{ 'person' if people == 1 else 'people' }} in the room:
+			{{ name }} needs <b data-live="speed">{{ people }}&times;</b> as much care
+			{% endif %}
+		</p>
+		<div class="pet-bars">
+			{% for bar in bars %}
+			<div class="pet-bar pet-bar-{{ bar.key }}{{ ' low' if bar.low }}" data-live="bar-{{ bar.key }}" style="--value: {{ bar.value }}%">
+				<span class="pet-bar-label">{{ bar.label }}</span>
+				<span class="pet-bar-track"><i></i></span>
+			</div>
+			{% endfor %}
+		</div>
+		<div class="pet-buttons">
+			<button class="pet-button" data-action="feed">
+				<svg viewBox="0 0 60 26" aria-hidden="true"><rect x="2" y="2" width="56" height="22" rx="11"/></svg>
+				<span>Feed</span>
+			</button>
+			<button class="pet-button" data-action="play">
+				<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17"/><path d="M3 20 h34 M20 3 a12 17 0 0 1 0 34 M20 3 a12 17 0 0 0 0 34"/></svg>
+				<span>Play</span>
+			</button>
+			<button class="pet-button" data-action="clean">
+				<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="14" cy="24" r="10"/><circle cx="28" cy="14" r="7"/><circle cx="30" cy="31" r="5"/></svg>
+				<span>Clean</span>
+			</button>
+		</div>
+		{% endif %}
+		<p class="pet-footer">
+			Tap to look after it &middot;
+			{% if graves %}{{ graves }} {{ 'pet' if graves == 1 else 'pets' }} died so far &middot; longest life {{ record }}{% else %}no pet has died yet{% endif %}
+		</p>
+	</div>
+	{% endif %}
+</div>

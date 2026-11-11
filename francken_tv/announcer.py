@@ -106,6 +106,14 @@ class Announcer:
 		self.music_process = subprocess.Popen(self.play_command(path), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 		return True
 
+	def play_sound(self, path: Path) -> bool:
+		"""A short sound effect (the pet's cry), next to whatever plays; not while muted or during the music
+		(the bieruur song). False if it didn't play."""
+		if self.player is None or self.muted or self.music_playing() or not path.exists():
+			return False
+		subprocess.Popen(self.play_command(path), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+		return True
+
 	def music_playing(self) -> bool:
 		return self.music_process is not None and self.music_process.poll() is None
 

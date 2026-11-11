@@ -1,0 +1,56 @@
+<svg class="pet-svg" viewBox="0 0 200 210" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	<!-- The parts of each species (providers/pet.py, SPECIES): only those of the class species-... around it show (style.css). -->
+	<g class="pc-part pc-blob pc-antenna">
+		<path d="M100 56 Q96 38 100 24" fill="none" stroke-width="4" stroke-linecap="round"/>
+		<circle class="pc-nucleus" cx="100" cy="20" r="8"/>
+		<g class="pc-orbit"><ellipse cx="100" cy="20" rx="22" ry="8" fill="none" stroke-width="2"/><circle class="pc-electron" r="3.5"/></g>
+	</g>
+	<g class="pc-part pc-cat">
+		<path class="pc-tail pc-tail-cat" d="M168 172 C212 168 214 112 190 100" fill="none" stroke-width="15" stroke-linecap="round"/>
+		<path class="pc-skin" d="M36 104 L46 26 L98 56 Z"/><path class="pc-inner" d="M50 88 L54 44 L82 60 Z"/>
+		<path class="pc-skin" d="M164 104 L154 26 L102 56 Z"/><path class="pc-inner" d="M150 88 L146 44 L118 60 Z"/>
+	</g>
+	<g class="pc-part pc-bunny">
+		<g class="pc-ear-left"><ellipse class="pc-skin" cx="72" cy="22" rx="17" ry="48" transform="rotate(-14 72 60)"/><ellipse class="pc-inner" cx="72" cy="22" rx="8" ry="36" transform="rotate(-14 72 60)"/></g>
+		<g class="pc-ear-right"><ellipse class="pc-skin" cx="128" cy="22" rx="17" ry="48" transform="rotate(14 128 60)"/><ellipse class="pc-inner" cx="128" cy="22" rx="8" ry="36" transform="rotate(14 128 60)"/></g>
+	</g>
+	<g class="pc-part pc-bear">
+		<circle class="pc-skin" cx="48" cy="66" r="24"/><circle class="pc-inner" cx="48" cy="66" r="12"/>
+		<circle class="pc-skin" cx="152" cy="66" r="24"/><circle class="pc-inner" cx="152" cy="66" r="12"/>
+	</g>
+	<g class="pc-part pc-dino">
+		<path class="pc-dark" d="M166 148 L222 192 L156 192 Z"/>
+		<path class="pc-dark" d="M36 100 L40 64 L60 78 L66 40 L86 60 L100 22 L114 60 L134 40 L140 78 L160 64 L164 100 Z"/>
+	</g>
+	<g class="pc-part pc-octopus pc-tentacles" fill="none" stroke-width="16" stroke-linecap="round">
+		<path d="M44 176 q-14 16 -4 30"/><path d="M76 186 q-6 14 4 22"/><path d="M124 186 q6 14 -4 22"/><path d="M156 176 q14 16 4 30"/>
+	</g>
+	<ellipse class="pc-foot" cx="68" cy="194" rx="22" ry="11"/>
+	<ellipse class="pc-foot" cx="132" cy="194" rx="22" ry="11"/>
+	<ellipse class="pc-arm pc-arm-left" cx="26" cy="140" rx="12" ry="20"/>
+	<ellipse class="pc-arm pc-arm-right" cx="174" cy="140" rx="12" ry="20"/>
+	<path class="pc-body" d="M100 50 C156 50 182 96 182 136 C182 178 146 196 100 196 C54 196 18 178 18 136 C18 96 44 50 100 50 Z"/>
+	<ellipse class="pc-belly" cx="100" cy="158" rx="46" ry="30"/>
+	<g class="pc-part pc-octopus pc-spots"><circle cx="60" cy="84" r="7"/><circle cx="140" cy="80" r="9"/><circle cx="100" cy="66" r="5"/></g>
+	<g class="pc-dirt"><circle cx="58" cy="150" r="7"/><circle cx="140" cy="165" r="9"/><circle cx="120" cy="80" r="5"/><circle cx="48" cy="100" r="4"/><circle cx="152" cy="118" r="6"/></g>
+	<ellipse class="pc-cheek" cx="52" cy="140" rx="11" ry="7"/>
+	<ellipse class="pc-cheek" cx="148" cy="140" rx="11" ry="7"/>
+	<g class="pc-part pc-cat pc-whiskers" fill="none" stroke-width="2.5" stroke-linecap="round"><path d="M44 136 l-30 -6 M44 144 l-30 4"/><path d="M156 136 l30 -6 M156 144 l30 4"/></g>
+	<g class="pc-part pc-bear pc-snout"><ellipse cx="100" cy="146" rx="26" ry="20"/></g>
+	<g class="pc-eyes-open">
+		<g class="pc-eye"><circle cx="72" cy="114" r="17"/><circle class="pc-pupil" cx="75" cy="117" r="9"/><circle class="pc-glint" cx="78" cy="112" r="3"/></g>
+		<g class="pc-eye"><circle cx="128" cy="114" r="17"/><circle class="pc-pupil" cx="131" cy="117" r="9"/><circle class="pc-glint" cx="134" cy="112" r="3"/></g>
+	</g>
+	<g class="pc-eyes-closed" fill="none" stroke-width="5" stroke-linecap="round"><path d="M58 118 q14 10 28 0"/><path d="M114 118 q14 10 28 0"/></g>
+	<g class="pc-eyes-x" fill="none" stroke-width="5" stroke-linecap="round"><path d="M62 104 l20 20 M82 104 l-20 20"/><path d="M118 104 l20 20 M138 104 l-20 20"/></g>
+	<g class="pc-part pc-bear pc-nose"><ellipse cx="100" cy="136" rx="8" ry="5.5"/></g>
+	<g class="pc-mouths" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+		<path class="pc-mouth pc-mouth-happy" d="M78 142 Q100 172 122 142 Z"/>
+		<path class="pc-mouth pc-mouth-okay" d="M84 148 Q100 160 116 148" fill="none"/>
+		<path class="pc-mouth pc-mouth-sad" d="M84 158 Q100 144 116 158" fill="none"/>
+		<path class="pc-mouth pc-mouth-sick" d="M80 154 q5 -6 10 0 t10 0 t10 0 t10 0" fill="none"/>
+		<ellipse class="pc-mouth pc-mouth-open" cx="100" cy="152" rx="15" ry="13"/>
+		<circle class="pc-mouth pc-mouth-asleep" cx="100" cy="152" r="5"/>
+	</g>
+	<g class="pc-part pc-bunny pc-teeth"><rect x="91.5" y="150" width="8" height="10" rx="1.5"/><rect x="100.5" y="150" width="8" height="10" rx="1.5"/></g>
+</svg>

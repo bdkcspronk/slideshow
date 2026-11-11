@@ -38,6 +38,7 @@ from .providers.socials import SocialsProvider
 from .providers.streep import StreepProvider
 from .providers.francken_vrij_subscribe import FranckenVrijSubscribeProvider
 from .providers.connections import ConnectionsProvider
+from .providers.pet import PetCry, PetProvider, people_in_room
 from .providers.poll import PollProvider
 from .providers.practice import PracticeSessionsProvider
 from .providers.xkcd import XkcdProvider
@@ -169,6 +170,7 @@ def build_app(config: dict, clock: Clock) -> App:
 	activities = ActivitiesProvider(config.get("activities", {}), seconds)
 	spotify = SpotifyProvider(config.get("spotify", {}), project_path(config.get("spotify", {}).get("credentials",
 		"~/.config/slideshow/spotify.json")), seconds)
+	pet = PetProvider(config.get("pet", {}), people_in_room(store, config.get("pet", {}).get("presence_minutes", 10)), DATA_DIR / "pet.json")
 	francken_vrij = FranckenVrijProvider(config.get("francken_vrij", {}), CACHE_DIR / "francken_vrij")
 	all_providers: list[Provider] = [
 		ImagesProvider(config.get("images", {}), seconds),
@@ -187,6 +189,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		ConfidentialProvider(config.get("confidential", {}), seconds),
 		ExternProvider(config.get("extern", {}), seconds),
 		PollProvider(config.get("poll", {}), seconds, DATA_DIR / "poll.json"),
+		pet,
 		XkcdProvider(config.get("xkcd", {}), CACHE_DIR / "xkcd", seconds),
 		GraafmachineProvider(config.get("graafmachine", {})),
 		CompucieProvider(config.get("compucie", {})),
@@ -226,6 +229,8 @@ def build_app(config: dict, clock: Clock) -> App:
 	takeovers: list[Takeover] = [BieruurTakeover(bieruur), VrijmiboTakeover(config.get("vrijmibo", {}))]
 	jobs: list[Job] = [BieruurSong(bieruur, announcer, duck=spotify.duck)]   # Spotify quieter during the song
 	jobs.append(Greeter(presence, store, devices, announcer))
+	if "pet" in order:
+		jobs.append(PetCry(pet, announcer))   # cries on the speakers now and then while its health is low
 	jobs.append(LineOut(config.get("sound", {})))   # the sound on the speakers, not the TV's HDMI   # quiet if greetings are off in the settings
 
 	power = config.get("power", {})

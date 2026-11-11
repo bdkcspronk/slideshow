@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "borrelcie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "extern", "poll", "pet", "xkcd", "graafmachine", "compucie", "borrelcie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -230,6 +230,15 @@ seconds = 15
 # (personal data, not in git; the format is in francken_tv/providers/extern.py), the photo and the
 # background in media/extern/. Without that file the slide is left out.
 seconds = 15
+
+[pet]
+# The Francken pet: a tamagotchi people feed, play with and clean by tapping the TV, or it dies. Its needs only go
+# down while people are in the room (known devices the sniffer saw in the last presence_minutes), faster with more
+# people, but at most so much a day that three visits a day keep it alive (providers/pet.py). The first time and
+# after it died, the slide asks for its name. Its state is in data/pet.json (delete it to start over).
+seconds = 20
+presence_minutes = 10
+cry_minutes = 20   # below half health it cries on the speakers about this often (not while muted or during bieruur)
 
 [poll]
 # The weekly dilemma: vote on the TV, or scan the QR code and vote on a Google Form (docs/setup/weekly-dilemma.md).
