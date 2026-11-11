@@ -4,7 +4,7 @@
 //
 // Keys: right/down = next, left/up = previous, space = pause for 4 minutes, or until space again with
 // Settings → "Pause until unpaused" (or the slide's data-space-action,
-// e.g. pausing the music on the Spotify slide), m = read quotes aloud on/off,
+// e.g. pausing the music on the Spotify slide), m = mute/unmute all sound,
 // number keys = jump to a slide type, e.g. 1 = Daily puzzles (see [shortcuts] in config.toml),
 // Esc = the menu: previews of those slide types, Settings and Power (see "The menu" below).
 // Interactive slides (the puzzle): clicking pauses the slideshow there; see "Interactive slides" below.
@@ -418,7 +418,7 @@ document.addEventListener("keydown", async (event) => {
 	} else if (/^[0-9]$/.test(event.key) && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		jumpTo(event.key);
 	} else if (event.key === "m") {
-		await getJson("/api/narration", { method: "POST" });
+		await getJson("/api/mute", { method: "POST" });   // all sound on the TV PC, like "Mute all sound" in the settings
 	}
 });
 

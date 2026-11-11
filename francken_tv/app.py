@@ -95,7 +95,7 @@ class App:
 		"""All sound on/off, like "Mute all sound" in the menu's Settings (the m key in the slideshow)."""
 		self.read_sound()   # the volume keys may have (un)muted it in the meantime
 		self.change_settings({"muted": not self.settings.muted})
-		self.notify("Sound muted" if self.settings.muted else "Sound on")
+		log.info("All sound: %s", "muted" if self.settings.muted else "on")
 
 	def change_settings(self, changes: dict) -> None:
 		"""Apply and save settings from the menu. Raises ValueError for a wrong value."""

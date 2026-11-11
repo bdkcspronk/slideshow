@@ -148,6 +148,27 @@ class SystemVolumeTest(unittest.TestCase):
 		self.assertEqual(volume.commands, [["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0.60"],
 			["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "1"]])
 
+	def test_the_m_key_toggles_all_sound(self):
+		outputs = {"get-volume": "Volume: 0.40\n"}
+		volume = self.volume("wpctl", outputs)
+		muted = []
+		app = App(clock=None, announcer=SimpleNamespace(mute=muted.append), devices=None, providers={}, takeovers={}, jobs=[],
+			scheduler=Scheduler([], []), runner=None, screen_size=(1920, 1080), system_volume=volume)
+		app.toggle_mute()
+		self.assertTrue(app.settings.muted)
+		self.assertIn(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "1"], volume.commands)
+		outputs["get-volume"] = "Volume: 0.40 [MUTED]\n"   # the output is muted now
+		app.toggle_mute()
+		self.assertFalse(app.settings.muted)
+		self.assertEqual(volume.commands[-1], ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "0"])
+		self.assertEqual(muted[-1], False)   # the announcer speaks again too
+
+	def test_the_player_sends_the_m_key_to_a_route_the_server_has(self):
+		player = (Path(__file__).parent.parent / "francken_tv" / "static" / "player.js").read_text()
+		server = (Path(__file__).parent.parent / "francken_tv" / "server.py").read_text()
+		self.assertIn('getJson("/api/mute"', player)
+		self.assertIn('== "/api/mute"', server)
+
 
 if __name__ == "__main__":
 	unittest.main()
