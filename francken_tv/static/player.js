@@ -42,6 +42,7 @@ async function show(slide, { canRefresh = true } = {}) {
 	clearInterval(refreshTimer);
 	if (slide.permanent_pause !== undefined) setPermanentPause(slide.permanent_pause);
 	const back = layers[1 - front];
+	back.classList.add("loading");   // its animations wait until it's shown (style.css), or they'd run ahead of the timer
 	back.innerHTML = slide.html;
 	setupWidgets(back);
 	// Wait until the images are decoded, so slides never appear half-loaded.
@@ -56,6 +57,7 @@ async function show(slide, { canRefresh = true } = {}) {
 		return;
 	}
 	const old = layers[front];
+	back.classList.remove("loading");
 	back.classList.add("visible");
 	old.classList.remove("visible");
 	startVideos(back, true);   // so they start with the slide, not while it is still loading

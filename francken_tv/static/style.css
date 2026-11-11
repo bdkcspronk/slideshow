@@ -41,6 +41,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	transition: opacity 0.6s ease;
 }
 .layer.visible { opacity: 1; pointer-events: auto; z-index: 1; }
+/* While a slide loads its images (player.js), its animations don't start yet: otherwise a slide with many
+   images (the Francken Vrij) would be partway through before it's shown, and end early. */
+.layer.loading *, .layer.loading *::before, .layer.loading *::after { animation-play-state: paused !important; }
 
 .slide {
 	width: 100vw;
