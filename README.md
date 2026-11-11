@@ -31,7 +31,10 @@ It shows:
 | The Borrelcie's promo after the Beatles: a piano keyboard playing, then THE BORRELCIE landing letter by letter | | `providers/borrelcie.py` |
 | Become a member: €5 a year, free coffee, events, and a QR code to the sign-up form, animated (only in August to October and February) | professorfrancken.nl/register | `providers/membership.py` |
 | Francken socks for sale: the price, legs in our socks rising out of the title, and a QR code to text the seller on WhatsApp | wa.me link in `config.toml` | `providers/socks.py` |
+| Find us online: QR codes to the WhatsApp announcement group, LinkedIn, Instagram and the website, as polaroids dropping onto a washing line | links in `config.toml` | `providers/socials.py` |
+| Streep your food: the glass-door fridge drawing itself and, next to it, the PC with the streep system, a cursor tapping snacks and the total going up | | `providers/streep.py` |
 | The latest Francken Vrij, its pages turning by themselves, pausing on the cover, the contents and each article | a PDF in `media/francken-vrij/` | `providers/francken_vrij.py` |
+| The Francken Vrij on paper: how to opt in on the website, a cursor doing it, the latest cover jumping out, and a QR code to the page | professorfrancken.nl/profile/francken-vrij, the cover from the Francken Vrij PDF | `providers/francken_vrij_subscribe.py` |
 | Our latest Instagram posts on a phone, with a QR code to follow us | Instagram (a Meta app) | `providers/instagram.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
 | A lyric video of the playing song: the line being sung, big, each line in its own style (only when it has synced lyrics) | Spotify, lrclib.net | `providers/lyric_video.py` |

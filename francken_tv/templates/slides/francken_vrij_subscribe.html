@@ -1,0 +1,48 @@
+{#
+	Get the Francken Vrij on paper (providers/francken_vrij_subscribe.py), on the navy poster: on the left the title,
+	the three steps and a QR code straight to the page on the website (data-qr, widgets.js; level H, for the professor
+	in the middle); on the right the website's menu, in which a cursor does the steps: it clicks "Francken Vrij",
+	then Subscribe on the subscription card that pops up (as on the website's page), and the latest cover (if there's a PDF, providers/francken_vrij.py) jumps
+	out from behind the menu. Each step lights up as the cursor does it. See "Francken Vrij on paper" in style.css.
+#}
+<div class="slide fvs-slide">
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+
+	<div class="fvs-body">
+		<div class="fvs-pitch">
+			<p class="fvs-kicker">Subscribe on the website</p>
+			<h1 class="poster-title"><span>The Francken Vrij</span> <span class="poster-marked">on paper</span></h1>
+			<ol class="fvs-steps">
+				<li style="--i: 0; --on: 1.6s"><span class="fvs-num">1</span><span>Log in on professorfrancken.nl</span></li>
+				<li style="--i: 1; --on: 3.2s"><span class="fvs-num">2</span><span>Open <b>Francken Vrij</b> in the menu</span></li>
+				<li style="--i: 2; --on: 4.8s"><span class="fvs-num">3</span><span>Pick until when, and <b>Subscribe</b>!</span></li>
+			</ol>
+			<div class="fvs-scan">
+				<div class="member-qr-card fvs-qr-card">
+					<div class="member-qr" data-qr="{{ link }}" data-qr-level="H"></div>
+					<div class="member-tile">{% include "francken_portrait.svg" %}</div>
+				</div>
+				<p><b>Scan to go there</b>{{ link | replace("https://", "") }}</p>
+			</div>
+		</div>
+
+		<div class="fvs-scene" aria-hidden="true">
+			{% if cover %}<img class="fvs-cover" src="{{ cover }}" alt="" style="aspect-ratio: {{ aspect }}">{% endif %}
+			<ul class="fvs-menu">
+				<li><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="5"/><path d="M2 23 C2 16 6 13 12 13 C18 13 22 16 22 23 Z"/></svg>Profile</li>
+				<li><svg viewBox="0 0 24 24"><path d="M2 3 H4 V20 H23 V22 H2 Z M7 12 H10 V18 H7 Z M12 7 H15 V18 H12 Z M17 10 H20 V18 H17 Z"/></svg>Expenses</li>
+				<li><svg viewBox="0 0 24 24"><path d="M3 5 H21 V22 H3 Z M5 10 V20 H19 V10 Z"/><rect x="6" y="2" width="3" height="6" rx="1.5"/><rect x="15" y="2" width="3" height="6" rx="1.5"/></svg>Activities</li>
+				<li class="fvs-target"><svg viewBox="0 0 24 24"><path d="M1 4 C5 3 9 3.5 11 5.5 V21 C9 19.5 5 19 1 20 Z M23 4 C19 3 15 3.5 13 5.5 V21 C15 19.5 19 19 23 20 Z"/></svg>Francken Vrij</li>
+				<li><svg viewBox="0 0 24 24"><path d="M3 3 H12 V7 H7 V17 H12 V21 H3 Z M13 7 L18 12 L13 17 V14 H9 V10 H13 Z"/></svg>Logout</li>
+			</ul>
+			<div class="fvs-optin">
+				<b>Francken Vrij subscription</b>
+				<span>Receive new printed editions of the Francken Vrij until</span>
+				<i class="fvs-select">{{ until }}</i>
+				<i class="fvs-subscribe">Subscribe</i>
+			</div>
+			{% if cover %}<p class="fvs-badge">&#10003; You're in!</p>{% endif %}
+			<div class="fvs-cursor"><svg viewBox="0 0 24 24"><path d="M3 2 L20 13 L12.5 14 L16.5 22 L13.2 23.5 L9.3 15.5 L3 20 Z"/></svg></div>
+		</div>
+	</div>
+</div>

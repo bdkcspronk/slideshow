@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "borrelcie", "membership", "socks", "instagram", "francken_vrij", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "extern", "poll", "xkcd", "graafmachine", "compucie", "borrelcie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -184,6 +184,19 @@ link = "https://wa.me/31653346489"
 price = "€7,20"
 seconds = 15   # everything is in after about 4 s
 
+[socials]
+# Where to find us: a QR code for each of these links, as polaroids on a washing line (the names under them are in
+# templates/slides/socials.html). Leave one empty ("") to leave it out.
+whatsapp = "https://chat.whatsapp.com/JhyvxwWNQU5IP9h4YK5CFp"   # the announcement group
+linkedin = "https://www.linkedin.com/company/t.f.v.-professor-francken/"
+instagram = "https://www.instagram.com/tfvprofessorfrancken/"
+website = "https://professorfrancken.nl/"
+seconds = 15   # everything is in after about 4 s
+
+[streep]
+# Streep your food on the PC next to the fridge: a cursor tapping snacks in the streep system (the snacks, prices and taps are in providers/streep.py).
+seconds = 14   # the last streep is drawn after about 12 s
+
 [francken_vrij]
 # The latest Francken Vrij, its pages turning by themselves, pausing on the cover, the contents and each article's
 # start (its bookmarks). The newest PDF in the folder is shown; without one there's no slide. The slide lasts as long
@@ -192,6 +205,12 @@ folder = "media/francken-vrij"
 turn_seconds = 0.9     # one page turning over
 pause_seconds = 5      # on the cover, the contents and the start of each article
 glance_seconds = 0.7   # on the other pages
+
+[francken_vrij_subscribe]
+# Get the Francken Vrij on paper: how to opt in on the website, with the latest cover (from [francken_vrij] above)
+# and a QR code to the page (the text is in templates/slides/francken_vrij_subscribe.html).
+link = "https://professorfrancken.nl/profile/francken-vrij"
+seconds = 15   # everything is done after about 6 s
 
 [instagram]
 # Our latest Instagram posts on a phone, with a QR code to the account. Setup: docs/setup/instagram.md.

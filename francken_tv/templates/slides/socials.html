@@ -1,0 +1,49 @@
+{#
+	Where to find us (providers/socials.py), on the navy poster: a washing line draws itself across the slide and
+	a polaroid drops onto it for each link, one after the other, pegged where the line sags (--x, --y), and keeps
+	swinging a little. Each polaroid is a QR code (data-qr, widgets.js; level H, so the icon in its middle doesn't
+	hurt) with the name under it. See "Find us online" in style.css.
+#}
+{% set names = {
+	"whatsapp": ["WhatsApp", "Announcement group"],
+	"linkedin": ["LinkedIn", "Follow our page"],
+	"instagram": ["Instagram", "@tfvprofessorfrancken"],
+	"website": ["Website", "professorfrancken.nl"],
+} %}
+{% macro icon(kind) %}
+{% if kind == "whatsapp" %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path class="socials-outline" d="M12 2.6a9.4 9.4 0 0 0-8.1 14.2L2.6 21.4l4.7-1.2A9.4 9.4 0 1 0 12 2.6Z"/><path d="M8.7 7c.3 0 .5 0 .7.5l1 2.3c.1.3 0 .5-.1.7l-.7.8c-.2.2-.2.4 0 .7a7.4 7.4 0 0 0 3.6 3.1c.3.1.5.1.6-.1l.9-1.1c.2-.2.4-.3.7-.2l2.2 1c.3.2.5.3.5.5 0 .6-.2 1.4-.9 1.9-.6.5-1.6.8-2.6.5a11.6 11.6 0 0 1-6.7-6c-.6-1.4-.4-2.6.3-3.4.2-.3.5-.4.8-.4Z"/></svg>
+{% elif kind == "linkedin" %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h14a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Zm1.3 7.6V18h2.9V9.6Zm1.45-4.4a1.65 1.65 0 1 0 0 3.3 1.65 1.65 0 0 0 0-3.3ZM11 9.6V18h2.9v-4.4c0-1.2.4-2 1.5-2s1.4.9 1.4 2V18h2.9v-5c0-2.5-1-3.6-3.1-3.6-1.3 0-2.1.6-2.6 1.3V9.6Z"/></svg>
+{% elif kind == "instagram" %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path class="socials-outline" d="M7.5 2.8h9a4.7 4.7 0 0 1 4.7 4.7v9a4.7 4.7 0 0 1-4.7 4.7h-9a4.7 4.7 0 0 1-4.7-4.7v-9a4.7 4.7 0 0 1 4.7-4.7Z"/><circle class="socials-outline" cx="12" cy="12" r="4.3"/><circle cx="17.4" cy="6.6" r="1.25"/></svg>
+{% else %}
+{% include "francken_portrait.svg" %}
+{% endif %}
+{% endmacro %}
+<div class="slide socials-slide" style="--sag: {{ sag }}vh">
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+
+	<header class="socials-head">
+		<h1 class="poster-title"><span>Find us</span> <span class="poster-marked">online</span></h1>
+	</header>
+
+	<svg class="socials-line" viewBox="0 0 100 {{ sag + 2 }}" preserveAspectRatio="none" aria-hidden="true">
+		<path d="M0 1 Q50 {{ 1 + 2 * sag }} 100 1"/>
+	</svg>
+
+	{% for card in cards %}
+	<div class="socials-card" style="--x: {{ card.x }}%; --y: {{ card.y }}vh; --i: {{ card.i }}; --tilt: {{ [-3, 2, -2, 3][card.i % 4] }}deg">
+		<div class="socials-swing">
+			<i class="socials-peg" aria-hidden="true"></i>
+			<div class="socials-photo">
+				<div class="socials-qr">
+					<div class="member-qr" data-qr="{{ card.link }}" data-qr-level="H"></div>
+					<div class="socials-tile socials-{{ card.kind }}">{{ icon(card.kind) }}</div>
+				</div>
+				<p><b>{{ names[card.kind][0] }}</b><span>{{ names[card.kind][1] }}</span></p>
+			</div>
+		</div>
+	</div>
+	{% endfor %}
+</div>

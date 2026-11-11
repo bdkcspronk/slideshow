@@ -34,6 +34,9 @@ from .providers.graafmachine import GraafmachineProvider
 from .providers.instagram import InstagramProvider
 from .providers.membership import MembershipProvider
 from .providers.socks import SocksProvider
+from .providers.socials import SocialsProvider
+from .providers.streep import StreepProvider
+from .providers.francken_vrij_subscribe import FranckenVrijSubscribeProvider
 from .providers.connections import ConnectionsProvider
 from .providers.poll import PollProvider
 from .providers.practice import PracticeSessionsProvider
@@ -166,6 +169,7 @@ def build_app(config: dict, clock: Clock) -> App:
 	activities = ActivitiesProvider(config.get("activities", {}), seconds)
 	spotify = SpotifyProvider(config.get("spotify", {}), project_path(config.get("spotify", {}).get("credentials",
 		"~/.config/slideshow/spotify.json")), seconds)
+	francken_vrij = FranckenVrijProvider(config.get("francken_vrij", {}), CACHE_DIR / "francken_vrij")
 	all_providers: list[Provider] = [
 		ImagesProvider(config.get("images", {}), seconds),
 		activities,
@@ -189,7 +193,10 @@ def build_app(config: dict, clock: Clock) -> App:
 		BorrelcieProvider(config.get("borrelcie", {})),
 		MembershipProvider(config.get("membership", {})),
 		SocksProvider(config.get("socks", {})),
-		FranckenVrijProvider(config.get("francken_vrij", {}), CACHE_DIR / "francken_vrij"),
+		SocialsProvider(config.get("socials", {})),
+		StreepProvider(config.get("streep", {})),
+		francken_vrij,
+		FranckenVrijSubscribeProvider(config.get("francken_vrij_subscribe", {}), francken_vrij),
 		InstagramProvider(config.get("instagram", {}), project_path(config.get("instagram", {}).get("credentials",
 			"~/.config/slideshow/instagram.json")), CACHE_DIR / "instagram", seconds),
 		PuzzlesProvider(puzzle_settings, puzzles, seconds),

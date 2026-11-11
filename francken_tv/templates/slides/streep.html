@@ -1,0 +1,73 @@
+{#
+	Streep your food (providers/streep.py), on the navy poster: the title big on the left; on the right the big fridge with
+	its glass doors (drinks on the shelves) and the PC next to it, showing the streep system's snacks page as it looks there (the dark sidebar, a grid of snack tiles,
+	the dark bar at the bottom). A cursor taps a few snacks: each tap flashes the tile, pops a
+	+1 and updates the count and total in the bottom bar (one text per tap, shown from its tap until the next). Where
+	the tiles are, when they're tapped and the cursor's path come from the provider; the cursor's keyframes are made
+	here, in the style below. The fridge, hearts and stars draw themselves in cream, twice over like a doodle. See
+	"Streep your food" in style.css.
+#}
+{% macro doodle(path, view, style, class="streep-doodle") %}
+<svg class="{{ class }}" viewBox="{{ view }}" style="{{ style }}" aria-hidden="true">
+	<path d="{{ path }}" pathLength="1"/>
+	<path class="streep-doodle-echo" d="{{ path }}" pathLength="1"/>
+</svg>
+{% endmacro %}
+{% set heart = "M50 88 C26 70 8 52 11 31 C14 13 38 9 50 29 C61 8 87 12 90 31 C92 51 75 69 50 88 Z" %}
+{% set star = "M50 5 L61 37 L95 38 L68 58 L78 92 L50 72 L21 91 L32 58 L5 38 L39 37 Z" %}
+{% set fridge = "M14 10 H306 Q314 10 314 18 V448 Q314 456 306 456 H14 Q6 456 6 448 V18 Q6 10 14 10 Z M6 60 H314 M160 60 V456 M24 78 H146 V438 H24 Z M174 78 H296 V438 H174 Z M152 210 V310 M168 210 V310 M24 456 V474 M296 456 V474 M24 170 H146 M174 170 H296 M24 260 H146 M174 260 H296 M24 350 H146 M174 350 H296 M34 168 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M58 168 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M86 168 v-30 h16 v30 M110 168 v-30 h16 v30 M184 168 v-30 h16 v30 M206 168 v-30 h16 v30 M232 168 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M258 168 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M34 258 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M58 258 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M86 258 v-30 h16 v30 M110 258 v-30 h16 v30 M184 258 v-30 h16 v30 M206 258 v-30 h16 v30 M232 258 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M258 258 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M34 348 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M58 348 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M86 348 v-30 h16 v30 M110 348 v-30 h16 v30 M184 348 v-30 h16 v30 M206 348 v-30 h16 v30 M232 348 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M258 348 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M34 434 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M58 434 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M86 434 v-30 h16 v30 M184 434 v-30 h16 v30 M206 434 v-30 h16 v30 M232 434 v-30 q0 -8 6 -10 v-12 h6 v12 q6 2 6 10 v30 M120 92 L140 112 M112 100 L134 122 M270 92 L290 112 M262 100 L284 122" %}
+<style>
+@keyframes streep-cursor {
+{% for percent, x, y, scale in cursor %}	{{ percent }}% { transform: translate({{ x }}px, {{ y }}px) scale({{ scale }}); }
+{% endfor %}}
+</style>
+<div class="slide streep-slide" style="--cursor: {{ cursor_seconds }}s">
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	{{ doodle(heart, "0 0 100 100", "--at: 1.2s; left: 3vw; top: 5vh; width: 12vh; --tilt: -14deg") }}
+	{{ doodle(heart, "0 0 100 100", "--at: 1.5s; left: 12vw; top: 3vh; width: 8vh; --tilt: 10deg") }}
+	{{ doodle(star, "0 0 100 100", "--at: 1.7s; left: 33vw; top: 6vh; width: 9vh; --tilt: 12deg") }}
+	{{ doodle(star, "0 0 100 100", "--at: 2s; right: 2vw; top: 3vh; width: 10vh; --tilt: -8deg") }}
+	{{ doodle(star, "0 0 100 100", "--at: 2.3s; left: 62vw; top: 7vh; width: 8vh; --tilt: 20deg") }}
+
+	<div class="streep-body">
+		<div class="streep-pitch">
+			<h1 class="poster-title"><span>Streep</span> <span class="streep-your">your</span> <span class="poster-marked">food</span></h1>
+			<p class="streep-line">Took a snack? Streep it on the PC next to the fridge.</p>
+		</div>
+
+		{{ doodle(fridge, "0 0 320 480", "--at: 0.9s", "streep-fridge") }}
+
+		<div class="streep-pc" aria-hidden="true">
+			<div class="streep-monitor">
+				<svg class="streep-screen" viewBox="0 0 760 520">
+					<rect class="streep-page" width="760" height="520"/>
+					<rect class="streep-sidebar" width="70" height="450"/>
+					<g class="streep-sidebar-icons">
+						<circle cx="35" cy="40" r="9"/><path d="M24 105 L35 95 L46 105 V118 H24 Z"/><circle cx="35" cy="175" r="10"/>
+						<circle cx="29" cy="240" r="6"/><circle cx="42" cy="240" r="6"/><path d="M25 312 V298 M32 312 V302 M39 312 V295 M46 312 V304"/>
+					</g>
+					<text class="streep-who" x="95" y="45">Your name</text>
+					<text class="streep-assoc" x="742" y="45">T.F.V. 'Professor Francken'</text>
+					{% for tile in tiles %}
+					<rect class="streep-tile" x="{{ tile.x }}" y="{{ tile.y }}" width="{{ tile.w }}" height="{{ tile.h }}" style="fill: {{ tile.color }}; --i: {{ loop.index0 }}"/>
+					<text class="streep-tile-name" x="{{ tile.x + tile.w / 2 }}" y="{{ tile.y + tile.h / 2 + 8 }}" style="--i: {{ loop.index0 }}">{{ tile.name }}</text>
+					{% endfor %}
+					<rect class="streep-bottom" y="450" width="760" height="70"/>
+					<path class="streep-corner" d="M0 450 H95 L125 520 H0 Z"/>
+					{% for tap in taps %}
+					{% set tile = tiles[tap.tile] %}
+					<rect class="streep-flash" x="{{ tile.x }}" y="{{ tile.y }}" width="{{ tile.w }}" height="{{ tile.h }}" style="--at: {{ tap.at }}s"/>
+					<text class="streep-plus" x="{{ tile.x + tile.w / 2 }}" y="{{ tile.y + 40 }}" style="--at: {{ tap.at }}s">+1</text>
+					<text class="streep-total" x="742" y="494" style="--at: {{ tap.at }}s;{% if tap.until %} --until: {{ tap.until }}s{% endif %}"{% if not tap.until %} data-last{% endif %}>{{ tap.count }} {{ "snack" if tap.count == 1 else "snacks" }} · {{ tap.total }}</text>
+					{% endfor %}
+
+					<g class="streep-cursor">
+						<path d="M0 0 L0 46 L11 35 L19 54 L27 50 L19 32 L34 32 Z"/>
+					</g>
+				</svg>
+			</div>
+			<div class="streep-stand"></div>
+		</div>
+
+	</div>
+</div>
