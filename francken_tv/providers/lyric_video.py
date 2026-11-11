@@ -4,14 +4,15 @@ its own typographic style and colours, the words popping in about as they're sun
 
 Needs synced lyrics (a time for every line) from LRCLIB, looked up by the Spotify slide's lyrics view
 (lyrics.py, SpotifyProvider.song_lyrics()); refresh() looks them up as soon as a song starts, so the
-slide is ready when its turn comes. In the round only while a song plays that has synced lyrics,
-and only if some of them are still to come; the shortcut and the menu preview show it anyway (with
-the song's title when there are no lyrics).
+slide is ready when its turn comes. In the round only after bieruur (until rotation.daytime_from the
+next morning), only while a song plays that has synced lyrics, and only if some of them are still to
+come; the shortcut and the menu preview show it anyway, at any time (with the song's title when there
+are no lyrics).
 """
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, time
 
 from ..lyrics import Lyrics
 from ..slides import Provider, Slide
@@ -23,8 +24,10 @@ class LyricVideoProvider(Provider):
 	title = "Lyric video"
 	nothing_to_show = "No song with synced lyrics is playing"
 
-	def __init__(self, settings: dict, spotify: SpotifyProvider):
+	def __init__(self, settings: dict, spotify: SpotifyProvider, shown_from: time = time(16, 0),
+			shown_until: time = time(8, 0)):
 		self.spotify = spotify
+		self.shown = (shown_from, shown_until)   # bieruur until the next morning
 		self.seconds = settings.get("seconds", 30)
 		self.refresh_seconds = settings.get("check_every_seconds", 5)
 
@@ -45,7 +48,15 @@ class LyricVideoProvider(Provider):
 	def slide(self) -> Slide:
 		return Slide("lyric_video.html", self.seconds, self.view(), update=lambda now: self.view(), refresh_seconds=1)
 
+	def after_bieruur(self, now: datetime) -> bool:
+		start, end = self.shown
+		if start <= end:
+			return start <= now.time() < end
+		return now.time() >= start or now.time() < end   # past midnight
+
 	def slides(self, now: datetime) -> list[Slide]:
+		if not self.after_bieruur(now):
+			return []
 		playing = self.spotify.playing
 		if not (self.spotify.connected and playing and playing.is_playing):
 			return []

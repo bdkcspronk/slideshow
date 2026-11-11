@@ -38,7 +38,7 @@ It shows:
 | The Francken Vrij on paper: how to opt in on the website, a cursor doing it, the latest cover jumping out, and a QR code to the page | professorfrancken.nl/profile/francken-vrij, the cover from the Francken Vrij PDF | `providers/francken_vrij_subscribe.py` |
 | Our latest Instagram posts on a phone, with a QR code to follow us | Instagram (a Meta app) | `providers/instagram.py` |
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
-| A lyric video of the playing song: the line being sung, big, each line in its own style (only when it has synced lyrics) | Spotify, lrclib.net | `providers/lyric_video.py` |
+| A lyric video of the playing song: the line being sung, big, each line in its own style (only after bieruur, when it has synced lyrics) | Spotify, lrclib.net | `providers/lyric_video.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing \| TimeGuessr, with today's status; tap one to play it. Left out once all are done for the day | nytimes.com, catfishing.net, timeguessr.com (map: OpenStreetMap) | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py`, `timeguessr.py` |
 | Bieruur countdown; full screen from 15:58 to 16:02, with a song (Spotify on the TV turns down meanwhile) | | `providers/bieruur.py` |
 | The vrijmibo GIF, every 15 minutes on Fridays | `media/vrijmibo.gif` | `providers/vrijmibo.py` |

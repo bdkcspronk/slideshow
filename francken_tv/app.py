@@ -210,7 +210,8 @@ def build_app(config: dict, clock: Clock) -> App:
 		*available_puzzles.values(),
 		BieruurCountdownProvider(bieruur),
 		spotify,
-		LyricVideoProvider(config.get("lyric_video", {}), spotify),
+		LyricVideoProvider(config.get("lyric_video", {}), spotify, parse_time(bieruur.time),   # only after bieruur
+			parse_time(config.get("rotation", {}).get("daytime_from", "08:00"))),
 	]
 	providers = {provider.name: provider for provider in all_providers}
 	rotation = config.get("rotation", {})
