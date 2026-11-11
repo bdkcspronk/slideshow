@@ -89,6 +89,8 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
 
 - http://127.0.0.1:8080/status shows each slide type, when it last refreshed, and its last error.
 - http://127.0.0.1:8080/preview/activities shows one slide (also `quote`, `presence`, `bieruur_countdown`, ...).
+- `python3 tools/slides_gallery.py` puts every slide on one self-contained page, `data/slides_gallery.html`:
+  today's public data, made-up private data (posters, people, Spotify, ...), no server needed.
 - Keys in the slideshow: →/↓ next, ←/↑ previous, space pause (it goes on by itself after 4 minutes,
   unless "Pause until unpaused" is on in the settings), `m` mute/unmute all sound,
   `1` Daily puzzles, `2` Spotify, `3` today's activity chart, `4`-`7` news, weather, buses, timetable (change these under `[shortcuts]` in
