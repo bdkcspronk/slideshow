@@ -4074,3 +4074,16 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pet-next { justify-content: center; font-size: 3.6vh; }
 .pet-back { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; }
 .pet-egg-waiting path { stroke: var(--spots, #d9cdb0); stroke-width: 3; }
+
+/* The pet on a finished puzzle (templates/pet_cameo.html): it rises up from the bottom right corner, jumps for joy
+   a few times, a "+30 fun" floats up, and after about 9 s it sinks away again. Above the puzzle, but not in the way
+   of its buttons (pointer-events: none). */
+.pet-cameo { position: fixed; right: 3vw; bottom: 0; z-index: 50; width: 26vh; pointer-events: none; font-family: "Familjen Grotesk", "DejaVu Sans", sans-serif; font-weight: 700; animation: pet-cameo 9s ease-in-out 0.6s both; }
+@keyframes pet-cameo { 0% { transform: translateY(110%); } 8%, 90% { transform: translateY(12%); } 100% { transform: translateY(110%); } }
+.pet-cameo-pet { animation: pet-cameo-jump 0.45s cubic-bezier(0.3, 0, 0.7, 1) 1.3s 6 alternate; }
+@keyframes pet-cameo-jump { to { transform: translateY(-5vh) rotate(-5deg); } }
+.pet-cameo .pet-creature { position: static; width: 100%; margin: 0; animation: none; }
+.pet-cameo-bubble { position: absolute; right: 85%; bottom: 72%; width: max-content; max-width: 34vh; padding: 1.4vh 2vh; border-radius: 2.2vh; background: #fdf8ec; color: #0d1f3c; font-size: 2.8vh; line-height: 1.2; box-shadow: 0 1vh 3vh rgba(0, 0, 0, 0.3); animation: pet-pop 0.4s ease-out 1.2s both; }
+.pet-cameo-bubble::after { content: ""; position: absolute; right: -1.6vh; bottom: 1.6vh; border: 1vh solid transparent; border-left: 1.6vh solid #fdf8ec; }
+.pet-cameo-plus { position: absolute; left: 50%; top: 0; transform: translateX(-50%); color: #3fae5a; font-size: 4vh; text-shadow: 0 0.3vh 0 #fff, 0 0 1.2vh rgba(255, 255, 255, 0.9); white-space: nowrap; animation: pet-cameo-plus 2.2s ease-out 1.6s both; }
+@keyframes pet-cameo-plus { 0% { opacity: 0; transform: translate(-50%, 2vh); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -10vh); } }

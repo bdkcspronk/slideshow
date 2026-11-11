@@ -1,0 +1,12 @@
+{#
+	The Francken pet popping up in the corner of a puzzle that was just finished (cheer_on_puzzles in
+	providers/pet.py): it jumps for joy, says something, and a "+30 fun" floats up; after a while it slides away.
+	See "The pet on a finished puzzle" in style.css.
+#}
+<div class="pet-cameo" aria-hidden="true">
+	<div class="pet-cameo-bubble">{{ pet_cameo.said }}</div>
+	<div class="pet-cameo-pet">
+		<div class="pet-creature mood-happy species-{{ pet_cameo.species }}" style="--pet-body: {{ pet_cameo.body }}; --pet-dark: {{ pet_cameo.dark }}">{% include "pet_creature.svg" %}</div>
+	</div>
+	<div class="pet-cameo-plus">+{{ pet_cameo.fun }} fun</div>
+</div>

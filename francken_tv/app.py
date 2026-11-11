@@ -38,7 +38,7 @@ from .providers.socials import SocialsProvider
 from .providers.streep import StreepProvider
 from .providers.francken_vrij_subscribe import FranckenVrijSubscribeProvider
 from .providers.connections import ConnectionsProvider
-from .providers.pet import PetCry, PetProvider, people_in_room
+from .providers.pet import PetCry, PetProvider, cheer_on_puzzles, people_in_room
 from .providers.poll import PollProvider
 from .providers.practice import PracticeSessionsProvider
 from .providers.xkcd import XkcdProvider
@@ -231,6 +231,7 @@ def build_app(config: dict, clock: Clock) -> App:
 	jobs.append(Greeter(presence, store, devices, announcer))
 	if "pet" in order:
 		jobs.append(PetCry(pet, announcer))   # cries on the speakers now and then while its health is low
+		cheer_on_puzzles(pet, list(available_puzzles.values()))   # finishing a puzzle is fun for it too
 	jobs.append(LineOut(config.get("sound", {})))   # the sound on the speakers, not the TV's HDMI   # quiet if greetings are off in the settings
 
 	power = config.get("power", {})

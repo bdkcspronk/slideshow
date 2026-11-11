@@ -52,6 +52,7 @@ NEGLECT_HOURS = 2          # one empty need takes all health in this long (two e
 RECOVER_HOURS = 4          # with no empty need, health comes back in this long
 CRY_BELOW = 50             # health below which it cries now and then
 SHOW_BELOW = 50            # only in the slideshow once a bar (a need or health) is below this
+PUZZLE_FUN = 30            # finishing a daily puzzle (solved or lost) is as much fun for it as being played with
 MAX_STEP = timedelta(minutes=5)   # a longer gap between updates: the slideshow was off, nothing happened
 TAP_COOLDOWN = timedelta(seconds=2)   # the same button tapped faster than this counts once
 AWAKE_AFTER_TAP = timedelta(minutes=5)   # a tap wakes it up even if the sniffer sees nobody
@@ -373,6 +374,49 @@ class PetProvider(Provider):
 			self.said = (said, now + SAY_SECONDS) if said else None
 			self.save()
 		return self.make_slide(now, anim), None
+
+
+	def puzzle_finished(self, title: str, won: bool, now: datetime) -> dict | None:
+		"""A daily puzzle was just finished on the TV: the pet watched, and had fun (PUZZLE_FUN). Returns what its
+		cameo on the puzzle's slide needs (templates/pet_cameo.html), or None without a living pet."""
+		with self.lock:
+			pet = self.step(now)
+			if pet is None or pet["died"]:
+				return None
+			pet["fun"] = min(100.0, pet["fun"] + PUZZLE_FUN)
+			self.last_any_tap = now   # someone's here: it wakes up
+			said = f"You solved {title}! So fun!" if won else f"Aww, {title} was hard. Fun though!"
+			self.said = (said, now + SAY_SECONDS)
+			self.save()
+			return look(pet) | {"name": pet["name"], "said": said, "fun": PUZZLE_FUN}
+
+
+def cheer_on_puzzles(pet: PetProvider, puzzles: list[Provider]) -> None:
+	"""The pet watches the daily puzzles: when a tap finishes one (solved or lost), it pops up on the puzzle's
+	slide (pet_cameo in its data, included by each puzzle's template) and gets fun. Wraps each puzzle's action()."""
+	finished = ("solved", "lost")
+
+	def watch(puzzle: Provider) -> None:
+		original = puzzle.action
+
+		def action(name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
+			before = puzzle.status(now)
+			slide, message = original(name, values, now)
+			after = puzzle.status(now)
+			if slide is not None and after and after.state in finished and not (before and before.state in finished):
+				try:
+					cameo = pet.puzzle_finished(puzzle.title or puzzle.name, after.state == "solved", now)
+				except Exception:   # the pet must never break a puzzle
+					log.exception("The pet couldn't cheer on %s", puzzle.name)
+					cameo = None
+				if cameo:
+					slide.data = slide.data | {"pet_cameo": cameo}
+			return slide, message
+
+		puzzle.action = action
+
+	for puzzle in puzzles:
+		watch(puzzle)
 
 
 class PetCry(Job):

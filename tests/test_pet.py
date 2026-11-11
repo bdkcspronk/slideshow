@@ -6,9 +6,27 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from francken_tv.providers.pet import MAX_DRAIN_PER_DAY, PetCry, PetProvider, advance, clean_name, new_pet, numbered_name
+from francken_tv.providers.pet import MAX_DRAIN_PER_DAY, PetCry, PetProvider, advance, cheer_on_puzzles, clean_name, new_pet, numbered_name
+from francken_tv.providers.puzzles import PuzzleStatus
+from francken_tv.slides import Provider, Slide
 
 START = datetime(2026, 11, 11, 12, 0)
+
+
+class FakePuzzle(Provider):
+	"""A puzzle finished after `moves` moves (solved or lost)."""
+	name = "fake"
+	title = "Wordle"
+
+	def __init__(self, moves=2, result="solved"):
+		self.moves, self.result, self.made = moves, result, 0
+
+	def status(self, now):
+		return PuzzleStatus(self.result if self.made >= self.moves else "playing", "")
+
+	def action(self, name, values, now):
+		self.made += 1
+		return Slide("wordle.html", 20, {"board": self.made}), None
 
 
 def run(pet, people, hours, start=START):
@@ -199,3 +217,30 @@ class PetTest(unittest.TestCase):
 		slide, _ = self.provider.action("feed", [], START + timedelta(seconds=5))
 		self.assertEqual(slide.update(START + timedelta(seconds=5))["anim"], "feed")   # the server draws it with update()
 		self.assertIsNone(slide.update(START + timedelta(seconds=7))["anim"])   # the refresh 2 s later: not again
+
+	def test_finishing_a_puzzle_is_fun_and_the_pet_cheers(self):
+		self.hatch()
+		self.provider.state["pet"]["fun"] = 20
+		puzzle = FakePuzzle()
+		cheer_on_puzzles(self.provider, [puzzle])
+		slide, _ = puzzle.action("submit", [], START)
+		self.assertNotIn("pet_cameo", slide.data)   # not finished yet
+		slide, _ = puzzle.action("submit", [], START)
+		self.assertEqual(slide.data["board"], 2)   # the puzzle's own data is still there
+		self.assertEqual((slide.data["pet_cameo"]["name"], slide.data["pet_cameo"]["fun"]), ("Bob", 30))
+		self.assertIn("solved Wordle", slide.data["pet_cameo"]["said"])
+		self.assertAlmostEqual(self.provider.state["pet"]["fun"], 50, places=1)
+		slide, _ = puzzle.action("submit", [], START)   # a tap on the finished puzzle: no second time
+		self.assertNotIn("pet_cameo", slide.data)
+		self.assertAlmostEqual(self.provider.state["pet"]["fun"], 50, places=1)
+
+	def test_a_lost_puzzle_counts_too(self):
+		self.hatch()
+		puzzle = FakePuzzle(moves=1, result="lost")
+		cheer_on_puzzles(self.provider, [puzzle])
+		self.assertIn("hard", puzzle.action("submit", [], START)[0].data["pet_cameo"]["said"])
+
+	def test_no_pet_no_cameo(self):
+		puzzle = FakePuzzle(moves=1)
+		cheer_on_puzzles(self.provider, [puzzle])   # still waiting for a name
+		self.assertNotIn("pet_cameo", puzzle.action("submit", [], START)[0].data)
