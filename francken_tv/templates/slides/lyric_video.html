@@ -5,7 +5,6 @@
 	the song changes, pauses or jumps (data-state). Without synced lyrics: the song's title, big.
 #}
 <div class="slide lyric-video" data-state="{{ state }}">
-	{% if cover %}<div class="lyric-video-cover" style="background-image: url('{{ cover }}')"></div>{% endif %}
 	<div class="lyric-video-backtext" aria-hidden="true"><span>{% for _ in range(6) %}{{ title }} &#9679; {% endfor %}</span></div>
 	{% if lines %}
 	<div class="lyric-video-stage" data-lyric-video data-start="{{ progress_seconds }}" data-total="{{ total_seconds }}"
