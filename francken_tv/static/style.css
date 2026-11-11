@@ -838,14 +838,39 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .lecture.current { border-left-color: var(--red); outline: 0.3vh solid var(--red); }
 .no-lectures { margin: 0; font-size: 2.4vh; color: var(--faint); }
 
-/* Quotes: blue text on white, or on the quote background picture if there is one. */
+/* Quotes: blue text on white, with our logo (templates/francken_logo_balls.svg) grey behind it. The logo builds
+   itself in the middle: the coat of arms fades in, then the balls inflate layer by layer (the five at the back,
+   the four in the middle, the five in front), a little past their size and back (their radius grows, so the outline is the same all the way). The balls are white with a grey
+   outline, so the front ones hide those behind. The logo then stays, and the quote is typed over it (at --start,
+   from providers/quote.py). */
 .quote-slide {
+	position: relative;
+	overflow: hidden;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: var(--bg) center / cover no-repeat;
+	background: var(--bg);
 }
+.quote-watermark {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	height: 80vh;
+	color: #d3d7dc;
+	transform: translate(-50%, -50%);
+}
+.quote-watermark svg { display: block; height: 100%; width: auto; overflow: visible; }
+.quote-watermark .logo-arms { opacity: 0; animation: quote-logo-arms 0.8s ease-out 0.3s forwards; }
+.quote-watermark .logo-ball {
+	fill: var(--bg);
+	stroke: currentColor;
+	r: 0;
+	animation: quote-logo-ball 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) calc(0.7s + var(--layer) * 0.6s + var(--i) * 0.07s) forwards;
+}
+@keyframes quote-logo-arms { to { opacity: 1; } }
+@keyframes quote-logo-ball { to { r: 24.063px; } }   /* the radius, not a scale: the outline keeps its width */
 .quote-slide blockquote {
+	position: relative;
 	width: 80%;
 	margin: 0;
 	text-align: center;
@@ -860,13 +885,13 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .quote-text span {
 	opacity: 0;
 	animation:
-		quote-letter 1ms calc(800ms + var(--i) * var(--letter)) forwards,
-		quote-cursor var(--letter) steps(1, end) calc(800ms + var(--i) * var(--letter));
+		quote-letter 1ms calc(var(--start) + var(--i) * var(--letter)) forwards,
+		quote-cursor var(--letter) steps(1, end) calc(var(--start) + var(--i) * var(--letter));
 }
 .quote-text span.last {
 	animation:
-		quote-letter 1ms calc(800ms + var(--i) * var(--letter)) forwards,
-		quote-cursor-blink 0.9s steps(1, end) calc(800ms + var(--i) * var(--letter)) 3;
+		quote-letter 1ms calc(var(--start) + var(--i) * var(--letter)) forwards,
+		quote-cursor-blink 0.9s steps(1, end) calc(var(--start) + var(--i) * var(--letter)) 3;
 }
 @keyframes quote-letter { to { opacity: 1; } }
 @keyframes quote-cursor { from { box-shadow: 0.08em 0 0 var(--red); } }

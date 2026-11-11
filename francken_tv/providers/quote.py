@@ -14,11 +14,11 @@ import requests
 
 from ..announcer import Announcer
 from ..config import project_path
-from ..slides import Provider, Slide, media_url
+from ..slides import Provider, Slide
 
 log = logging.getLogger(__name__)
 
-TYPING_STARTS_MS = 800      # after the slide has faded in
+TYPING_STARTS_MS = 2700     # once the logo has built itself (style.css)
 AUTHOR_FADE_SECONDS = 1.5
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
 
@@ -60,7 +60,6 @@ class QuoteProvider(Provider):
 
 	def __init__(self, settings: dict, csv_path: Path, announcer: Announcer, default_seconds: float) -> None:
 		self.sheet_id = settings.get("sheet_id")
-		self.background = project_path(settings.get("background", "media/quote_background.png"))
 		self.blocked_words_path = project_path(settings.get("blocked_words", "config/quote_filter.txt"))
 		self.seconds = settings.get("seconds", default_seconds)        # reading time after the quote is typed
 		self.letter_ms = settings.get("letter_ms", 45)                     # typing speed
@@ -103,8 +102,8 @@ class QuoteProvider(Provider):
 		typing_ms = TYPING_STARTS_MS + letters * letter_ms
 		return [Slide("quote.html", typing_ms / 1000 + AUTHOR_FADE_SECONDS + self.seconds, {
 			"quote": quote["quote"],
+			"start_ms": TYPING_STARTS_MS,
 			"letter_ms": round(letter_ms),
 			"typing_ms": round(typing_ms),
 			"author": quote["author"],
-			"background": media_url(self.background) if self.background.exists() else None,
 		}, announce=announce)]

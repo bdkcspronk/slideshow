@@ -148,7 +148,6 @@ seconds = 12
 
 [quote]
 sheet_id = "12hadm3_zdeU7e3q-YHFfcNSDocQdzjWKnn7lzZLqhI4"   # Google Sheet with "Quote" and "name" columns
-background = "media/quote_background.png"
 blocked_words = "config/quote_filter.txt"   # quotes containing these words are never shown
 narrate = false                             # read quotes aloud? Also: Ctrl+M in the terminal, "m" or Esc -> Settings in the browser
 letter_ms = 45                              # the quote is typed letter by letter at this speed...
