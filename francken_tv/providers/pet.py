@@ -187,13 +187,24 @@ def done_for_today(pet: dict, now: datetime) -> bool:
 
 
 def mood(pet: dict) -> str:
-	"""happy, okay, sad, drunk or sick: how it looks, from its emptiest need and its health."""
+	"""The face (happy, okay or sad), from its emptiest need. Sick, drunk and dirty are not moods but amounts that
+	come on top of the face (traits())."""
 	lowest = min(pet[need] for need in NEEDS)
-	if lowest <= 0 or pet["health"] < 50:
-		return "sick"
-	if pet["sober"] < DRUNK_BELOW:
-		return "drunk"
 	return "happy" if lowest > 60 else "okay" if lowest > 25 else "sad"
+
+
+def ramp(value: float, start: float, end: float) -> float:
+	"""0 at 'start', 1 at 'end' and linear between (either way round), as a number to hand to the page."""
+	return round(min(1.0, max(0.0, (value - start) / (end - start))), 2)
+
+
+def traits(pet: dict) -> dict:
+	"""How much each condition shows, 0 (not at all) to 1 (as much as it gets), as CSS variables on the creature:
+	they fade in and stack, so it can be sad, dirty and drunk at once, and each species draws them its own way."""
+	starving = min(pet[need] for need in NEEDS) <= 0
+	return {"sick": 1.0 if starving else ramp(pet["health"], 70, 40),
+		"drunk": ramp(pet["sober"], DRUNK_BELOW + 20, DRUNK_BELOW - 20),
+		"dirt": ramp(pet["clean"], 100, 0)}
 
 
 def complaint(pet: dict) -> str:
@@ -335,6 +346,7 @@ class PetProvider(Provider):
 		return data | {
 			"state": "awake" if people else "asleep",
 			"mood": mood(pet) if people else "asleep",
+			"traits": traits(pet),
 			"age": age_text(now - hatched),
 			"bars": bars,
 			"said": said or (complaint(pet) if people else "Zzz..."),

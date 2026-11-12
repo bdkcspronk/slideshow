@@ -3878,8 +3878,10 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 @keyframes bc-the { 0% { opacity: 0; transform: translateY(-220px); }   /* in THE's own coordinates, 0.22 the size */ 100% { opacity: 1; transform: translateY(0); } }
 
 /* ---- The Francken pet (templates/slides/pet.html, providers/pet.py), on the navy poster: a crimson critter with an
-   atom for an antenna (templates/pet_creature.svg). Its mood (.mood-happy/okay/sad/sick/asleep on .pet-creature)
-   picks the eyes and mouth; --dirt (0 clean .. 1 filthy) shows the spots and the stink. A tap's answer is in
+   atom for an antenna (templates/pet_creature.svg). Its face (.mood-happy/okay/sad/asleep on .pet-creature)
+   picks the eyes and mouth; on top of that come amounts from 0 to 1 that stack: --sick, --drunk and --dirt (0 clean .. 1
+   filthy), with .is-sick/.is-drunk (above 0) and .very-sick/.very-drunk (from 0.5) for what can't fade. Each species draws
+   them its own way (the slime goes murky). A tap's answer is in
    data-anim on .pet-stage: feed, play, clean, hatch or no. ---- */
 .pet-slide { flex-direction: row; gap: 4vw; padding: 5vh 4vw 4vh 5vw; }
 .pet-left, .pet-right { position: relative; display: flex; flex-direction: column; }
@@ -3905,8 +3907,8 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .species-blob .pc-blob, .species-cat .pc-cat, .species-bunny .pc-bunny, .species-bear .pc-bear, .species-dino .pc-dino, .species-octopus .pc-octopus { display: inline; }
 .species-octopus .pc-foot, .species-octopus .pc-arm { display: none; }
 .pc-inner { fill: #ff8fa6; opacity: 0.75; }
-.pc-tail-cat, .pc-tentacles path { stroke: var(--pet-body, #c8102e); }
-.pc-tail-cat { transform-box: view-box; transform-origin: 168px 172px; animation: pet-tail 3s ease-in-out infinite; }
+.pc-tentacles path { stroke: var(--pet-body, #c8102e); }
+.pc-tail-cat { transform-box: view-box; transform-origin: 138px 196px; animation: pet-tail 3s ease-in-out infinite; }
 @keyframes pet-tail { 50% { transform: rotate(-12deg); } }
 .pc-tentacles path { transform-box: fill-box; transform-origin: 50% 0; animation: pet-tentacle 1.8s ease-in-out infinite; }
 .pc-tentacles path:nth-child(even) { animation-delay: -0.9s; }
@@ -3922,12 +3924,56 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 @keyframes pet-ear { 0%, 80%, 100% { transform: rotate(0); } 88% { transform: rotate(-8deg); } }
 .pc-belly { fill: #fdf8ec; opacity: 0.9; }
 .pc-cheek { fill: #ff8fa6; opacity: 0.55; }
-.pc-antenna path, .pc-orbit ellipse { stroke: #fdf8ec; }
-.pc-nucleus, .pc-electron { fill: #fdf8ec; }
-.pc-electron { offset-path: path("M78 20 a22 8 0 1 0 44 0 a22 8 0 1 0 -44 0"); animation: pet-electron 1.6s linear infinite; }
-@keyframes pet-electron { to { offset-distance: 100%; } }
-.pc-orbit { transform-box: view-box; transform-origin: 100px 20px; animation: pet-orbit 9s linear infinite; }
-@keyframes pet-orbit { to { transform: rotate(360deg); } }
+/* blob = slime: its own body (pc-goo) instead of the shared one; no arms or feet, it squashes and stretches on its puddle */
+.species-blob .pc-std, .species-blob .pc-dirt, .species-cat .pc-std, .species-cat .pc-dirt { display: none; }   /* (the slime has no spots: it goes murky instead) */
+/* cat: a sitting cat with an outline (head, ears, haunches, torso, front legs, striped tail), small dark eyes and a small
+   mouth instead of the shared big ones; dirty = a dull, greyish coat, no spots */
+.species-cat { --fur: color-mix(in srgb, #6b5a2a calc(max(0, var(--dirt, 0) - 0.3) * 70%), var(--pet-body, #c8102e)); --cat-line: color-mix(in srgb, var(--pet-dark, #9c0c24) 45%, #1b0d06); }
+.species-cat .pc-fur, .species-cat .pc-skin { fill: var(--fur); }
+.pc-ol { stroke: var(--cat-line); stroke-width: 3.5; stroke-linejoin: round; }
+.pc-ol-line { stroke: var(--cat-line); }
+.pc-tail-fur { stroke: var(--fur); }
+.pc-marks { fill: #fff3dc; }   /* the tabby marks: tapered shapes */
+.pc-tail-stripe { stroke: #fff3dc; }
+.pc-cat-cream { fill: #fff3dc; }
+.pc-cat-nose { fill: #ff8fa6; stroke: var(--cat-line); stroke-width: 1.5; stroke-linejoin: round; }
+.pc-toes { stroke: var(--cat-line); }
+.species-cat .pc-eye > circle { display: none; }
+.pc-cat-iris { fill: #a6d64a; stroke: var(--cat-line); stroke-width: 2.5; stroke-linejoin: round; }
+.pc-cat-pupil { fill: #2a1408; }
+.pc-cat-glint { fill: #fff; }
+/* an eyelid that closes from the top (blink, and the drunk droop) so the pupil is covered, never squashed */
+.pc-cat-lid { fill: var(--fur); stroke: var(--cat-line); stroke-width: 2.5; transform-box: fill-box; transform-origin: 50% 0; animation: pet-cat-blink 4.5s infinite; }
+@keyframes pet-cat-blink { 0%, 94%, 100% { scale: 1 calc(var(--drunk, 0) * 0.45); opacity: min(1, calc(var(--drunk, 0) * 100)); } 97% { scale: 1 1; opacity: 1; } }
+.species-cat .pc-eyes-open { animation: none; }
+.species-cat.is-drunk .pc-eyes-open { transform: none; }
+.mood-sad .pc-cat-pupil { translate: 0 1.2px; }   /* (the pupil stays inside the iris's inner edge: tips 7.5 from the middle, the iris is 9.25 tall inside its outline) */
+.species-cat .pc-eyes-closed path, .species-cat .pc-eyes-x path { stroke: #2a1408; }
+/* the head (ears, head, whiskers: a transform in the svg) is drawn at 0.7 from its top at (100, 32); the shared face parts follow it */
+.species-cat .pc-mouths { transform-box: view-box; transform-origin: 0 0; transform: translate(100px, 32px) scale(0.7) translate(-100px, -52px) translate(100px, 138px) scale(0.63) translate(-100px, -138px); }
+.species-cat .pc-cheek { transform-box: view-box; transform-origin: 100px 32px; scale: 0.7; translate: 0 -14px; }
+.species-cat .pc-eyes-open, .species-cat .pc-eyes-closed, .species-cat .pc-eyes-x { transform-box: view-box; transform-origin: 100px 32px; scale: 0.7; translate: 0 -18.2px; }
+.species-cat .pc-whiskers { stroke: var(--cat-line); }
+.pc-cat-ear-left, .pc-cat-ear-right { transform-box: view-box; animation: pet-cat-ear 6s ease-in-out infinite; }
+.pc-cat-ear-left { transform-origin: 62px 76px; }
+.pc-cat-ear-right { transform-origin: 138px 76px; animation-delay: -2.5s; }
+@keyframes pet-cat-ear { 0%, 86%, 100% { rotate: 0deg; } 90% { rotate: -9deg; } 94% { rotate: 3deg; } }
+/* dirty = murky: the goo turns muddy from a clean level of about 70 down, loses its shine and fills with bits */
+.pc-goo, .pc-drip { fill: color-mix(in srgb, #6b5a2a calc(max(0, var(--dirt, 0) - 0.3) * 85%), var(--pet-body, #c8102e)); }
+.pc-goo { opacity: 0.92; }
+.pc-puddle { fill: var(--pet-dark, #9c0c24); opacity: 0.55; }
+.pc-bub { fill: color-mix(in srgb, #3b2f12 calc(var(--dirt, 0) * 100%), #fff); opacity: calc(0.3 + var(--dirt, 0) * 0.3); }
+.pc-shine { stroke: #fff; opacity: calc(0.55 - var(--dirt, 0) * 0.4); }
+.pc-shine-dot { fill: #fff; opacity: calc(0.55 - var(--dirt, 0) * 0.4); }
+.species-blob .pet-svg { transform-origin: 50% 92%; animation: pet-slime 2.6s ease-in-out infinite; }
+@keyframes pet-slime { 0%, 100% { scale: 1 1; } 35% { scale: 1.05 0.94; } 70% { scale: 0.96 1.05; } }
+.species-blob.is-sick .pet-svg { animation: pet-slime 2.6s ease-in-out infinite, pet-shiver 0.25s linear infinite; }
+.pc-drip { transform-box: fill-box; transform-origin: 50% 0; animation: pet-drip 3.2s ease-in infinite; }
+.pc-drip-b { animation-delay: -1.7s; }
+@keyframes pet-drip { 0% { transform: scaleY(0.4); opacity: 0; } 25% { transform: scaleY(1); opacity: 1; } 70% { transform: translateY(2px) scaleY(1.25); opacity: 1; } 100% { transform: translateY(8px) scaleY(0.6); opacity: 0; } }
+.pc-bub { animation: pet-bub 4s ease-in-out infinite; }
+.pc-bub-b { animation-delay: -1.3s; } .pc-bub-c { animation-delay: -2.6s; }
+@keyframes pet-bub { 50% { transform: translateY(-8px); } }
 .pc-eye circle:first-child { fill: #fff; }
 .pc-pupil { fill: #0d1f3c; }
 .pc-glint { fill: #fff; }
@@ -3938,14 +3984,17 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 @keyframes pet-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.08); } }
 .pc-dirt { fill: #6b4a2b; opacity: calc((var(--dirt) - 0.35) * 1.6); }
 .pc-eyes-closed, .pc-eyes-x, .pc-mouth { display: none; }
-.mood-happy .pc-mouth-happy, .mood-okay .pc-mouth-okay, .mood-sad .pc-mouth-sad, .mood-sick .pc-mouth-sick, .mood-asleep .pc-mouth-asleep { display: inline; }
+.mood-happy .pc-mouth-happy, .mood-okay .pc-mouth-okay, .mood-sad .pc-mouth-sad, .mood-asleep .pc-mouth-asleep { display: inline; }
 .mood-asleep .pc-eyes-open { display: none; }
 .mood-asleep .pc-eyes-closed { display: inline; }
 .mood-sad .pc-pupil { transform: translateY(3px); }
 .mood-sad { animation-duration: 3.6s; }
-.mood-sick .pet-svg { filter: saturate(0.45) brightness(0.9); }
-.mood-sick { animation: pet-shiver 0.25s linear infinite; }
-@keyframes pet-shiver { 25% { transform: translateX(-0.3vh); } 75% { transform: translateX(0.3vh); } }
+.pet-svg { filter: saturate(calc(1 - var(--sick, 0) * 0.55)) brightness(calc(1 - var(--sick, 0) * 0.1)); }
+/* sick and drunk move the svg with its own properties (translate, rotate), so they stack with the face's bob on the creature */
+.is-sick .pet-svg { animation: pet-shiver 0.25s linear infinite; }
+@keyframes pet-shiver { 25% { translate: calc(var(--sick) * -0.4vh) 0; } 75% { translate: calc(var(--sick) * 0.4vh) 0; } }
+.very-sick .pc-mouth:not(.pc-mouth-sick) { display: none; }
+.very-sick .pc-mouth-sick { display: inline; }
 .mood-happy { animation: pet-bob 2.4s ease-in-out infinite, pet-hop 7s ease-in-out 3s infinite; }
 @keyframes pet-hop { 0%, 88%, 100% { translate: 0 0; } 92% { translate: 0 -5vh; } 96% { translate: 0 0; } }
 .mood-asleep { animation: pet-breathe 4s ease-in-out infinite; }
@@ -4125,11 +4174,15 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 @keyframes pet-pour { 0%, 45% { stroke-dashoffset: 60; } 60%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -60; } }
 [data-anim="water"] .pc-mouth { animation: pet-hide 2.2s both; }
 [data-anim="water"] .pc-mouth-open { display: inline; animation: pet-chomp 2.2s both; transform-box: fill-box; transform-origin: center; }
-.mood-drunk .pc-mouth-okay { display: inline; }
-.mood-drunk { animation: pet-sway 3s ease-in-out infinite; }
-@keyframes pet-sway { 0%, 100% { transform: rotate(-6deg) translateX(-1vh); } 50% { transform: rotate(6deg) translateX(1vh); } }
-.mood-drunk .pc-eyes-open { animation: none; transform: scaleY(0.55); }
-.mood-drunk .pc-cheek { opacity: 1; fill: #ff5c7a; }
+.very-drunk .pc-mouth:not(.pc-mouth-okay) { display: none; }
+.very-drunk .pc-mouth-okay { display: inline; }
+.is-drunk .pet-svg { transform-origin: 50% 92%; rotate: 0deg; animation: pet-sway 3s ease-in-out infinite; }
+.species-blob.is-drunk .pet-svg { animation: pet-slime 2.6s ease-in-out infinite, pet-sway 3s ease-in-out infinite; }
+.is-sick.is-drunk .pet-svg { animation: pet-sway 3s ease-in-out infinite, pet-shiver 0.25s linear infinite; }
+.species-blob.is-sick.is-drunk .pet-svg { animation: pet-slime 2.6s ease-in-out infinite, pet-sway 3s ease-in-out infinite, pet-shiver 0.25s linear infinite; }
+@keyframes pet-sway { 0%, 100% { rotate: calc(var(--drunk) * -7deg); } 50% { rotate: calc(var(--drunk) * 7deg); } }
+.is-drunk .pc-eyes-open { animation: none; transform: scaleY(calc(1 - var(--drunk) * 0.45)); }
+.is-drunk .pc-cheek { opacity: calc(0.55 + var(--drunk) * 0.45); fill: color-mix(in srgb, #ff5c7a calc(var(--drunk) * 100%), #ff8fa6); }
 
 /* The Fotocie (providers/fotocie.py): the logo with the animation of the Fotocie app's start screen (splash.py), 2.6 s: it fades in,
    the emblem looks around out of focus and zoomed in on its crown, pulls back and into focus, and the flashbulb fires. The numbers

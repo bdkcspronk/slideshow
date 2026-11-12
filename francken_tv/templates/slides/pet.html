@@ -1,6 +1,6 @@
 {#
 	The Francken pet (providers/pet.py), on the navy poster: the pet on the left with a speech bubble, its bars
-	and three buttons on the right. Every 2 s the bars, its mood (the class on .pet-creature) and the bubble
+	and three buttons on the right. Every 2 s the bars, its face (mood-... on .pet-creature) and how sick, drunk and dirty it is (is-/very- classes and --sick, --drunk, --dirt) and the bubble
 	follow along (data-live); naming/awake/asleep/dead (data-state) redraws all of it. A tap's answer comes with
 	data-anim on .pet-stage: a kroket dropping in, a ball bouncing, bubbles, an egg hatching, or a head shake.
 	A new pet, in two steps: choosing (its shape and colour, each tap redraws the slide), then naming (an egg and
@@ -94,7 +94,7 @@
 			<p class="pet-cause">{{ name }} {{ cause }}.</p>
 			{% else %}
 			<div class="pet-bubble"><span data-live="said">{{ said }}</span></div>
-			<div class="pet-creature mood-{{ mood }} species-{{ species }}" data-live="creature" style="--dirt: {{ (100 - bars[2].value) / 100 }}; --pet-body: {{ body }}; --pet-dark: {{ dark }}">
+			<div class="pet-creature mood-{{ mood }} species-{{ species }}{% if mood != 'asleep' %}{% if traits.sick > 0 %} is-sick{% endif %}{% if traits.sick >= 0.5 %} very-sick{% endif %}{% if traits.drunk > 0 %} is-drunk{% endif %}{% if traits.drunk >= 0.5 %} very-drunk{% endif %}{% endif %}" data-live="creature" style="--dirt: {{ traits.dirt }}; --sick: {{ traits.sick }}; --drunk: {{ traits.drunk }}; --pet-body: {{ body }}; --pet-dark: {{ dark }}">
 				{% include "pet_creature.svg" %}
 				<div class="pet-stink" aria-hidden="true"><i></i><i></i><i></i></div>
 				<div class="pet-zzz" aria-hidden="true"><i>z</i><i>z</i><i>Z</i></div>

@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from francken_tv.providers.pet import MAX_DRAIN_PER_DAY, PetCry, PetProvider, advance, cheer_on_puzzles, clean_name, new_pet, numbered_name
+from francken_tv.providers.pet import MAX_DRAIN_PER_DAY, PetCry, PetProvider, advance, cheer_on_puzzles, clean_name, mood, new_pet, numbered_name, traits
 from francken_tv.providers.pet_streep import StreepFeed, listing
 from francken_tv.providers.puzzles import PuzzleStatus
 from francken_tv.slides import Provider, Slide
@@ -336,7 +336,9 @@ class SoberTest(WithStreepSystem):
 		self.assertAlmostEqual(pet["sober"], 70, delta=0.5)
 		self.assertIn("*hic*", self.pet.overlay(START + timedelta(seconds=31))["data"]["pet_cameo"]["said"])
 		pet["sober"] = 30
-		self.assertEqual(self.pet.shortcut_slide(START + timedelta(seconds=32)).data["mood"], "drunk")
+		data = self.pet.shortcut_slide(START + timedelta(seconds=32)).data
+		self.assertGreater(data["traits"]["drunk"], 0.5)
+		self.assertEqual(data["mood"], "okay")   # the face still follows the emptiest need (sober 30), drunk is an amount on top
 		slide, _ = self.pet.action("water", [], START + timedelta(seconds=33))
 		self.assertEqual(slide.data["anim"], "water")
 		self.assertAlmostEqual(pet["sober"], 55, delta=0.5)
@@ -367,3 +369,23 @@ class SoberTest(WithStreepSystem):
 		self.api.orders.append({"id": 101, "member_id": 7, "product_id": 3, "ordered_at": "2026-11-11 12:01:00"})   # Bobby: a Twix
 		self.pet.refresh(START + timedelta(seconds=60))
 		self.assertEqual(self.pet.overlay(START + timedelta(seconds=61))["data"]["pet_cameo"]["said"], "Thank you for the Twix!")
+
+
+class TraitsTest(unittest.TestCase):
+	def pet(self, **needs):
+		return {"food": 100, "fun": 100, "clean": 100, "sober": 100, "health": 100} | needs
+
+	def test_the_face_only_follows_the_emptiest_need(self):
+		self.assertEqual(mood(self.pet()), "happy")
+		self.assertEqual(mood(self.pet(fun=40)), "okay")
+		self.assertEqual(mood(self.pet(clean=10, sober=5)), "sad")
+
+	def test_nothing_shows_when_it_is_fine(self):
+		self.assertEqual(traits(self.pet()), {"sick": 0, "drunk": 0, "dirt": 0})
+
+	def test_the_amounts_grow_and_stack(self):
+		both = traits(self.pet(clean=25, sober=30, health=55))
+		self.assertEqual(both["dirt"], 0.75)
+		self.assertEqual(both["drunk"], 0.75)
+		self.assertEqual(both["sick"], 0.5)
+		self.assertEqual(traits(self.pet(food=0))["sick"], 1)
