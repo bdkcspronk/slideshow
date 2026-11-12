@@ -116,7 +116,7 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
   What a build downloads is kept for 6 hours in `data/cache/emulator_http/`, so rebuilding is quick; `--fresh` fetches it all again.
 - Keys in the slideshow: →/↓ next, ←/↑ previous, space pause (it goes on by itself after 4 minutes,
   unless "Pause until unpaused" is on in the settings), `m` mute/unmute all sound,
-  `1` Daily puzzles, `2` Spotify, `3` today's activity chart, `4`-`7` news, weather, buses, timetable (change these under `[shortcuts]` in
+  `1` Daily puzzles, `2` Spotify, `3` today's activity chart, `4`-`7` news, weather, buses, timetable, `8` the Francken pet (change these under `[shortcuts]` in
   `config/config.toml`).
 - **Esc** opens the menu: live previews of those slide types (arrow keys + Enter, or click), plus
   - **Settings**: mute all sound, read quotes aloud, greet people, volume, slide speed, which slide

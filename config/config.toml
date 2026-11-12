@@ -47,6 +47,7 @@ check_minutes = 10
 "5" = "weather"
 "6" = "buses"
 "7" = "timetable"
+"8" = "pet"                  # the Francken pet
 
 [power]
 # The Power button in the menu (Esc). Ubuntu lets the logged-in desktop user do these without a password.
