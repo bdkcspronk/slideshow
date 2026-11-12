@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "ero", "extern", "poll", "pet", "xkcd", "graafmachine", "compucie", "borrelcie", "fotocie", "sjaarscie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "ero", "extern", "poll", "pet", "xkcd", "graafmachine", "compucie", "borrelcie", "fotocie", "sjaarscie", "mscie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -181,6 +181,10 @@ seconds = 14   # the animation takes 2.6 s; the join text goes at 4.6 s, the sec
 [sjaarscie]
 # The Sjaarscie's promo: the first-year questions, then "Join the Sjaarscie!" with the Zwitsal baby, on baby blue and pink (templates/slides/sjaarscie.html).
 seconds = 14   # the questions come at 0.3 s and 2.8 s, the baby and "Join the Sjaarscie!" at 5.3 s
+
+[mscie]
+# The MScie's promo: silhouettes of arms throw black graduation caps in the air once, then "MScie" and its tagline (templates/slides/mscie.html).
+seconds = 14   # the arms swing at 0-1.5 s, the caps are gone by 4.9 s; the name lands at 5.4 s and the tagline at 6.6 s
 
 [membership]
 # Become a member: what it costs and gives (the text is in templates/slides/membership.html) and a QR code to the form.

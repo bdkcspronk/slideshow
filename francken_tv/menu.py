@@ -32,7 +32,7 @@ GROUPS = [
 	("Puzzles", ["puzzles", "connections", "wordle", "catfishing", "timeguessr"]),
 	("Music", ["spotify", "spotify-lyrics", "lyric-video"]),
 	("Photos and socials", ["event-photo", "event-photos", "instagram", "socials"]),
-	("Committees", ["compucie", "borrelcie", "fotocie", "sjaarscie"]),
+	("Committees", ["compucie", "borrelcie", "fotocie", "sjaarscie", "mscie"]),
 	("Contacts", ["confidential", "ero", "extern"]),
 	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
 	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine", "vrijmibo"]),
