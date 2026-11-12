@@ -29,8 +29,8 @@
 			   front of the person's bars while they grow, from the first to the end of the last (across the gaps),
 			   the rainbow coming out behind it, then keeps bobbing at the end. #}
 			{% set ride = bar.nyan_cat %}
-			<div class="nyan-cat-sprite" style="--row: {{ bar.row }}; --from: {{ ride.from }}%;
-				--to: {{ ride.to }}%; --delay: {{ ride.delay }}s; --grow: {{ ride.grow }}s">{% include "nyancat.svg" %}{% include "nyancat1.svg" %}</div>
+			<div class="nyan-ride" style="--row: {{ bar.row }}; --from: {{ ride.from }}%; --to: {{ ride.to }}%;
+				--delay: {{ ride.delay }}s; --grow: {{ ride.grow }}s"><div class="nyan-cat-sprite" style="--delay: {{ ride.delay }}s; --grow: {{ ride.grow }}s">{% include "nyancat.svg" %}{% include "nyancat1.svg" %}</div></div>
 			{% endif %}
 			{% if bar.emblem_left is not none and bar.shape == "portugal" %}
 			{# The flag's emblem, on the border of the green and the red of the person's one flag, once their

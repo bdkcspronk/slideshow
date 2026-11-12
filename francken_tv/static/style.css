@@ -1516,26 +1516,30 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 /* The nyan cat rides the front of its rainbow while it grows, then keeps bobbing. Its bottom sits on the
    end of the rainbow: the poptart starts 7 of the art's 33 pixels in (the tail and back paw stick out
    behind it, over the rainbow), and the shift is in % of the cat's own width, so it fits on any screen. */
+/* The ride: a wrapper as wide as the plot slides (transform, so no relayout per frame; % of its own width =
+   % of the plot) from --from to --to in step with the growing bar; the cat sits at --from inside it. */
+.nyan-ride { position: absolute; inset: 0; pointer-events: none; opacity: 0; animation: cat-ride var(--grow) linear var(--delay) forwards; }
 .nyan-cat-sprite {
 	position: absolute;
+	left: var(--from);
 	top: calc((var(--row) + 0.5) * 100% / var(--rows));
 	height: calc(1.04 * 100% / var(--rows));
 	aspect-ratio: 33 / 20;   /* templates/nyancat.svg and nyancat1.svg */
 	transform: translate(calc(-700% / 33), -50%);
-	opacity: 0;
-	animation:
-		cat-ride var(--grow) linear var(--delay) forwards,
-		cat-bob 0.45s ease-in-out calc(var(--delay) + var(--grow)) infinite alternate;
+	animation: cat-bob 0.45s ease-in-out calc(var(--delay) + var(--grow)) infinite alternate;
 }
 /* Its two frames on top of each other, taking turns (0.2 s each, the rainbow's rhythm): it runs. */
-.nyan-cat-sprite svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; animation: nyan-frame 0.4s steps(1) infinite; }
-.nyan-cat-sprite svg:last-child { animation-delay: -0.2s; }
-@keyframes nyan-frame { 50% { visibility: hidden; } }
+.nyan-cat-sprite svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; animation: nyan-frame-a 0.4s step-end infinite; }
+.nyan-cat-sprite svg:last-child { animation-name: nyan-frame-b; }
+/* Complementary keyframes with the same start (no negative delay): at a switch exactly one frame is
+   visible, never both or neither, which flickered. */
+@keyframes nyan-frame-a { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes nyan-frame-b { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
 @keyframes cat-ride {
-	from { left: var(--from); opacity: 1; }
-	to { left: var(--to); opacity: 1; }
+	from { translate: 0 0; opacity: 1; }
+	to { translate: calc(var(--to) - var(--from)) 0; opacity: 1; }
 }
-@keyframes cat-bob { to { margin-top: -0.8vh; } }
+@keyframes cat-bob { to { translate: 0 -0.8vh; } }   /* translate, not margin: no relayout each frame */
 /* Portugal: once the bar has grown, the emblem of templates/portugal_flag.svg spins in on the border of
    the green and the red. The emblem is half as tall as the flag and centred at 40% of its width, so the
    whole flag is drawn twice the box's height and shifted until the emblem fills the box; its two
