@@ -47,7 +47,7 @@ GROUPS = [
 	("Puzzles", ["puzzles", "connections", "wordle", "catfishing", "timeguessr"]),
 	("Music", ["spotify", "spotify-lyrics", "lyric-video"]),
 	("Photos and socials", ["event-photo", "event-photos", "instagram", "socials"]),
-	("Committees and contacts", ["confidential", "extern", "compucie", "borrelcie", "fotocie"]),
+	("Committees and contacts", ["confidential", "ero", "extern", "compucie", "borrelcie", "fotocie"]),
 	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
 	("Fun", ["quote", "commandments", "xkcd", "graafmachine"]),
 	("Full screen", ["bieruur-countdown", "bieruur", "vrijmibo"]),
@@ -164,6 +164,9 @@ def fake_files(project: Path, now: datetime) -> None:
 		frames.append(frame)
 	frames[0].save(project / "media/vrijmibo.gif", save_all=True, append_images=frames[1:], duration=150, loop=0)
 	photo(project / "media/extern/photo.jpg", (800, 1000), 9)
+	real_ero = any((project / "media/ERO").glob("*.png"))   # copied in by emulator.py --real-ero
+	for i, name in enumerate(() if real_ero else ("Sam", "Noor", "Jesse", "Robin", "Eva")):
+		photo(project / f"media/ERO/{name}.png", (600, 600), i + 3)
 	(project / "config/confidential.json").write_text(json.dumps({
 		"email": "confidential@example.org", "website": "https://www.professorfrancken.nl/",
 		"people": [{"name": name, "email": f"{name.lower().replace(' ', '.')}@example.org"}

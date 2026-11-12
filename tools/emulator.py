@@ -71,6 +71,7 @@ def main() -> None:
 	parser.add_argument("--host", default="127.0.0.1", help="with --serve: who can reach it (default: only this PC; 0.0.0.0: the whole network)")
 	parser.add_argument("--port", type=int, default=8090, help="with --serve (default: 8090)")
 	parser.add_argument("--artifact", action="store_true", help="index.html as an artifact page for claude.ai instead of a web page")
+	parser.add_argument("--fake-ero", action="store_true", help="made-up officers instead of the real pictures of media/ERO/ (always, with --artifact: real faces stay off public hosts)")
 	parser.add_argument("--fresh", action="store_true", help="fetch everything again instead of using what the last build fetched (kept %d hours)" % CACHE_HOURS)
 	parser.add_argument("--http-cache", type=Path, help=argparse.SUPPRESS)   # in the copy; where the last builds' downloads are kept
 	parser.add_argument("--inside", type=Path, help=argparse.SUPPRESS)   # running in the copy; the folder with Pyodide
@@ -92,6 +93,8 @@ def main() -> None:
 	with tempfile.TemporaryDirectory(prefix="francken-emulator-") as folder:
 		copy = Path(folder) / "slideshow"
 		shutil.copytree(ROOT, copy, ignore=lambda _, names: [n for n in names if n in slides_gallery.LEFT_OUT])
+		if not (args.fake_ero or args.artifact) and (ROOT / "media" / "ERO").is_dir():
+			shutil.copytree(ROOT / "media" / "ERO", copy / "media" / "ERO")   # the copy has no media/: slides_gallery makes up the rest
 		subprocess.run([sys.executable, "tools/emulator.py", "--inside", str(pyodide), "--out", str(out), "--http-cache", str(ROOT / "data" / "cache" / "emulator_http"), "--time", now.isoformat(),
 			*(["--artifact"] if args.artifact else []), *(["--fresh"] if args.fresh else [])], cwd=copy, check=True)
 	print(f"Written: {out}/", flush=True)
