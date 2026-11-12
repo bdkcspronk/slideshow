@@ -3831,7 +3831,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	fill: #fdf8ec;
 	font: 600 42px Georgia, "DejaVu Serif", serif;
 	text-anchor: middle;
-	animation: bc-word 1.4s linear calc(0.9s + var(--t)) both;   /* at one speed, so words from one key keep apart */
+	animation: bc-word 1.8s linear calc(0.9s + var(--t)) both;   /* whole words, so they last long enough to read */
 }
 .bc-word:nth-child(even) { fill: #ffd77a; }
 @keyframes bc-word {
