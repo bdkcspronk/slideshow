@@ -79,7 +79,13 @@ class Takeover:
 	"""Interrupts the normal rotation when slide() returns a slide."""
 
 	name = ""
+	title = ""                  # in the menu (Esc), if it has menu_slide()
 	interrupts_paused = False   # True: also interrupts someone playing an interactive slide
+
+	def menu_slide(self, now: datetime) -> Slide | None:
+		"""The slide to jump to from the menu (Esc) right now, without taking over (and without using up the
+		takeover's turn); None: it isn't in the menu, or not now."""
+		return None
 
 	def slide(self, now: datetime) -> Slide | None:
 		raise NotImplementedError

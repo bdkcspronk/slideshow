@@ -35,8 +35,8 @@ GROUPS = [
 	("Committees", ["compucie", "borrelcie", "fotocie"]),
 	("Contacts", ["confidential", "ero", "extern"]),
 	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
-	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine"]),
-	("Full screen", ["bieruur-countdown", "bieruur", "vrijmibo"]),
+	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine", "vrijmibo"]),
+	("Full screen", ["bieruur-countdown", "bieruur"]),
 	("Other", []),
 ]
 # More slides to jump to after a slide type's own (not in the rotation by themselves)
@@ -65,14 +65,19 @@ def has_slide(provider: Provider, app: App) -> bool:
 
 
 def channels(app: App) -> list[dict]:
-	"""Every slide type of the rotation, and the EXTRA ones after it, as {"name", "label", "group"} (the group's
-	number in GROUPS), sorted by group; within a group in the order of the rotation."""
+	"""Every slide type of the rotation, and the EXTRA ones after it, and the takeovers that have a menu slide right now
+	(the vrijmibo, on Fridays), as {"name", "label", "group"} (the group's number in GROUPS), sorted by group; within a
+	group in the order of the rotation."""
 	found = []
 	for provider in app.scheduler.providers:
 		for name, label in [(provider.name, ""), *EXTRA.get(provider.name, [])]:
 			known = app.providers.get(name)
 			label = label or (known.title if known else "") or name.replace("_", " ").capitalize()
 			found.append({"name": name, "label": label, "group": group_of(KEYS.get(name, name.replace("_", "-")))})
+	now = app.clock.now()
+	for takeover in getattr(app, "takeovers", {}).values():
+		if takeover.menu_slide(now) is not None:
+			found.append({"name": takeover.name, "label": takeover.title or takeover.name.capitalize(), "group": group_of(takeover.name)})
 	found.sort(key=lambda channel: channel["group"])   # stable
 	return found
 
@@ -87,6 +92,8 @@ def groups(app: App) -> list[dict]:
 def slide_for(app: App, name: str):
 	"""The slide to show right away for a slide type (or an EXTRA one); None if it has nothing to show."""
 	now = app.clock.now()
+	if name in getattr(app, "takeovers", {}):
+		return app.takeovers[name].menu_slide(now)
 	if name == "rain":
 		return app.providers["weather"].rain_preview(now)
 	if name == "spotify-lyrics":
@@ -107,7 +114,8 @@ def group_status(app: App, group_title: str) -> list[dict] | None:
 		name = channel["name"]
 		provider = app.providers.get(name)
 		try:
-			available = (slide_for(app, name) is not None) if name in ("rain", "spotify-lyrics") else has_slide(provider, app)
+			available = has_slide(provider, app) if provider is not None and name not in ("rain", "spotify-lyrics") \
+				else slide_for(app, name) is not None
 		except Exception:
 			log.exception("Preview of %s failed", name)
 			available = False

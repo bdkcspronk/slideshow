@@ -9,7 +9,7 @@ from francken_tv.app import App
 from francken_tv.providers.puzzles import PuzzlesProvider
 from francken_tv.scheduler import Scheduler
 from francken_tv.settings import Settings, load_settings, save_settings
-from francken_tv.slides import Provider, Slide
+from francken_tv.slides import Provider, Slide, Takeover
 from francken_tv.system_volume import SystemVolume
 
 NOW = datetime(2026, 10, 16, 12, 0)
@@ -158,6 +158,21 @@ class GroupsTest(unittest.TestCase):
 		self.assertEqual([(entry["name"], entry["available"]) for entry in menu.group_status(self.app, "Today")],
 			[("weather", True), ("rain", True)])
 		self.assertIsNone(menu.group_status(self.app, "Nothing"))
+
+	def test_a_takeover_with_a_menu_slide_is_in_the_menu_while_it_has_one(self):
+		class Friday(Takeover):
+			name, title = "vrijmibo", "Vrijmibo"
+
+			def menu_slide(self, now):
+				return Slide("empty.html", 5) if now.weekday() == 4 else None
+
+		self.app.takeovers = {"vrijmibo": Friday()}
+		fun = lambda: next(group for group in menu.groups(self.app) if group["title"] == "Fun")["channels"]
+		self.assertEqual([channel["name"] for channel in fun()], ["pet", "vrijmibo"])   # Fridays (NOW is one)
+		self.assertEqual(menu.group_status(self.app, "Fun")[1], {"name": "vrijmibo", "available": True, "empty": "Nothing to show right now"})
+		self.assertEqual(menu.slide_for(self.app, "vrijmibo").template, "empty.html")
+		self.app.clock = SimpleNamespace(now=lambda: datetime(2026, 10, 15, 12, 0))   # Thursday
+		self.assertEqual([channel["name"] for channel in fun()], ["pet"])
 
 	def test_the_groups_are_in_the_menu_data(self):
 		self.app.providers["puzzles"] = SimpleNamespace(cards=lambda now: [])

@@ -165,6 +165,12 @@ class VrijmiboTest(unittest.TestCase):
 		shown = [self.takeover.slide(at(FRIDAY, t)) is not None for t in ("12:00:00", "12:05:00", "12:14:59", "12:15:00", "12:16:00")]
 		self.assertEqual(shown, [True, False, False, True, False])
 
+	def test_the_menu_slide_does_not_use_up_the_slot(self):
+		self.assertIsNotNone(self.takeover.menu_slide(at(FRIDAY, "12:00:00")))
+		self.assertIsNotNone(self.takeover.menu_slide(at(FRIDAY, "12:00:05")))   # as often as you like...
+		self.assertIsNotNone(self.takeover.slide(at(FRIDAY, "12:00:10")))        # ...and the takeover still gets its turn
+		self.assertIsNone(self.takeover.menu_slide(at(THURSDAY, "12:00:00")))    # only on Fridays
+
 	def test_plays_gif_once(self):
 		self.assertEqual(self.takeover.slide(at(FRIDAY, "12:00:00")).seconds, 2.0)
 

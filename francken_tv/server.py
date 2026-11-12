@@ -382,7 +382,7 @@ class Handler(BaseHTTPRequestHandler):
 		elif name in app.providers:
 			slide = app.providers[name].shortcut_slide(now)   # e.g. Spotify also when nothing plays
 		elif name in app.takeovers:
-			slide = app.takeovers[name].slide(now)
+			slide = app.takeovers[name].menu_slide(now) or app.takeovers[name].slide(now)   # the menu's previews don't use up a takeover's turn
 		if slide is None:
 			self.send_error(HTTPStatus.NOT_FOUND, f"{name} has no slide right now (see /status)")
 			return

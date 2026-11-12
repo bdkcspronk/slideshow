@@ -122,7 +122,8 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
   Puzzles, Music, ... the same groups as the buttons of the emulator, `GROUPS` in `francken_tv/menu.py`): ←/→ choose
   a group and show its slides, ↓ goes into them and Enter opens one (↑ goes back to the tabs; slides with nothing to
   show right now are greyed out). The first tab, **Quick**, is the slide types under `[shortcuts]` with their number
-  keys (the number keys work in every tab). The menu opens on the group it was last on. Below the tabs:
+  keys (the number keys work in every tab). On Fridays the **Fun** group also has the vrijmibo GIF. The menu opens
+  on the group it was last on. Below the tabs:
   - **Settings**: mute all sound, read quotes aloud, greet people, volume, slide speed, which slide
     types are shown, start one or all of today's puzzles over, reload `devices.json`. Volume and
     mute are the TV PC's main sound output (Spotify too; needs `wpctl` or `pactl`, standard on
