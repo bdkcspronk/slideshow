@@ -43,13 +43,14 @@ NAVY, CRIMSON, GOLD, CREAM = (23, 50, 73), (190, 30, 45), (255, 196, 0), (247, 2
 GROUPS = [
 	("What's on", ["poster", "activities", "practice"]),
 	("Today", ["news", "weather", "rain", "buses", "timetable"]),
-	("The room", ["presence", "leaderboard", "pet", "poll", "streep"]),
+	("The room", ["presence", "leaderboard", "poll", "streep"]),
 	("Puzzles", ["puzzles", "connections", "wordle", "catfishing", "timeguessr"]),
 	("Music", ["spotify", "spotify-lyrics", "lyric-video"]),
 	("Photos and socials", ["event-photo", "event-photos", "instagram", "socials"]),
-	("Committees and contacts", ["confidential", "ero", "extern", "compucie", "borrelcie", "fotocie"]),
+	("Committees", ["compucie", "borrelcie", "fotocie"]),
+	("Contacts", ["confidential", "ero", "extern"]),
 	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
-	("Fun", ["quote", "commandments", "xkcd", "graafmachine"]),
+	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine"]),
 	("Full screen", ["bieruur-countdown", "bieruur", "vrijmibo"]),
 	("Other", []),
 ]
