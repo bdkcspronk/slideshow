@@ -371,6 +371,14 @@ document.addEventListener("keydown", async (event) => {
 	}
 	// On a slide you can type on, keys go to the game instead of the shortcuts below.
 	const slide = interactiveSlide();
+	// A button marked data-enter (e.g. Catfishing's "Next article") is pressed by Enter.
+	const enter = slide?.querySelector("[data-enter]");
+	if (enter && event.key === "Enter" && !event.ctrlKey && !event.altKey && !event.metaKey) {
+		event.preventDefault();
+		keepPaused(idleSeconds(slide));
+		enter.click();
+		return;
+	}
 	if (slide && slide.querySelector("[data-input-text]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		const names = { Enter: "ENTER", Backspace: "BACK", " ": "SPACE", Delete: "DELETE",
 			ArrowLeft: "LEFT", ArrowRight: "RIGHT", Home: "HOME", End: "END" };

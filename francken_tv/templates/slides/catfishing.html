@@ -45,7 +45,7 @@
 				{% if last.result in ["incorrect", "close"] %}
 				<button data-action="close">{{ "Undo close enough" if last.result == "close" else "Mark as close enough (1 point)" }}</button>
 				{% endif %}
-				<button data-action="next" class="primary">{{ "See the results" if game.answers | length == game.articles | length else "Next article" }} &rarr;</button>
+				<button data-action="next" data-enter class="primary">{{ "See the results" if game.answers | length == game.articles | length else "Next article" }} &rarr;</button>
 			</div>
 		</div>
 		{% if article.image %}
