@@ -107,6 +107,10 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
 - http://127.0.0.1:8080/preview/activities shows one slide (also `quote`, `presence`, `bieruur_countdown`, ...).
 - `python3 tools/slides_gallery.py` puts every slide on one self-contained page, `data/slides_gallery.html`:
   today's public data, made-up private data (posters, people, Spotify, ...), no server needed.
+- `python3 tools/emulator.py --serve` builds the whole slideshow as a website (`data/emulator/`) and shows it at
+  http://127.0.0.1:8090: the real player, the menu (Esc) with its settings and the puzzles, all working without
+  the TV PC, with the same made-up private data. Python runs inside the browser, so any web server can show
+  the folder on any device (`--host 0.0.0.0` for other devices on the network); the data is from when it was built.
 - Keys in the slideshow: →/↓ next, ←/↑ previous, space pause (it goes on by itself after 4 minutes,
   unless "Pause until unpaused" is on in the settings), `m` mute/unmute all sound,
   `1` Daily puzzles, `2` Spotify, `3` today's activity chart, `4`-`7` news, weather, buses, timetable (change these under `[shortcuts]` in

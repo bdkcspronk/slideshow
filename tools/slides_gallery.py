@@ -38,6 +38,28 @@ ROOT = Path(__file__).resolve().parent.parent
 LEFT_OUT = {".git", "data", "media", ".venv", "__pycache__", "devices.json", "confidential.json", "extern.json"}
 MAP_ZOOMS = range(0, 4)   # world map tiles for TimeGuessr (85 tiles)
 NAVY, CRIMSON, GOLD, CREAM = (23, 50, 73), (190, 30, 45), (255, 196, 0), (247, 243, 233)
+# The channel buttons in groups, and the slides in this order. A slide belongs to the first group that
+# names its key, or its key up to the number ("news" for news-2); anything else lands in "Other".
+GROUPS = [
+	("What's on", ["poster", "activities", "practice"]),
+	("Today", ["news", "weather", "rain", "buses", "timetable"]),
+	("The room", ["presence", "leaderboard", "pet", "poll", "streep"]),
+	("Puzzles", ["puzzles", "connections", "wordle", "catfishing", "timeguessr"]),
+	("Music", ["spotify", "spotify-lyrics", "lyric-video"]),
+	("Photos and socials", ["event-photo", "event-photos", "instagram", "socials"]),
+	("Committees and contacts", ["confidential", "extern", "compucie", "borrelcie"]),
+	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
+	("Fun", ["quote", "commandments", "xkcd", "graafmachine"]),
+	("Full screen", ["bieruur-countdown", "bieruur", "vrijmibo"]),
+	("Other", []),
+]
+
+
+def group_of(key: str) -> int:
+	for number, (_, keys) in enumerate(GROUPS):
+		if key in keys or re.sub(r"-\d+$", "", key) in keys:
+			return number
+	return len(GROUPS) - 1
 
 
 def main() -> None:
@@ -156,7 +178,9 @@ def fake_files(project: Path, now: datetime) -> None:
 
 # ---- the slides ---------------------------------------------------------------------------------------
 
-def build(now: datetime, out: Path) -> None:
+def prepare(now: datetime):
+	"""The app in this (copied) project folder, with today's public data fetched and the private things made up:
+	the config and the app. Also used by tools/emulator.py."""
 	logging.basicConfig(level=logging.ERROR)
 	project = Path.cwd()
 	sys.path.insert(0, str(project))
@@ -169,8 +193,7 @@ def build(now: datetime, out: Path) -> None:
 	from francken_tv.providers.francken_vrij import Issue
 	from francken_tv.providers.instagram import Post
 	from francken_tv.providers.spotify import NowPlaying
-	from francken_tv.server import make_templates
-	from francken_tv.slides import Slide, media_url
+	from francken_tv.slides import media_url
 
 	config = load_config(DEFAULT_CONFIG)
 	app = build_app(config, Clock(now))
@@ -214,7 +237,16 @@ def build(now: datetime, out: Path) -> None:
 	spotify.playing = NowPlaying("made-up", "Mr. Brightside", "The Killers", "Hot Fuss", cover, 222000, 61000, True,
 		monotonic_time.monotonic(), 65, spotify.speaker)
 	spotify.next = {"title": "Don't Stop Me Now", "artist": "Queen", "uri": "spotify:track:made-up", "cover": cover}
+	return config, app
 
+
+def draw(config: dict, app, now: datetime) -> list[dict]:
+	"""Every slide drawn once, sorted by group: {"key", "label", "group", "seconds", "html"}."""
+	from francken_tv.config import CACHE_DIR
+	from francken_tv.server import make_templates
+	from francken_tv.slides import Slide, media_url
+
+	providers = app.providers
 	templates = make_templates()
 	slides: list[dict] = []
 
@@ -264,6 +296,17 @@ def build(now: datetime, out: Path) -> None:
 	add("bieruur", "Bieruur (full screen)", app.takeovers["bieruur"].slide(
 		datetime.combine(friday, bieruur_time) - timedelta(seconds=30)))
 	add("vrijmibo", "Vrijmibo", app.takeovers["vrijmibo"].slide(datetime.combine(friday, time(13, 0))))
+
+	slides.sort(key=lambda slide: group_of(slide["key"]))   # stable: within a group, the order of the rotation
+	for slide in slides:
+		slide["group"] = GROUPS[group_of(slide["key"])][0]
+	return slides
+
+
+def build(now: datetime, out: Path) -> None:
+	project = Path.cwd()
+	config, app = prepare(now)
+	slides = draw(config, app, now)
 
 	print("Putting every picture inside the page...")
 	assets = Assets(project)
@@ -439,7 +482,10 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 #play[aria-pressed="true"] { background: var(--crimson); border-color: var(--crimson); }
 .progress { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .progress i { display: block; height: 100%; width: 0; background: var(--gold); }
-.channels { display: flex; flex-wrap: wrap; gap: 6px; }
+.channels { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 14px 24px; }
+.channels section { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.channels h2 { font: 600 11px/1.2 var(--text); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.channels div { display: flex; flex-wrap: wrap; gap: 6px; }
 .channels button { padding: 5px 10px; font-size: 13px; color: var(--muted); }
 .channels button.on { color: var(--room); background: var(--gold); border-color: var(--gold); }
 .hint { color: var(--muted); font-size: 13px; margin: 0; }
@@ -473,12 +519,21 @@ const tiles = Object.fromEntries(Object.entries(DATA.tiles).map(([k, v]) => [k, 
 let index = 0, playing = false, timer = null, ready = false;
 document.getElementById("drawn").textContent = `Drawn for ${DATA.drawn}`;
 
-const channels = document.getElementById("channels");
+const channels = document.getElementById("channels"), channelButtons = [];
+let row = null;
 slides.forEach((slide, i) => {
+	if (!row || slide.group !== slides[i - 1].group) {   // the slides come sorted by group
+		const section = document.createElement("section"), heading = document.createElement("h2");
+		heading.textContent = slide.group;
+		row = document.createElement("div");
+		section.append(heading, row);
+		channels.append(section);
+	}
 	const button = document.createElement("button");
 	button.textContent = slide.label;
 	button.addEventListener("click", () => show(i));
-	channels.append(button);
+	row.append(button);
+	channelButtons.push(button);
 });
 
 function fit() { frame.style.transform = `scale(${screen.clientWidth / 1920})`; }
@@ -490,7 +545,7 @@ function show(i) {
 	if (ready) frame.contentWindow.showSlide(fill(slide.html), tiles);
 	document.getElementById("name").textContent = slide.label;
 	document.getElementById("count").textContent = `${index + 1} / ${slides.length}`;
-	[...channels.children].forEach((b, n) => b.classList.toggle("on", n === index));
+	channelButtons.forEach((b, n) => b.classList.toggle("on", n === index));
 	try { history.replaceState(null, "", `#${slide.key}`); } catch (e) {}
 	schedule();
 }

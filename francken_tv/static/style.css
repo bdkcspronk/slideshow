@@ -1400,13 +1400,14 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	box-sizing: border-box;
 	border-radius: 8px;
 	overflow: hidden;
-	clip-path: inset(-3vh 100% -3vh -3vh);
+	clip-path: inset(-3vh 100% -3vh 0);   /* nothing shows, not even a glow to the left of where the bar will start */
 	animation: bar-grow var(--grow) linear var(--delay) forwards, bar-grown 0s var(--grow-end) forwards;
 	--grow-end: calc(var(--delay) + var(--grow));
 }
 /* The growing edge goes exactly to the bar's end, so it keeps pace with a nyan cat or a vehicle riding
-   it; only once the bar has grown does the clip open 3vh to the right too, for a glow. */
-@keyframes bar-grow { to { clip-path: inset(-3vh 0 -3vh -3vh); } }
+   it; only once the bar has grown does the clip open 3vh to the right too, for a glow. To the left it opens
+   3vh when the bar starts growing: before that (while it waits its turn) a glow would already show there. */
+@keyframes bar-grow { from { clip-path: inset(-3vh 100% -3vh -3vh); } to { clip-path: inset(-3vh 0 -3vh -3vh); } }
 @keyframes bar-grown { to { clip-path: inset(-3vh -3vh -3vh -3vh); } }
 .bar.square-corners { border-radius: 0; }
 .bar.glow { filter: drop-shadow(0 0 1.2vh var(--glow)) drop-shadow(0 0 0.4vh var(--glow)); }   /* outside the bar, which stays clipped */
