@@ -58,8 +58,6 @@ QUOTES = """Tijdstempel,name,Quote
 29-9-2026 13:15:00,Eve,"Assume the cow is spherical. No, more spherical"
 6-10-2026 15:59:00,Frank,One minute to bieruur is still lecture time
 """   # the columns of the quotes sheet
-EXTRA = {"weather": [("rain", "Rain warning")], "spotify": [("spotify-lyrics", "Spotify lyrics")],
-	"puzzles": [("connections", ""), ("wordle", ""), ("catfishing", ""), ("timeguessr", "")]}   # more buttons after a slide type's own
 
 
 def main() -> None:
@@ -301,16 +299,9 @@ def pack(project: Path, out: Path) -> int:
 
 
 def channels(config: dict, app, gallery) -> list[dict]:
-	"""The page's buttons: every slide type of the rotation, in the gallery's groups."""
-	found = []
-	for name in config["rotation"]["order"]:
-		for key, label in [(name, ""), *EXTRA.get(name, [])]:
-			provider = app.providers.get(key)
-			label = label or (provider.title if provider else "") or key.replace("_", " ").capitalize()
-			group = gallery.group_of({"images": "poster", "event_photos": "event-photo"}.get(key, key.replace("_", "-")))
-			found.append({"name": key, "label": label, "group": gallery.GROUPS[group][0], "order": group})
-	found.sort(key=lambda channel: channel.pop("order"))
-	return found
+	"""The page's buttons: every slide type of the rotation, in the groups of the menu (Esc) on the TV."""
+	from francken_tv import menu
+	return [{"name": channel["name"], "label": channel["label"], "group": menu.GROUPS[channel["group"]][0]} for channel in menu.channels(app)]
 
 
 # ---- the page -------------------------------------------------------------------------------------------

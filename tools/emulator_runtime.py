@@ -117,8 +117,6 @@ def boot() -> None:
 
 def request(method: str, path: str, body: str = "") -> tuple[int, str, bytes]:
 	"""What the server would answer: (status, content type, body)."""
-	if path.startswith("/api/shortcut/go-"):   # the page's own buttons: any slide type, not only the number keys
-		return 200, "application/json", json.dumps(go(path.removeprefix("/api/shortcut/go-"))).encode()
 	from francken_tv.server import Handler
 
 	class Request(Handler):
@@ -135,24 +133,6 @@ def request(method: str, path: str, body: str = "") -> tuple[int, str, bytes]:
 	lines = head.decode("latin-1").split("\r\n")
 	headers = {name.lower(): value for name, _, value in (line.partition(": ") for line in lines[1:])}
 	return int(lines[0].split()[1]), headers.get("content-type", "application/octet-stream"), content
-
-
-def go(name: str) -> dict:
-	"""A slide type shown right away, like a shortcut key; {"message": ...} if it has nothing to show."""
-	app, now = server.app, server.app.clock.now()
-	try:
-		if name == "rain":
-			slide = app.providers["weather"].rain_preview(now)
-		elif name == "spotify-lyrics":
-			slide = app.providers["spotify"].lyrics_slide()
-		else:
-			slide = app.providers[name].shortcut_slide(now)
-	except Exception as error:
-		return {"message": f"{name}: {error!r}"}
-	if slide is None:
-		provider = app.providers.get(name)
-		return {"message": f"{getattr(provider, 'title', '') or name}: {getattr(provider, 'nothing_to_show', 'nothing to show right now')}"}
-	return server.renderer.start(slide)
 
 
 def set_time(moment: str) -> None:

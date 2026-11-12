@@ -38,29 +38,8 @@ ROOT = Path(__file__).resolve().parent.parent
 LEFT_OUT = {".git", "data", "media", ".venv", "__pycache__", "devices.json", "confidential.json", "extern.json"}
 MAP_ZOOMS = range(0, 4)   # world map tiles for TimeGuessr (85 tiles)
 NAVY, CRIMSON, GOLD, CREAM = (23, 50, 73), (190, 30, 45), (255, 196, 0), (247, 243, 233)
-# The channel buttons in groups, and the slides in this order. A slide belongs to the first group that
-# names its key, or its key up to the number ("news" for news-2); anything else lands in "Other".
-GROUPS = [
-	("What's on", ["poster", "activities", "practice"]),
-	("Today", ["news", "weather", "rain", "buses", "timetable"]),
-	("The room", ["presence", "leaderboard", "poll", "streep"]),
-	("Puzzles", ["puzzles", "connections", "wordle", "catfishing", "timeguessr"]),
-	("Music", ["spotify", "spotify-lyrics", "lyric-video"]),
-	("Photos and socials", ["event-photo", "event-photos", "instagram", "socials"]),
-	("Committees", ["compucie", "borrelcie", "fotocie"]),
-	("Contacts", ["confidential", "ero", "extern"]),
-	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
-	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine"]),
-	("Full screen", ["bieruur-countdown", "bieruur", "vrijmibo"]),
-	("Other", []),
-]
-
-
-def group_of(key: str) -> int:
-	for number, (_, keys) in enumerate(GROUPS):
-		if key in keys or re.sub(r"-\d+$", "", key) in keys:
-			return number
-	return len(GROUPS) - 1
+sys.path.insert(0, str(ROOT))
+from francken_tv.menu import GROUPS, group_of  # noqa: E402  the channel buttons in groups, and the slides in this order (also the menu: Esc on the TV)
 
 
 def main() -> None:
