@@ -3908,8 +3908,6 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .species-octopus .pc-foot, .species-octopus .pc-arm { display: none; }
 .pc-inner { fill: #ff8fa6; opacity: 0.75; }
 .pc-tentacles path { stroke: var(--pet-body, #c8102e); }
-.pc-tail-cat { transform-box: view-box; transform-origin: 138px 196px; animation: pet-tail 3s ease-in-out infinite; }
-@keyframes pet-tail { 50% { transform: rotate(-12deg); } }
 .pc-tentacles path { transform-box: fill-box; transform-origin: 50% 0; animation: pet-tentacle 1.8s ease-in-out infinite; }
 .pc-tentacles path:nth-child(even) { animation-delay: -0.9s; }
 @keyframes pet-tentacle { 50% { transform: rotate(10deg); } }
@@ -3958,6 +3956,48 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pc-cat-ear-left { transform-origin: 62px 76px; }
 .pc-cat-ear-right { transform-origin: 138px 76px; animation-delay: -2.5s; }
 @keyframes pet-cat-ear { 0%, 86%, 100% { rotate: 0deg; } 90% { rotate: -9deg; } 94% { rotate: 3deg; } }
+
+/* the cat's life. Every part moves with its own property (rotate, translate, scale), so it all stacks with the face's bob
+   and with sick/drunk/dirty. The idle moments (look about, yawn) share one 30 s timeline so the eyelids, mouth,
+   head and paw stay in step. */
+.pc-ol-fill { fill: var(--cat-line); }
+.pc-tail-fur-fill { fill: var(--fur); }
+.pc-tail-cat { transform-box: view-box; transform-origin: 134px 196px; animation: pet-cat-tail-a 4.5s ease-in-out infinite; }
+.pc-tail-b { transform-box: view-box; transform-origin: 182px 179.75px; animation: pet-cat-tail-b 4.5s ease-in-out -0.6s infinite; }   /* the tip lags behind */
+@keyframes pet-cat-tail-a { 0%, 100% { rotate: 3deg; } 50% { rotate: -6deg; } }
+@keyframes pet-cat-tail-b { 0%, 100% { rotate: 8deg; } 50% { rotate: -14deg; } }
+.pc-cat-torso { transform-box: view-box; transform-origin: 100px 206px; animation: pet-cat-breath 4.2s ease-in-out infinite; }
+@keyframes pet-cat-breath { 0%, 100% { scale: 1 1; } 50% { scale: 1.012 1.02; } }
+.species-cat .pc-head-rig, .pc-ear-rig { transform-box: view-box; transform-origin: 100px 112px; animation: pet-cat-rise 4.2s ease-in-out infinite, pet-cat-head 30s ease-in-out infinite; }   /* rises with each breath */
+@keyframes pet-cat-rise { 0%, 100% { translate: 0 0; } 50% { translate: 0 -2.1px; } }
+@keyframes pet-cat-head {
+	0%, 6%, 20%, 30%, 42%, 58%, 80%, 100% { rotate: 0deg; scale: 1 1; }
+	10%, 16% { rotate: 5deg; scale: 1 1; }   /* looks to one side */
+	34%, 38% { rotate: -4deg; scale: 1 1; }   /* and to the other */
+	61%, 66% { rotate: -3deg; scale: 1.03 1.07; }   /* yawn: the neck stretches */
+}
+.pc-cat-yawn { opacity: 0; transform-box: fill-box; transform-origin: 50% 0; animation: pet-cat-yawn 30s ease-in-out infinite; }
+.pc-cat-yawn-mouth { fill: #5a0814; stroke: #2a1408; }
+.pc-cat-yawn-tongue { fill: #e8708a; }
+.species-cat .pc-mouth-open { fill: #5a0814; }
+@keyframes pet-cat-yawn { 0%, 61% { opacity: 0; scale: 1 0.3; } 64%, 68% { opacity: 1; scale: 1 1; } 71%, 100% { opacity: 0; scale: 1 0.3; } }
+.pc-cat-lid2 { opacity: 0; animation: pet-cat-lid2 30s ease-in-out infinite; }   /* eyes shut for the yawn: a lid with the curve of a closed eye */
+.pc-cat-lid2-fill { fill: var(--fur); }
+.pc-cat-lid2-line { stroke: var(--cat-line); }
+@keyframes pet-cat-lid2 { 0%, 60%, 72%, 100% { opacity: 0; } 63%, 69% { opacity: 1; } }
+.pc-whiskers path { transform-box: view-box; }
+.pc-whiskers path:first-child { transform-origin: 30px 138px; animation: pet-cat-whisker 11s ease-in-out infinite; }
+.pc-whiskers path:last-child { transform-origin: 170px 138px; animation: pet-cat-whisker 11s ease-in-out -4s infinite reverse; }
+@keyframes pet-cat-whisker { 0%, 90%, 100% { rotate: 0deg; } 93% { rotate: -5deg; } 96% { rotate: 2deg; } }
+/* asleep: it only breathes (slower) */
+.species-cat.mood-asleep .pc-head-rig, .mood-asleep .pc-ear-rig { animation: pet-cat-rise 6s ease-in-out infinite; }
+.mood-asleep .pc-cat-torso { animation-duration: 6s; }
+.mood-asleep .pc-cat-yawn, .mood-asleep .pc-cat-lid2 { animation: none; opacity: 0; }
+/* taps: feed (it leans in and chews), play (it crouches and pounces); clean is the generic scrub and bubbles */
+[data-anim="feed"] .species-cat .pc-head-rig, [data-anim="feed"] .pc-ear-rig { animation: pet-cat-feed 1.6s ease-in-out both; }
+@keyframes pet-cat-feed { 0%, 100% { rotate: 0deg; translate: 0 0; } 30%, 70% { rotate: 5deg; translate: 0 4px; } 74%, 82%, 90% { rotate: 5deg; translate: 0 5.5px; } 78%, 86%, 94% { rotate: 5deg; translate: 0 4px; } }
+[data-anim="play"] .pet-creature.species-cat { animation: pet-cat-pounce 0.9s cubic-bezier(0.3, 0, 0.5, 1) 2, pet-bob 2.4s ease-in-out 1.8s infinite; }
+@keyframes pet-cat-pounce { 0%, 100% { transform: none; } 25% { transform: scale(1.07, 0.84); } 45% { transform: translateY(-9vh) scale(0.94, 1.1) rotate(-4deg); } 72% { transform: translateY(-1vh) scale(1.05, 0.92); } }
 /* dirty = murky: the goo turns muddy from a clean level of about 70 down, loses its shine and fills with bits */
 .pc-goo, .pc-drip { fill: color-mix(in srgb, #6b5a2a calc(max(0, var(--dirt, 0) - 0.3) * 85%), var(--pet-body, #c8102e)); }
 .pc-goo { opacity: 0.92; }
