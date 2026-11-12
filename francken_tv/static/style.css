@@ -4243,7 +4243,18 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
    the emblem looks around out of focus and zoomed in on its crown, pulls back and into focus, and the flashbulb fires. The numbers
    (zoom 2.3, a pan that wanders, blur, the flash dying out in 0.65 s) are the app's; the frames in between are worked out from them. */
 .fc-body { position: relative; flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 4vw; }
-.fc-text { min-width: 0; }
+.fc-text { min-width: 0; display: grid; align-items: center; }
+/* Two texts in turn, one over the other: "Do you like taking pictures? Join the Fotocie!", then what the Fotocie does. The words of the
+   second drop in after the first is gone (the delays are from the start of the slide). */
+.fc-phase { grid-area: 1 / 1; min-width: 0; }
+.fc-phase-a { animation: fc-phase-out 0.6s ease-in 4.6s both; }
+@keyframes fc-phase-out { to { opacity: 0; transform: translateY(-3vh); } }
+.fc-phase-b { opacity: 0; animation: fc-phase-in 0.01s linear 5.2s both; }
+@keyframes fc-phase-in { to { opacity: 1; } }
+.fc-phase-b .poster-title span { animation-delay: 5.4s; }
+.fc-phase-b .poster-marked { animation-delay: 5.55s !important; }
+.fc-phase-b .poster-marked::before { animation-delay: 6s; }
+.fc-phase-b .fc-join { animation-delay: 6.6s; }
 .fc-text .poster-title { margin: 0 0 5vh; font-size: 12vh; line-height: 1.05; }
 .fc-join { margin: 0; font-size: 9vh; color: var(--crimson); animation: member-up 0.8s ease-out 1.4s both; }
 .fc-stage { flex: none; height: 84vh; aspect-ratio: 1; margin-right: 1vw; }

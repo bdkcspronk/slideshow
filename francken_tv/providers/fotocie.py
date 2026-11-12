@@ -13,7 +13,7 @@ class FotocieProvider(Provider):
 	title = "Fotocie"
 
 	def __init__(self, settings: dict) -> None:
-		self.seconds = settings.get("seconds", 8)   # the animation takes 2.6 s, the rest is the logo staying
+		self.seconds = settings.get("seconds", 14)   # the animation takes 2.6 s; the first text goes at 4.6 s, the second is complete at 7.4 s and stays for the rest
 
 	def slides(self, now: datetime) -> list[Slide]:
 		return [Slide("fotocie.html", self.seconds)]

@@ -1,6 +1,7 @@
 {#
 	The Fotocie's promo (providers/fotocie.py), on the navy poster like the other promos: the title with the crimson
-	highlighter, "Join the Fotocie!" under it, and on the right the Fotocie's logo with the animation of the Fotocie app's start screen
+	highlighter, "Join the Fotocie!" under it (then, after about 4.6 seconds, what the Fotocie does: it takes pictures at events and
+	puts them online), and on the right the Fotocie's logo with the animation of the Fotocie app's start screen
 	(splash.py): looking through a camera, the emblem zoomed in and out of focus, searching, finding its subject, then the flashbulb
 	fires. The lens is the app's own drawing (fotocie.svg, made in Affinity); what's seen through it is our current logo (the website's
 	public/logo/francken-logo.svg), zoomed in on the coat of arms in the middle of the lens, the balls cropped by it. See "The Fotocie" in style.css.
@@ -9,8 +10,14 @@
 	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
 	<div class="fc-body">
 		<div class="fc-text">
-			<h1 class="poster-title"><span>Do you like taking</span> <span class="poster-marked">pictures</span><span>?</span></h1>
-			<p class="fc-join">Join the Fotocie!</p>
+			<div class="fc-phase fc-phase-a">
+				<h1 class="poster-title"><span>Do you like taking</span> <span class="poster-marked">pictures</span><span>?</span></h1>
+				<p class="fc-join">Join the Fotocie!</p>
+			</div>
+			<div class="fc-phase fc-phase-b">
+				<h1 class="poster-title"><span>The</span> <span class="poster-marked">Fotocie</span> <span>takes pictures at events</span></h1>
+				<p class="fc-join">&hellip;and puts them online!</p>
+			</div>
 		</div>
 		<svg class="fc-stage" viewBox="0 0 1772 1772" aria-hidden="true">
 		<defs>
