@@ -57,6 +57,7 @@ DRUNK_BELOW = 40           # below this sober it sways and hiccups
 FULL = 92                  # above this a need can't be filled more ("I'm full!")
 NEGLECT_HOURS = 2          # one empty need takes all health in this long (two empty needs: twice as fast)
 RECOVER_HOURS = 4          # with no empty need, health comes back in this long
+CRY_SOUND = PROJECT_DIR / "francken_tv/static/pet/cry.wav"
 CRY_BELOW = 50             # health below which it cries now and then
 SHOW_BELOW = 50            # only in the slideshow once a bar (a need or health) is below this
 STREEP_FOOD = 1            # every snack or drink streeped in the streep system feeds it this much (pet_streep.py)...
@@ -356,7 +357,12 @@ class PetProvider(Provider):
 		return pet is None or bool(pet["died"]) or any(pet[key] < SHOW_BELOW for key in (*NEEDS, "health"))
 
 	def slides(self, now: datetime) -> list[Slide]:
-		return [self.make_slide(now)] if self.needs_attention(now) else []
+		if not self.needs_attention(now):
+			return []
+		slide = self.make_slide(now)
+		if slide.data["state"] == "awake":
+			slide.sound = CRY_SOUND   # one cry when it comes round again (not in the menu's preview)
+		return [slide]
 
 	def shortcut_slide(self, now: datetime) -> Slide | None:
 		return self.make_slide(now)   # the menu's preview: always
@@ -485,7 +491,7 @@ class PetCry(Job):
 	name = "pet_cry"
 	check_every = timedelta(seconds=10)
 
-	def __init__(self, pet: PetProvider, announcer: Announcer, sound: Path = PROJECT_DIR / "francken_tv/static/pet/cry.wav") -> None:
+	def __init__(self, pet: PetProvider, announcer: Announcer, sound: Path = CRY_SOUND) -> None:
 		self.pet = pet
 		self.announcer = announcer
 		self.sound = sound

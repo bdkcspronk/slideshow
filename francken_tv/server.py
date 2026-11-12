@@ -103,7 +103,7 @@ class SlideRenderer:
 		return {"html": self.render(slide), "seconds": slide.seconds, "refresh": slide.refresh_seconds}
 
 	def next_slide(self) -> dict:
-		return self.start(self.app.scheduler.next_slide(self.app.clock.now()))
+		return self.start(self.app.scheduler.next_slide(self.app.clock.now()), rotation=True)
 
 	def shortcut(self, key: str) -> dict | None:
 		"""The slide of the provider under a shortcut key, drawn now; {"message": ...} if it has nothing
@@ -121,7 +121,7 @@ class SlideRenderer:
 			return {"message": f"{provider.title or name}: {provider.nothing_to_show}"}
 		return self.start(slide)
 
-	def start(self, slide: Slide) -> dict:
+	def start(self, slide: Slide, rotation: bool = False) -> dict:
 		"""Render a slide and make it the current one."""
 		try:
 			response = self.as_json(slide)
@@ -137,6 +137,8 @@ class SlideRenderer:
 		self.current = slide
 		if slide.announce:
 			self.app.announcer.say_quote(slide.announce)
+		if rotation and slide.sound:
+			self.app.announcer.play_sound(slide.sound)
 		return response
 
 	def again(self, number: int) -> dict | None:

@@ -32,6 +32,7 @@ class Slide:
 	update: Callable[[datetime], dict] | None = None   # recomputes `data` while the slide is shown...
 	refresh_seconds: float | None = None               # ...this often (e.g. a ticking countdown)
 	announce: str | None = None        # quote text to read aloud when the slide appears
+	sound: Path | None = None          # a sound file to play once when the slide comes up in the rotation
 
 
 class Provider:
