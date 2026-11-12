@@ -1892,7 +1892,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-album { margin-top: 0.8vh; font-size: 2.8vh; opacity: 0.6; }
 /* The playing song's artist and album: one line each, sliding when too long (data-marquee); the title too (above). */
 .spotify-info > .spotify-artist, .spotify-info > .spotify-album { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.spotify-progress { margin-top: 4vh; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+/* The timeline is clickable (data-seek): a taller invisible area around the thin bar. */
+.spotify-seek { margin-top: 2vh; padding: 2vh 0; cursor: pointer; }
+.spotify-progress { margin-top: 0; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
 .spotify-times { display: flex; justify-content: space-between; margin-top: 1.2vh; font-size: 2.4vh; opacity: 0.75; font-variant-numeric: tabular-nums; }
 /* The bar and the elapsed time run on by themselves from --start to --total seconds (set by the
    template), so they keep moving between the server's updates; paused: they stand still. */

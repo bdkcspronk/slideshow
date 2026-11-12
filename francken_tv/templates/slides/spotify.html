@@ -21,9 +21,9 @@
 			<h1 class="spotify-title" data-marquee>{{ title }}</h1>
 			<div class="spotify-artist" data-marquee>{{ artist }}</div>
 			<div class="spotify-album" data-marquee>{{ album }}</div>
-			<div class="spotify-progress{{ ' paused' if not is_playing }}" style="--start: {{ elapsed_seconds }}; --total: {{ total_seconds }}; --percent: {{ percent }}%">
+			<div class="spotify-seek" data-seek="seek"><div class="spotify-progress{{ ' paused' if not is_playing }}" style="--start: {{ elapsed_seconds }}; --total: {{ total_seconds }}; --percent: {{ percent }}%">
 				<div class="spotify-bar"></div>
-			</div>
+			</div></div>
 			<div class="spotify-times{{ ' paused' if not is_playing }}" style="--start: {{ elapsed_seconds }}; --total: {{ total_seconds }}">
 				<span class="spotify-elapsed"></span><span>{{ total }}</span>
 			</div>

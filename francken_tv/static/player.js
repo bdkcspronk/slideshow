@@ -178,9 +178,14 @@ document.addEventListener("click", async (event) => {
 	const action = event.target.closest("[data-action]");
 	const key = event.target.closest("[data-key]");
 	const input = event.target.closest("[data-input-text]");
+	const seek = event.target.closest("[data-seek]");   // a song's timeline: the click position, 0-1, as the value
 	const selected = () => [...slide.querySelectorAll("[data-toggle].selected")];
 	if (input) {
 		clickInput(input, event);
+	} else if (seek) {
+		const box = seek.getBoundingClientRect();
+		const fraction = Math.max(0, Math.min(1, (event.clientX - box.left) / box.width));
+		sendAction(slide, seek.dataset.seek, [fraction.toFixed(4)], seek.dataset.provider);
 	} else if (toggle) {
 		const max = parseInt(slide.dataset.maxSelected || "1000", 10);
 		if (toggle.classList.contains("selected") || selected().length < max) toggle.classList.toggle("selected");

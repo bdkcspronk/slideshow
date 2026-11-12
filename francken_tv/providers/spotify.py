@@ -55,6 +55,7 @@ PAUSE_URL = API + "/me/player/pause"
 NEXT_URL = API + "/me/player/next"
 PREVIOUS_URL = API + "/me/player/previous"
 VOLUME_URL = API + "/me/player/volume"
+SEEK_URL = API + "/me/player/seek"
 VOLUME_STEP = 10             # in heard volume (see heard_volume)
 DB_PER_DECADE_HEARD = 0.6    # loudness heard ~ amplitude^0.6
 VOLUME_SETTLE_SECONDS = 4
@@ -868,6 +869,16 @@ class SpotifyProvider(Provider):
 			self.catch_up(now)
 			# The lyrics view's buttons send "lyrics" along, so it stays the lyrics view.
 			return (self.lyrics_slide() if values[:1] == ["lyrics"] else self.now_playing()), None
+		if name == "seek" and self.playing and self.playing.duration_ms:   # a click on the timeline: values[0] is 0-1
+			try:
+				fraction = max(0.0, min(1.0, float(values[0])))
+			except (IndexError, ValueError):
+				return None, None
+			error = self.command("PUT", f"{SEEK_URL}?position_ms={int(fraction * self.playing.duration_ms)}")
+			if error:
+				return None, error
+			self.catch_up(now)
+			return self.now_playing(), None
 		if name in ("volume_up", "volume_down") and self.playing and self.playing.volume is not None:
 			step = VOLUME_STEP if name == "volume_up" else -VOLUME_STEP
 			with self.volume_lock:   # quick taps arrive together: one after another, each from the last one
