@@ -19,9 +19,9 @@ class SocialsProvider(Provider):
 		self.seconds = settings.get("seconds", 15)   # everything is in after about 4 s
 		self.links = {
 			"whatsapp": settings.get("whatsapp", "https://chat.whatsapp.com/JhyvxwWNQU5IP9h4YK5CFp"),
-			"linkedin": settings.get("linkedin", "https://www.linkedin.com/company/t.f.v.-professor-francken/"),
-			"instagram": settings.get("instagram", "https://www.instagram.com/tfvprofessorfrancken/"),
-			"website": settings.get("website", "https://professorfrancken.nl/"),
+			"linkedin": settings.get("linkedin", "https://linkedin.com/company/t.f.v.-professor-francken"),
+			"instagram": settings.get("instagram", "https://instagram.com/tfvprofessorfrancken"),
+			"website": settings.get("website", "https://professorfrancken.nl"),
 		}
 
 	def slides(self, now: datetime) -> list[Slide]:

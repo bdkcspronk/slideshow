@@ -207,7 +207,7 @@ class InstagramProvider(Provider):
 			if not self.username:
 				return None
 			return {"username": self.username, "name": "", "picture": "", "followers": "", "post_count": "",
-				"link": f"https://www.instagram.com/{self.username}/", "scroll_seconds": 0, "posts": [], "tiles": 9}
+				"link": f"https://instagram.com/{self.username}", "scroll_seconds": 0, "posts": [], "tiles": 9}
 		username = self.profile.get("username", "")
 		return {
 			"username": username,
@@ -215,7 +215,7 @@ class InstagramProvider(Provider):
 			"picture": self.profile.get("picture", ""),
 			"followers": count(self.profile.get("followers_count")),
 			"post_count": count(self.profile.get("media_count")),
-			"link": f"https://www.instagram.com/{username}/",
+			"link": f"https://instagram.com/{username}",
 			"scroll_seconds": max(self.seconds - 5, 5),   # the posts scroll by, after a moment and with a moment left
 			"posts": [{"picture": post.picture, "likes": count(post.likes), "comments": count(post.comments), "caption": post.caption,
 				"ago": ago(post.time, now), "kind": post.kind, "video": post.video} for post in self.posts],

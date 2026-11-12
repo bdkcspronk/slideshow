@@ -73,7 +73,7 @@ class InstagramTest(unittest.TestCase):
 			self.provider.refresh(NOW)
 		[slide] = self.provider.slides(NOW)   # the account all the same, with empty tiles instead of posts
 		self.assertEqual((slide.data["username"], slide.data["link"], slide.data["posts"], slide.data["tiles"]),
-			("tfvprofessorfrancken", "https://www.instagram.com/tfvprofessorfrancken/", [], 9))
+			("tfvprofessorfrancken", "https://instagram.com/tfvprofessorfrancken", [], 9))
 		no_account = InstagramProvider({}, self.credentials, self.folder / "pictures", 20)
 		self.assertEqual(no_account.slides(NOW), [])
 
@@ -84,7 +84,7 @@ class InstagramTest(unittest.TestCase):
 		saved = json.loads(self.credentials.read_text())
 		self.assertEqual((saved["access_token"], saved["renewed_at"]), ("renewed", "2026-10-26T20:00:00"))
 		[slide] = self.provider.slides(NOW)
-		self.assertEqual((slide.data["username"], slide.data["followers"], slide.data["link"]), ("tfvprofessorfrancken", "812", "https://www.instagram.com/tfvprofessorfrancken/"))
+		self.assertEqual((slide.data["username"], slide.data["followers"], slide.data["link"]), ("tfvprofessorfrancken", "812", "https://instagram.com/tfvprofessorfrancken"))
 		self.assertEqual([post["likes"] for post in slide.data["posts"]], ["12.3K", ""])
 		self.assertRegex(slide.data["posts"][0]["ago"], r"^\d hours ago$")   # 17:00 UTC: how many hours depends on the time zone
 		self.assertTrue(all(post["picture"].startswith("/files/") for post in slide.data["posts"]))

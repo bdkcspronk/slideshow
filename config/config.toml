@@ -193,9 +193,9 @@ seconds = 15   # everything is in after about 4 s
 # Where to find us: a QR code for each of these links, as polaroids on a washing line (the names under them are in
 # templates/slides/socials.html). Leave one empty ("") to leave it out.
 whatsapp = "https://chat.whatsapp.com/JhyvxwWNQU5IP9h4YK5CFp"   # the announcement group
-linkedin = "https://www.linkedin.com/company/t.f.v.-professor-francken/"
-instagram = "https://www.instagram.com/tfvprofessorfrancken/"
-website = "https://professorfrancken.nl/"
+linkedin = "https://linkedin.com/company/t.f.v.-professor-francken"
+instagram = "https://instagram.com/tfvprofessorfrancken"
+website = "https://professorfrancken.nl"
 seconds = 15   # everything is in after about 4 s
 
 [streep]
