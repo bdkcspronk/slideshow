@@ -7,6 +7,7 @@ from pathlib import Path
 from francken_tv.providers.fotocie import FotocieProvider
 from francken_tv.providers.francken_vrij import FranckenVrijProvider
 from francken_tv.providers.francken_vrij_subscribe import FranckenVrijSubscribeProvider
+from francken_tv.providers.mscie import MscieProvider
 from francken_tv.providers.sjaarscie import SjaarscieProvider
 from francken_tv.providers.socials import LINE_SAG, SocialsProvider
 from francken_tv.providers.streep import PRODUCTS, TAPS, cursor_keyframes, taps, tiles
@@ -26,6 +27,19 @@ class SjaarscieTest(unittest.TestCase):
 		slides = SjaarscieProvider({}).slides(NOW)
 		self.assertEqual([slide.template for slide in slides], ["sjaarscie.html"])
 		self.assertGreater(slides[0].seconds, 5.3)
+
+
+class MscieTest(unittest.TestCase):
+	def test_one_slide_longer_than_the_animation(self):
+		slides = MscieProvider({}).slides(NOW)
+		self.assertEqual([slide.template for slide in slides], ["mscie.html"])
+		self.assertGreater(slides[0].seconds, 6.6)
+
+	def test_every_cap_is_thrown_from_a_hand_above_the_screen_and_is_gone_before_the_name(self):
+		for cap in MscieProvider({}).slides(NOW)[0].data["caps"]:
+			self.assertGreater(cap["y"], 0)
+			self.assertGreater(cap["peak"], cap["y"] + cap["size"])
+			self.assertLess(cap["delay"] + 0.4 + cap["seconds"], 5.4)
 
 
 class SocialsTest(unittest.TestCase):

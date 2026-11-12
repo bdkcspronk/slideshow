@@ -4378,3 +4378,56 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 @keyframes sj-show { 0% { opacity: 0; transform: translateY(-40%); } 20%, 80% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-60%); } }
 @keyframes sj-join { from { opacity: 0; transform: translateY(-30%); } to { opacity: 1; transform: translateY(-50%); } }
 @keyframes sj-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+
+/* The MScie (providers/mscie.py): black silhouettes first. Seven arms swing up from below the bottom of the screen, each holding a black graduation cap, and throw it
+   up once; the caps tumble and fall out of sight while the arms swing back down, with no text. The hand cocks back a little, flicks at the throw while the fingers open from a grip, then it settles and stays still. All gone by about 4.9 s. Then the name lands at 5.4 s and the tagline
+   fades in at 6.6 s. An arm turns around its shoulder (--shoulder under the edge of the screen), so it is always attached to the edge: --start is its angle when it
+   is out of sight, --lean its angle when the cap leaves (0.4 s after --d) and --over how far it swings on. The cap in the hand (.ms-held) is swapped for the
+   flying cap (.ms-cap) at that moment, from --lx and --ly. --x, --h, --s, --spin, --t are a cap's place, peak height, size, spin and flight time. Butler Free Bold. */
+@font-face { font-family: "Butler Free"; font-weight: 700; src: url("vendor/butler-free/Butler-Free-Bd.otf") format("opentype"); }
+.mscie-slide { position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 100%, #1d3a7a 0%, #0c1633 70%); color: #fff; font-family: "Butler Free", serif; font-weight: 700; text-align: center; }
+.ms-arm { position: absolute; bottom: calc(var(--shoulder) * -1); left: var(--x); width: calc(var(--reach) / 3); height: var(--reach); margin-left: calc(var(--reach) / -6); fill: #000; transform-origin: 50% 100%; transform: rotate(var(--start)); animation: ms-arm 1.7s linear var(--d) both; }
+.ms-arm > svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.ms-arm > .ms-held { left: 50%; top: auto; bottom: calc(100% - var(--grip)); width: calc(var(--s) * 1.25); height: var(--s); margin-left: calc(var(--s) * -0.62); animation: ms-held 0.4s steps(1, end) var(--d) forwards; }
+.ms-hand { transform-box: view-box; transform-origin: 50px 100px; animation: ms-hand 1.7s linear var(--d) both; }
+.ms-f { fill: none; stroke: #000; stroke-width: 11; stroke-linecap: round; transform-box: fill-box; transform-origin: 50% 100%; animation: ms-finger 1.7s linear var(--d) both; }
+.ms-thumb { stroke-width: 13; }
+.f1 { --g: 8deg; --o: -22deg; --r: -9deg; }
+.f2 { --g: 3deg; --o: -8deg; --r: -3deg; }
+.f3 { --g: -3deg; --o: 8deg; --r: 3deg; }
+.f4 { --g: -8deg; --o: 22deg; --r: 9deg; }
+.ms-thumb { --g: 30deg; --o: -16deg; --r: 0deg; }
+.ms-cap { position: absolute; bottom: 0; left: var(--x); width: calc(var(--s) * 1.25); height: var(--s); margin-left: calc(var(--s) * -0.62); fill: #000; transform: translateY(120%); animation: ms-throw var(--t) linear calc(var(--d) + 0.4s) forwards; }
+.ms-name { position: absolute; left: 0; right: 0; top: 34%; margin: 0; font-size: 32vh; line-height: 1; font-weight: 700; letter-spacing: 0.01em; opacity: 0;
+	/* warm metal, nearly flat: gold with only a slight darkening towards the bottom, and a faint glint that sweeps across once after it lands */
+	color: #d9a156; background: linear-gradient(105deg, transparent 42%, rgba(255, 244, 214, 0.3) 50%, transparent 58%) 130% 0 / 250% 100% no-repeat, linear-gradient(180deg, #ebc57a 0%, #dcaf63 55%, #d3a45a 100%);
+	-webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 1vh 3vh rgba(0, 0, 0, 0.5));
+	animation: ms-name 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) 5.4s both, ms-glint 1.4s ease-in-out 6.4s both; }
+.ms-cie { margin-left: -0.06em; }   /* "cie" closer to "MS" */
+.ms-tag { position: absolute; left: 5vw; right: 5vw; top: 72%; margin: 0; font-size: 5vh; color: #e2bb7e; text-shadow: 0 0.4vh 1.5vh rgba(0, 0, 0, 0.4); opacity: 0; animation: ms-fade 1s ease-out 6.6s both; }
+@keyframes ms-arm {
+	0% { transform: rotate(var(--start)); animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
+	23.5% { transform: rotate(var(--lean)); animation-timing-function: ease-out; }
+	30% { transform: rotate(var(--over)); animation-timing-function: linear; }
+	42% { transform: rotate(var(--over)); animation-timing-function: ease-in; }
+	100% { transform: rotate(var(--start)); }
+}
+@keyframes ms-hand {
+	0%, 18% { transform: rotate(calc(var(--side) * 8deg)); animation-timing-function: ease-in; }
+	23.5% { transform: rotate(calc(var(--side) * -12deg)); animation-timing-function: ease-out; }
+	38%, 100% { transform: rotate(0deg); }
+}
+@keyframes ms-finger {
+	0%, 17% { transform: rotate(var(--g)); animation-timing-function: ease-out; }
+	23.5% { transform: rotate(var(--o)); animation-timing-function: ease-in-out; }
+	38%, 100% { transform: rotate(var(--r)); }
+}
+@keyframes ms-held { from { visibility: visible; } to { visibility: hidden; } }
+@keyframes ms-throw {
+	0% { transform: translate(var(--lx), calc(var(--ly) * -1)) rotate(var(--lean)); animation-timing-function: cubic-bezier(0.15, 0.7, 0.4, 1); }
+	45% { transform: translateY(calc(var(--h) * -1)) rotate(var(--spin)); animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.4); }
+	100% { transform: translateY(120%) rotate(calc(var(--spin) * -1)); }
+}
+@keyframes ms-name { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes ms-fade { from { opacity: 0; transform: translateY(2vh); } to { opacity: 1; transform: none; } }
+@keyframes ms-glint { from { background-position: 130% 0, 0 0; } to { background-position: -30% 0, 0 0; } }

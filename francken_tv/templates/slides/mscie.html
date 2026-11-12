@@ -1,0 +1,39 @@
+{#
+	The MScie's promo (providers/mscie.py): the committee for master students, by master students. First only black silhouettes: seven arms
+	swing up from below the bottom of the screen (they turn around a shoulder under the edge, so each arm always starts at the edge), each holding a
+	graduation cap, and throw it up once; the caps tumble and fall out of sight with no text, their cords and tassels wiggling on the way, and the arms
+	swing back down. The hands grip the caps, flick and spread their fingers at the throw, and then settle. When the caps are gone the name lands, then the tagline. Butler Free Bold. See "The MScie" in style.css.
+#}
+<div class="slide mscie-slide" style="--arm: {{ arm }}vh; --reach: {{ reach }}vh; --shoulder: {{ shoulder }}vh; --grip: {{ grip }}vh">
+	<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+		<symbol id="mscie-cap" viewBox="0 0 200 160">
+			<path d="M48 80 L100 103 L152 80 V118 Q100 138 48 118 Z"/>
+			<path d="M0 52 L100 8 L200 52 L100 96 Z"/>
+			<g>
+				<animateTransform attributeName="transform" type="rotate" values="-16 30 60;16 30 60;-16 30 60" dur="0.55s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/>
+				<path d="M30 60 V112" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+				<g>
+					<animateTransform attributeName="transform" type="rotate" values="22 30 112;-22 30 112;22 30 112" dur="0.55s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/>
+					<circle cx="30" cy="114" r="6"/>
+					<path d="M24 118 H36 L38 150 H22 Z"/>
+				</g>
+			</g>
+		</symbol>
+	</svg>
+	{% for c in caps %}
+	<div class="ms-arm" style="--x: {{ c.left }}vw; --s: {{ c.size }}vh; --d: {{ c.delay }}s; --start: {{ c.start }}deg; --side: {{ (c.start / 100)|int }}; --lean: {{ c.lean }}deg; --over: {{ c.over }}deg">
+		<svg viewBox="0 0 100 300" aria-hidden="true">
+			<path d="M33 100 H67 L79 300 H21 Z"/>
+			<g class="ms-hand">
+				<rect x="22" y="58" width="56" height="62" rx="16"/>
+				<path class="ms-f f1" d="M30 70 V26"/><path class="ms-f f2" d="M43 66 V10"/><path class="ms-f f3" d="M57 66 V14"/><path class="ms-f f4" d="M70 72 V34"/>
+				<g transform="translate(27 104) rotate(-30)"><path class="ms-f ms-thumb" d="M0 0 V-40"/></g>
+			</g>
+		</svg>
+		<svg class="ms-held" viewBox="0 0 200 160" aria-hidden="true"><use href="#mscie-cap"/></svg>
+	</div>
+	<svg class="ms-cap" viewBox="0 0 200 160" aria-hidden="true" style="--x: {{ c.left }}vw; --h: {{ c.peak }}vh; --s: {{ c.size }}vh; --spin: {{ c.spin }}deg; --lean: {{ c.lean }}deg; --lx: {{ c.x }}vh; --ly: {{ c.y }}vh; --d: {{ c.delay }}s; --t: {{ c.seconds }}s"><use href="#mscie-cap"/></svg>
+	{% endfor %}
+	<h1 class="ms-name">MS<span class="ms-cie">cie</span></h1>
+	<p class="ms-tag">The committee for master students, by master students</p>
+</div>
