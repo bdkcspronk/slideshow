@@ -75,6 +75,13 @@ class NewsProviderTest(unittest.TestCase):
 		self.provider.news = {"BBC": [Headline("B", None)]}       # NU.nl gone after a refresh: the first feed instead
 		self.assertEqual(slide.update(SUNDAY_EVENING)["feed"], "BBC")
 
+	def test_the_outlets_can_be_tapped_to_switch(self):
+		self.provider.news = {"NOS": [Headline("A", None)], "BBC": [Headline("B", None)]}
+		slide, _ = self.provider.action("news", ["BBC"], SUNDAY_EVENING)
+		self.assertEqual((slide.template, slide.data["feed"], slide.data["feeds"]), ("news.html", "BBC", ["NOS", "BBC"]))
+		template = (Path(__file__).parent.parent / "francken_tv/templates/slides/news.html").read_text()
+		self.assertIn('data-action="news" data-value="{{ name }}"', template)   # each outlet is a button
+
 	def test_open_an_article_and_go_back(self):
 		long = "A sentence that is long enough to count as article text, not a menu item."
 		self.provider.news = {
