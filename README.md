@@ -118,7 +118,11 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
   unless "Pause until unpaused" is on in the settings), `m` mute/unmute all sound,
   `1` Daily puzzles, `2` Spotify, `3` today's activity chart, `4`-`7` news, weather, buses, timetable, `8` the Francken pet (change these under `[shortcuts]` in
   `config/config.toml`).
-- **Esc** opens the menu: live previews of those slide types (arrow keys + Enter, or click), plus
+- **Esc** opens the menu. A row of tabs on top holds every slide type in groups (What's on, Today, The room,
+  Puzzles, Music, ... the same groups as the buttons of the emulator, `GROUPS` in `francken_tv/menu.py`): ←/→ choose
+  a group and show its slides, ↓ goes into them and Enter opens one (↑ goes back to the tabs; slides with nothing to
+  show right now are greyed out). The first tab, **Quick**, is the slide types under `[shortcuts]` with their number
+  keys (the number keys work in every tab). The menu opens on the group it was last on. Below the tabs:
   - **Settings**: mute all sound, read quotes aloud, greet people, volume, slide speed, which slide
     types are shown, start one or all of today's puzzles over, reload `devices.json`. Volume and
     mute are the TV PC's main sound output (Spotify too; needs `wpctl` or `pactl`, standard on

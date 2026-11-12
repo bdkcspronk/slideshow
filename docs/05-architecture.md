@@ -43,7 +43,7 @@ prepared. That is why one slow or broken website never freezes the TV.
 | `server.py` | the web server: `/`, `/status`, `/preview/<name>`, the actions of interactive slides |
 | `updater.py` | pulls new commits from GitHub, runs the tests, restarts |
 | `settings.py` | the choices made on the TV (Esc → Settings), saved in `data/settings.json` |
-| `menu.py` | the Esc menu |
+| `menu.py` | the Esc menu, and `GROUPS`: the slide types in groups (the menu's tabs, the emulator's and the gallery's buttons) |
 | `announcer.py`, `line_out.py`, `system_volume.py` | sound: text-to-speech, line-out, volume |
 | `sniffer.py`, `presence_store.py`, `devices.py` | presence: serial from the ESP32, the database, who is who |
 | `static/player.js` | the browser side; you shouldn't need to touch it |
