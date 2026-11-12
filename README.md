@@ -21,6 +21,7 @@ It shows:
 | &nbsp;&nbsp;Buses from Aletta Jacobshal | OVapi | `providers/buses.py` |
 | &nbsp;&nbsp;Today's Applied Physics timetable | rooster.rug.nl | `providers/timetable.py` |
 | The confidential contact persons: who they are and how to reach them (left out without the data file) | `config/confidential.json` (personal data, not in git) | `providers/confidential.py` |
+| The emergency response officers: round photos with their names (left out without pictures) | pictures in `media/ERO/`, the file name is the name | `providers/ero.py` |
 | The extern: "Internship? Job? Thesis?" and how to reach them (left out without the data file) | `config/extern.json` (personal data, not in git) | `providers/extern.py` |
 | A random quote (read aloud) | the quotes Google Sheet | `providers/quote.py` |
 | The commandment of the week by Jeff de Hosson, our honorary member (the next one each Monday) | `config/commandments.txt` | `providers/commandments.py` |

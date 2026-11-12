@@ -25,6 +25,7 @@ from .providers.books import BooksProvider
 from .providers.catfishing import CatfishingProvider
 from .providers.commandments import CommandmentsProvider
 from .providers.confidential import ConfidentialProvider
+from .providers.ero import EroProvider
 from .providers.extern import ExternProvider
 from .providers.compucie import CompucieProvider
 from .providers.borrelcie import BorrelcieProvider
@@ -190,6 +191,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		QuoteProvider(config.get("quote", {}), DATA_DIR / "quotes.csv", announcer, seconds),
 		CommandmentsProvider(config.get("commandments", {}), seconds),
 		ConfidentialProvider(config.get("confidential", {}), seconds),
+		EroProvider(config.get("ero", {}), seconds),
 		ExternProvider(config.get("extern", {}), seconds),
 		PollProvider(config.get("poll", {}), seconds, DATA_DIR / "poll.json"),
 		pet,

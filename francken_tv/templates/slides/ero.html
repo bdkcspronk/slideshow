@@ -1,0 +1,14 @@
+{# The emergency response officers (providers/ero.py), after the ERO poster: the Francken emblem on its striped
+   floor and the gold "premium water" (ero_background.svg, cut from the poster) over a sky-blue half and the
+   repeated words, the round photos on the left, as on the crate, popping in one after the other (--i), the name under each. #}
+<div class="slide ero-slide">
+	{% include "ero_background.svg" %}
+	<div class="ero-people" style="--count: {{ officers | length }}; --size: {{ {1: 34, 2: 32, 3: 22, 4: 27}.get(officers | length, 21) }}vh">
+		{% for officer in officers %}
+		<figure class="ero-person" style="--i: {{ loop.index0 }}">
+			<img src="{{ officer.photo }}" alt="">
+			<figcaption>{{ officer.name }}</figcaption>
+		</figure>
+		{% endfor %}
+	</div>
+</div>

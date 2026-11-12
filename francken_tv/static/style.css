@@ -1122,6 +1122,26 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 @keyframes confidential-in { from { opacity: 0; transform: translateY(1.5vh); } }
 @keyframes confidential-rise { from { opacity: 0; transform: translateY(12vh) scale(0.95); } }
 
+/* The emergency response officers, after the ERO poster: its emblem, floor and gold lettering come from
+   templates/ero_background.svg (cut from the poster, with the repeated words and the sky-blue half); the
+   round photos below pop in one after the other. */
+@font-face { font-family: "Bebas Neue"; font-weight: 400; src: url("vendor/bebas-neue/bebas-neue-400.woff2") format("woff2"); }
+.ero-slide {
+	background: #fff;
+	color: #1e1c1a;
+	font-family: "Bebas Neue", sans-serif;
+	position: relative;
+	overflow: hidden;
+}
+.ero-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ero-emblem { animation: ero-fade 1.2s ease-out both; }
+.ero-people { position: absolute; left: 2vw; top: 0; bottom: 0; width: 44vw; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 3vh 2.5vw; }
+.ero-person { width: var(--size); margin: 0; display: flex; flex-direction: column; align-items: center; animation: ero-pop 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(0.5s + var(--i) * 0.3s) both; }
+.ero-person img { width: var(--size); height: var(--size); box-sizing: border-box; border: 0.6vh solid #1a1129; border-radius: 50%; object-fit: cover; background: #fff; }
+.ero-person figcaption { margin-top: 0.8vh; font-size: min(6.5vh, calc(var(--size) / 3.2)); line-height: 1; letter-spacing: 0.04em; text-align: center; text-transform: uppercase; white-space: nowrap; color: #1e1c1a; }
+@keyframes ero-fade { from { opacity: 0; } }
+@keyframes ero-pop { from { opacity: 0; transform: translateY(8vh) scale(0.7); } }
+
 /* The extern: the poster it replaces, live. Everything is measured on its 1920 x 1080 grid (--px), over
    its own background pattern; the questions pop up one after the other, the photo slides in from the
    right, then the name and the contact details; then it all stands still. */
