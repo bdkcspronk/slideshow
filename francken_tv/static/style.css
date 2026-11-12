@@ -4357,3 +4357,21 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	98.08% { opacity: 0.001; }
 	100.00% { opacity: -0.000; }
 }
+
+/* The Sjaarscie (providers/sjaarscie.py): baby blue above and pink below a smooth S-curve. In the middle of the screen the first question
+   comes at 0.3 s and goes at 2.3 s, the second comes at 2.8 s and goes at 4.8 s, then the Zwitsal baby and "Join the Sjaarscie!" (5.3 s) stay.
+   All in Source Serif Pro Bold. */
+@font-face { font-family: "Source Serif Pro"; font-weight: 700; src: url("vendor/source-serif-pro/SourceSerifPro-Bold.otf") format("opentype"); }
+.sjaarscie-slide { position: relative; overflow: hidden; background: #a9d4f5; color: #fff; text-shadow: 0 0.5vh 2vh rgba(60, 90, 140, 0.45); font-family: "Source Serif Pro", serif; font-weight: 700; text-align: center; }
+.sj-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sj-bg path { fill: #f8b4cf; }
+.sj-q { position: absolute; left: 5vw; right: 5vw; top: 50%; margin: 0; font-size: 11vh; line-height: 1.1; transform: translateY(-50%); }
+.sj-q { opacity: 0; }
+.sj-q1 { animation: sj-show 2s ease-in-out 0.3s both; }
+.sj-q2 { animation: sj-show 2s ease-in-out 2.8s both; }
+.sj-join { top: 77%; font-size: 12vh; animation: sj-join 0.9s ease-out 5.3s both; }
+.sj-logo { position: absolute; left: 50%; top: 7vh; height: 56vh; aspect-ratio: 1; margin-left: -28vh; filter: drop-shadow(0 1vh 2vh rgba(60, 90, 140, 0.25)); opacity: 0; animation: sj-pop 1s cubic-bezier(0.2, 0.9, 0.3, 1.25) 5.3s both; }
+.sj-logo path { fill: #fff; }
+@keyframes sj-show { 0% { opacity: 0; transform: translateY(-40%); } 20%, 80% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-60%); } }
+@keyframes sj-join { from { opacity: 0; transform: translateY(-30%); } to { opacity: 1; transform: translateY(-50%); } }
+@keyframes sj-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
