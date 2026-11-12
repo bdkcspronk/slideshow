@@ -73,6 +73,22 @@ Each slide type is one Python file plus one small HTML template in `francken_tv/
 4. Add its name to `rotation.order` in `config/config.toml`.
 5. Check it at http://127.0.0.1:8080/preview/your_name.
 
+## Setting it up on a new PC
+
+On Ubuntu/Debian:
+
+```sh
+git clone https://github.com/bdkcspronk/slideshow ~/slideshow
+~/slideshow/deploy/setup.sh
+```
+
+[deploy/setup.sh](deploy/setup.sh) installs the packages (`apt`), makes the Python environment (`.venv`, from
+`requirements.txt`), sets up the Spotify speaker and starts the services. The files that are not in git (posters,
+personal data, logins in `~/.config/slideshow/`) are not included: copy them by hand. `--no-services` only installs
+packages and the environment (for a
+laptop: then use `./start.sh`). Every step by hand, and what each account needs: [docs/06-tv-pc.md](docs/06-tv-pc.md) and
+[docs/02-accounts-and-secrets.md](docs/02-accounts-and-secrets.md).
+
 ## Running it on your laptop
 
 ```sh
