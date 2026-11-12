@@ -136,6 +136,6 @@ class TimetableProvider(Provider):
 			day = start_day + timedelta(days=offset)
 			columns = {column: [lecture for lecture in lectures if lecture.start.date() == day and lecture.end > now] for column, lectures in self.timetable.items()}
 			if any(columns.values()):
-				label = "today" if day == now.date() else "tomorrow" if day == now.date() + timedelta(days=1) else day.strftime("%A %-d %B")
+				label = "today" if day == now.date() else "tomorrow" if day == now.date() + timedelta(days=1) else f"{day:%A} {day.day} {day:%B}"
 				return {"name": self.timetable_name, "day": label, "columns": columns, "now": now}
 		return None

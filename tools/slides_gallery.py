@@ -408,7 +408,7 @@ def page(project: Path, slides: list[dict], assets: list[str], tiles: dict, now:
 	frame = FRAME.replace("/*STYLE*/", leaflet_css + "\n" + style).replace("/*SCRIPTS*/", scripts.replace("</script", "<\\/script"))
 	grotesk = base64.b64encode((static / "vendor/familjen-grotesk/familjen-grotesk-700.woff2").read_bytes()).decode()
 	data = {"slides": slides, "assets": assets, "tiles": tiles, "frame": frame,
-		"drawn": now.strftime("%A %-d %B %Y, %H:%M")}
+		"drawn": f"{now:%A} {now.day} {now:%B %Y, %H:%M}"}
 	return (GALLERY.replace("/*GROTESK*/", grotesk)
 		.replace("/*DATA*/", json.dumps(data).replace("</", "<\\/")))
 

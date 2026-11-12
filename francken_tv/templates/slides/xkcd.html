@@ -2,7 +2,7 @@
 <div class="slide xkcd-slide">
 	<header>
 		<h1>{{ comic.title }}</h1>
-		<span>xkcd #{{ comic.number }} &middot; {{ "today" if comic.day == today else comic.day.strftime("%A %-d %B") }}</span>
+		<span>xkcd #{{ comic.number }} &middot; {{ "today" if comic.day == today else comic.day.strftime("%A") ~ " " ~ comic.day.day ~ " " ~ comic.day.strftime("%B") }}</span>
 	</header>
 	<img class="xkcd-comic" src="{{ comic.image }}" alt="{{ comic.alt }}">
 	{% if comic.alt %}<p class="xkcd-alt">{{ comic.alt }}</p>{% endif %}

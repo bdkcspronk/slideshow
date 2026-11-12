@@ -18,7 +18,7 @@
 				<div class="activity-title">{{ activity.title }}</div>
 				<div class="activity-details">
 					{% if activity.day == today %}Today{% elif activity.day < today %}Going on{% else %}{{ activity.day.strftime("%A") }}{% endif %}
-					{% if activity.end %}&middot; until {{ activity.end.strftime("%A %-d %B") }}{% endif %}
+					{% if activity.end %}&middot; until {{ activity.end.strftime("%A") }} {{ activity.end.day }} {{ activity.end.strftime("%B") }}{% endif %}
 					{% if activity.time %}&middot; {{ activity.time }}{% endif %}
 					{% if activity.location %}&middot; {{ activity.location }}{% endif %}
 				</div>

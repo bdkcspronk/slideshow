@@ -306,7 +306,7 @@ class CatfishingProvider(Provider):
 			"results": [answer.result for answer in game.answers] + ["open"] * (len(game.articles) - len(game.answers)),
 			"summary": list(zip(game.articles, game.answers)) if game.done else [],
 			"today": game.day == now.date(),
-			"day_label": game.day.strftime("%-d %b %Y"),
+			"day_label": f"{game.day.day} {game.day:%b %Y}",
 			"highscore": self.highscores.best(self.name, game.day) if game is self.game else None,
 		})
 
@@ -365,7 +365,7 @@ class CatfishingProvider(Provider):
 				articles = self.articles(day)
 			except requests.RequestException as error:
 				log.warning("Could not load the catfishing game of %s: %s", day, error)
-				return self.archive_slide(day, now, error=f"The game of {day:%-d %B} can't be loaded right now."), None
+				return self.archive_slide(day, now, error=f"The game of {day.day} {day:%B} can't be loaded right now."), None
 			if not (self.archive_game and self.archive_game.day == day):
 				self.archive_game = self.restore(Game(day, articles), self.history.get(day.isoformat()))
 			self.day_shown = day

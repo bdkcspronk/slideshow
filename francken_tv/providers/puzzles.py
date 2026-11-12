@@ -67,7 +67,7 @@ class HighScores:
 
 	def text(self, name: str) -> str:
 		best = self.best(name)
-		return f"Highscore: {best['score']:,} \u00b7 {best['day']:%-d %b}" if best else ""
+		return f"Highscore: {best['score']:,} \u00b7 {best['day'].day} {best['day']:%b}" if best else ""
 
 
 def load_state(path: Path | None, day: date) -> dict | None:
