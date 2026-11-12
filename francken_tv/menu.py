@@ -1,13 +1,15 @@
 """The menu that Esc opens in the browser (player.js, "The menu"): previews of the slide types in
-[shortcuts] (config.toml), the settings (settings.py) and the power buttons.
+[shortcuts] (config.toml), every slide type in groups (GROUPS), the settings (settings.py) and the power buttons.
 
-The browser gets everything it shows from menu_data() (GET /api/menu) and sends what was chosen
-to command() (POST /api/menu).
+The browser gets everything it shows from menu_data() (GET /api/menu), the groups' previews one group at a time
+from group_status() (GET /api/menu/group/<title>), and sends what was chosen to command() (POST /api/menu).
+The groups are also the emulator's (tools/emulator.py) and the slides gallery's (tools/slides_gallery.py).
 """
 
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
@@ -18,6 +20,36 @@ if TYPE_CHECKING:
 	from .slides import Provider
 
 log = logging.getLogger(__name__)
+
+# The slide types in groups: the groups of the menu (Esc) and of the emulator's and the gallery's buttons, in this
+# order. A slide belongs to the first group that names its key, or its key up to the number ("news" for news-2);
+# anything else lands in "Other". The key is the slide type's name with - for _, or what a slide is called in the
+# gallery: poster, event-photo, rain, spotify-lyrics.
+GROUPS = [
+	("What's on", ["poster", "activities", "practice"]),
+	("Today", ["news", "weather", "rain", "buses", "timetable"]),
+	("The room", ["presence", "leaderboard", "poll", "streep"]),
+	("Puzzles", ["puzzles", "connections", "wordle", "catfishing", "timeguessr"]),
+	("Music", ["spotify", "spotify-lyrics", "lyric-video"]),
+	("Photos and socials", ["event-photo", "event-photos", "instagram", "socials"]),
+	("Committees", ["compucie", "borrelcie", "fotocie"]),
+	("Contacts", ["confidential", "ero", "extern"]),
+	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
+	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine"]),
+	("Full screen", ["bieruur-countdown", "bieruur", "vrijmibo"]),
+	("Other", []),
+]
+# More slides to jump to after a slide type's own (not in the rotation by themselves)
+EXTRA = {"weather": [("rain", "Rain warning")], "spotify": [("spotify-lyrics", "Spotify lyrics")],
+	"puzzles": [("connections", ""), ("wordle", ""), ("catfishing", ""), ("timeguessr", "")]}
+KEYS = {"images": "poster", "event_photos": "event-photo"}   # slide types called differently in GROUPS
+
+
+def group_of(key: str) -> int:
+	for number, (_, keys) in enumerate(GROUPS):
+		if key in keys or re.sub(r"-\d+$", "", key) in keys:
+			return number
+	return len(GROUPS) - 1
 
 
 def title(provider: Provider) -> str:
@@ -32,6 +64,58 @@ def has_slide(provider: Provider, app: App) -> bool:
 		return False
 
 
+def channels(app: App) -> list[dict]:
+	"""Every slide type of the rotation, and the EXTRA ones after it, as {"name", "label", "group"} (the group's
+	number in GROUPS), sorted by group; within a group in the order of the rotation."""
+	found = []
+	for provider in app.scheduler.providers:
+		for name, label in [(provider.name, ""), *EXTRA.get(provider.name, [])]:
+			known = app.providers.get(name)
+			label = label or (known.title if known else "") or name.replace("_", " ").capitalize()
+			found.append({"name": name, "label": label, "group": group_of(KEYS.get(name, name.replace("_", "-")))})
+	found.sort(key=lambda channel: channel["group"])   # stable
+	return found
+
+
+def groups(app: App) -> list[dict]:
+	"""The groups that have slides: {"title", "channels": [{"name", "label"}]}."""
+	every = channels(app)
+	return [{"title": title_, "channels": [{"name": c["name"], "label": c["label"]} for c in every if c["group"] == number]}
+		for number, (title_, _) in enumerate(GROUPS) if any(c["group"] == number for c in every)]
+
+
+def slide_for(app: App, name: str):
+	"""The slide to show right away for a slide type (or an EXTRA one); None if it has nothing to show."""
+	now = app.clock.now()
+	if name == "rain":
+		return app.providers["weather"].rain_preview(now)
+	if name == "spotify-lyrics":
+		return app.providers["spotify"].lyrics_slide()
+	return app.providers[name].shortcut_slide(now)
+
+
+def group_status(app: App, group_title: str) -> list[dict] | None:
+	"""For each slide of a group: {"name", "available", "empty"}, so the menu can grey out the ones with nothing to
+	show right now (and say why). None for an unknown group."""
+	for group in groups(app):
+		if group["title"] == group_title:
+			break
+	else:
+		return None
+	status = []
+	for channel in group["channels"]:
+		name = channel["name"]
+		provider = app.providers.get(name)
+		try:
+			available = (slide_for(app, name) is not None) if name in ("rain", "spotify-lyrics") else has_slide(provider, app)
+		except Exception:
+			log.exception("Preview of %s failed", name)
+			available = False
+		status.append({"name": name, "available": available,
+			"empty": getattr(provider, "nothing_to_show", "Nothing to show right now")})
+	return status
+
+
 def menu_data(app: App) -> dict:
 	now = app.clock.now()
 	app.read_sound()
@@ -43,6 +127,7 @@ def menu_data(app: App) -> dict:
 			"empty": provider.nothing_to_show})
 	return {
 		"previews": previews,
+		"groups": groups(app),
 		"settings": asdict(app.settings),
 		"speeds": SPEEDS,
 		"slide_types": [{"name": p.name, "title": title(p)} for p in app.scheduler.providers],

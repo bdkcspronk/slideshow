@@ -7,6 +7,8 @@
 	/api/slide/<n>  a recent slide again, freshly drawn (going back with the left arrow)
 	/api/mute       POST: toggle muting all sound (the m key)
 	/api/menu       the menu (Esc): GET what it shows, POST a choice (see menu.py)
+	/api/menu/group/<title>   which slides of a group have something to show right now
+	/api/shortcut/go-<name>   the slide of any slide type (the menu's groups), right away
 	/api/action     POST: a button on an interactive slide (the puzzle) was clicked
 	/api/takeover   whether a takeover should interrupt a paused interactive slide
 	/api/overlay    something to show over whatever slide is on, for a few seconds (the pet thanking for a streep)
@@ -121,6 +123,22 @@ class SlideRenderer:
 			return {"message": f"{provider.title or name}: {provider.nothing_to_show}"}
 		return self.start(slide)
 
+	def go(self, name: str) -> dict | None:
+		"""The slide of any slide type (the groups in the menu), drawn now; {"message": ...} if it has nothing to
+		show, None if there's no such slide type."""
+		channel = next((channel for channel in menu.channels(self.app) if channel["name"] == name), None)
+		if channel is None:
+			return None
+		try:
+			slide = menu.slide_for(self.app, name)
+		except Exception:
+			log.exception("Going to %s failed", name)
+			slide = None
+		if slide is None:
+			provider = self.app.providers.get(name)
+			return {"message": f"{channel['label']}: {getattr(provider, 'nothing_to_show', 'Nothing to show right now')}"}
+		return self.start(slide)
+
 	def start(self, slide: Slide, rotation: bool = False) -> dict:
 		"""Render a slide and make it the current one."""
 		try:
@@ -212,13 +230,20 @@ class Handler(BaseHTTPRequestHandler):
 		elif path == "/api/next":
 			self.send_json(renderer.next_slide())
 		elif path.startswith("/api/shortcut/"):
-			slide = renderer.shortcut(path.removeprefix("/api/shortcut/"))
+			key = path.removeprefix("/api/shortcut/")
+			slide = renderer.go(key.removeprefix("go-")) if key.startswith("go-") else renderer.shortcut(key)
 			if slide is None:
 				self.send_error(HTTPStatus.NOT_FOUND)
 			else:
 				self.send_json(slide)
 		elif path == "/api/menu":
 			self.send_json(menu.menu_data(self.server.app))
+		elif path.startswith("/api/menu/group/"):
+			status = menu.group_status(self.server.app, path.removeprefix("/api/menu/group/"))
+			if status is None:
+				self.send_error(HTTPStatus.NOT_FOUND)
+			else:
+				self.send_json(status)
 		elif path == "/api/takeover":
 			now = self.server.app.clock.now()
 			due = any(t.interrupts_paused and t.due(now) for t in self.server.app.takeovers.values())

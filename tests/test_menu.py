@@ -121,6 +121,56 @@ class MenuTest(unittest.TestCase):
 		self.assertEqual(data["power"], ["shutdown"])
 
 
+class GroupsTest(unittest.TestCase):
+	"""The menu's tabs: every slide type of the rotation in the groups of menu.GROUPS."""
+
+	def setUp(self):
+		class Slides(Provider):
+			def __init__(self, name, title="", has=True):
+				self.name, self.title, self.has = name, title, has
+
+			def slides(self, now):
+				return [Slide("empty.html", 5)] if self.has else []
+
+		names = ["images", "weather", "pet", "ero", "fotocie", "spotify", "event_photos", "mystery"]
+		self.providers = {name: Slides(name, has=name != "ero") for name in names}
+		self.providers["pet"].title = "Francken pet"
+		self.providers["weather"].rain_preview = lambda now: Slide("empty.html", 5)
+		self.providers["spotify"].lyrics_slide = lambda: None
+		self.app = SimpleNamespace(clock=SimpleNamespace(now=lambda: NOW), providers=self.providers, shortcuts={},
+			scheduler=SimpleNamespace(providers=[self.providers[name] for name in names]))
+
+	def test_slide_types_are_sorted_into_the_groups(self):
+		found = {group["title"]: [channel["name"] for channel in group["channels"]] for group in menu.groups(self.app)}
+		self.assertEqual(found, {"What's on": ["images"], "Today": ["weather", "rain"], "Music": ["spotify", "spotify-lyrics"],
+			"Photos and socials": ["event_photos"], "Committees": ["fotocie"], "Contacts": ["ero"], "Fun": ["pet"], "Other": ["mystery"]})
+		self.assertEqual([group["title"] for group in menu.groups(self.app)], [  # in the order of GROUPS; empty groups are left out
+			"What's on", "Today", "Music", "Photos and socials", "Committees", "Contacts", "Fun", "Other"])
+
+	def test_the_labels_are_the_titles_or_made_from_the_names(self):
+		labels = {channel["name"]: channel["label"] for channel in menu.channels(self.app)}
+		self.assertEqual((labels["pet"], labels["event_photos"], labels["rain"]), ("Francken pet", "Event photos", "Rain warning"))
+
+	def test_which_slides_of_a_group_have_something_to_show(self):
+		self.assertEqual([(entry["name"], entry["available"]) for entry in menu.group_status(self.app, "Contacts")], [("ero", False)])
+		self.assertEqual([(entry["name"], entry["available"]) for entry in menu.group_status(self.app, "Music")],
+			[("spotify", True), ("spotify-lyrics", False)])   # no lyrics to show
+		self.assertEqual([(entry["name"], entry["available"]) for entry in menu.group_status(self.app, "Today")],
+			[("weather", True), ("rain", True)])
+		self.assertIsNone(menu.group_status(self.app, "Nothing"))
+
+	def test_the_groups_are_in_the_menu_data(self):
+		self.app.providers["puzzles"] = SimpleNamespace(cards=lambda now: [])
+		self.app.settings, self.app.power_commands, self.app.read_sound = Settings(), {}, lambda: None
+		data = menu.menu_data(self.app)
+		self.assertEqual(data["groups"][0], {"title": "What's on", "channels": [{"name": "images", "label": "Images"}]})
+
+	def test_a_slide_type_is_jumped_to_by_its_name(self):
+		self.assertEqual(menu.slide_for(self.app, "pet").template, "empty.html")
+		self.assertIsNone(menu.slide_for(self.app, "spotify-lyrics"))
+		self.assertEqual(menu.slide_for(self.app, "rain").template, "empty.html")
+
+
 class SystemVolumeTest(unittest.TestCase):
 	def volume(self, tool, outputs):
 		volume = SystemVolume.__new__(SystemVolume)
