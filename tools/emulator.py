@@ -93,8 +93,11 @@ def main() -> None:
 	with tempfile.TemporaryDirectory(prefix="francken-emulator-") as folder:
 		copy = Path(folder) / "slideshow"
 		shutil.copytree(ROOT, copy, ignore=lambda _, names: [n for n in names if n in slides_gallery.LEFT_OUT])
-		if not (args.fake_ero or args.artifact) and (ROOT / "media" / "ERO").is_dir():
-			shutil.copytree(ROOT / "media" / "ERO", copy / "media" / "ERO")   # the copy has no media/: slides_gallery makes up the rest
+		if not (args.fake_ero or args.artifact):   # the real officers, however many: none (or no folder) leaves the slide out
+			if (ROOT / "media" / "ERO").is_dir():
+				shutil.copytree(ROOT / "media" / "ERO", copy / "media" / "ERO")   # the copy has no media/: slides_gallery makes up the rest
+			else:
+				(copy / "media" / "ERO").mkdir(parents=True)
 		subprocess.run([sys.executable, "tools/emulator.py", "--inside", str(pyodide), "--out", str(out), "--http-cache", str(ROOT / "data" / "cache" / "emulator_http"), "--time", now.isoformat(),
 			*(["--artifact"] if args.artifact else []), *(["--fresh"] if args.fresh else [])], cwd=copy, check=True)
 	print(f"Written: {out}/", flush=True)

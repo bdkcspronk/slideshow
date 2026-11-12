@@ -164,7 +164,7 @@ def fake_files(project: Path, now: datetime) -> None:
 		frames.append(frame)
 	frames[0].save(project / "media/vrijmibo.gif", save_all=True, append_images=frames[1:], duration=150, loop=0)
 	photo(project / "media/extern/photo.jpg", (800, 1000), 9)
-	real_ero = any((project / "media/ERO").glob("*.png"))   # copied in by emulator.py --real-ero
+	real_ero = (project / "media/ERO").is_dir()   # made by emulator.py for the real officers, however few (not with --fake-ero)
 	for i, name in enumerate(() if real_ero else ("Sam", "Noor", "Jesse", "Robin", "Eva")):
 		photo(project / f"media/ERO/{name}.png", (600, 600), i + 3)
 	(project / "config/confidential.json").write_text(json.dumps({
