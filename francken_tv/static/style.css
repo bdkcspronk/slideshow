@@ -2994,6 +2994,18 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .menu-card:focus .menu-preview, .menu-card:hover:not([disabled]) .menu-preview { outline-color: var(--menu-text); transform: scale(1.03); }
 .menu-card[disabled] { opacity: 0.55; }
 
+/* The groups (the same as in the emulator): a row of tabs above the cards. Left and right choose one (player.js). */
+.menu-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 1vh 0.8vw; width: 94vw; margin-bottom: 4vh; }
+.menu-tab { padding: 1.1vh 1.5vw; border-radius: 99vh; background: var(--menu-raised); color: var(--menu-muted); font-size: 2.5vh; font-weight: bold; white-space: nowrap; }
+.menu-tab[aria-selected="true"] { background: var(--menu-accent); color: #ffffff; }
+.menu-tab:focus, .menu-tab:hover { box-shadow: 0 0 0 0.4vh var(--menu-text); color: var(--menu-text); }
+.menu-tab-content { min-height: 38vh; display: flex; align-items: flex-start; justify-content: center; }
+.menu-page-overview .menu-card { width: min(27vw, calc((94vw - (var(--columns) - 1) * var(--gap)) / var(--columns)), 40vh); }   /* two rows of cards, the tabs and the buttons fit */
+.menu-page-overview .menu-cards { gap: 3vh var(--gap); }
+.menu-page-overview .menu-card-title { font-size: 2.6vh; }
+.menu-page-overview .menu-actions { margin-top: 4vh; }
+.menu-page-overview .menu-hint { margin-top: 3vh; }
+
 .menu-actions { display: flex; gap: 2vw; margin-top: 6vh; }
 .menu-button {
 	display: flex;

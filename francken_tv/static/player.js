@@ -357,6 +357,13 @@ document.addEventListener("mousemove", () => {
 	cursorTimer = setTimeout(() => document.body.classList.remove("show-cursor"), 3000);
 });
 
+document.addEventListener("focusin", (event) => {   // arrowing over the tabs shows each group's slides
+	const tab = event.target.closest?.(".menu-tab");
+	if (!tab || !menuIsOpen() || tab.getAttribute("aria-selected") === "true") return;
+	clearTimeout(menuTabTimer);
+	menuTabTimer = setTimeout(() => selectMenuTab(tab.dataset.value), 150);   // not for every tab passed on the way
+});
+
 document.addEventListener("keydown", async (event) => {
 	if (menuIsOpen()) return menuKey(event);
 	if (event.key === "Escape") {
@@ -454,8 +461,9 @@ function setPermanentPause(on) {
 }
 
 // ---- The menu --------------------------------------------------------------------------------
-// Esc opens it: previews of the slide types in [shortcuts] (config.toml), the sound (mute and volume),
-// Settings and Power.
+// Esc opens it: tabs with the slide types in groups (the same groups as in the emulator, menu.py), the first
+// tab "Quick" being the slide types in [shortcuts] (config.toml), then the sound (mute and volume), Settings and
+// Power. Left and right choose a group, down goes to its slides.
 // What it shows comes from the server (francken_tv/menu.py), and choices go back there.
 // While it's open the slideshow waits; Esc again (or a minute without input) continues it.
 
@@ -463,6 +471,9 @@ const menu = document.getElementById("menu");
 const MENU_IDLE_SECONDS = 60;
 let menuData = null;
 let menuPage = "overview";
+let menuTab = "quick";        // the overview's tab: "quick", or the title of a group (kept while the page is open)
+let menuGroups = {};          // group title -> which of its slides have something to show right now (asked when the tab is chosen)
+let menuTabTimer = null;
 let menuIdleTimer = null;
 let menuTakeoverTimer = null;
 let confirming = null;     // a button that needs a second press (start a puzzle over, shut down)
@@ -511,7 +522,9 @@ async function openMenu() {
 	clearInterval(menuTakeoverTimer);
 	menuTakeoverTimer = setInterval(checkTakeover, 5000);   // bieruur still starts on time
 	menu.hidden = false;
+	menuGroups = {};
 	showMenuPage("overview");
+	if (menuTab !== "quick") selectMenuTab(menuTab);   // opens on the group it was on
 }
 
 // resume = false when a slide was chosen in the menu: that slide sets its own timer.
@@ -539,6 +552,7 @@ function showMenuPage(page, focus) {
 	confirming = null;
 	menu.innerHTML = `<div class="menu-panel menu-page-${page}${entering ? " menu-enter" : ""}">${menuPages[page](menuData)}</div>`;
 	const target = (focus && menu.querySelector(`[data-focus="${focus}"]:not([disabled])`))
+		|| menu.querySelector(".menu-tab-content [data-focus]:not([disabled])")   // the overview: the first slide of the group
 		|| menu.querySelector("[data-focus]:not([disabled]):not(.menu-back)");
 	target?.focus();
 	menuActivity();
@@ -550,23 +564,71 @@ function menuColumns(count) {
 	return count <= 4 ? Math.max(count, 1) : Math.ceil(count / Math.ceil(count / 4));
 }
 
+function menuTabs(data) {
+	const tabs = [{ title: "quick", label: "Quick" }, ...data.groups.map((group) => ({ title: group.title, label: group.title }))];
+	if (!tabs.some((tab) => tab.title === menuTab)) menuTab = "quick";   // a group that has gone
+	return tabs.map((tab, number) => `
+		<button class="menu-tab" role="tab" data-focus="tab-${number}" data-menu="tab" data-value="${escapeHtml(tab.title)}"
+			aria-selected="${tab.title === menuTab}">${escapeHtml(tab.label)}</button>`).join("");
+}
+
+// The cards of a tab: the shortcuts' previews (Quick), or the slides of a group (greyed out while it isn't known yet
+// whether they have something to show, then as soon as it is).
+function menuTabContent(data) {
+	const card = (focus, jump, preview, key, label, available, empty) => `
+		<button class="menu-card" data-focus="${escapeHtml(focus)}" data-menu="jump" data-value="${escapeHtml(jump)}"${available === false ? " disabled" : ""}>
+			<span class="menu-preview">${available
+				? `<iframe src="/preview/${encodeURIComponent(preview)}" tabindex="-1"></iframe>`
+				: `<span>${escapeHtml(empty)}</span>`}</span>
+			<span class="menu-card-title">${key ? `<kbd>${escapeHtml(key)}</kbd>` : ""}${escapeHtml(label)}</span>
+		</button>`;
+	let cards;
+	if (menuTab === "quick") {
+		cards = data.previews.map((preview) => card(`slide-${preview.key}`, preview.key, preview.name, preview.key, preview.title, preview.available, preview.empty));
+	} else {
+		const group = data.groups.find((candidate) => candidate.title === menuTab);
+		const status = menuGroups[menuTab];
+		const keys = Object.fromEntries(data.previews.map((preview) => [preview.name, preview.key]));
+		cards = group.channels.map((channel) => {
+			const found = status?.find((entry) => entry.name === channel.name);
+			return card(`go-${channel.name}`, `go-${channel.name}`, channel.name, keys[channel.name], channel.label,
+				found ? found.available : null, found ? found.empty : "…");   // null: not known yet
+		});
+	}
+	return `<div class="menu-cards" style="--columns: ${menuColumns(cards.length)}">${cards.join("")}</div>`;
+}
+
+// Show another tab's cards (the focus stays where it is), asking the server first which slides have anything to show.
+async function selectMenuTab(title) {
+	menuTab = title;
+	for (const tab of menu.querySelectorAll(".menu-tab")) tab.setAttribute("aria-selected", String(tab.dataset.value === title));
+	const draw = () => {
+		if (menuTab !== title || !menuIsOpen() || menuPage !== "overview") return;
+		const content = menu.querySelector(".menu-tab-content");
+		if (content) content.innerHTML = menuTabContent(menuData);
+	};
+	draw();
+	if (title !== "quick" && !menuGroups[title]) {
+		try {
+			menuGroups[title] = await getJson(`/api/menu/group/${encodeURIComponent(title)}`);
+		} catch (error) {
+			console.error(error);
+			menuGroups[title] = [];
+		}
+		draw();
+	}
+}
+
 const menuPages = {
 	overview: (data) => `
-		<div class="menu-cards" style="--columns: ${menuColumns(data.previews.length)}">${data.previews.map((preview) => `
-			<button class="menu-card" data-focus="slide-${escapeHtml(preview.key)}" data-menu="jump"
-				data-value="${escapeHtml(preview.key)}"${preview.available ? "" : " disabled"}>
-				<span class="menu-preview">${preview.available
-					? `<iframe src="/preview/${encodeURIComponent(preview.name)}" tabindex="-1"></iframe>`
-					: `<span>${escapeHtml(preview.empty)}</span>`}</span>
-				<span class="menu-card-title"><kbd>${escapeHtml(preview.key)}</kbd>${escapeHtml(preview.title)}</span>
-			</button>`).join("")}
-		</div>
+		<nav class="menu-tabs" role="tablist" aria-label="Groups of slides">${menuTabs(data)}</nav>
+		<div class="menu-tab-content">${menuTabContent(data)}</div>
 		<div class="menu-actions">
 			${soundControls(data.settings)}
 			<button class="menu-button" data-focus="settings" data-menu="page" data-value="settings">${ICONS.settings}Settings</button>
 			${data.power.length ? `<button class="menu-button" data-focus="power" data-menu="page" data-value="power">${ICONS.power}Power</button>` : ""}
 		</div>
-		<p class="menu-hint">Arrow keys to choose &middot; Enter to open &middot; Esc to close</p>`,
+		<p class="menu-hint">&larr; &rarr; group &middot; &darr; its slides &middot; Enter to open &middot; Esc to close</p>`,
 
 	settings: (data) => {
 		const settings = data.settings;
@@ -662,6 +724,11 @@ async function menuChoose(button) {
 		return;
 	}
 	const settings = menuData.settings;
+	if (action === "tab") {
+		await selectMenuTab(value);
+		menu.querySelector(".menu-tab-content [data-focus]:not([disabled])")?.focus();   // into its slides
+		return;
+	}
 	if (action === "jump") {
 		closeMenu(false);
 		jumpTo(value);
@@ -732,7 +799,17 @@ function menuKey(event) {
 function moveMenuFocus(key) {
 	const items = [...menu.querySelectorAll("[data-focus]:not([disabled])")];
 	const from = items.includes(document.activeElement) ? document.activeElement : null;
+	const onTab = from?.classList.contains("menu-tab");
 	if (!from) return items[0]?.focus();
+	if (onTab) {   // the tabs wrap onto two lines: left and right go along them, down goes into the slides
+		const tabs = [...menu.querySelectorAll(".menu-tab")];
+		if (key === "ArrowLeft" || key === "ArrowRight") return tabs[tabs.indexOf(from) + (key === "ArrowRight" ? 1 : -1)]?.focus();
+		if (key === "ArrowUp") return;
+		const cards = [...menu.querySelectorAll(".menu-tab-content [data-focus]:not([disabled])")];
+		const middle = (element) => element.getBoundingClientRect().left + element.getBoundingClientRect().width / 2;
+		const nearest = cards.sort((a, b) => Math.abs(middle(a) - middle(from)) - Math.abs(middle(b) - middle(from)))[0];
+		if (nearest) return nearest.focus();
+	}
 	const [dx, dy] = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key];
 	const a = from.getBoundingClientRect();
 	let best = null;
@@ -743,6 +820,7 @@ function moveMenuFocus(key) {
 		const y = b.top + b.height / 2 - (a.top + a.height / 2);
 		const along = x * dx + y * dy;              // how far in the arrow's direction
 		if (item === from || along <= 1) continue;
+		if (!onTab && item.classList.contains("menu-tab")) continue;   // from a slide, a tab is only reached by going up (below)
 		const score = along + 2 * Math.abs(x * dy + y * dx);   // ...and how far off to the side
 		if (score < bestScore) {
 			best = item;
@@ -752,6 +830,8 @@ function moveMenuFocus(key) {
 	if (best) {
 		best.focus();
 		best.scrollIntoView({ block: "nearest" });
+	} else if (key === "ArrowUp" && !onTab) {   // above the top row of slides: the tab of this group
+		menu.querySelector('.menu-tab[aria-selected="true"]')?.focus();
 	}
 }
 
