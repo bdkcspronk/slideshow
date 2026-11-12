@@ -4371,6 +4371,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .sj-q2 { animation: sj-show 2s ease-in-out 2.8s both; }
 .sj-join { top: 77%; font-size: 12vh; animation: sj-join 0.9s ease-out 5.3s both; }
 .sj-logo { position: absolute; left: 50%; top: 7vh; height: 56vh; aspect-ratio: 1; margin-left: -28vh; filter: drop-shadow(0 1vh 2vh rgba(60, 90, 140, 0.25)); opacity: 0; animation: sj-pop 1s cubic-bezier(0.2, 0.9, 0.3, 1.25) 5.3s both; }
+.sj-logo svg { display: block; width: 100%; height: 100%; }
 .sj-logo path { fill: #fff; }
 @keyframes sj-show { 0% { opacity: 0; transform: translateY(-40%); } 20%, 80% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-60%); } }
 @keyframes sj-join { from { opacity: 0; transform: translateY(-30%); } to { opacity: 1; transform: translateY(-50%); } }
