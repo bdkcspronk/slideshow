@@ -71,11 +71,15 @@ def main() -> None:
 	parser.add_argument("--host", default="127.0.0.1", help="with --serve: who can reach it (default: only this PC; 0.0.0.0: the whole network)")
 	parser.add_argument("--port", type=int, default=8090, help="with --serve (default: 8090)")
 	parser.add_argument("--artifact", action="store_true", help="index.html as an artifact page for claude.ai instead of a web page")
+	parser.add_argument("--fresh", action="store_true", help="fetch everything again instead of using what the last build fetched (kept %d hours)" % CACHE_HOURS)
+	parser.add_argument("--http-cache", type=Path, help=argparse.SUPPRESS)   # in the copy; where the last builds' downloads are kept
 	parser.add_argument("--inside", type=Path, help=argparse.SUPPRESS)   # running in the copy; the folder with Pyodide
 	args = parser.parse_args()
 	now = args.time or datetime.combine(date.today(), time(15, 30))
 	out = args.out.resolve()
 	if args.inside:
+		if args.http_cache and not args.fresh:
+			cache_downloads(args.http_cache)
 		build(now, out, args.inside, args.artifact)
 		return
 	missing = [name for name, module in {"jinja2": "jinja2", "requests": "requests", "beautifulsoup4": "bs4", "pillow": "PIL"}.items()
@@ -88,11 +92,45 @@ def main() -> None:
 	with tempfile.TemporaryDirectory(prefix="francken-emulator-") as folder:
 		copy = Path(folder) / "slideshow"
 		shutil.copytree(ROOT, copy, ignore=lambda _, names: [n for n in names if n in slides_gallery.LEFT_OUT])
-		subprocess.run([sys.executable, "tools/emulator.py", "--inside", str(pyodide), "--out", str(out), "--time", now.isoformat(),
-			*(["--artifact"] if args.artifact else [])], cwd=copy, check=True)
+		subprocess.run([sys.executable, "tools/emulator.py", "--inside", str(pyodide), "--out", str(out), "--http-cache", str(ROOT / "data" / "cache" / "emulator_http"), "--time", now.isoformat(),
+			*(["--artifact"] if args.artifact else []), *(["--fresh"] if args.fresh else [])], cwd=copy, check=True)
 	print(f"Written: {out}/", flush=True)
 	if args.serve:
 		serve(out, args.host, args.port)
+
+
+CACHE_HOURS = 6
+
+
+def cache_downloads(folder: Path) -> None:
+	"""Builds fetch the same public data and pictures every time, into a copy of the project that is thrown away
+	afterwards. Keep every plain GET (no login) for CACHE_HOURS in `folder`, outside that copy, so the next build is quick."""
+	import hashlib
+	import pickle
+	import time as time_module
+	import requests
+	folder.mkdir(parents=True, exist_ok=True)
+	send = requests.Session.send
+
+	def cached(session, request, **kwargs):
+		if request.method != "GET" or kwargs.get("stream") or {"Authorization", "Cookie"} & set(request.headers):
+			return send(session, request, **kwargs)
+		path = folder / hashlib.sha256(request.url.encode()).hexdigest()
+		if path.exists() and time_module.time() - path.stat().st_mtime < CACHE_HOURS * 3600:
+			try:
+				response = pickle.loads(path.read_bytes())
+				response.request = request
+				return response
+			except Exception:
+				pass
+		response = send(session, request, **kwargs)
+		if response.ok:
+			try:
+				path.write_bytes(pickle.dumps(response))
+			except Exception:
+				pass
+		return response
+	requests.Session.send = cached
 
 
 def serve(folder: Path, host: str, port: int) -> None:

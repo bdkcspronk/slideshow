@@ -112,6 +112,7 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
   http://127.0.0.1:8090: the real player, the menu (Esc) with its settings and the puzzles, all working without
   the TV PC, with the same made-up private data. Python runs inside the browser, so any web server can show
   the folder on any device (`--host 0.0.0.0` for other devices on the network); the data is from when it was built.
+  What a build downloads is kept for 6 hours in `data/cache/emulator_http/`, so rebuilding is quick; `--fresh` fetches it all again.
 - Keys in the slideshow: →/↓ next, ←/↑ previous, space pause (it goes on by itself after 4 minutes,
   unless "Pause until unpaused" is on in the settings), `m` mute/unmute all sound,
   `1` Daily puzzles, `2` Spotify, `3` today's activity chart, `4`-`7` news, weather, buses, timetable (change these under `[shortcuts]` in
