@@ -182,7 +182,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	gap: 2.2vh 2.5vw;
 }
 /* Today's activities: one card per activity across both columns, bigger, above the others. */
-.activities-slide .activities-current { grid-template-columns: minmax(0, 1fr); margin-bottom: 2.2vh; }
+.activities-slide .activities-current { grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr; margin-bottom: 2.2vh; }   /* (1fr: every card as tall as the tallest) */
 .activities-slide .activities-current li { padding: 0; }
 .activities-slide .activities-current .activity-date .day { font-size: 6.5vh; }
 .activities-slide .activities-current .activity-title { font-size: 4.4vh; }

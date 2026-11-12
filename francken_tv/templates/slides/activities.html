@@ -1,7 +1,7 @@
 {# Upcoming activities (providers/activities.py), a poster in navy and crimson: soft glows over
    the navy, the title with a crimson highlighter wiping in, and a card per activity with a crimson date
    block. Today's activities (and ones of several days going on now) each across both columns at the top,
-   crimson themselves; then the others: down the left column, then the right. They slide in one by one
+   crimson themselves; then the others: down the left column, then the right, all cards the same height (the rows are 1fr). They slide in one by one
    (--i): today's from above, the left column from the left, the right column from the right. #}
 <div class="slide activities-slide">
 	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -32,7 +32,7 @@
 	{% endif %}
 	{% if activities %}
 	{% set rows = (activities | length + 1) // 2 %}
-	<ul class="activities-later" style="grid-template-rows: repeat({{ rows }}, auto)">
+	<ul class="activities-later" style="grid-template-rows: repeat({{ rows }}, 1fr)">
 		{% for activity in activities %}
 		{{ card(activity, 'from-left' if loop.index0 < rows else 'from-right', current | length + loop.index0) }}
 		{% endfor %}
