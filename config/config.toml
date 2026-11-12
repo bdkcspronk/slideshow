@@ -176,7 +176,7 @@ seconds = 17   # the leg has grown out after about 14 s
 
 [fotocie]
 # The Fotocie's promo: their logo with the animation of the Fotocie app's start screen (templates/slides/fotocie.html).
-seconds = 8   # the animation takes 2.6 s, the rest is the logo staying
+seconds = 16   # the animation takes 2.6 s; the join text goes at 4.6 s, the second text is complete at 7.4 s and stays for the rest
 
 [membership]
 # Become a member: what it costs and gives (the text is in templates/slides/membership.html) and a QR code to the form.
