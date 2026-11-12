@@ -90,7 +90,7 @@ def main() -> None:
 		shutil.copytree(ROOT, copy, ignore=lambda _, names: [n for n in names if n in slides_gallery.LEFT_OUT])
 		subprocess.run([sys.executable, "tools/emulator.py", "--inside", str(pyodide), "--out", str(out), "--time", now.isoformat(),
 			*(["--artifact"] if args.artifact else [])], cwd=copy, check=True)
-	print(f"Written: {out}/")
+	print(f"Written: {out}/", flush=True)
 	if args.serve:
 		serve(out, args.host, args.port)
 
@@ -99,7 +99,7 @@ def serve(folder: Path, host: str, port: int) -> None:
 	handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(folder))
 	with http.server.ThreadingHTTPServer((host, port), handler) as server:
 		where = "this PC's address on the network" if host in ("0.0.0.0", "::") else host
-		print(f"The emulator is at http://{where}:{port}/ (Ctrl+C stops it)")
+		print(f"The emulator is at http://{where}:{port}/ (Ctrl+C stops it)", flush=True)
 		try:
 			server.serve_forever()
 		except KeyboardInterrupt:
