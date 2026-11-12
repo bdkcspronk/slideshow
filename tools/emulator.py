@@ -442,6 +442,8 @@ L.TileLayer.prototype.options.maxNativeZoom = ${INFO.zoom};`;
 
 window.emulator = {
 	fetch(url, options) {
+		// Firefox brings the TV's old page back when the page is reloaded, and it asks before Python runs: not yet.
+		if (!runtime) return Promise.reject(new Error("the slideshow is still starting"));
 		try {
 			const answer = ask(options.method || "GET", url, options.body || "");
 			const text = /json|html/.test(answer.type) ? rewrite(decode(answer.data)) : null;
@@ -553,6 +555,7 @@ emulator_runtime.boot()
 		frame.contentWindow.focus();
 		document.querySelectorAll("button").forEach((made) => { made.disabled = false; });
 	}, { once: true });
+	say("");
 	showClock();
 	setInterval(showClock, 1000);
 }
