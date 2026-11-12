@@ -26,9 +26,8 @@ class Warning(Provider):
 		return ["a login is about to expire"]
 
 
-def fake_app(providers, errors=None, update=None, backup=None):
+def fake_app(providers, errors=None, update=None):
 	return SimpleNamespace(
-		backup_warnings=(lambda now: backup) if backup else None,
 		providers={p.name: p for p in providers},
 		runner=SimpleNamespace(status={p.name: RefreshStatus(last_error=(errors or {}).get(p.name)) for p in providers}),
 		updater=SimpleNamespace(last_result=update) if update else None)
@@ -51,10 +50,6 @@ class HealthTest(unittest.TestCase):
 	def test_a_failing_update_is_a_problem(self):
 		[problem] = health.problems(fake_app([Fine()], update="not updating: the tests failed"), NOW)
 		self.assertEqual(problem.what, "updates")
-
-	def test_a_backup_that_stopped_is_a_problem(self):
-		[problem] = health.problems(fake_app([Fine()], backup=["the last backup was 20 days ago"]), NOW)
-		self.assertEqual((problem.what, problem.detail), ("backup", "the last backup was 20 days ago"))
 
 	def test_the_text_lists_every_problem(self):
 		text = health.as_text(fake_app([Fine(), Warning()], errors={"fine": "boom"}), NOW)

@@ -315,13 +315,6 @@ volume = 100
 length_scale = 1.2               # speaking speed: higher is slower
 download_voice = true            # the voice model missing: download it by itself (nothing is spoken until it is there)
 
-[backup]
-# The weekly backup to Nextcloud of what isn't in git: media, personal data, logins, encrypted with the
-# passphrase in ~/.config/slideshow/backup.passphrase (docs/01-handover.md, "Not everything is in git").
-# Run by deploy/francken-tv-backup.timer, with the Nextcloud login of [event_photos] above.
-folder = "backups/francken-tv"   # on Nextcloud: keep it private: the backups hold logins (encrypted all the same)
-keep = 1                         # how many backups of each part stay on Nextcloud: only the newest, a new one replaces it
-
 [sniffer]
 port = "/dev/ttyUSB0"
 baud = 115200

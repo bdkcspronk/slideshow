@@ -17,7 +17,6 @@ deploy/install_spotifyd.sh                          # the "Francken TV" Spotify 
 mkdir -p ~/.config/systemd/user && cp deploy/*.service deploy/*.timer ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user enable --now francken-tv francken-tv-sniffer francken-tv-kiosk francken-tv-spotifyd
-systemctl --user enable --now francken-tv-backup.timer   # the weekly backup, once `backup setup` below has been run
 sudo loginctl enable-linger $USER                   # keep running without anyone logged in
 ```
 
@@ -40,46 +39,17 @@ slideshow); `deploy/install_autostart.sh --undo` switches them back on.
 
 The sniffer firmware lives in `firmware/` (PlatformIO).
 
-## The weekly backup, and restoring the files that aren't in git
+### The files that aren't in git
 
-The files that are not in git (media, personal data, logins) are backed up every Monday night, encrypted, to
-the board's Nextcloud: see [the backup](01-handover.md#the-backup). All the commands run in the project folder.
-
-**Setting it up** (once, on the PC that holds the files; `/health` says "no backup is set up" until you do):
-
-```sh
-.venv/bin/python -m francken_tv.backup setup     # choose a passphrase; give it to the board for their KeePass
-sudo apt install gnupg                           # usually there already
-systemctl --user enable --now francken-tv-backup.timer
-systemctl --user start francken-tv-backup        # the first backup now, to see that it works
-.venv/bin/python -m francken_tv.backup list      # what is on Nextcloud
-```
-
-### Restoring the files that aren't in git
-
-On a new TV PC, after the steps above up to `git clone` and the venv (the slideshow doesn't need to run yet).
-You need two things from the board: the **Nextcloud login** and the **backup passphrase**.
-
-```sh
-cd ~/slideshow
-.venv/bin/python -m francken_tv.backup restore   # asks for the Nextcloud login and the passphrase
-```
-
-It downloads the newest backup, decrypts it and puts every file back: the media and personal files in the
-project folder, the logins in `~/.config/slideshow/`. It **never overwrites a file that already exists**
-(it says how many it left alone); `--force` replaces them. Then start the services as above. The
-passphrase file `backup.passphrase` is not in the backup: run `backup setup` again with the same passphrase
-so that this PC makes backups too.
-
-The Spotify speaker's login may need doing again (`deploy/install_spotifyd.sh`) if `data/spotifyd/` didn't
-come back usable. If a restore says "gpg failed", the passphrase is wrong.
+Media, personal data and logins are not in git and are not backed up: copy them by hand from the old PC
+(see [the list](01-handover.md#not-everything-is-in-git)) into the project folder and `~/.config/slideshow/`.
 
 ### The text-to-speech voice
 
 The voice for reading quotes and greetings aloud is a piper voice model (`media/voices/en_US-ryan-high.onnx`
-and its `.json`, about 100 MB or more), the largest file there is. It is **not** in the backup, because the
+and its `.json`, about 100 MB or more), the largest file there is. It is not in git, but the
 slideshow **downloads it by itself** when it is missing: at startup, from
-[piper's voices](https://huggingface.co/rhasspy/piper-voices) (`en/en_US/ryan/high/`), so after a restore or on a
+[piper's voices](https://huggingface.co/rhasspy/piper-voices) (`en/en_US/ryan/high/`), so on a
 new PC the PC only needs internet access. If a download fails, it is tried again every ten minutes (when
 something is to be spoken). Until the voice is there, nothing is spoken; the slideshow itself is not affected.
 

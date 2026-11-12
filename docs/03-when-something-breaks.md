@@ -116,18 +116,6 @@ keeps happening.
 Restart: `systemctl --user restart francken-tv` (or `Ctrl+R` in the terminal). Then check that
 `data/settings.json` isn't overriding it (see "A slide isn't shown").
 
-### /status says there is no backup, or the last one is old
-
-- **"no backup is set up on this PC"**: run `python -m francken_tv.backup setup` in the project folder (use
-  `.venv/bin/python`), choose a passphrase, give it to the board for their KeePass. Then enable the timer:
-  `systemctl --user enable --now francken-tv-backup.timer`, and run one by hand to see it work:
-  `systemctl --user start francken-tv-backup`.
-- **"the last backup was N days ago"**: `journalctl --user -u francken-tv-backup` says why. Usually the
-  Nextcloud password changed (put the new one in `~/.config/slideshow/nextcloud.credentials.json`) or the
-  PC was off for weeks. `systemctl --user list-timers` shows when the next one runs.
-- **"gpg failed"**: `gpg` isn't installed (`sudo apt install gnupg`).
-- Try it by hand: `.venv/bin/python -m francken_tv.backup backup` prints what it did.
-
 ### Phone votes in the weekly dilemma don't count
 
 TV votes work but phone votes don't: the Google Sheet is no longer public by link, or the form

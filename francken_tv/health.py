@@ -4,7 +4,6 @@ Used by /health (one line per problem) and the top of /status. A problem is one 
 - a slide type whose last refresh failed (background.py records it),
 - a provider's own warning (Provider.warnings(): e.g. a login that is about to expire),
 - speech without its voice model (announcer.py),
-- the backup of the files that aren't in git not set up or not running (backup.py),
 - the automatic update from GitHub not working (updater.py).
 """
 
@@ -35,8 +34,6 @@ def problems(app, now: datetime) -> list[Problem]:
 	announcer = getattr(app, "announcer", None)
 	if announcer:
 		found += [Problem("speech", warning, BREAKS) for warning in announcer.warnings()]
-	if app.backup_warnings:
-		found += [Problem("backup", warning, BREAKS) for warning in app.backup_warnings(now)]
 	updater = app.updater
 	if updater and ("not updating" in updater.last_result or "failed" in updater.last_result):
 		found.append(Problem("updates", updater.last_result, BREAKS + " (\"The slideshow is on an old version\")"))

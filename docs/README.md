@@ -10,7 +10,7 @@ You don't need to know the code, or to have met the people who built it. Pick yo
 | **Wanting to change something** (a poster, a time, a new slide) | [4. Common changes](04-common-changes.md) |
 | **Wondering which passwords and accounts exist**, or one has expired | [2. Accounts and secrets](02-accounts-and-secrets.md) |
 | **Reading the code** for the first time | [5. Architecture](05-architecture.md) |
-| **Setting up the TV PC** again (it died, or we got a new one) | [6. The TV PC](06-tv-pc.md), including restoring the backup |
+| **Setting up the TV PC** again (it died, or we got a new one) | [6. The TV PC](06-tv-pc.md) |
 
 Step-by-step setup guides for the outside services are in [setup/](setup/):
 [Spotify](setup/spotify.md), [Instagram](setup/instagram.md), [the weekly dilemma](setup/weekly-dilemma.md).
