@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "ero", "extern", "poll", "pet", "xkcd", "graafmachine", "compucie", "borrelcie", "fotocie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "ero", "extern", "poll", "pet", "xkcd", "graafmachine", "compucie", "borrelcie", "fotocie", "sjaarscie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -146,7 +146,7 @@ check_every_seconds = 5      # how soon after a song starts its lyrics are looke
 [leaderboard]
 # Who spent the most time in the room this week (since Monday).
 top = 10
-seconds = 12
+seconds = 14
 
 [quote]
 sheet_id = "12hadm3_zdeU7e3q-YHFfcNSDocQdzjWKnn7lzZLqhI4"   # Google Sheet with "Quote" and "name" columns
@@ -160,7 +160,7 @@ refresh_hours = 6
 [commandments]
 # Jeff de Hosson's commandment of the week: the next one from the file every Monday, in order.
 file = "config/commandments.txt"   # one commandment per line
-seconds = 12
+seconds = 14
 
 [graafmachine]
 # An animated graafmachine digging a hole and dumping the earth on a heap.
@@ -176,7 +176,11 @@ seconds = 17   # the leg has grown out after about 14 s
 
 [fotocie]
 # The Fotocie's promo: their logo with the animation of the Fotocie app's start screen (templates/slides/fotocie.html).
-seconds = 12   # the animation takes 2.6 s; the join text goes at 4.6 s, the second text is complete at 7.4 s and stays for the rest
+seconds = 14   # the animation takes 2.6 s; the join text goes at 4.6 s, the second text is complete at 7.4 s and stays for the rest
+
+[sjaarscie]
+# The Sjaarscie's promo: the first-year questions, then "Join the Sjaarscie!" with the Zwitsal baby, on baby blue and pink (templates/slides/sjaarscie.html).
+seconds = 14   # the questions come at 0.3 s and 2.8 s, the baby and "Join the Sjaarscie!" at 5.3 s
 
 [membership]
 # Become a member: what it costs and gives (the text is in templates/slides/membership.html) and a QR code to the form.

@@ -30,6 +30,7 @@ from .providers.extern import ExternProvider
 from .providers.compucie import CompucieProvider
 from .providers.borrelcie import BorrelcieProvider
 from .providers.fotocie import FotocieProvider
+from .providers.sjaarscie import SjaarscieProvider
 from .providers.francken_vrij import FranckenVrijProvider
 from .providers.graafmachine import GraafmachineProvider
 from .providers.instagram import InstagramProvider
@@ -200,6 +201,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		CompucieProvider(config.get("compucie", {})),
 		BorrelcieProvider(config.get("borrelcie", {})),
 		FotocieProvider(config.get("fotocie", {})),
+		SjaarscieProvider(config.get("sjaarscie", {})),
 		MembershipProvider(config.get("membership", {})),
 		SocksProvider(config.get("socks", {})),
 		SocialsProvider(config.get("socials", {})),
