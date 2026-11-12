@@ -132,7 +132,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
    find us online, streep your food, the Francken Vrij on paper, the Francken pet): soft
    glows lie over the navy (.navy-glows) and a title with a crimson
    highlighter behind a word (.poster-marked). */
-.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide, .francken-vrij-slide, .membership-slide, .socks-slide, .socials-slide, .streep-slide, .fvs-slide, .pet-slide {
+.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide, .francken-vrij-slide, .membership-slide, .fotocie-slide, .socks-slide, .socials-slide, .streep-slide, .fvs-slide, .pet-slide {
 	--navy: #0d1f3c;
 	--crimson: #c8102e;
 	--paper: #fdf8ec;
@@ -290,6 +290,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	padding: 0;
 	list-style: none;
 	display: grid;
+.news-feeds button:active { background: rgba(253, 248, 236, 0.2); }
 	grid-template-columns: repeat(var(--cards), minmax(0, 1fr));
 	gap: 2.2vw;
 }
@@ -4097,3 +4098,111 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 @keyframes pet-sway { 0%, 100% { transform: rotate(-6deg) translateX(-1vh); } 50% { transform: rotate(6deg) translateX(1vh); } }
 .mood-drunk .pc-eyes-open { animation: none; transform: scaleY(0.55); }
 .mood-drunk .pc-cheek { opacity: 1; fill: #ff5c7a; }
+
+/* The Fotocie (providers/fotocie.py): the logo with the animation of the Fotocie app's start screen (splash.py), 2.6 s: it fades in,
+   the emblem looks around out of focus and zoomed in on its crown, pulls back and into focus, and the flashbulb fires. The numbers
+   (zoom 2.3, a pan that wanders, blur, the flash dying out in 0.65 s) are the app's; the frames in between are worked out from them. */
+.fc-body { position: relative; flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 4vw; }
+.fc-text { min-width: 0; }
+.fc-text .poster-title { margin: 0 0 5vh; font-size: 12vh; line-height: 1.05; }
+.fc-join { margin: 0; font-size: 9vh; color: var(--crimson); animation: member-up 0.8s ease-out 1.4s both; }
+.fc-stage { flex: none; height: 84vh; aspect-ratio: 1; margin-right: 1vw; }
+.fc-stage path, .fc-stage circle.fc-bulb { fill: #fff; fill-rule: evenodd; }
+.fc-stage * { transform-box: view-box; }
+.fc-fade { animation: fc-fade 0.5s ease-in-out both; }
+@keyframes fc-fade { from { opacity: 0; } to { opacity: 1; } }
+.fc-emblem { transform-origin: 969.144px 1048.168px; transform-box: view-box; animation: fc-look 2.6s linear both; }
+.fc-emblem path { fill: #fff; }
+@keyframes fc-look {
+	0.00% { transform: translate(-54.0px, 554.0px) scale(2.3000); filter: blur(14.40px); }
+	1.92% { transform: translate(-32.6px, 553.1px) scale(2.3000); filter: blur(14.40px); }
+	3.85% { transform: translate(-12.0px, 550.3px) scale(2.3000); filter: blur(14.40px); }
+	5.77% { transform: translate(7.0px, 543.4px) scale(2.2963); filter: blur(14.34px); }
+	7.69% { transform: translate(23.1px, 530.3px) scale(2.2854); filter: blur(14.16px); }
+	9.62% { transform: translate(35.5px, 511.9px) scale(2.2679); filter: blur(13.87px); }
+	11.54% { transform: translate(43.6px, 488.8px) scale(2.2441); filter: blur(13.48px); }
+	13.46% { transform: translate(47.2px, 462.2px) scale(2.2147); filter: blur(13.01px); }
+	15.38% { transform: translate(46.5px, 432.9px) scale(2.1800); filter: blur(12.45px); }
+	17.31% { transform: translate(41.8px, 401.9px) scale(2.1406); filter: blur(11.83px); }
+	19.23% { transform: translate(34.0px, 370.1px) scale(2.0969); filter: blur(11.16px); }
+	21.15% { transform: translate(24.0px, 338.1px) scale(2.0493); filter: blur(10.44px); }
+	23.08% { transform: translate(12.7px, 306.7px) scale(1.9985); filter: blur(9.69px); }
+	25.00% { transform: translate(1.0px, 276.4px) scale(1.9448); filter: blur(8.92px); }
+	26.92% { transform: translate(-10.0px, 247.5px) scale(1.8887); filter: blur(8.14px); }
+	28.85% { transform: translate(-19.7px, 220.4px) scale(1.8307); filter: blur(7.36px); }
+	30.77% { transform: translate(-27.6px, 195.2px) scale(1.7712); filter: blur(6.58px); }
+	32.69% { transform: translate(-33.2px, 171.9px) scale(1.7109); filter: blur(5.82px); }
+	34.62% { transform: translate(-36.5px, 150.6px) scale(1.6500); filter: blur(5.09px); }
+	36.54% { transform: translate(-37.6px, 131.2px) scale(1.5891); filter: blur(4.39px); }
+	38.46% { transform: translate(-36.7px, 113.5px) scale(1.5288); filter: blur(3.74px); }
+	40.38% { transform: translate(-34.2px, 97.4px) scale(1.4693); filter: blur(3.12px); }
+	42.31% { transform: translate(-30.5px, 82.9px) scale(1.4113); filter: blur(2.56px); }
+	44.23% { transform: translate(-26.0px, 69.7px) scale(1.3552); filter: blur(2.06px); }
+	46.15% { transform: translate(-21.2px, 57.8px) scale(1.3015); filter: blur(1.61px); }
+	48.08% { transform: translate(-16.5px, 47.1px) scale(1.2507); filter: blur(1.22px); }
+	50.00% { transform: translate(-12.2px, 37.5px) scale(1.2031); filter: blur(0.89px); }
+	51.92% { transform: translate(-8.5px, 29.0px) scale(1.1594); filter: blur(0.62px); }
+	53.85% { transform: translate(-5.5px, 21.6px) scale(1.1200); filter: blur(0.40px); }
+	55.77% { transform: translate(-3.2px, 15.2px) scale(1.0853); filter: blur(0.24px); }
+	57.69% { transform: translate(-1.7px, 9.9px) scale(1.0559); filter: blur(0.13px); }
+	59.62% { transform: translate(-0.7px, 5.7px) scale(1.0321); filter: blur(0.06px); }
+	61.54% { transform: translate(-0.2px, 2.6px) scale(1.0146); filter: blur(0.02px); }
+	63.46% { transform: translate(-0.0px, 0.7px) scale(1.0037); filter: blur(0.00px); }
+	65.38% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	67.31% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	69.23% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	71.15% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	73.08% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	75.00% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	76.92% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	78.85% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	80.77% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	82.69% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	84.62% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	86.54% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	88.46% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	90.38% { transform: translate(0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	92.31% { transform: translate(-0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	94.23% { transform: translate(-0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	96.15% { transform: translate(-0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	98.08% { transform: translate(-0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+	100.00% { transform: translate(-0.0px, 0.0px) scale(1.0000); filter: blur(0.00px); }
+}
+.fc-bulb { fill: #6e6e78; animation: fc-bulb 2.6s step-end both; }
+@keyframes fc-bulb { 0% { fill: #6e6e78; } 75% { fill: #fff; } }
+.fc-glow { opacity: 0; animation: fc-flash 2.6s linear both; }
+.fc-view { opacity: 0; fill: #fff; animation: fc-flash-view 2.6s linear both; }
+@keyframes fc-flash {
+	73.08% { opacity: 0.000; }
+	75.00% { opacity: 1.000; }
+	76.92% { opacity: 0.675; }
+	78.85% { opacity: 0.453; }
+	80.77% { opacity: 0.301; }
+	82.69% { opacity: 0.198; }
+	84.62% { opacity: 0.129; }
+	86.54% { opacity: 0.083; }
+	88.46% { opacity: 0.052; }
+	90.38% { opacity: 0.032; }
+	92.31% { opacity: 0.018; }
+	94.23% { opacity: 0.010; }
+	96.15% { opacity: 0.005; }
+	98.08% { opacity: 0.002; }
+	100.00% { opacity: -0.000; }
+}
+@keyframes fc-flash-view {
+	73.08% { opacity: 0.000; }
+	75.00% { opacity: 0.700; }
+	76.92% { opacity: 0.473; }
+	78.85% { opacity: 0.317; }
+	80.77% { opacity: 0.211; }
+	82.69% { opacity: 0.139; }
+	84.62% { opacity: 0.090; }
+	86.54% { opacity: 0.058; }
+	88.46% { opacity: 0.036; }
+	90.38% { opacity: 0.022; }
+	92.31% { opacity: 0.013; }
+	94.23% { opacity: 0.007; }
+	96.15% { opacity: 0.003; }
+	98.08% { opacity: 0.001; }
+	100.00% { opacity: -0.000; }
+}

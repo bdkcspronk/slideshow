@@ -28,6 +28,7 @@ from .providers.confidential import ConfidentialProvider
 from .providers.extern import ExternProvider
 from .providers.compucie import CompucieProvider
 from .providers.borrelcie import BorrelcieProvider
+from .providers.fotocie import FotocieProvider
 from .providers.francken_vrij import FranckenVrijProvider
 from .providers.graafmachine import GraafmachineProvider
 from .providers.instagram import InstagramProvider
@@ -196,6 +197,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		GraafmachineProvider(config.get("graafmachine", {})),
 		CompucieProvider(config.get("compucie", {})),
 		BorrelcieProvider(config.get("borrelcie", {})),
+		FotocieProvider(config.get("fotocie", {})),
 		MembershipProvider(config.get("membership", {})),
 		SocksProvider(config.get("socks", {})),
 		SocialsProvider(config.get("socials", {})),

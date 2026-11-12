@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "extern", "poll", "pet", "xkcd", "graafmachine", "compucie", "borrelcie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "extern", "poll", "pet", "xkcd", "graafmachine", "compucie", "borrelcie", "fotocie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -172,6 +172,10 @@ seconds = 18   # the terminal has typed everything after about 12 s
 [borrelcie]
 # The Borrelcie's promo after the Beatles: a piano keyboard playing, then THE BORRELCIE (all in templates/slides/borrelcie.html).
 seconds = 17   # the leg has grown out after about 14 s
+
+[fotocie]
+# The Fotocie's promo: their logo with the animation of the Fotocie app's start screen (templates/slides/fotocie.html).
+seconds = 8   # the animation takes 2.6 s, the rest is the logo staying
 
 [membership]
 # Become a member: what it costs and gives (the text is in templates/slides/membership.html) and a QR code to the form.

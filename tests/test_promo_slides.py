@@ -4,12 +4,20 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 
+from francken_tv.providers.fotocie import FotocieProvider
 from francken_tv.providers.francken_vrij import FranckenVrijProvider
 from francken_tv.providers.francken_vrij_subscribe import FranckenVrijSubscribeProvider
 from francken_tv.providers.socials import LINE_SAG, SocialsProvider
 from francken_tv.providers.streep import PRODUCTS, TAPS, cursor_keyframes, taps, tiles
 
 NOW = datetime(2026, 11, 11, 12)
+
+
+class FotocieTest(unittest.TestCase):
+	def test_one_slide_longer_than_the_animation(self):
+		slides = FotocieProvider({}).slides(NOW)
+		self.assertEqual([slide.template for slide in slides], ["fotocie.html"])
+		self.assertGreater(slides[0].seconds, 2.6)
 
 
 class SocialsTest(unittest.TestCase):
