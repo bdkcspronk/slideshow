@@ -138,8 +138,21 @@ def cache_downloads(folder: Path) -> None:
 
 
 def serve(folder: Path, host: str, port: int) -> None:
-	handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(folder))
-	with http.server.ThreadingHTTPServer((host, port), handler) as server:
+	class Files(http.server.SimpleHTTPRequestHandler):
+		def do_GET(self) -> None:
+			if self.path.startswith("/preview/"):   # a menu preview's frame asks for its address first; the page then shows it itself (SHIM)
+				self.send_response(http.HTTPStatus.NO_CONTENT)
+				self.end_headers()
+			else:
+				super().do_GET()
+
+	class Quiet(http.server.ThreadingHTTPServer):
+		def handle_error(self, request, client_address) -> None:
+			if not isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):   # a browser that gave up on a request
+				super().handle_error(request, client_address)
+
+	handler = functools.partial(Files, directory=str(folder))
+	with Quiet((host, port), handler) as server:
 		where = "this PC's address on the network" if host in ("0.0.0.0", "::") else host
 		print(f"The emulator is at http://{where}:{port}/ (Ctrl+C stops it)", flush=True)
 		try:
