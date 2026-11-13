@@ -78,8 +78,9 @@ def markdown(results: dict) -> str:
 		f"- Graphics: {cell(results.get('gpu'))} (WebGL {2 if results.get('webgl2') else 1}, largest texture {cell(results.get('max_texture_size'))})",
 		f"- Screen: {cell(results.get('screen'))}, drawn on {cell(results.get('canvas'))} (pixel ratio {cell(results.get('pixel_ratio'))})",
 		f"- Three.js r{cell(results.get('three'))}, {cell(results.get('browser'))}", "",
-		'"Holds 60" means at least 55 fps and 95% of the frames took 15 ms of work or less. "Work" is the median time to draw a frame '
-		'including waiting for the graphics chip. "First frame" is when shaders compile and textures upload.', ""]
+		f"- Empty scene: {cell(results.get('floor_ms'))} ms of work (reading a pixel back costs that by itself; a real slide doesn't pay it)", "",
+		'"Holds 60" means at least 55 fps and 95% of the frames took 14 ms of work or less beyond the empty scene\'s. "Work" is the median time '
+		'to draw a frame including waiting for the graphics chip. "First frame" is when shaders compile and textures upload.', ""]
 	for test in results["tests"]:
 		lines += [f"## {cell(test.get('title'))}", ""]
 		if test.get("best") is not None:

@@ -5,11 +5,13 @@
 // Every step is drawn for a while after a short warm-up (shaders compile and textures upload then). Per frame we measure the
 // *work*: render() followed by a 1-pixel readPixels, which waits for the graphics chip to finish. That makes the time independent
 // of vsync (the frame rate stops at the screen's 60 Hz, the work time doesn't). A step "holds 60 fps" when it
-// reaches 55 fps and 95% of its frames took 15 ms of work or less.
+// reaches 55 fps and 95% of its frames took 14 ms of work or less beyond the empty scene's: reading the pixel back costs a fixed
+// few milliseconds on its own, which a real slide doesn't pay. Everything is drawn at the screen's real pixels (devicePixelRatio:
+// a TV PC with display scaling shows a 1920x1080 screen as, say, 736x414 CSS pixels).
 
 (() => {
 	const WARMUP_MS = 700, MEASURE_MS = 2500;
-	const HOLDS_FPS = 55, HOLDS_P95_MS = 15;
+	const HOLDS_FPS = 55, HOLDS_P95_MS = 14;   // the work beyond the empty scene's (the floor, see "Empty scene" below)
 
 	const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 	const percentile95 = (values) => [...values].sort((a, b) => a - b)[Math.min(values.length - 1, Math.floor(values.length * 0.95))];
@@ -23,20 +25,24 @@
 		const bar = root.querySelector("[data-tb-bar]");
 		const live = root.querySelector("[data-tb-live]");
 		const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-		renderer.setPixelRatio(1);
-		renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+		const resolution = (scale = 1) => {   // `scale` of the screen's real pixels
+			renderer.setPixelRatio(devicePixelRatio * scale);
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+		};
+		resolution();
+		let floor = 0;   // ms of work for an empty scene: the read-back's own cost
 		const gl = renderer.getContext();
 		const pixel = new Uint8Array(4);
 		const sync = () => gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);   // waits until the chip is done drawing
 		const debug = gl.getExtension("WEBGL_debug_renderer_info");
 
-		const info = {
+		const info = {   // floor_ms is added below
 			gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : "unknown",
 			webgl2: renderer.capabilities.isWebGL2,
 			max_texture_size: renderer.capabilities.maxTextureSize,
-			screen: `${screen.width}x${screen.height}`,
+			screen: `${Math.round(screen.width * devicePixelRatio)}x${Math.round(screen.height * devicePixelRatio)}`,
 			canvas: `${canvas.width}x${canvas.height}`,
-			pixel_ratio: devicePixelRatio,
+			pixel_ratio: round(devicePixelRatio, 2),
 			three: THREE.REVISION,
 			browser: navigator.userAgent,
 		};
@@ -86,7 +92,7 @@
 			return {
 				fps: round(fps, 0), work_ms: round(median(works)), p95_ms: round(p95), first_ms: round(firstMs, 0),
 				triangles: renderer.info.render.triangles, calls: renderer.info.render.calls,
-				holds: fps >= HOLDS_FPS && p95 <= HOLDS_P95_MS,
+				holds: fps >= HOLDS_FPS && p95 - floor <= HOLDS_P95_MS,
 			};
 		}
 
@@ -219,7 +225,7 @@
 				cam.position.z = 0.45 / tan * 1.05;
 				return { scene, camera: cam };
 			}
-			const close = canvas.clientHeight / (2 * tan * 0.9 * size);   // where one picture (0.9 wide) is `size` pixels high: 1:1
+			const close = canvas.height / (2 * tan * 0.9 * size);   // where one picture (0.9 wide) is `size` pixels high: 1:1
 			cam.position.z = fit;
 			return { scene, camera: cam, update: (t) => {
 				const zoom = 0.5 - 0.5 * Math.cos(t / 3 * 2 * Math.PI);   // 0: the whole grid, 1: one picture at its own size
@@ -239,6 +245,15 @@
 		plan.push(["Overdraw (see-through layers)", [10, 20, 40, 80], overdrawRig, (n) => `${n} full-screen layers`, "ramp"]);
 		plan.push(["Textures (512x512 pictures)", [10, 40, 100, 200], texturesRig, (n) => `${n} textures`, "ramp"]);
 		plan.push(["One big texture", [2048, 4096, 8192], (n) => texturesRig(1, n), (n) => `${n}x${n} texture`, "all"]);
+
+		{   // the empty scene: how long the read-back takes by itself
+			progress("Empty scene (calibration)");
+			const rig = { scene: new THREE.Scene(), camera: camera(10) };
+			rig.scene.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));
+			floor = (await measure(rig)).work_ms;
+			free(rig);
+		}
+		info.floor_ms = floor;
 
 		const steps = plan.reduce((sum, p) => sum + p[1].length, 0) + 3;   // + the instance updates
 		let done = 0;
@@ -271,13 +286,11 @@
 				const failed = test.steps.find((s) => !s.holds);
 				if (failed) {
 					progress(`${title}: ${failed.label} at 50% resolution`);
-					renderer.setPixelRatio(0.5);
-					renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+					resolution(0.5);
 					const rig = overdrawRig(Number(failed.label.split(" ")[0]));
 					test.steps.push({ label: `${failed.label}, drawn at 50% resolution`, ...await measure(rig) });
 					free(rig);
-					renderer.setPixelRatio(1);
-					renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+					resolution();
 				}
 			}
 			const held = test.steps.filter((s) => s.holds);
@@ -304,7 +317,6 @@
 			cpu.steps.push({ label: `${number(count)} instances`, work_ms: round(ms, 2), holds: ms <= 4 });
 			done++;
 		}
-		cpu.best = "";
 		results.push(cpu);
 
 		renderer.dispose();

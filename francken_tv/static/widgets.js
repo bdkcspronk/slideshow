@@ -670,7 +670,7 @@ async function setupThree(canvas) {
 		name = newName;
 		scale = newScale;
 		renderer.shadowMap.enabled = false;
-		renderer.setPixelRatio(scale);
+		renderer.setPixelRatio(devicePixelRatio * scale);   // the screen's real pixels (a TV PC with display scaling has a pixel ratio above 1)
 		renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 		scene = new THREE.Scene();
 		camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 200);

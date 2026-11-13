@@ -4,6 +4,12 @@
 (`providers/three.py`, the scenes are in `static/widgets.js`, `THREE_SCENES`). Read this before making a slide with Three.js
 (the 3D books slide, a new 3D scene, ...).
 
+> **These numbers are provisional.** They were read off the old test slide by eye, and the first two benchmark runs
+> (`benchmarks/3d-2026-11-13-1628` and `-1632`) drew at only 736x414 pixels (the TV PC's display scaling makes the 1920x1080 screen
+> 736x414 CSS pixels, and the test used one pixel per CSS pixel), about a seventh of the real pixels, and counted a fixed few
+> milliseconds of read-back as work. Both are fixed; anything about pixels (overdraw, textures, shadows) was too optimistic.
+> Run the benchmark again and replace the tables with its results.
+
 ## The budget
 
 | What | Limit | Measured |
