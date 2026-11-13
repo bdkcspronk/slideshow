@@ -2364,6 +2364,15 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .puzzle-card .puzzle-status { grid-row: 3; }
 .puzzle-card .puzzle-play { grid-row: 4; }
 .puzzle-card:active { transform: scale(0.98); background: var(--blue-faint); }
+/* Keyboard navigation (Tab): :focus-visible only matches then, so mouse and touch look as before. A thick
+   ring plus a lift and the Play button turning red make the selected card easy to spot from across the room. */
+.puzzles-slide button:focus-visible, .connections-slide button:focus-visible, .wordle-slide button:focus-visible,
+.timeguessr-slide button:focus-visible, .catfishing-slide button:focus-visible {
+	outline: 0.7vh solid var(--red);
+	outline-offset: 0.6vh;
+}
+.puzzle-card:focus-visible { background: var(--blue-faint); transform: scale(1.02); }
+.puzzle-card:focus-visible .puzzle-play { background: var(--red); }
 .puzzle-icon { display: grid; gap: 0.6vh; height: 23vh; align-content: center; }   /* same height, so the titles line up */
 .puzzle-connections .puzzle-icon { grid-template-columns: repeat(4, 5vh); }
 .puzzle-wordle .puzzle-icon { grid-template-columns: repeat(5, 5vh); }

@@ -202,6 +202,28 @@ document.addEventListener("click", async (event) => {
 	}
 });
 
+const PUZZLE_PROVIDERS = ["puzzles", "connections", "wordle", "timeguessr", "catfishing"];
+
+// The enabled, visible button in the slide closest to `from` in the direction of an arrow key (null if none).
+function nearestButton(slide, from, key) {
+	const [dx, dy] = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key];
+	const centre = (rect) => [rect.left + rect.width / 2, rect.top + rect.height / 2];
+	const [fx, fy] = centre(from.getBoundingClientRect());
+	let best = null, bestScore = Infinity;
+	for (const button of slide.querySelectorAll("button:not([disabled])")) {
+		if (button === from) continue;
+		const rect = button.getBoundingClientRect();
+		if (!rect.width || !rect.height) continue;
+		const [x, y] = centre(rect);
+		const along = (x - fx) * dx + (y - fy) * dy;     // distance in the arrow's direction
+		const across = Math.abs((x - fx) * dy + (y - fy) * dx);   // sideways
+		if (along <= 1 || across > along * 2 + rect.height) continue;   // not (mostly) in that direction
+		const score = along + across * 2;
+		if (score < bestScore) { best = button; bestScore = score; }
+	}
+	return best;
+}
+
 function interactiveSlide() {
 	return layers[front].querySelector("[data-interactive]");
 }
@@ -409,6 +431,19 @@ document.addEventListener("keydown", async (event) => {
 			event.preventDefault();
 			keepPaused(idleSeconds(slide));
 			typeKey(slide, key);
+			return;
+		}
+	}
+	// Once you've Tabbed onto a button in a puzzle, the arrow keys move to the nearest button in that direction.
+	// Where there is none (the edge) they do what they always did: change slides.
+	if (event.key.startsWith("Arrow") && slide && PUZZLE_PROVIDERS.includes(slide.dataset.provider)
+			&& !event.ctrlKey && !event.altKey && !event.metaKey && event.target.closest?.("button")
+			&& slide.contains(event.target)) {
+		const target = nearestButton(slide, event.target, event.key);
+		if (target) {
+			event.preventDefault();
+			keepPaused(idleSeconds(slide));
+			target.focus();
 			return;
 		}
 	}
