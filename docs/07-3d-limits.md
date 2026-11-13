@@ -1,43 +1,39 @@
 # 7. What the TV PC's graphics can do (for 3D slides)
 
-[Manual](README.md). Measured on the TV PC itself (1920x1080, Firefox kiosk) in November 2026 with the Three.js test slide
-(`providers/three.py`, the scenes are in `static/widgets.js`, `THREE_SCENES`). Read this before making a slide with Three.js
-(the 3D books slide, a new 3D scene, ...).
+[Manual](README.md). Measured on the TV PC itself (Intel HD Graphics, 1920x1080, Firefox 159 kiosk) on 13 November 2026 with the
+3D benchmark: [benchmarks/3d-2026-11-13-1657.md](../benchmarks/3d-2026-11-13-1657.md) has every number. Read this before making a slide
+with Three.js (or any 3D in the browser).
 
-> **These numbers are provisional.** They were read off the old test slide by eye at a pixel ratio of 2.6, so it drew only 736x414
-> pixels, about a seventh of the screen; anything about pixels (overdraw, textures, shadows) was too optimistic. The benchmark runs of
-> 13 November 2026 in `benchmarks/` are not usable either: the first two drew at 736x414 too, and all four waited for the graphics chip
-> after every frame, which made even one textured square miss 60 fps. Both are fixed; run the benchmark again and replace the
-> tables with its results.
+**In short: the TV PC is weak at 1920x1080, and what limits it is pixels.** A 3D slide that should stay smooth needs a small scene,
+antialiasing off, and preferably fewer pixels (`renderer.setPixelRatio(0.5)` or `0.75`; on a TV seen from across the room that barely shows).
 
-## The budget
+## The budget at full resolution (1920x1080, antialiasing on)
 
-| What | Limit | Measured |
+| What | Still smooth (60 fps) | Too much |
 |---|---|---|
-| Triangles per frame | **about 2 million at 60 fps; stay at 500,000 or fewer** to leave room for lighting and the browser | 4 million unlit triangles: about 30 fps. Roughly 100-120 million triangles per second in total. |
-| Shadows | **a shadow pass draws everything a second time**: count the triangles double. Avoid for big scenes | 4 million triangles with shadows: 9-11 fps |
-| Many separate meshes | 400 meshes (400 draw calls) with 3 lights and fog is fine | 60 fps |
-| Translucent layers on top of each other (overdraw) | about 20 full-screen layers at full resolution; about twice that at 75% | 60 layers: 24 fps at 100%, 60 fps at 50% resolution |
-| Lit, solid objects | 1,000 lit spheres (340,000 triangles), two lights | 60 fps |
+| See-through layers covering the whole screen (glows, fades, fog planes) | 1 | 2: 53 fps; 5: 32 fps |
+| Triangles (a cube of spheres filling much of the screen) | under 50,000 | 50,000: 53-56 fps with stutter |
+| Separate meshes (draw calls) | 100 | 250: 58 fps with stutter |
+| Different 512x512 pictures (like book covers) | 10 | 40: 58 fps with stutter |
+| One big texture | 2048x2048 | 4096x4096 and up: stutter (8192 takes half a second to upload) |
+| Shadows | none | even 100,000 lit triangles on a lit floor without shadows: 41 fps; a 512 shadow map: 29 fps |
+| Moving objects from JavaScript every frame | 20,000 (2 ms) | 60,000 (6 ms) |
 
-What limits it:
-- **Triangles are the bottleneck**, not pixels: lowering the resolution did not help the triangle-heavy scenes at all.
-  Instancing does not help either (it saves draw calls, not triangles). Use fewer or simpler objects: a sphere of 16x12 segments is plenty.
-- **Only stacked translucent layers are limited by pixels.** For those, render at a lower resolution (`renderer.setPixelRatio(0.5)`).
+## What helps
 
-## The results per scene
+| Change | Measured |
+|---|---|
+| **Half the resolution** (`renderer.setPixelRatio(0.5)`) | 2 full-screen layers: 53 -> 60 fps |
+| **Antialiasing off** (`new THREE.WebGLRenderer({ antialias: false })`) | 100,000 lit triangles: 46 -> 55 fps; 5 full-screen layers: 32 -> 49 fps |
+| Fewer, simpler objects | instancing saves draw calls, not pixels or triangles |
+| No shadows, no full-screen see-through effects | the two most expensive things here |
 
-| Scene | What it is | fps |
-|---|---|---|
-| Simple | a knot and a cube, one light | 60 |
-| Medium | 400 meshes, fog, 3 lights, reflective floor | 60 |
-| Heavy | 1,000 lit spheres, 340,000 triangles | 60 |
-| Shadows | 300 spheres, 2048 shadow map | 40-45 |
-| Triangles | 6,000 unlit spheres, 4 million triangles | about 30 (the same at 50% resolution) |
-| Overdraw | 60 additive translucent layers | 24 (60 at 50% resolution) |
-| Complex | 4 million triangles with shadows, 30,000 points, detailed knot | 9-11 (the same at 50% resolution) |
+Both of the first two together are probably what a real 3D slide needs; check it with the "Three.js test" slide (below), which has
+buttons for the resolution.
 
-(The shadows scene is slower than its 100,000 triangles suggest: a 2048 shadow map on a floor the size of the screen costs more than the geometry.)
+Earlier numbers on this page (from the "Three.js test" slide by eye) were too optimistic: that slide drew at 736x414 pixels then
+(the PC had display scaling of 2.6), a seventh of the screen. The benchmark runs before `3d-2026-11-13-1657` in `benchmarks/` are not
+usable either (too few pixels, or a way of measuring that made everything look slower than it is).
 
 ## The benchmark: measuring again (a new PC, a new browser, a new slideshow version)
 
@@ -56,7 +52,7 @@ On the TV PC press Esc -> Fun -> "3D benchmark" and tap **Start** (or press Ente
 
 At the end the results are saved in [benchmarks/](../benchmarks/README.md) as `3d-<date>.json` and `3d-<date>.md`. **Commit them
 from the TV PC** (`git add benchmarks && git commit -m "3D benchmark" && git push`; until then the automatic updates wait, because the
-PC has changes of its own), then update the tables above with the new numbers.
+PC has changes of its own), then update the tables above with the new numbers and the link to the results file.
 
 Each step is drawn exactly as a slide would draw it. "Holds 60 fps" means at least 57 fps with 95% of the frames within 20 ms (no
 stutter). The frame rate can't go above the screen's 60, so the headroom shows only as the step where it drops; the steps double.
