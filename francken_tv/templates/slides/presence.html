@@ -42,12 +42,12 @@
 			{# The motorcycle or mobility scooter rides along the front of the person's bars, from the first to the end of the last
 			   (across the gaps), kicking up dust, then idles there puffing exhaust. #}
 			{% set ride = bar.vehicle %}
-			<div class="motorcycle-rider {{ ride.kind }}" style="--row: {{ bar.row }}; --from: {{ ride.from }}%; --to: {{ ride.to }}%;
-				--delay: {{ ride.delay }}s; --grow: {{ ride.grow }}s; --paint: {{ bar.paint }}">
+			<div class="vehicle-ride {{ ride.kind }}" style="--row: {{ bar.row }}; --from: {{ ride.from }}%; --to: {{ ride.to }}%;
+				--delay: {{ ride.delay }}s; --grow: {{ ride.grow }}s; --paint: {{ bar.paint }}"><div class="motorcycle-rider {{ ride.kind }}">
 				<div class="motorcycle-dust"><i></i><i></i><i></i><i></i><i></i></div>
 				<div class="motorcycle-exhaust"><i></i><i></i><i></i></div>
 				{% include ride.kind ~ ".svg" %}
-			</div>
+			</div></div>
 			{% endif %}
 			{% endfor %}
 		</div>

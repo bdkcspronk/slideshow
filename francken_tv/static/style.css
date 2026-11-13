@@ -1564,13 +1564,14 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
    start, dust from the back wheel while it rides, then it idles at the end, shaking and puffing exhaust.
    templates/motorcycle.svg faces right with its wheels at the bottom; the puffs are placed for that.
    Its class="paint" parts (side panel, stripes) take the bar's colour, the seat a darker shade. */
+/* It rides in a wrapper as wide as the plot, like the cat (cat-ride's translate is in % of the wrapper). */
+.vehicle-ride { position: absolute; inset: 0; pointer-events: none; opacity: 0; animation: cat-ride var(--grow) linear var(--delay) forwards; }
 .motorcycle-rider {
 	position: absolute;
+	left: var(--from);
 	top: calc((var(--row) + 0.5) * 100% / var(--rows));
 	height: calc(1.3 * 100% / var(--rows));
 	transform: translate(-80%, -62%);
-	opacity: 0;
-	animation: cat-ride var(--grow) linear var(--delay) forwards;
 }
 .motorcycle-rider svg {
 	position: relative;
@@ -1589,8 +1590,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .motorcycle-rider.mobility {   /* a row tall and centred on it: the flag and seat stay clear of the rows around it */
 	height: calc(100% / var(--rows));
 	transform: translate(-80%, -50%);
-	animation-timing-function: cubic-bezier(0.65, 0, 0.75, 1);
 }
+.vehicle-ride.mobility { animation-timing-function: cubic-bezier(0.65, 0, 0.75, 1); }
 .motorcycle-rider.mobility svg { animation: moto-idle 0.12s linear calc(var(--delay) + var(--grow)) infinite alternate; }
 .motorcycle-rider.mobility .motorcycle-exhaust { display: none; }
 .motorcycle-rider.mobility .motorcycle-dust i { left: 16%; width: 24%; }
