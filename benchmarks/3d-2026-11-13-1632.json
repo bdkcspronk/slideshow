@@ -1,0 +1,302 @@
+{
+	"when": "2026-11-13T15:32:35.035Z",
+	"gpu": "Intel(R) HD Graphics, or similar",
+	"webgl2": true,
+	"max_texture_size": 8192,
+	"screen": "736x414",
+	"canvas": "736x414",
+	"pixel_ratio": 2.608695652173913,
+	"three": "160",
+	"browser": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:159.0) Gecko/20100101 Firefox/159.0",
+	"tests": [
+		{
+			"title": "Triangles, unlit",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "250,000 triangles",
+					"fps": 60,
+					"work_ms": 12,
+					"p95_ms": 13,
+					"first_ms": 20,
+					"triangles": 250272,
+					"calls": 1,
+					"holds": true
+				},
+				{
+					"label": "500,000 triangles",
+					"fps": 60,
+					"work_ms": 11,
+					"p95_ms": 16,
+					"first_ms": 20,
+					"triangles": 500192,
+					"calls": 1,
+					"holds": false
+				}
+			],
+			"best": "250,000 triangles"
+		},
+		{
+			"title": "Triangles, lit (2 lights)",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "250,000 triangles",
+					"fps": 60,
+					"work_ms": 10,
+					"p95_ms": 15,
+					"first_ms": 8,
+					"triangles": 250272,
+					"calls": 1,
+					"holds": true
+				},
+				{
+					"label": "500,000 triangles",
+					"fps": 54,
+					"work_ms": 17,
+					"p95_ms": 19,
+					"first_ms": 16,
+					"triangles": 500192,
+					"calls": 1,
+					"holds": false
+				}
+			],
+			"best": "250,000 triangles"
+		},
+		{
+			"title": "Separate meshes (draw calls)",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "250 meshes",
+					"fps": 60,
+					"work_ms": 10,
+					"p95_ms": 11,
+					"first_ms": 6,
+					"triangles": 5000,
+					"calls": 250,
+					"holds": true
+				},
+				{
+					"label": "500 meshes",
+					"fps": 60,
+					"work_ms": 10,
+					"p95_ms": 11,
+					"first_ms": 6,
+					"triangles": 10000,
+					"calls": 500,
+					"holds": true
+				},
+				{
+					"label": "1,000 meshes",
+					"fps": 60,
+					"work_ms": 11,
+					"p95_ms": 12,
+					"first_ms": 8,
+					"triangles": 20000,
+					"calls": 1000,
+					"holds": true
+				},
+				{
+					"label": "2,000 meshes",
+					"fps": 60,
+					"work_ms": 13,
+					"p95_ms": 14,
+					"first_ms": 13,
+					"triangles": 40000,
+					"calls": 2000,
+					"holds": true
+				},
+				{
+					"label": "4,000 meshes",
+					"fps": 41,
+					"work_ms": 24,
+					"p95_ms": 26,
+					"first_ms": 24,
+					"triangles": 80000,
+					"calls": 4000,
+					"holds": false
+				}
+			],
+			"best": "2,000 meshes"
+		},
+		{
+			"title": "Shadows (100,000 triangles)",
+			"kind": "all",
+			"steps": [
+				{
+					"label": "no shadows",
+					"fps": 60,
+					"work_ms": 12,
+					"p95_ms": 13,
+					"first_ms": 7,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": true
+				},
+				{
+					"label": "shadow map 512x512",
+					"fps": 60,
+					"work_ms": 15,
+					"p95_ms": 17,
+					"first_ms": 22,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": false
+				},
+				{
+					"label": "shadow map 1024x1024",
+					"fps": 60,
+					"work_ms": 15,
+					"p95_ms": 19,
+					"first_ms": 11,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": false
+				},
+				{
+					"label": "shadow map 2048x2048",
+					"fps": 54,
+					"work_ms": 17,
+					"p95_ms": 19,
+					"first_ms": 12,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": false
+				},
+				{
+					"label": "shadow map 4096x4096",
+					"fps": 39,
+					"work_ms": 25,
+					"p95_ms": 27,
+					"first_ms": 21,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": false
+				}
+			]
+		},
+		{
+			"title": "Overdraw (see-through layers)",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "10 full-screen layers",
+					"fps": 60,
+					"work_ms": 15,
+					"p95_ms": 16,
+					"first_ms": 11,
+					"triangles": 40,
+					"calls": 20,
+					"holds": false
+				},
+				{
+					"label": "10 full-screen layers, drawn at 50% resolution",
+					"fps": 60,
+					"work_ms": 9,
+					"p95_ms": 10,
+					"first_ms": 3,
+					"triangles": 40,
+					"calls": 20,
+					"holds": true
+				}
+			],
+			"best": "10 full-screen layers, drawn at 50% resolution"
+		},
+		{
+			"title": "Textures (512x512 pictures)",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "10 textures",
+					"fps": 60,
+					"work_ms": 9,
+					"p95_ms": 11,
+					"first_ms": 6,
+					"triangles": 20,
+					"calls": 10,
+					"holds": true
+				},
+				{
+					"label": "40 textures",
+					"fps": 60,
+					"work_ms": 10,
+					"p95_ms": 11,
+					"first_ms": 6,
+					"triangles": 80,
+					"calls": 40,
+					"holds": true
+				},
+				{
+					"label": "100 textures",
+					"fps": 55,
+					"work_ms": 10,
+					"p95_ms": 11,
+					"first_ms": 6,
+					"triangles": 200,
+					"calls": 100,
+					"holds": false
+				}
+			],
+			"best": "40 textures"
+		},
+		{
+			"title": "One big texture",
+			"kind": "all",
+			"steps": [
+				{
+					"label": "2048x2048 texture",
+					"fps": 60,
+					"work_ms": 8,
+					"p95_ms": 10,
+					"first_ms": 3,
+					"triangles": 2,
+					"calls": 1,
+					"holds": true
+				},
+				{
+					"label": "4096x4096 texture",
+					"fps": 60,
+					"work_ms": 5,
+					"p95_ms": 10,
+					"first_ms": 3,
+					"triangles": 2,
+					"calls": 1,
+					"holds": true
+				},
+				{
+					"label": "8192x8192 texture",
+					"fps": 49,
+					"work_ms": 5,
+					"p95_ms": 10,
+					"first_ms": 3,
+					"triangles": 2,
+					"calls": 1,
+					"holds": false
+				}
+			]
+		},
+		{
+			"title": "Moving instances from JavaScript (CPU, every frame)",
+			"kind": "all",
+			"steps": [
+				{
+					"label": "6,000 instances",
+					"work_ms": 1,
+					"holds": true
+				},
+				{
+					"label": "20,000 instances",
+					"work_ms": 2,
+					"holds": true
+				},
+				{
+					"label": "60,000 instances",
+					"work_ms": 6,
+					"holds": false
+				}
+			],
+			"best": ""
+		}
+	]
+}
