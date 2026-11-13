@@ -620,7 +620,7 @@ function setupThreeBenchmark(root) {
 		results.innerHTML = "";
 		try {
 			const THREE = await loadThree();
-			if (!window.threeBenchmark) await loadScript("/static/three_benchmark.js");
+			await loadScript(`/static/three_benchmark.js?${Date.now()}`);   // every time: a page that has been open for days may hold an old version
 			const run = await window.threeBenchmark(root, THREE);
 			results.innerHTML = `<h2>${escape(run.gpu)} &middot; ${escape(run.screen)}</h2>` + run.tests.map((test) =>
 				`<p><b>${escape(test.title)}</b>${test.best !== undefined ? ": " + escape(test.best || "") : ""}</p>`).join("");
