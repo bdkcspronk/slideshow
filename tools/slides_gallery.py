@@ -387,7 +387,7 @@ def page(project: Path, slides: list[dict], assets: list[str], tiles: dict, now:
 	style = inline_css((static / "style.css").read_text(encoding="utf-8"), static)
 	leaflet_css = inline_css((static / "vendor/leaflet/leaflet.css").read_text(encoding="utf-8"), static / "vendor/leaflet")
 	scripts = "\n".join((static / name).read_text(encoding="utf-8") for name in
-		["vendor/leaflet/leaflet.js", "vendor/qrcode/qrcode.js", "widgets.js"])
+		["vendor/leaflet/leaflet.js", "vendor/qrcode/qrcode.js", "widgets.js", "books_3d.js", "activities_3d.js"])
 	frame = FRAME.replace("/*STYLE*/", leaflet_css + "\n" + style).replace("/*SCRIPTS*/", scripts.replace("</script", "<\\/script"))
 	grotesk = base64.b64encode((static / "vendor/familjen-grotesk/familjen-grotesk-700.woff2").read_bytes()).decode()
 	data = {"slides": slides, "assets": assets, "tiles": tiles, "frame": frame,

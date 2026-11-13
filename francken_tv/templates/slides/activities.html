@@ -1,14 +1,30 @@
-{# Upcoming activities (providers/activities.py), a poster in navy and crimson: soft glows over
-   the navy, the title with a crimson highlighter wiping in, and a card per activity with a crimson date
-   block. Today's activities (and ones of several days going on now) each across both columns at the top,
-   crimson themselves; then the others: down the left column, then the right, all cards the same height (the rows are 1fr). They slide in one by one
-   (--i): today's from above, the left column from the left, the right column from the right. #}
+{# Upcoming activities (providers/activities.py), on the navy and crimson poster: a split-flap display per activity,
+   in 3D (static/activities_3d.js). Each display swings down into place, one after the other, and its flaps clatter
+   through the letters until they show the date, the title and the details. Today's activities (and ones of several
+   days going on now) each get a crimson display across both columns at the top; then the others: down the left
+   column, then the right, all the same height (the rows are 1fr).
+
+   The cards below are where the displays go (the 3D draws one over each card, the size of the card) and what is
+   shown without WebGL: cream cards with a crimson date block, sliding in one by one (--i): today's from above, the
+   left column from the left, the right column from the right. data-flaps is what each display spells out. #}
 <div class="slide activities-slide">
 	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
 	<h1 class="poster-title"><span>Upcoming</span> <span class="poster-marked">activities</span></h1>
+	<canvas class="activities-3d" data-activities-3d aria-hidden="true"></canvas>
 	{% macro card(activity, cls, i) %}
 		{% set now = activity.day <= today %}
-		<li class="{{ cls }}" style="--i: {{ i }}">
+		{% set when = "Today" if activity.day == today else ("Going on" if activity.day < today else activity.day.strftime("%A")) %}
+		{% set details = [when] %}
+		{% if activity.end %}{% set details = details + ["until " ~ activity.end.strftime("%a") ~ " " ~ activity.end.day ~ " " ~ activity.end.strftime("%b")] %}{% endif %}
+		{% if activity.time %}{% set details = details + [activity.time] %}{% endif %}
+		{% if activity.location %}{% set details = details + [activity.location] %}{% endif %}
+		<li class="{{ cls }}" style="--i: {{ i }}" data-flaps="{{ {
+			'weekday': ('Now' if now and activity.day != today else activity.day.strftime('%a')),
+			'day': activity.day.day | string,
+			'month': activity.day.strftime('%b'),
+			'title': activity.title,
+			'details': details | join(' · '),
+		} | tojson | forceescape }}">
 			<div class="activity-date">
 				<span class="weekday">{% if activity.day == today %}Today{% elif now %}Now{% else %}{{ activity.day.strftime("%a") }}{% endif %}</span>
 				<span class="day">{{ activity.day.day }}</span>

@@ -251,6 +251,20 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	overflow: hidden;
 }
 .activities-slide li.today .activity-details { color: rgba(255, 255, 255, 0.85); }
+/* In 3D (static/activities_3d.js): a split-flap display drawn over each card on the canvas; the cards stay where they
+   are (hidden, not sliding in), to say where. Without WebGL .activities-flaps goes and the cards are shown. */
+.activities-3d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.activities-flaps li { visibility: hidden; animation: none !important; }
+/* In 3D the displays hang on a white wall: plaster (a faint grain), lit from the top left; the title in navy. */
+.activities-slide.activities-flaps {
+	color: var(--navy);
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url%28%23n%29'/%3E%3C/svg%3E"),
+		radial-gradient(ellipse 90% 80% at 20% 0%, #ffffff, #f1efea 55%, #dedbd3);
+}
+.activities-flaps .navy-glows { display: none; }
+.activities-flaps .poster-marked { color: #ffffff; }
+.activities-flaps .poster-marked::before { inset: 6% -1vw -2% -0.8vw; }   /* the whole word: its white letters are on the white wall otherwise */
 
 /* The info slides (news, weather, buses, timetable: providers/news.py, ...), in the activities slide's
    look. Items slide in one after another (--i, --j). */
