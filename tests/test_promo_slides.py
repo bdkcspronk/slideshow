@@ -61,8 +61,8 @@ class ThreeTest(unittest.TestCase):
 
 RESULTS = {"when": "2026-11-13T15:00:00Z", "gpu": "Some GPU", "webgl2": True, "screen": "1920x1080", "tests": [
 	{"title": "Triangles", "kind": "ramp", "best": "500,000 triangles", "steps": [
-		{"label": "500,000 triangles", "fps": 60, "work_ms": 4.2, "p95_ms": 5, "holds": True},
-		{"label": "1,000,000 triangles", "fps": 31, "work_ms": 30, "p95_ms": 33, "holds": False}]},
+		{"label": "500,000 triangles", "fps": 60, "frame_ms": 16.7, "p95_ms": 17, "holds": True},
+		{"label": "1,000,000 triangles", "fps": 31, "frame_ms": 30, "p95_ms": 33, "holds": False}]},
 	{"title": "Textures", "kind": "all", "steps": [{"label": "8192x8192 texture", "error": "out | of memory"}]}]}
 
 

@@ -78,20 +78,20 @@ def markdown(results: dict) -> str:
 		f"- Graphics: {cell(results.get('gpu'))} (WebGL {2 if results.get('webgl2') else 1}, largest texture {cell(results.get('max_texture_size'))})",
 		f"- Screen: {cell(results.get('screen'))}, drawn on {cell(results.get('canvas'))} (pixel ratio {cell(results.get('pixel_ratio'))})",
 		f"- Three.js r{cell(results.get('three'))}, {cell(results.get('browser'))}", "",
-		f"- Empty scene: {cell(results.get('floor_ms'))} ms of work (reading a pixel back costs that by itself; a real slide doesn't pay it)", "",
-		'"Holds 60" means at least 55 fps and 95% of the frames took 14 ms of work or less beyond the empty scene\'s. "Work" is the median time '
-		'to draw a frame including waiting for the graphics chip. "First frame" is when shaders compile and textures upload.', ""]
+		"",
+		'Each step is drawn as a slide would draw it. "Holds 60" means at least 57 fps with 95% of the frames within 20 ms (no stutter). '
+		'"Frame ms" is the median time between frames (16.7 at 60 fps). "First frame" is when shaders compile and textures upload.', ""]
 	for test in results["tests"]:
 		lines += [f"## {cell(test.get('title'))}", ""]
 		if test.get("best") is not None:
 			lines += [f"**Largest step that holds 60 fps: {cell(test['best'])}**", ""]
-		lines += ["| Step | fps | Work ms | 95% ms | First frame ms | Triangles | Draw calls | Holds 60 |", "|---|---|---|---|---|---|---|---|"]
+		lines += ["| Step | fps | Frame ms | 95% ms | First frame ms | Triangles | Draw calls | Holds 60 |", "|---|---|---|---|---|---|---|---|"]
 		for step in test.get("steps", []):
 			holds = "yes" if step.get("holds") else "no"
 			if step.get("error"):
 				lines.append(f"| {cell(step.get('label'))} | | | | | | | error: {cell(step['error'])} |")
 				continue
-			lines.append("| " + " | ".join([cell(step.get("label")), cell(step.get("fps")), cell(step.get("work_ms")), cell(step.get("p95_ms")),
+			lines.append("| " + " | ".join([cell(step.get("label")), cell(step.get("fps")), cell(step.get("frame_ms")), cell(step.get("p95_ms")),
 				cell(step.get("first_ms")), cell(step.get("triangles")), cell(step.get("calls")), holds]) + " |")
 		lines.append("")
 	return "\n".join(lines)

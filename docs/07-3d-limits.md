@@ -4,11 +4,11 @@
 (`providers/three.py`, the scenes are in `static/widgets.js`, `THREE_SCENES`). Read this before making a slide with Three.js
 (the 3D books slide, a new 3D scene, ...).
 
-> **These numbers are provisional.** They were read off the old test slide by eye, and the first two benchmark runs
-> (`benchmarks/3d-2026-11-13-1628` and `-1632`) drew at only 736x414 pixels (the TV PC's display scaling makes the 1920x1080 screen
-> 736x414 CSS pixels, and the test used one pixel per CSS pixel), about a seventh of the real pixels, and counted a fixed few
-> milliseconds of read-back as work. Both are fixed; anything about pixels (overdraw, textures, shadows) was too optimistic.
-> Run the benchmark again and replace the tables with its results.
+> **These numbers are provisional.** They were read off the old test slide by eye at a pixel ratio of 2.6, so it drew only 736x414
+> pixels, about a seventh of the screen; anything about pixels (overdraw, textures, shadows) was too optimistic. The benchmark runs of
+> 13 November 2026 in `benchmarks/` are not usable either: the first two drew at 736x414 too, and all four waited for the graphics chip
+> after every frame, which made even one textured square miss 60 fps. Both are fixed; run the benchmark again and replace the
+> tables with its results.
 
 ## The budget
 
@@ -41,7 +41,7 @@ What limits it:
 
 ## The benchmark: measuring again (a new PC, a new browser, a new slideshow version)
 
-On the TV PC press Esc -> Fun -> "3D benchmark" and tap **Start** (or press Enter). It takes about 2 minutes; leave the PC alone
+On the TV PC press Esc -> Fun -> "3D benchmark" and tap **Start** (or press Enter). It takes about 3 minutes; leave the PC alone
 (and not near bieruur: that takes over the screen). It runs these tests, each getting heavier until a step no longer holds 60 fps:
 
 | Test | Finds out |
@@ -51,15 +51,16 @@ On the TV PC press Esc -> Fun -> "3D benchmark" and tap **Start** (or press Ente
 | Shadows | what a shadow map of 512 to 4096 costs on a 100,000 triangle scene |
 | Overdraw | the most full-screen see-through layers, and whether half the resolution helps |
 | Textures, one big texture | how many pictures (like book covers) can be loaded, flown into until one is shown 1:1, and how long uploading them takes |
+| Antialiasing on and off | what the smoothing of edges costs (it is on in the slides; off is the cheapest way to win back speed) |
 | Moving instances | how many objects JavaScript can move every frame |
 
 At the end the results are saved in [benchmarks/](../benchmarks/README.md) as `3d-<date>.json` and `3d-<date>.md`. **Commit them
 from the TV PC** (`git add benchmarks && git commit -m "3D benchmark" && git push`; until then the automatic updates wait, because the
 PC has changes of its own), then update the tables above with the new numbers.
 
-"Holds 60 fps" means at least 55 fps and 95% of the frames took 15 ms of work or less. The work is measured including waiting for the
-graphics chip, so unlike the fps it is not stuck at the screen's 60. The panel and the results also show which graphics chip is used
-("llvmpipe" or "SwiftShader" means no GPU is used and 3D will be slow).
+Each step is drawn exactly as a slide would draw it. "Holds 60 fps" means at least 57 fps with 95% of the frames within 20 ms (no
+stutter). The frame rate can't go above the screen's 60, so the headroom shows only as the step where it drops; the steps double.
+The panel and the results also show which graphics chip is used ("llvmpipe" or "SwiftShader" means no GPU is used and 3D will be slow).
 
 There is also the older "Three.js test" slide (in the rotation by default; take `three` out of `rotation.order` when you are done with it):
 seven scenes you can switch between by tapping (or S and R), at 100%, 75% or 50% resolution, with a live fps panel. Handy for looking at a scene

@@ -35,7 +35,7 @@ It shows:
 | The Sjaarscie's promo: the first-year questions, then "Join the Sjaarscie!" with the Zwitsal baby, on baby blue and pink | | `providers/sjaarscie.py` |
 | The MScie's promo, the committee for master students by master students: silhouettes of arms throwing black graduation caps in the air once, then the name | | `providers/mscie.py` |
 | A graphics test (Three.js): 3D scenes from simple to complex, plus tests of triangles, shadows and overdraw on their own,, each with a live frames-per-second readout, to see what the TV PC can handle (tap to switch scene or resolution, or press S and R; take `three` out of the rotation when done) | | `providers/three.py`, `static/widgets.js` |
-| The 3D benchmark: tap Start (Esc, Fun) and it runs 3D tests for 2 minutes, saving what the TV PC can handle in `benchmarks/` to commit from the TV PC | | `providers/three.py`, `static/three_benchmark.js` |
+| The 3D benchmark: tap Start (Esc, Fun) and it runs 3D tests for about 3 minutes, saving what the TV PC can handle in `benchmarks/` to commit from the TV PC | | `providers/three.py`, `static/three_benchmark.js` |
 | Become a member: €5 a year, free coffee, events, and a QR code to the sign-up form, animated (only in August to October and February) | professorfrancken.nl/register | `providers/membership.py` |
 | Francken socks for sale: the price, legs in our socks rising out of the title, and a QR code to text the seller on WhatsApp | wa.me link in `config.toml` | `providers/socks.py` |
 | Find us online: QR codes to the WhatsApp announcement group, LinkedIn, Instagram and the website, as polaroids dropping onto a washing line | links in `config.toml` | `providers/socials.py` |

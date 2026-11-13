@@ -2,16 +2,17 @@
 // It runs a series of tests, each a ramp of steps that get heavier until a step no longer keeps 60 frames per second, then
 // sends the results to the server (POST /api/benchmark), which saves them in benchmarks/.
 //
-// Every step is drawn for a while after a short warm-up (shaders compile and textures upload then). Per frame we measure the
-// *work*: render() followed by a 1-pixel readPixels, which waits for the graphics chip to finish. That makes the time independent
-// of vsync (the frame rate stops at the screen's 60 Hz, the work time doesn't). A step "holds 60 fps" when it
-// reaches 55 fps and 95% of its frames took 14 ms of work or less beyond the empty scene's: reading the pixel back costs a fixed
-// few milliseconds on its own, which a real slide doesn't pay. Everything is drawn at the screen's real pixels (devicePixelRatio:
-// a TV PC with display scaling shows a 1920x1080 screen as, say, 736x414 CSS pixels).
+// Every step is drawn for a while after a short warm-up (shaders compile and textures upload then), exactly as a slide would draw
+// it: one render() per animation frame, nothing more. We count the frames and the time between them. A step "holds 60 fps" when
+// it reaches 57 fps and 95% of its frames came within 20 ms (no stutter). The frame rate can't go above the screen's 60 Hz, so the
+// headroom shows only as the step where it drops: the ramps double each step. (Waiting for the graphics chip after each frame
+// to time its work, as an earlier version did, stops the CPU and the chip from working at the same time and makes everything look
+// slower than it is.) Everything is drawn at the screen's real pixels (devicePixelRatio: with display scaling a 1920x1080 screen
+// can be, say, 736x414 CSS pixels). Antialiasing is on, as in the slides, except in the test that turns it off.
 
 (() => {
 	const WARMUP_MS = 700, MEASURE_MS = 2500;
-	const HOLDS_FPS = 55, HOLDS_P95_MS = 14;   // the work beyond the empty scene's (the floor, see "Empty scene" below)
+	const HOLDS_FPS = 57, HOLDS_P95_MS = 20;
 
 	const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 	const percentile95 = (values) => [...values].sort((a, b) => a - b)[Math.min(values.length - 1, Math.floor(values.length * 0.95))];
@@ -24,19 +25,22 @@
 		const status = root.querySelector("[data-tb-status]");
 		const bar = root.querySelector("[data-tb-bar]");
 		const live = root.querySelector("[data-tb-live]");
-		const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+		const makeRenderer = (on, antialias) => new THREE.WebGLRenderer({ canvas: on, antialias, powerPreference: "high-performance" });
+		let renderer = makeRenderer(canvas, true);
 		const resolution = (scale = 1) => {   // `scale` of the screen's real pixels
 			renderer.setPixelRatio(devicePixelRatio * scale);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 		};
 		resolution();
-		let floor = 0;   // ms of work for an empty scene: the read-back's own cost
-		const gl = renderer.getContext();
 		const pixel = new Uint8Array(4);
-		const sync = () => gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);   // waits until the chip is done drawing
+		const sync = () => {   // waits until the chip is done drawing (only to time the first frame)
+			const gl = renderer.getContext();
+			gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+		};
+		const gl = renderer.getContext();
 		const debug = gl.getExtension("WEBGL_debug_renderer_info");
 
-		const info = {   // floor_ms is added below
+		const info = {
 			gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : "unknown",
 			webgl2: renderer.capabilities.isWebGL2,
 			max_texture_size: renderer.capabilities.maxTextureSize,
@@ -60,39 +64,35 @@
 			renderer.renderLists.dispose();
 		}
 
-		// Draws a rig for WARMUP_MS + MEASURE_MS and returns what it took.
+		// Draws a rig for WARMUP_MS + MEASURE_MS, one render() per frame, and returns how it went.
 		async function measure(rig) {
+			const first = performance.now();
 			renderer.render(rig.scene, rig.camera);   // the first frame: shaders compile and textures upload
 			sync();
-			const first = performance.now();
-			renderer.render(rig.scene, rig.camera);
-			sync();
 			const firstMs = performance.now() - first;
-			const works = [];
+			const gaps = [];
 			const started = await nextFrame();
-			let measuring = null, frames = 0, end = started;
+			let measuring = null, frames = 0, last = started;
 			for (;;) {
 				const now = await nextFrame();
 				alive();
 				rig.update?.((now - started) / 1000);
-				const before = performance.now();
 				renderer.render(rig.scene, rig.camera);
-				sync();
-				const work = performance.now() - before;
+				const gap = now - last;
+				last = now;
 				if (now - started < WARMUP_MS) continue;
-				measuring ??= now;
-				works.push(work);
+				if (measuring === null) { measuring = now; continue; }
+				gaps.push(gap);
 				frames++;
-				end = now;
-				live.textContent = `${Math.round(frames * 1000 / Math.max(1, now - measuring))} fps, ${round(median(works))} ms of work per frame`;
+				live.textContent = `${Math.round(frames * 1000 / Math.max(1, now - measuring))} fps`;
 				if (now - measuring >= MEASURE_MS) break;
 			}
-			const fps = frames * 1000 / (end - measuring);
-			const p95 = percentile95(works);
+			const fps = frames * 1000 / (last - measuring);
+			const p95 = percentile95(gaps);
 			return {
-				fps: round(fps, 0), work_ms: round(median(works)), p95_ms: round(p95), first_ms: round(firstMs, 0),
+				fps: round(fps, 0), frame_ms: round(median(gaps)), p95_ms: round(p95), first_ms: round(firstMs, 0),
 				triangles: renderer.info.render.triangles, calls: renderer.info.render.calls,
-				holds: fps >= HOLDS_FPS && p95 - floor <= HOLDS_P95_MS,
+				holds: fps >= HOLDS_FPS && p95 <= HOLDS_P95_MS,
 			};
 		}
 
@@ -238,26 +238,17 @@
 		const results = [];
 		const plan = [];   // [title, steps, make(step) -> rig, label(step), options]
 		const tris = (n) => `${number(n)} triangles`;
-		plan.push(["Triangles, unlit", [250e3, 500e3, 1e6, 2e6, 4e6, 8e6], (n) => trianglesRig(n, false), tris, "ramp"]);
-		plan.push(["Triangles, lit (2 lights)", [250e3, 500e3, 1e6, 2e6, 4e6], (n) => trianglesRig(n, true), tris, "ramp"]);
-		plan.push(["Separate meshes (draw calls)", [250, 500, 1000, 2000, 4000], drawCallsRig, (n) => `${number(n)} meshes`, "ramp"]);
+		plan.push(["Triangles, unlit", [50e3, 100e3, 250e3, 500e3, 1e6, 2e6, 4e6], (n) => trianglesRig(n, false), tris, "ramp"]);
+		plan.push(["Triangles, lit (2 lights)", [50e3, 100e3, 250e3, 500e3, 1e6, 2e6], (n) => trianglesRig(n, true), tris, "ramp"]);
+		plan.push(["Separate meshes (draw calls)", [50, 100, 250, 500, 1000, 2000, 4000], drawCallsRig, (n) => `${number(n)} meshes`, "ramp"]);
 		plan.push(["Shadows (100,000 triangles)", [0, 512, 1024, 2048, 4096], shadowsRig, (n) => n ? `shadow map ${n}x${n}` : "no shadows", "all"]);
-		plan.push(["Overdraw (see-through layers)", [10, 20, 40, 80], overdrawRig, (n) => `${n} full-screen layers`, "ramp"]);
-		plan.push(["Textures (512x512 pictures)", [10, 40, 100, 200], texturesRig, (n) => `${n} textures`, "ramp"]);
+		plan.push(["Overdraw (see-through layers)", [1, 2, 5, 10, 20, 40], overdrawRig, (n) => `${n} full-screen layer${n === 1 ? "" : "s"}`, "ramp"]);
+		plan.push(["Textures (512x512 pictures)", [5, 10, 40, 100, 200], texturesRig, (n) => `${n} textures`, "ramp"]);
 		plan.push(["One big texture", [2048, 4096, 8192], (n) => texturesRig(1, n), (n) => `${n}x${n} texture`, "all"]);
 
-		const steps = plan.reduce((sum, p) => sum + p[1].length, 0) + 3;   // + the instance updates
+		const steps = plan.reduce((sum, p) => sum + p[1].length, 0) + 3 + 4;   // + the instance updates and the antialiasing test
 		let done = 0;
 		const progress = (text) => { status.textContent = text; bar.style.width = `${Math.min(100, Math.round(done / steps * 100))}%`; };
-
-		{   // the empty scene: how long the read-back takes by itself
-			progress("Empty scene (calibration)");
-			const rig = { scene: new THREE.Scene(), camera: camera(10) };
-			rig.scene.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));
-			floor = (await measure(rig)).work_ms;
-			free(rig);
-		}
-		info.floor_ms = floor;
 
 		for (const [title, values, make, label, kind] of plan) {
 			const test = { title, kind, steps: [] };
@@ -288,15 +279,53 @@
 					progress(`${title}: ${failed.label} at 50% resolution`);
 					resolution(0.5);
 					const rig = overdrawRig(Number(failed.label.split(" ")[0]));
-					test.steps.push({ label: `${failed.label}, drawn at 50% resolution`, ...await measure(rig) });
-					free(rig);
-					resolution();
+					try {
+						test.steps.push({ label: `${failed.label}, drawn at 50% resolution`, ...await measure(rig) });
+					} catch (error) {
+						if (!document.contains(canvas)) throw error;
+						test.steps.push({ label: `${failed.label}, drawn at 50% resolution`, error: String(error.message || error), holds: false });
+					} finally {
+						free(rig);
+						resolution();
+					}
 				}
 			}
 			const held = test.steps.filter((s) => s.holds);
 			test.best = kind === "ramp" ? (held.length ? held.at(-1).label : "none held 60 fps, even the first step") : undefined;
 			results.push(test);
 		}
+
+		// Antialiasing: the same scenes with it on (as everywhere above) and off. It is chosen when the drawing surface is made, so the
+		// "off" steps draw on a second canvas laid over the first.
+		const antialias = { title: "Antialiasing on and off", kind: "all", steps: [] };
+		const aaScenes = [["100,000 lit triangles", () => trianglesRig(100e3, true)], ["5 full-screen layers", () => overdrawRig(5)]];
+		const plain = Object.assign(document.createElement("canvas"), { className: canvas.className });
+		plain.style.cssText = "position:absolute;inset:0;width:100%;height:100%";
+		try {   // an error here (say, no second drawing surface) is noted, and the rest still runs and is saved
+			for (const on of [true, false]) {
+				if (!on) {
+					canvas.after(plain);
+					renderer.dispose();
+					renderer = makeRenderer(plain, false);
+					resolution();
+				}
+				for (const [label, make] of aaScenes) {
+					alive();
+					progress(`${antialias.title}: ${label}, antialiasing ${on ? "on" : "off"}`);
+					const rig = make();
+					try {
+						antialias.steps.push({ label: `${label}, antialiasing ${on ? "on" : "off"}`, ...await measure(rig) });
+					} finally {
+						free(rig);
+						done++;
+					}
+				}
+			}
+		} catch (error) {
+			if (!document.contains(canvas)) throw error;
+			antialias.steps.push({ label: "stopped", error: String(error.message || error), holds: false });
+		}
+		results.push(antialias);
 
 		// The CPU: moving thousands of instances in JavaScript every frame, as the wave scenes do (no drawing).
 		const cpu = { title: "Moving instances from JavaScript (CPU, every frame)", kind: "all", steps: [] };
@@ -314,12 +343,13 @@
 			}
 			mesh.dispose();
 			const ms = median(times.slice(3));
-			cpu.steps.push({ label: `${number(count)} instances`, work_ms: round(ms, 2), holds: ms <= 4 });
+			cpu.steps.push({ label: `${number(count)} instances: ${round(ms, 2)} ms of JavaScript per frame`, work_ms: round(ms, 2), holds: ms <= 4 });
 			done++;
 		}
 		results.push(cpu);
 
-		renderer.dispose();
+		try { renderer.dispose(); } catch (error) { /* the results matter more */ }
+		plain.remove();
 		return { when: new Date().toISOString(), ...info, tests: results };
 	};
 })();
