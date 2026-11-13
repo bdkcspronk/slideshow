@@ -87,7 +87,7 @@ class ThreeBenchmarkTest(unittest.TestCase):
 		self.assertEqual([slide.template for slide in ThreeBenchmarkProvider().slides(NOW)], ["three_benchmark.html"])
 		from francken_tv import menu
 		self.assertEqual(menu.GROUPS[menu.group_of("three-benchmark")][0], "Fun")
-		self.assertIn(("three_benchmark", ""), menu.EXTRA["three"])
+		self.assertIn("three_benchmark", menu.MENU_ONLY)
 
 
 class SocialsTest(unittest.TestCase):

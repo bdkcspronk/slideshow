@@ -40,8 +40,10 @@ GROUPS = [
 	("Other", []),
 ]
 # More slides to jump to after a slide type's own (not in the rotation by themselves)
-EXTRA = {"three": [("three_benchmark", "")], "weather": [("rain", "Rain warning")], "spotify": [("spotify-lyrics", "Spotify lyrics")],
+EXTRA = {"weather": [("rain", "Rain warning")], "spotify": [("spotify-lyrics", "Spotify lyrics")],
 	"puzzles": [("connections", ""), ("wordle", ""), ("catfishing", ""), ("timeguessr", "")]}
+# Slide types that are only in the menu, never in the rotation (the 3D test slide and benchmark: too heavy for the TV PC to show in passing)
+MENU_ONLY = ["three", "three_benchmark"]
 KEYS = {"images": "poster", "event_photos": "event-photo"}   # slide types called differently in GROUPS
 
 
@@ -65,7 +67,7 @@ def has_slide(provider: Provider, app: App) -> bool:
 
 
 def channels(app: App) -> list[dict]:
-	"""Every slide type of the rotation, and the EXTRA ones after it, and the takeovers that have a menu slide right now
+	"""Every slide type of the rotation, and the EXTRA ones after it, the MENU_ONLY ones, and the takeovers that have a menu slide right now
 	(the vrijmibo, on Fridays), as {"name", "label", "group"} (the group's number in GROUPS), sorted by group; within a
 	group in the order of the rotation."""
 	found = []
@@ -74,6 +76,11 @@ def channels(app: App) -> list[dict]:
 			known = app.providers.get(name)
 			label = label or (known.title if known else "") or name.replace("_", " ").capitalize()
 			found.append({"name": name, "label": label, "group": group_of(KEYS.get(name, name.replace("_", "-")))})
+	listed = {channel["name"] for channel in found}
+	for name in MENU_ONLY:
+		known = app.providers.get(name)
+		if known is not None and name not in listed:
+			found.append({"name": name, "label": title(known), "group": group_of(name.replace("_", "-"))})
 	now = app.clock.now()
 	for takeover in getattr(app, "takeovers", {}).values():
 		if takeover.menu_slide(now) is not None:

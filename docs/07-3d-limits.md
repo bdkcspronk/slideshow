@@ -58,6 +58,6 @@ Each step is drawn exactly as a slide would draw it. "Holds 60 fps" means at lea
 stutter). The frame rate can't go above the screen's 60, so the headroom shows only as the step where it drops; the steps double.
 The panel and the results also show which graphics chip is used ("llvmpipe" or "SwiftShader" means no GPU is used and 3D will be slow).
 
-There is also the older "Three.js test" slide (in the rotation by default; take `three` out of `rotation.order` when you are done with it):
+There is also the older "Three.js test" slide (not in the rotation; Esc -> Fun -> "Three.js test"):
 seven scenes you can switch between by tapping (or S and R), at 100%, 75% or 50% resolution, with a live fps panel. Handy for looking at a scene
 with your own eyes. The code is in `providers/three.py`, `static/widgets.js` and `static/three_benchmark.js`.

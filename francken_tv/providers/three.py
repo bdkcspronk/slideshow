@@ -1,7 +1,7 @@
 """A graphics test for the TV PC: three Three.js scenes in steps from simple to complex, each with a live frames-per-second readout.
 Watch whether they stay smooth: the scenes and the readout are in static/widgets.js (setupThree), the look in
 templates/slides/three.html. Tap a scene or a resolution to switch (or press S and R); that also stops the slideshow on this slide until nobody has touched it for
-5 minutes. Take "three" out of rotation.order in config.toml once you know."""
+5 minutes. Not in the rotation (menu.MENU_ONLY): open it with Esc -> Fun."""
 
 from __future__ import annotations
 

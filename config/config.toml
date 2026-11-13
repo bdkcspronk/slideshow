@@ -16,7 +16,7 @@ port = 8080
 
 [rotation]
 # The slide types in each round. Remove a name to disable that slide type.
-order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "ero", "extern", "poll", "pet", "xkcd", "graafmachine", "compucie", "borrelcie", "fotocie", "sjaarscie", "mscie", "three", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
+order = ["images", "activities", "practice", "news", "weather", "buses", "timetable", "event_photos", "presence", "puzzles", "spotify", "leaderboard", "lyric_video", "books", "quote", "commandments", "confidential", "ero", "extern", "poll", "pet", "xkcd", "graafmachine", "compucie", "borrelcie", "fotocie", "sjaarscie", "mscie", "membership", "socks", "socials", "streep", "instagram", "francken_vrij", "francken_vrij_subscribe", "bieruur_countdown"]
 # The other slide types are spread evenly between these slides, in the order above.
 fill_with = "images"
 # These slide types are only shown in the daytime: from daytime_from until bieruur (bieruur.time),
@@ -188,7 +188,7 @@ seconds = 14   # the arms swing at 0-1.5 s, the caps are gone by 4.9 s; the name
 
 [three]
 # A graphics test: Three.js scenes from simple to complex (and tests of triangles, shadows and overdraw on their own), each with a frames-per-second readout (templates/slides/three.html).
-# Remove "three" from rotation.order once you know what the TV PC can do. Leave scenes out of the list to skip them.
+# Not in the rotation (too heavy for the TV PC); open it with Esc -> Fun -> "Three.js test". Leave scenes out of the list to skip them.
 seconds = 15
 scenes = ["simple", "medium", "heavy", "shadows", "triangles", "overdraw", "complex"]
 
