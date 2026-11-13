@@ -32,6 +32,7 @@
 //   data-command is typed after data-prompt, then the child (its answer) appears. When it's done the
 //   slide gets .typed (e.g. to show what comes after).
 // - data-three: a Three.js scene (see THREE_SCENES) with a live frames-per-second readout and buttons to switch scene and resolution: a test of the TV PC's graphics.
+// - data-three-benchmark: the 3D benchmark's slide: its Start button runs static/three_benchmark.js and sends the results to the server.
 // - data-play-at-start: a <video> that plays from the start of its slide, also while it is out of view
 //   (a post further down the Instagram feed): the browser holds back a video with the autoplay
 //   attribute until it is on screen. startVideos() is called when the slide is drawn and again when it fades in.
@@ -56,6 +57,7 @@ function setupWidgets(root) {
 	root.querySelectorAll("[data-decode]").forEach(setupDecode);
 	root.querySelectorAll("[data-terminal]").forEach(setupTerminal);
 	root.querySelectorAll("canvas[data-three]").forEach(setupThree);
+	root.querySelectorAll("[data-three-benchmark]").forEach(setupThreeBenchmark);
 	startVideos(root);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
 		input.addEventListener("input", () => fieldChanged(input));
@@ -592,6 +594,50 @@ function loadThree() {
 		document.head.append(script);
 	});
 	return threeLoading;
+}
+
+function loadScript(src) {
+	return new Promise((resolve, reject) => {
+		const script = document.createElement("script");
+		script.src = src;
+		script.onload = resolve;
+		script.onerror = () => reject(new Error(`${src} did not load`));
+		document.head.append(script);
+	});
+}
+
+// The benchmark slide (providers/three.py, ThreeBenchmarkProvider): [data-tb-start] runs the tests, shows what came out
+// in [data-tb-results] and has the server save it (POST /api/benchmark) in benchmarks/, to be committed.
+function setupThreeBenchmark(root) {
+	const start = root.querySelector("[data-tb-start]");
+	const status = root.querySelector("[data-tb-status]");
+	const results = root.querySelector("[data-tb-results]");
+	const escape = (text) => String(text).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+	start.addEventListener("click", async () => {
+		start.disabled = true;
+		root.classList.add("running");
+		root.classList.remove("done");
+		results.innerHTML = "";
+		try {
+			const THREE = await loadThree();
+			if (!window.threeBenchmark) await loadScript("/static/three_benchmark.js");
+			const run = await window.threeBenchmark(root, THREE);
+			results.innerHTML = `<h2>${escape(run.gpu)} &middot; ${escape(run.screen)}</h2>` + run.tests.map((test) =>
+				`<p><b>${escape(test.title)}</b>${test.best !== undefined ? ": " + escape(test.best || "") : ""}</p>`).join("");
+			status.textContent = "Done. Saving...";
+			const response = await fetch("/api/benchmark", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(run) });
+			const saved = await response.json();
+			if (saved.error) throw new Error(saved.error);
+			status.textContent = `Saved as ${saved.json} and ${saved.markdown}. Commit them (git add benchmarks && git commit).`;
+		} catch (error) {
+			console.error(error);
+			status.textContent = document.contains(root) ? `Failed: ${error.message}` : "";
+		}
+		root.classList.remove("running");
+		root.classList.add("done");
+		start.disabled = false;
+		start.textContent = "Run again";
+	});
 }
 
 async function setupThree(canvas) {

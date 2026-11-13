@@ -9,7 +9,10 @@ from francken_tv.providers.francken_vrij import FranckenVrijProvider
 from francken_tv.providers.francken_vrij_subscribe import FranckenVrijSubscribeProvider
 from francken_tv.providers.mscie import MscieProvider
 from francken_tv.providers.sjaarscie import SjaarscieProvider
-from francken_tv.providers.three import ThreeProvider
+import json
+import tempfile
+
+from francken_tv.providers.three import ThreeBenchmarkProvider, ThreeProvider, markdown
 from francken_tv.providers.socials import LINE_SAG, SocialsProvider
 from francken_tv.providers.streep import PRODUCTS, TAPS, cursor_keyframes, taps, tiles
 
@@ -54,6 +57,37 @@ class ThreeTest(unittest.TestCase):
 	def test_scenes_can_be_left_out(self):
 		slides = ThreeProvider({"scenes": ["complex"]}).slides(NOW)
 		self.assertEqual([slide.data["scene"] for slide in slides], ["complex"])
+
+
+RESULTS = {"when": "2026-11-13T15:00:00Z", "gpu": "Some GPU", "webgl2": True, "screen": "1920x1080", "tests": [
+	{"title": "Triangles", "kind": "ramp", "best": "500,000 triangles", "steps": [
+		{"label": "500,000 triangles", "fps": 60, "work_ms": 4.2, "p95_ms": 5, "holds": True},
+		{"label": "1,000,000 triangles", "fps": 31, "work_ms": 30, "p95_ms": 33, "holds": False}]},
+	{"title": "Textures", "kind": "all", "steps": [{"label": "8192x8192 texture", "error": "out | of memory"}]}]}
+
+
+class ThreeBenchmarkTest(unittest.TestCase):
+	def test_the_results_are_saved_as_json_and_markdown(self):
+		with tempfile.TemporaryDirectory() as folder:
+			json_path, markdown_path = ThreeBenchmarkProvider(Path(folder) / "benchmarks").save(RESULTS, datetime(2026, 11, 13, 15, 4))
+			self.assertEqual(json_path.name, "3d-2026-11-13-1504.json")
+			self.assertEqual(json.loads(json_path.read_text()), RESULTS)
+			text = markdown_path.read_text()
+			self.assertIn("**Largest step that holds 60 fps: 500,000 triangles**", text)
+			self.assertIn("| 1,000,000 triangles | 31 | 30 | 33 |", text)
+			self.assertIn("error: out / of memory", text)   # a | in a cell would break the table
+
+	def test_results_without_tests_are_refused(self):
+		with tempfile.TemporaryDirectory() as folder:
+			with self.assertRaises(ValueError):
+				ThreeBenchmarkProvider(Path(folder)).save({"tests": []}, datetime(2026, 11, 13, 15, 4))
+			self.assertEqual(list(Path(folder).iterdir()), [])
+
+	def test_it_is_a_slide_of_its_own_and_in_the_menu(self):
+		self.assertEqual([slide.template for slide in ThreeBenchmarkProvider().slides(NOW)], ["three_benchmark.html"])
+		from francken_tv import menu
+		self.assertEqual(menu.GROUPS[menu.group_of("three-benchmark")][0], "Fun")
+		self.assertIn(("three_benchmark", ""), menu.EXTRA["three"])
 
 
 class SocialsTest(unittest.TestCase):

@@ -5,6 +5,7 @@
 	/api/current    the current slide re-rendered (for slides that update, like the countdown)
 	/api/shortcut/<key>  the slide for a shortcut key (see [shortcuts] in config.toml), right away
 	/api/slide/<n>  a recent slide again, freshly drawn (going back with the left arrow)
+	/api/benchmark  POST: the 3D benchmark's results, saved in benchmarks/
 	/api/mute       POST: toggle muting all sound (the m key)
 	/api/menu       the menu (Esc): GET what it shows, POST a choice (see menu.py)
 	/api/menu/group/<title>   which slides of a group have something to show right now
@@ -283,6 +284,8 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_action()
 		elif urlparse(self.path).path == "/api/menu":
 			self.send_menu_command()
+		elif urlparse(self.path).path == "/api/benchmark":
+			self.send_benchmark()
 		elif urlparse(self.path).path == "/api/mute":
 			self.server.app.toggle_mute()
 			self.send_json({"muted": self.server.app.settings.muted})
@@ -324,6 +327,17 @@ class Handler(BaseHTTPRequestHandler):
 		if not isinstance(request, dict):
 			raise ValueError("expected a JSON object")
 		return request
+
+	def send_benchmark(self) -> None:
+		"""The 3D benchmark's results (static/three_benchmark.js) -> saved in benchmarks/; answers where: {"json": ..., "markdown": ...}."""
+		try:
+			paths = self.server.app.providers["three_benchmark"].save(self.read_json(), self.server.app.clock.now())
+		except (ValueError, OSError) as error:   # not JSON, no results, or the folder can't be written
+			log.warning("The 3D benchmark's results were not saved: %s", error)
+			self.send_json({"error": str(error)})
+			return
+		log.info("Saved the 3D benchmark: %s", paths[0])
+		self.send_json({"json": str(paths[0].relative_to(PROJECT_DIR)), "markdown": str(paths[1].relative_to(PROJECT_DIR))})
 
 	def send_menu_command(self) -> None:
 		"""{"command": "settings", "value": {"muted": true}} -> the menu again, and a message."""

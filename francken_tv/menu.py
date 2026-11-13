@@ -35,12 +35,12 @@ GROUPS = [
 	("Committees", ["compucie", "borrelcie", "fotocie", "sjaarscie", "mscie"]),
 	("Contacts", ["confidential", "ero", "extern"]),
 	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
-	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine", "three", "vrijmibo"]),
+	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine", "three", "three-benchmark", "vrijmibo"]),
 	("Full screen", ["bieruur-countdown", "bieruur"]),
 	("Other", []),
 ]
 # More slides to jump to after a slide type's own (not in the rotation by themselves)
-EXTRA = {"weather": [("rain", "Rain warning")], "spotify": [("spotify-lyrics", "Spotify lyrics")],
+EXTRA = {"three": [("three_benchmark", "")], "weather": [("rain", "Rain warning")], "spotify": [("spotify-lyrics", "Spotify lyrics")],
 	"puzzles": [("connections", ""), ("wordle", ""), ("catfishing", ""), ("timeguessr", "")]}
 KEYS = {"images": "poster", "event_photos": "event-photo"}   # slide types called differently in GROUPS
 

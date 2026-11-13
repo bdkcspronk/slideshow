@@ -1,0 +1,18 @@
+{#
+	The 3D benchmark (providers/three.py, ThreeBenchmarkProvider): a Start button, then static/three_benchmark.js runs its tests
+	on the canvas while the status and a progress bar tell which one is going; at the end the results are listed and saved by the server
+	(benchmarks/). Interactive: tapping pauses the slideshow here (the idle time is longer than the run). See "3D benchmark" in style.css.
+#}
+<div class="slide tb-slide" data-interactive data-idle-seconds="600" data-provider="three_benchmark" data-three-benchmark>
+	<canvas></canvas>
+	<div class="tb-panel">
+		<h1>3D benchmark</h1>
+		<p class="tb-intro">Runs a series of 3D tests, heavier and heavier, for about 2 minutes, then saves the results in <code>benchmarks/</code> to commit.
+			Leave the PC alone while it runs.</p>
+		<button data-tb-start data-enter>Start</button>
+		<div class="tb-progress"><div data-tb-bar></div></div>
+		<p data-tb-status class="tb-status"></p>
+		<p data-tb-live class="tb-live"></p>
+		<div data-tb-results class="tb-results"></div>
+	</div>
+</div>
