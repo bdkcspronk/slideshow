@@ -170,6 +170,8 @@ class InstagramProvider(Provider):
 		names, result = set(), []
 		for url, suffix in files:
 			if not url:
+				if suffix == ".mp4":
+					log.warning("Instagram gave no file for a video: showing its cover")
 				result.append("")
 				continue
 			path = self.image_folder / (hashlib.sha1(url.split("?")[0].encode()).hexdigest()[:16] + suffix)
@@ -178,15 +180,15 @@ class InstagramProvider(Provider):
 					response = requests.get(url, timeout=60, stream=True)
 					response.raise_for_status()
 					if int(response.headers.get("Content-Length") or 0) > MAX_DOWNLOAD:
-						raise ValueError("too big")
+						raise ValueError(f"too big ({int(response.headers['Content-Length']) // 2**20} MB, the limit is {MAX_DOWNLOAD // 2**20} MB)")
 					content = bytearray()
 					for chunk in response.iter_content(1 << 16):
 						content += chunk
 						if len(content) > MAX_DOWNLOAD:
-							raise ValueError("too big")
+							raise ValueError(f"too big (over {MAX_DOWNLOAD // 2**20} MB)")
 					path.write_bytes(content)
 				except (requests.RequestException, ValueError) as error:
-					log.warning("Could not fetch an Instagram %s: %s", "video" if suffix == ".mp4" else "picture", error)
+					log.warning("Could not fetch an Instagram %s, showing %s: %s", *(("video", "its cover") if suffix == ".mp4" else ("picture", "none")), error)
 					result.append("")
 					continue
 			names.add(path.name)
