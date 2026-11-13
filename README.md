@@ -34,7 +34,7 @@ It shows:
 | The Fotocie's promo: their logo with the animation of the Fotocie app's start screen (looking through a camera, pulling focus, the flashbulb firing) | | `providers/fotocie.py` |
 | The Sjaarscie's promo: the first-year questions, then "Join the Sjaarscie!" with the Zwitsal baby, on baby blue and pink | | `providers/sjaarscie.py` |
 | The MScie's promo, the committee for master students by master students: silhouettes of arms throwing black graduation caps in the air once, then the name | | `providers/mscie.py` |
-| A graphics test (Three.js): a simple, a medium and a complex 3D scene, each with a live frames-per-second readout, to see what the TV PC can handle (take `three` out of the rotation when done) | | `providers/three.py`, `static/widgets.js` |
+| A graphics test (Three.js): 3D scenes from simple to complex, plus tests of triangles, shadows and overdraw on their own,, each with a live frames-per-second readout, to see what the TV PC can handle (take `three` out of the rotation when done) | | `providers/three.py`, `static/widgets.js` |
 | Become a member: €5 a year, free coffee, events, and a QR code to the sign-up form, animated (only in August to October and February) | professorfrancken.nl/register | `providers/membership.py` |
 | Francken socks for sale: the price, legs in our socks rising out of the title, and a QR code to text the seller on WhatsApp | wa.me link in `config.toml` | `providers/socks.py` |
 | Find us online: QR codes to the WhatsApp announcement group, LinkedIn, Instagram and the website, as polaroids dropping onto a washing line | links in `config.toml` | `providers/socials.py` |

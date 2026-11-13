@@ -31,7 +31,7 @@
 // - data-terminal: a terminal session that types itself after data-terminal-wait seconds: each child's
 //   data-command is typed after data-prompt, then the child (its answer) appears. When it's done the
 //   slide gets .typed (e.g. to show what comes after).
-// - data-three: a Three.js scene (simple, medium or complex) with a live frames-per-second readout: a test of the TV PC's graphics.
+// - data-three: a Three.js scene (simple, medium, heavy, shadows, triangles, overdraw or complex) with a live frames-per-second readout: a test of the TV PC's graphics.
 // - data-play-at-start: a <video> that plays from the start of its slide, also while it is out of view
 //   (a post further down the Instagram feed): the browser holds back a video with the autoplay
 //   attribute until it is on screen. startVideos() is called when the slide is drawn and again when it fades in.
@@ -651,6 +651,24 @@ async function setupThree(canvas) {
 	requestAnimationFrame(frame);
 }
 
+// A grid of `side` x `rows` instanced spheres in rainbow colours, rippling like a wave: { mesh, wave(seconds) }.
+function waveSpheres(THREE, scene, side, rows, geometry, material) {
+	const mesh = new THREE.InstancedMesh(geometry, material, side * rows);
+	mesh.receiveShadow = true;
+	const colour = new THREE.Color(), matrix = new THREE.Matrix4();
+	for (let i = 0; i < side * rows; i++) mesh.setColorAt(i, colour.setHSL(0.55 + (i % side) / side * 0.4, 0.8, 0.55));
+	scene.add(mesh);
+	const wave = (t) => {
+		for (let i = 0; i < side * rows; i++) {
+			const x = (i % side) - side / 2, z = Math.floor(i / side) - rows / 2;
+			matrix.makeTranslation(x * 0.75, Math.sin(x * 0.35 + t * 1.6) * Math.cos(z * 0.3 + t * 1.2) * 2.2, z * 0.75);
+			mesh.setMatrixAt(i, matrix);
+		}
+		mesh.instanceMatrix.needsUpdate = true;
+	};
+	return { mesh, wave };
+}
+
 // Each scene sets up `scene` and `camera` and returns update(seconds, delta), called before every frame.
 const THREE_SCENES = {
 	// Simple: a lit, spinning knot and a cube. Two objects, one light.
@@ -707,7 +725,76 @@ const THREE_SCENES = {
 		};
 	},
 
-	// Complex: 6,000 instanced spheres rippling like a wave (about 3 million triangles, every instance moved by the CPU each frame),
+	// Heavy: 1,000 lit spheres (about 340,000 triangles), two lights, no shadows: a step up from medium that isolates plain geometry.
+	heavy(THREE, renderer, scene, camera) {
+		scene.background = new THREE.Color(0x0a1020);
+		camera.position.set(0, 10, 28);
+		scene.add(new THREE.HemisphereLight(0x88aaff, 0x221133, 0.9));
+		const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+		sun.position.set(10, 20, 10);
+		scene.add(sun);
+		const spheres = waveSpheres(THREE, scene, 40, 25, new THREE.SphereGeometry(0.4, 16, 12), new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.3 }));
+		return (t) => {
+			spheres.wave(t);
+			camera.position.x = Math.sin(t * 0.15) * 10;
+			camera.lookAt(0, 0, 0);
+		};
+	},
+
+	// Shadows: only 300 spheres (about 100,000 triangles) but a 2048 shadow map: shows what the shadows cost by themselves.
+	shadows(THREE, renderer, scene, camera) {
+		scene.background = new THREE.Color(0x0a1020);
+		camera.position.set(0, 12, 26);
+		renderer.shadowMap.enabled = true;
+		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		scene.add(new THREE.HemisphereLight(0x88aaff, 0x221133, 0.7));
+		const sun = new THREE.DirectionalLight(0xfff0d0, 3);
+		sun.position.set(12, 24, 8);
+		sun.castShadow = true;
+		sun.shadow.mapSize.set(2048, 2048);
+		Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, near: 1, far: 70 });
+		scene.add(sun);
+		const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x223355, roughness: 0.8 }));
+		floor.rotation.x = -Math.PI / 2;
+		floor.position.y = -3;
+		floor.receiveShadow = true;
+		scene.add(floor);
+		const spheres = waveSpheres(THREE, scene, 30, 10, new THREE.SphereGeometry(0.5, 20, 14), new THREE.MeshStandardMaterial({ roughness: 0.4 }));
+		spheres.mesh.castShadow = true;
+		return (t) => {
+			spheres.wave(t);
+			camera.position.x = Math.sin(t * 0.15) * 10;
+			camera.lookAt(0, 0, 0);
+		};
+	},
+
+	// Triangles: the same 6,000 spheres as "complex" (about 4 million triangles) but unlit and without shadows: raw triangle throughput.
+	triangles(THREE, renderer, scene, camera) {
+		scene.background = new THREE.Color(0x02060f);
+		camera.position.set(0, 14, 34);
+		const spheres = waveSpheres(THREE, scene, 80, 75, new THREE.SphereGeometry(0.28, 24, 16), new THREE.MeshBasicMaterial());
+		return (t) => {
+			spheres.wave(t);
+			camera.position.x = Math.sin(t * 0.15) * 14;
+			camera.lookAt(0, 4, 0);
+		};
+	},
+
+	// Overdraw: 60 big see-through glowing layers on top of each other and almost nothing else: how many pixels it can blend (fill rate).
+	overdraw(THREE, renderer, scene, camera) {
+		scene.background = new THREE.Color(0x000000);
+		camera.position.set(0, 0, 14);
+		const layers = [];
+		for (let i = 0; i < 60; i++) {
+			const layer = new THREE.Mesh(new THREE.PlaneGeometry(40, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(i / 60, 0.8, 0.5), transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+			layer.position.z = -i * 0.3;
+			layers.push(layer);
+			scene.add(layer);
+		}
+		return (t) => layers.forEach((layer, i) => { layer.rotation.z = Math.sin(t * 0.3 + i * 0.1) * 0.5; layer.scale.setScalar(1 + 0.2 * Math.sin(t * 0.5 + i * 0.2)); });
+	},
+
+	// Complex: 6,000 instanced spheres rippling like a wave (about 4 million triangles, every instance moved by the CPU each frame),
 	// 30,000 glowing points, a shiny high-detail knot, a shadow-casting light with a 2048 shadow map, and fog.
 	complex(THREE, renderer, scene, camera) {
 		scene.background = new THREE.Color(0x02060f);

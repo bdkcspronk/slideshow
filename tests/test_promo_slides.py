@@ -44,9 +44,9 @@ class MscieTest(unittest.TestCase):
 
 
 class ThreeTest(unittest.TestCase):
-	def test_three_scenes_each_with_a_widget_scene_that_exists(self):
+	def test_every_scene_has_a_widget_scene_that_exists(self):
 		slides = ThreeProvider({}).slides(NOW)
-		self.assertEqual([slide.data["scene"] for slide in slides], ["simple", "medium", "complex"])
+		self.assertEqual([slide.data["scene"] for slide in slides], ["simple", "medium", "heavy", "shadows", "triangles", "overdraw", "complex"])
 		widgets = (Path(__file__).parent.parent / "francken_tv" / "static" / "widgets.js").read_text()
 		for slide in slides:
 			self.assertIn(f"\t{slide.data['scene']}(THREE", widgets)
