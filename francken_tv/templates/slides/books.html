@@ -1,31 +1,26 @@
 {# Second-hand books for sale (providers/books.py), on the navy and crimson poster (like the activities
-   and news slides): 3D books hovering with a crimson glow behind them, their title, authors and price below. #}
+   and news slides): a bookcase with all the books for sale in the background; a few are taken out of it and
+   hover in front with a crimson glow behind them, their title, authors and price below. #}
 <div class="slide books-slide">
 	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	{# The bookcase, drawn once in 3D (static/books_3d.js) from data-case: every book's title, colour and shape, in order. #}
+	<canvas class="books-case" data-books-case="{{ case | tojson | forceescape }}" data-case-size="{{ case_size }}" aria-hidden="true"></canvas>
 	<h1 class="poster-title"><span>Second-hand</span> <span class="poster-marked">books</span></h1>
-	{# The books slide in from the right one just after the other (--i), turning, and land in place, each
-	   with its glow; their title, authors and price appear below. #}
+	{# The books slide out of their place in the bookcase (data-slot) one just after the other, fly to the front, turn
+	   and land, each with its glow; their title, authors and price appear below. They are drawn in 3D on the canvas
+	   (static/books_3d.js), each where its .book-flat is; .book-flat is the cover it uses (and what is shown without WebGL). #}
+	<canvas class="books-3d" data-books-3d aria-hidden="true"></canvas>
 	<div class="books-row">
-		{% for book in books %}
-		<div class="book-card" style="--i: {{ loop.index0 }}; --hue: {{ book.hue }}">
+		{% for book, slot in books %}
+		<div class="book-card" style="--i: {{ loop.index0 }}; --hue: {{ book.hue }}" data-slot="{{ slot }}" data-title="{{ book.title }}" data-authors="{{ book.authors }}">
 			<div class="book-glow" aria-hidden="true"></div>
-			<div class="book-stage">
-				<div class="book-sway">
-					<div class="book-3d">
-						<div class="book-front">
-							{% if book.cover %}<img src="{{ book.cover }}" alt="">{% else %}
-							<div class="book-drawn">
-								<span class="book-drawn-title">{{ book.title }}</span>
-								<span class="book-drawn-authors">{{ book.authors }}</span>
-							</div>
-							{% endif %}
-						</div>
-						<div class="book-back"></div>
-						<div class="book-spine"></div>
-						<div class="book-pages"></div>
-						<div class="book-top"></div>
-					</div>
+			<div class="book-flat">
+				{% if book.cover %}<img src="{{ book.cover }}" alt="">{% else %}
+				<div class="book-drawn">
+					<span class="book-drawn-title">{{ book.title }}</span>
+					<span class="book-drawn-authors">{{ book.authors }}</span>
 				</div>
+				{% endif %}
 			</div>
 			<div class="book-text">
 				<div class="book-title">{{ book.title }}</div>

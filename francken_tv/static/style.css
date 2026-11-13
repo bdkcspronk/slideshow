@@ -1662,10 +1662,11 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .leaderboard-time { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .leaderboard-days { color: var(--crimson); font-size: 2.4vh; font-weight: normal; }
 
-/* Books for sale (providers/books.py), on the navy poster. The books slide in from the right one just
-   after the other (--i), turning, and land in place with a crimson glow behind them; their title, authors and
-   price appear below it. Each book is a 3D box (front cover, spine, pages, top, back); --hue colours
-   the spine and the cloth of books without a cover. */
+/* Books for sale (providers/books.py), on the navy poster. Everything 3D is drawn by static/books_3d.js: a bookcase
+   with all the books in the background (.books-case, drawn once), and the books of this slide (.books-3d) taken out of
+   it one just after the other (--i), flying to the front and landing where their .book-flat is, where a crimson glow
+   lights up behind them; their title, authors and price appear below it. --w, --h and --d are a normal book's size,
+   which books_3d.js reads too; --hue colours the cloth of books without a cover. */
 .books-slide {
 	--w: 25vh;   /* a book: width, height, thickness */
 	--h: 35vh;
@@ -1681,6 +1682,17 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	justify-content: space-around;
 	padding-top: calc(var(--stand) - var(--h));
 }
+/* The canvases: the whole slide (the books fly from the bookcase to the front). The bookcase is behind the title; the
+   books fly in front of everything. */
+.books-case, .books-3d {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+.books-3d { z-index: 2; }
+.books-slide .poster-title { z-index: 3; }   /* the title stays in front, also of the books flying past it */
 .book-card {
 	position: relative;
 	z-index: 1;
@@ -1691,83 +1703,29 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	text-align: center;
 }
 
-.book-stage {
+/* The cover the 3D book is made from: it holds the book's place, hidden. Without WebGL (.books-flat) it is
+   shown instead, hovering in flat. */
+.book-flat {
 	position: relative;
 	z-index: 1;   /* in front of its glow */
-	perspective: 140vh;
-	perspective-origin: 50% 30%;
-}
-/* Hovering: a slow bob up and down and a little sway, each book out of step with the others. */
-.book-sway {
-	transform-style: preserve-3d;
-	animation: book-sway 5s ease-in-out calc(var(--i) * -1.7s) infinite alternate;
-}
-@keyframes book-sway { from { transform: translateY(-4vh) rotateY(-4deg); } to { transform: translateY(-6.5vh) rotateY(5deg); } }
-.book-3d {
-	position: relative;
 	width: var(--w);
 	height: var(--h);
-	transform-origin: 50% 100%;
-	transform-style: preserve-3d;
-	will-change: transform;
-	animation: book-arrive 1.8s cubic-bezier(0.22, 0.8, 0.3, 1) calc(0.4s + var(--i) * 0.3s) both;
-}
-/* Positive rotateY shows the spine on the left. */
-@keyframes book-arrive {
-	0% { transform: translateX(100vw) rotateY(-180deg); }
-	80% { transform: rotateY(26deg); }
-	100% { transform: rotateY(18deg); }
-}
-.book-3d > div {
-	position: absolute;
 	box-sizing: border-box;
-	backface-visibility: hidden;
-	outline: 1px solid transparent;   /* makes Firefox smooth the edges of the turned sides */
-}
-.book-front {
-	inset: 0;
-	transform: translateZ(calc(var(--d) / 2));
 	border-radius: 0 0.4vh 0.4vh 0;
 	overflow: hidden;
 	background: hsl(var(--hue) 30% 30%);
+	visibility: hidden;
 }
-.book-front img { width: 100%; height: 100%; object-fit: cover; display: block; }
-/* The hinge of the cover, and a soft sheen. */
-.book-front::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	background:
-		linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0, rgba(255, 255, 255, 0.15) 0.9vh, rgba(0, 0, 0, 0.1) 1.5vh, transparent 2vh),
-		linear-gradient(115deg, rgba(255, 255, 255, 0.14) 0%, transparent 35%);
+.book-flat img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.books-flat .books-3d { display: none; }
+.books-flat .book-flat {
+	visibility: visible;
+	translate: 0 -5vh;
+	box-shadow: 0 2vh 4vh rgba(0, 0, 0, 0.4);
+	animation: book-flat-arrive 1.8s cubic-bezier(0.22, 0.8, 0.3, 1) calc(0.4s + var(--i) * 0.3s) both;
 }
-.book-back {
-	inset: 0;
-	transform: rotateY(180deg) translateZ(calc(var(--d) / 2));
-	background: hsl(var(--hue) 25% 22%);
-}
-.book-spine, .book-pages {
-	width: var(--d);
-	height: var(--h);
-	left: calc((var(--w) - var(--d)) / 2);
-}
-.book-spine {
-	transform: rotateY(-90deg) translateZ(calc(var(--w) / 2));
-	background: linear-gradient(90deg, hsl(var(--hue) 28% 16%), hsl(var(--hue) 28% 28%) 50%, hsl(var(--hue) 28% 16%));
-}
-.book-pages {
-	transform: rotateY(90deg) translateZ(calc(var(--w) / 2 - 0.3vh));
-	background: repeating-linear-gradient(90deg, #f7f2e8 0 0.3vh, #ddd3c2 0.3vh 0.4vh);
-}
-.book-top {
-	width: var(--w);
-	height: var(--d);
-	top: calc((var(--h) - var(--d)) / 2);
-	transform: rotateX(90deg) translateZ(calc(var(--h) / 2 - 0.3vh));
-	background: repeating-linear-gradient(0deg, #f7f2e8 0 0.3vh, #ddd3c2 0.3vh 0.4vh);
-}
-/* A crimson glow behind each book: it slides in with the book (the same timing as book-arrive, using
-   translate) and then stays still. Its softness is the gradient: no blur filter and no pulse, which
+/* A crimson glow behind each book: it lights up as the book lands (book i lands 3 s + 0.5 s * i after the start,
+   books_3d.js) and then stays still. Its softness is the gradient: no blur filter and no pulse, which
    cost the TV PC frames. */
 .book-glow {   /* behind the book (outside its 3D scene, which would hide it): centred on where it hovers */
 	position: absolute;
@@ -1779,9 +1737,11 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	margin-left: calc(var(--w) * -0.95);
 	border-radius: 50%;
 	background: radial-gradient(closest-side, rgba(225, 30, 60, 0.9), rgba(200, 16, 46, 0.35) 55%, transparent);
-	animation: book-glow-arrive 1.8s cubic-bezier(0.22, 0.8, 0.3, 1) calc(0.4s + var(--i) * 0.3s) both;
+	animation: book-glow-in 1s ease-out calc(2.6s + var(--i) * 0.5s) both;
 }
-@keyframes book-glow-arrive { 0% { translate: 100vw 0; } 80%, 100% { translate: 0 0; } }   /* in place at 80%, like the book */
+@keyframes book-glow-in { from { opacity: 0; transform: scale(0.5); } }
+.books-flat .book-glow { animation-delay: calc(0.6s + var(--i) * 0.3s); }
+@keyframes book-flat-arrive { 0% { transform: translateX(100vw); } 80%, 100% { transform: none; } }
 
 /* Books without a cover on Open Library: a cloth-bound hardcover with a gold title. */
 .book-drawn {
@@ -1812,7 +1772,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .book-text {
 	width: 100%;
 	margin-top: 5vh;   /* below the hovering books */
-	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(1.6s + var(--i) * 0.3s) both;
+	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(2.8s + var(--i) * 0.5s) both;
 }
 @keyframes book-text-in { from { opacity: 0; transform: translateY(2vh); } }
 .book-title {

@@ -32,6 +32,7 @@
 //   data-command is typed after data-prompt, then the child (its answer) appears. When it's done the
 //   slide gets .typed (e.g. to show what comes after).
 // - data-three: a Three.js scene (see THREE_SCENES) with a live frames-per-second readout and buttons to switch scene and resolution: a test of the TV PC's graphics.
+// - data-books-3d: the books slide's books in real 3D on a <canvas> (static/books_3d.js).
 // - data-three-benchmark: the 3D benchmark's slide: its Start button runs static/three_benchmark.js and sends the results to the server.
 // - data-play-at-start: a <video> that plays from the start of its slide, also while it is out of view
 //   (a post further down the Instagram feed): the browser holds back a video with the autoplay
@@ -57,6 +58,7 @@ function setupWidgets(root) {
 	root.querySelectorAll("[data-decode]").forEach(setupDecode);
 	root.querySelectorAll("[data-terminal]").forEach(setupTerminal);
 	root.querySelectorAll("canvas[data-three]").forEach(setupThree);
+	root.querySelectorAll("canvas[data-books-3d]").forEach(setupBooks3d);
 	root.querySelectorAll("[data-three-benchmark]").forEach(setupThreeBenchmark);
 	startVideos(root);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
@@ -587,19 +589,24 @@ let threeLoading = null;
 function loadThree() {
 	threeLoading ??= new Promise((resolve, reject) => {
 		if (window.THREE) return resolve(window.THREE);
-		const script = document.createElement("script");
-		script.src = "/static/vendor/three/three.min.js";
-		script.onload = () => resolve(window.THREE);
-		script.onerror = () => { threeLoading = null; reject(new Error("three.js did not load")); };
-		document.head.append(script);
+		loadScript("/static/vendor/three/three.min.js").then(() => resolve(window.THREE),
+			() => { threeLoading = null; reject(new Error("three.js did not load")); });
 	});
 	return threeLoading;
 }
 
-function loadScript(src) {
-	return new Promise((resolve, reject) => {
+// In the emulator (tools/emulator.py) there is no server behind the page, only its fetch(): the script is fetched
+// and run from a blob: URL there.
+async function loadScript(src) {
+	let url = src;
+	if (window.emulator) {
+		const response = await fetch(src.split("?")[0]);
+		if (!response.ok) throw new Error(`${src} did not load`);
+		url = URL.createObjectURL(new Blob([await response.text()], { type: "text/javascript" }));
+	}
+	await new Promise((resolve, reject) => {
 		const script = document.createElement("script");
-		script.src = src;
+		script.src = url;
 		script.onload = resolve;
 		script.onerror = () => reject(new Error(`${src} did not load`));
 		document.head.append(script);

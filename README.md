@@ -14,7 +14,7 @@ It shows:
 | A photo from one of the last 3 events | Nextcloud `images/albums/` | `providers/event_photos.py` |
 | Who was in the room today (animated chart) | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
 | This week's leaderboard: most time in the room | the ESP32 sniffer | `providers/presence.py` |
-| Second-hand books for sale: three at a time, as 3D books flying onto a shelf, with title and price | professorfrancken.nl/study/books, covers from openlibrary.org | `providers/books.py` |
+| Second-hand books for sale: all of them in a 3D bookcase (Three.js), three at a time taken out and hovering in front, with title and price | professorfrancken.nl/study/books, covers from openlibrary.org | `providers/books.py` |
 | Info, one per round in turn (`rotation.take_turns`): | | |
 | &nbsp;&nbsp;News: Dagblad van het Noorden, NU.nl, BBC World; tap a headline to read it | RSS feeds | `providers/news.py` |
 | &nbsp;&nbsp;Weather and rain at Zernike; after bieruur only a rain warning | open-meteo.com, Buienradar | `providers/weather.py` |

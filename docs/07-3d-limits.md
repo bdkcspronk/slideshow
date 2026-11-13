@@ -35,6 +35,16 @@ Earlier numbers on this page (from the "Three.js test" slide by eye) were too op
 (the PC had display scaling of 2.6), a seventh of the screen. The benchmark runs before `3d-2026-11-13-1657` in `benchmarks/` are not
 usable either (too few pixels, or a way of measuring that made everything look slower than it is).
 
+## A slide in 3D: the books
+
+The books slide (`static/books_3d.js`) is built to this budget. Its bookcase (room for 100 books, all in one mesh with one texture
+holding every spine) doesn't move, so it is drawn only once and copied onto a plain canvas behind; every frame draws only the three
+books taken out of it (15 draw calls, a few thousand triangles, 7 textures, no shadows) on one canvas over the whole screen, mostly see-through. The glows and
+all text stay HTML. If its frames still take over 20 ms in its first seconds, it draws at 75% resolution from then on (it says so in
+the browser console); without WebGL it shows the covers flat, without a bookcase. Antialiasing is on: turning books have edges that
+would flicker without it; check on the TV that it doesn't fall back to 75%. Copy its approach for a new 3D slide: whatever stands
+still, draw once.
+
 ## The benchmark: measuring again (a new PC, a new browser, a new slideshow version)
 
 On the TV PC press Esc -> Fun -> "3D benchmark" and tap **Start** (or press Enter). It takes about 3 minutes; leave the PC alone
