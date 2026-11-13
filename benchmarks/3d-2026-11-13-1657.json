@@ -1,0 +1,317 @@
+{
+	"when": "2026-11-13T15:57:39.931Z",
+	"gpu": "Intel(R) HD Graphics, or similar",
+	"webgl2": true,
+	"max_texture_size": 8192,
+	"screen": "1920x1080",
+	"canvas": "1920x1080",
+	"pixel_ratio": 1,
+	"three": "160",
+	"browser": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:159.0) Gecko/20100101 Firefox/159.0",
+	"tests": [
+		{
+			"title": "Triangles, unlit",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "50,000 triangles",
+					"fps": 56,
+					"frame_ms": 17,
+					"p95_ms": 28,
+					"first_ms": 40,
+					"triangles": 50336,
+					"calls": 1,
+					"holds": false
+				}
+			],
+			"best": "none held 60 fps, even the first step"
+		},
+		{
+			"title": "Triangles, lit (2 lights)",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "50,000 triangles",
+					"fps": 53,
+					"frame_ms": 19,
+					"p95_ms": 36,
+					"first_ms": 52,
+					"triangles": 50336,
+					"calls": 1,
+					"holds": false
+				}
+			],
+			"best": "none held 60 fps, even the first step"
+		},
+		{
+			"title": "Separate meshes (draw calls)",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "50 meshes",
+					"fps": 60,
+					"frame_ms": 17,
+					"p95_ms": 18,
+					"first_ms": 50,
+					"triangles": 1000,
+					"calls": 50,
+					"holds": true
+				},
+				{
+					"label": "100 meshes",
+					"fps": 60,
+					"frame_ms": 17,
+					"p95_ms": 18,
+					"first_ms": 29,
+					"triangles": 2000,
+					"calls": 100,
+					"holds": true
+				},
+				{
+					"label": "250 meshes",
+					"fps": 58,
+					"frame_ms": 17,
+					"p95_ms": 27,
+					"first_ms": 30,
+					"triangles": 5000,
+					"calls": 250,
+					"holds": false
+				}
+			],
+			"best": "100 meshes"
+		},
+		{
+			"title": "Shadows (100,000 triangles)",
+			"kind": "all",
+			"steps": [
+				{
+					"label": "no shadows",
+					"fps": 41,
+					"frame_ms": 24,
+					"p95_ms": 47,
+					"first_ms": 67,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": false
+				},
+				{
+					"label": "shadow map 512x512",
+					"fps": 29,
+					"frame_ms": 35,
+					"p95_ms": 70,
+					"first_ms": 89,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": false
+				},
+				{
+					"label": "shadow map 1024x1024",
+					"fps": 27,
+					"frame_ms": 36,
+					"p95_ms": 71,
+					"first_ms": 96,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": false
+				},
+				{
+					"label": "shadow map 2048x2048",
+					"fps": 27,
+					"frame_ms": 38,
+					"p95_ms": 73,
+					"first_ms": 106,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": false
+				},
+				{
+					"label": "shadow map 4096x4096",
+					"fps": 22,
+					"frame_ms": 45,
+					"p95_ms": 88,
+					"first_ms": 145,
+					"triangles": 100322,
+					"calls": 2,
+					"holds": false
+				}
+			]
+		},
+		{
+			"title": "Overdraw (see-through layers)",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "1 full-screen layer",
+					"fps": 60,
+					"frame_ms": 17,
+					"p95_ms": 17,
+					"first_ms": 93,
+					"triangles": 4,
+					"calls": 2,
+					"holds": true
+				},
+				{
+					"label": "2 full-screen layers",
+					"fps": 53,
+					"frame_ms": 19,
+					"p95_ms": 37,
+					"first_ms": 33,
+					"triangles": 8,
+					"calls": 4,
+					"holds": false
+				},
+				{
+					"label": "2 full-screen layers, drawn at 50% resolution",
+					"fps": 60,
+					"frame_ms": 17,
+					"p95_ms": 17,
+					"first_ms": 37,
+					"triangles": 8,
+					"calls": 4,
+					"holds": true
+				}
+			],
+			"best": "2 full-screen layers, drawn at 50% resolution"
+		},
+		{
+			"title": "Textures (512x512 pictures)",
+			"kind": "ramp",
+			"steps": [
+				{
+					"label": "5 textures",
+					"fps": 60,
+					"frame_ms": 17,
+					"p95_ms": 18,
+					"first_ms": 93,
+					"triangles": 10,
+					"calls": 5,
+					"holds": true
+				},
+				{
+					"label": "10 textures",
+					"fps": 59,
+					"frame_ms": 17,
+					"p95_ms": 20,
+					"first_ms": 59,
+					"triangles": 20,
+					"calls": 10,
+					"holds": true
+				},
+				{
+					"label": "40 textures",
+					"fps": 58,
+					"frame_ms": 17,
+					"p95_ms": 33,
+					"first_ms": 156,
+					"triangles": 80,
+					"calls": 40,
+					"holds": false
+				}
+			],
+			"best": "10 textures"
+		},
+		{
+			"title": "One big texture",
+			"kind": "all",
+			"steps": [
+				{
+					"label": "2048x2048 texture",
+					"fps": 58,
+					"frame_ms": 17,
+					"p95_ms": 19,
+					"first_ms": 77,
+					"triangles": 2,
+					"calls": 1,
+					"holds": true
+				},
+				{
+					"label": "4096x4096 texture",
+					"fps": 58,
+					"frame_ms": 17,
+					"p95_ms": 27,
+					"first_ms": 140,
+					"triangles": 2,
+					"calls": 1,
+					"holds": false
+				},
+				{
+					"label": "8192x8192 texture",
+					"fps": 58,
+					"frame_ms": 17,
+					"p95_ms": 32,
+					"first_ms": 569,
+					"triangles": 2,
+					"calls": 1,
+					"holds": false
+				}
+			]
+		},
+		{
+			"title": "Antialiasing on and off",
+			"kind": "all",
+			"steps": [
+				{
+					"label": "100,000 lit triangles, antialiasing on",
+					"fps": 46,
+					"frame_ms": 22,
+					"p95_ms": 42,
+					"first_ms": 47,
+					"triangles": 100320,
+					"calls": 1,
+					"holds": false
+				},
+				{
+					"label": "5 full-screen layers, antialiasing on",
+					"fps": 32,
+					"frame_ms": 31,
+					"p95_ms": 59,
+					"first_ms": 61,
+					"triangles": 20,
+					"calls": 10,
+					"holds": false
+				},
+				{
+					"label": "100,000 lit triangles, antialiasing off",
+					"fps": 55,
+					"frame_ms": 18,
+					"p95_ms": 34,
+					"first_ms": 53,
+					"triangles": 100320,
+					"calls": 1,
+					"holds": false
+				},
+				{
+					"label": "5 full-screen layers, antialiasing off",
+					"fps": 49,
+					"frame_ms": 20,
+					"p95_ms": 39,
+					"first_ms": 41,
+					"triangles": 20,
+					"calls": 10,
+					"holds": false
+				}
+			]
+		},
+		{
+			"title": "Moving instances from JavaScript (CPU, every frame)",
+			"kind": "all",
+			"steps": [
+				{
+					"label": "6,000 instances: 1 ms of JavaScript per frame",
+					"work_ms": 1,
+					"holds": true
+				},
+				{
+					"label": "20,000 instances: 2 ms of JavaScript per frame",
+					"work_ms": 2,
+					"holds": true
+				},
+				{
+					"label": "60,000 instances: 6 ms of JavaScript per frame",
+					"work_ms": 6,
+					"holds": false
+				}
+			]
+		}
+	]
+}
