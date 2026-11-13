@@ -1,9 +1,15 @@
 {#
 	A graphics test (providers/three.py): a Three.js scene on a canvas (data-three, widgets.js) with the frames per second,
-	what is drawn and the graphics chip in a panel on top. See "Three.js test" in style.css.
+	what is drawn and the graphics chip in a panel on top, and buttons to switch scene and resolution (tap them, or S and R).
+	Interactive: tapping pauses the slideshow here. See "Three.js test" in style.css.
 #}
-<div class="slide three-slide">
+<div class="slide three-slide" data-interactive data-idle-seconds="300" data-provider="three">
 	<canvas data-three="{{ scene }}"></canvas>
-	<div class="three-title"><b>{{ label }}</b> <span>{{ about }}</span></div>
+	<div class="three-title"></div>
 	<div class="three-stats" data-three-stats>starting...</div>
+	<div class="three-controls">
+		<div>{% for s in scenes %}<button data-three-scene="{{ s.name }}" data-about="{{ s.about }}">{{ s.label }}</button>{% endfor %}</div>
+		<div><small>Resolution</small>{% for scale, label in scales %}<button data-three-scale="{{ scale }}">{{ label }}</button>{% endfor %}</div>
+		<small>Tap, or press S for the next scene and R for the next resolution</small>
+	</div>
 </div>

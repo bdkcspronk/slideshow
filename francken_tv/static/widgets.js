@@ -31,7 +31,7 @@
 // - data-terminal: a terminal session that types itself after data-terminal-wait seconds: each child's
 //   data-command is typed after data-prompt, then the child (its answer) appears. When it's done the
 //   slide gets .typed (e.g. to show what comes after).
-// - data-three: a Three.js scene (simple, medium, heavy, shadows, triangles, overdraw or complex) with a live frames-per-second readout: a test of the TV PC's graphics.
+// - data-three: a Three.js scene (see THREE_SCENES) with a live frames-per-second readout and buttons to switch scene and resolution: a test of the TV PC's graphics.
 // - data-play-at-start: a <video> that plays from the start of its slide, also while it is out of view
 //   (a post further down the Instagram feed): the browser holds back a video with the autoplay
 //   attribute until it is on screen. startVideos() is called when the slide is drawn and again when it fades in.
@@ -576,7 +576,7 @@ async function setupTerminal(element) {
 	element.closest(".slide")?.classList.add("typed");
 }
 
-// data-three="simple|medium|complex" on a <canvas>: a Three.js scene (static/vendor/three, loaded the first time one is needed)
+// data-three="<scene>" on a <canvas> (the scene it starts with): a Three.js scene (static/vendor/three, loaded the first time one is needed)
 // for finding out what the TV PC's graphics can do (providers/three.py). [data-three-stats] next to it shows the frames per
 // second (now, the average and the slowest half second so far), what is drawn and which graphics chip does it. The renderer is
 // freed once the slide is gone, so the browser doesn't run out of WebGL contexts.
@@ -595,8 +595,9 @@ function loadThree() {
 }
 
 async function setupThree(canvas) {
-	const stats = canvas.parentElement.querySelector("[data-three-stats]");
-	const say = (html) => { if (stats) stats.innerHTML = html; };
+	const slide = canvas.closest(".three-slide");
+	const stats = slide.querySelector("[data-three-stats]");
+	const say = (html) => { stats.innerHTML = html; };
 	let THREE;
 	try {
 		THREE = await loadThree();
@@ -610,45 +611,78 @@ async function setupThree(canvas) {
 	} catch (error) {
 		return say("<b>No WebGL here</b>");
 	}
-	renderer.setPixelRatio(1);
-	renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-	const scene = new THREE.Scene();
-	const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 200);
-	const update = THREE_SCENES[canvas.dataset.three](THREE, renderer, scene, camera);
 	const gl = renderer.getContext();
 	const debug = gl.getExtension("WEBGL_debug_renderer_info");
 	const chip = debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : "unknown graphics";
+	const sceneButtons = [...slide.querySelectorAll("[data-three-scene]")];
+	const scaleButtons = [...slide.querySelectorAll("[data-three-scale]")];
 
-	const started = performance.now();
-	let last = started, windowStart = started, frames = 0, total = 0, slowest = Infinity, fps = 0;
-	const frame = (now) => {
-		if (!document.contains(canvas)) {   // the slide is gone
-			renderer.dispose();
-			renderer.forceContextLoss();
-			return;
-		}
-		requestAnimationFrame(frame);
-		update((now - started) / 1000, (now - last) / 1000);
-		renderer.render(scene, camera);
-		last = now;
-		frames++;
-		total++;
-		if (now - windowStart >= 500) {
-			fps = frames * 1000 / (now - windowStart);
-			if (now - started > 1500) slowest = Math.min(slowest, fps);   // not the first moments: the shaders compile then
-			const average = total * 1000 / (now - started);
-			const verdict = average >= 50 ? ["smooth", "good"] : average >= 28 ? ["so-so", "ok"] : ["too slow", "bad"];
-			const info = renderer.info.render;
-			say(`<span class="three-fps">${Math.round(fps)}<small> fps</small></span>`
-				+ `<span class="three-verdict ${verdict[1]}">${verdict[0]}</span>`
-				+ `<span>average ${Math.round(average)} &middot; slowest ${slowest === Infinity ? "..." : Math.round(slowest)}</span>`
-				+ `<span>${info.calls} draw calls &middot; ${info.triangles.toLocaleString("en")} triangles</span>`
-				+ `<span class="three-chip">${chip}</span>`);
-			frames = 0;
-			windowStart = now;
-		}
+	let scene, camera, update, name, scale = 1, run = 0;
+	const start = (newName, newScale) => {
+		const mine = ++run;   // the loop of the scene before stops by itself
+		if (scene) scene.traverse((o) => { o.geometry?.dispose(); [o.material].flat().forEach((m) => m?.dispose()); });
+		name = newName;
+		scale = newScale;
+		renderer.shadowMap.enabled = false;
+		renderer.setPixelRatio(scale);
+		renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+		scene = new THREE.Scene();
+		camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 200);
+		update = THREE_SCENES[name](THREE, renderer, scene, camera);
+		sceneButtons.forEach((b) => b.classList.toggle("selected", b.dataset.threeScene === name));
+		scaleButtons.forEach((b) => b.classList.toggle("selected", Number(b.dataset.threeScale) === scale));
+		const label = slide.querySelector(`[data-three-scene="${name}"]`);
+		slide.querySelector(".three-title").innerHTML = label ? `<b>${label.textContent}</b> <span>${label.dataset.about}</span>` : "";
+		measure(mine);
 	};
-	requestAnimationFrame(frame);
+
+	const measure = (mine) => {
+		const started = performance.now();
+		let last = started, windowStart = started, frames = 0, total = 0, slowest = Infinity;
+		const frame = (now) => {
+			if (mine !== run) return;   // another scene or resolution took over
+			if (!document.contains(canvas)) {   // the slide is gone
+				renderer.dispose();
+				renderer.forceContextLoss();
+				return;
+			}
+			requestAnimationFrame(frame);
+			update((now - started) / 1000, (now - last) / 1000);
+			renderer.render(scene, camera);
+			last = now;
+			frames++;
+			total++;
+			if (now - windowStart >= 500) {
+				const fps = frames * 1000 / (now - windowStart);
+				if (now - started > 1500) slowest = Math.min(slowest, fps);   // not the first moments: the shaders compile then
+				const average = total * 1000 / (now - started);
+				const verdict = average >= 50 ? ["smooth", "good"] : average >= 28 ? ["so-so", "ok"] : ["too slow", "bad"];
+				const info = renderer.info.render;
+				say(`<span class="three-fps">${Math.round(fps)}<small> fps</small></span>`
+					+ `<span class="three-verdict ${verdict[1]}">${verdict[0]}</span>`
+					+ `<span>average ${Math.round(average)} &middot; slowest ${slowest === Infinity ? "..." : Math.round(slowest)}</span>`
+					+ `<span>${info.calls} draw calls &middot; ${info.triangles.toLocaleString("en")} triangles</span>`
+					+ `<span>drawn at ${canvas.width} &times; ${canvas.height}</span>`
+					+ `<span class="three-chip">${chip}</span>`);
+				frames = 0;
+				windowStart = now;
+			}
+		};
+		requestAnimationFrame(frame);
+	};
+
+	sceneButtons.forEach((b) => b.addEventListener("click", () => start(b.dataset.threeScene, scale)));
+	scaleButtons.forEach((b) => b.addEventListener("click", () => start(name, Number(b.dataset.threeScale))));
+	// S: the next scene, R: the next resolution (clicks, so the slideshow stays on this slide like for a tap)
+	const cycle = (buttons) => buttons[(buttons.findIndex((b) => b.classList.contains("selected")) + 1) % buttons.length].click();
+	const keys = (event) => {
+		if (!document.contains(canvas)) return document.removeEventListener("keydown", keys);
+		if (event.ctrlKey || event.altKey || event.metaKey) return;
+		if (event.key === "s") cycle(sceneButtons);
+		else if (event.key === "r") cycle(scaleButtons);
+	};
+	document.addEventListener("keydown", keys);
+	start(canvas.dataset.three, 1);
 }
 
 // A grid of `side` x `rows` instanced spheres in rainbow colours, rippling like a wave: { mesh, wave(seconds) }.
