@@ -246,6 +246,10 @@
 		plan.push(["Textures (512x512 pictures)", [10, 40, 100, 200], texturesRig, (n) => `${n} textures`, "ramp"]);
 		plan.push(["One big texture", [2048, 4096, 8192], (n) => texturesRig(1, n), (n) => `${n}x${n} texture`, "all"]);
 
+		const steps = plan.reduce((sum, p) => sum + p[1].length, 0) + 3;   // + the instance updates
+		let done = 0;
+		const progress = (text) => { status.textContent = text; bar.style.width = `${Math.min(100, Math.round(done / steps * 100))}%`; };
+
 		{   // the empty scene: how long the read-back takes by itself
 			progress("Empty scene (calibration)");
 			const rig = { scene: new THREE.Scene(), camera: camera(10) };
@@ -254,10 +258,6 @@
 			free(rig);
 		}
 		info.floor_ms = floor;
-
-		const steps = plan.reduce((sum, p) => sum + p[1].length, 0) + 3;   // + the instance updates
-		let done = 0;
-		const progress = (text) => { status.textContent = text; bar.style.width = `${Math.min(100, Math.round(done / steps * 100))}%`; };
 
 		for (const [title, values, make, label, kind] of plan) {
 			const test = { title, kind, steps: [] };
