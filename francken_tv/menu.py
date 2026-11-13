@@ -35,7 +35,7 @@ GROUPS = [
 	("Committees", ["compucie", "borrelcie", "fotocie", "sjaarscie", "mscie"]),
 	("Contacts", ["confidential", "ero", "extern"]),
 	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
-	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine", "vrijmibo"]),
+	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine", "three", "vrijmibo"]),
 	("Full screen", ["bieruur-countdown", "bieruur"]),
 	("Other", []),
 ]

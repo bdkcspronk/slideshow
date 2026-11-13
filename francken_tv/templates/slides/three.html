@@ -1,0 +1,9 @@
+{#
+	A graphics test (providers/three.py): a Three.js scene on a canvas (data-three, widgets.js) with the frames per second,
+	what is drawn and the graphics chip in a panel on top. See "Three.js test" in style.css.
+#}
+<div class="slide three-slide">
+	<canvas data-three="{{ scene }}"></canvas>
+	<div class="three-title"><b>{{ label }}</b> <span>{{ about }}</span></div>
+	<div class="three-stats" data-three-stats>starting...</div>
+</div>

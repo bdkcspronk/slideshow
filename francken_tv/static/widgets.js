@@ -31,6 +31,7 @@
 // - data-terminal: a terminal session that types itself after data-terminal-wait seconds: each child's
 //   data-command is typed after data-prompt, then the child (its answer) appears. When it's done the
 //   slide gets .typed (e.g. to show what comes after).
+// - data-three: a Three.js scene (simple, medium or complex) with a live frames-per-second readout: a test of the TV PC's graphics.
 // - data-play-at-start: a <video> that plays from the start of its slide, also while it is out of view
 //   (a post further down the Instagram feed): the browser holds back a video with the autoplay
 //   attribute until it is on screen. startVideos() is called when the slide is drawn and again when it fades in.
@@ -54,6 +55,7 @@ function setupWidgets(root) {
 	root.querySelectorAll("canvas[data-matrix]").forEach(setupMatrix);
 	root.querySelectorAll("[data-decode]").forEach(setupDecode);
 	root.querySelectorAll("[data-terminal]").forEach(setupTerminal);
+	root.querySelectorAll("canvas[data-three]").forEach(setupThree);
 	startVideos(root);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
 		input.addEventListener("input", () => fieldChanged(input));
@@ -573,3 +575,188 @@ async function setupTerminal(element) {
 	promptLine();
 	element.closest(".slide")?.classList.add("typed");
 }
+
+// data-three="simple|medium|complex" on a <canvas>: a Three.js scene (static/vendor/three, loaded the first time one is needed)
+// for finding out what the TV PC's graphics can do (providers/three.py). [data-three-stats] next to it shows the frames per
+// second (now, the average and the slowest half second so far), what is drawn and which graphics chip does it. The renderer is
+// freed once the slide is gone, so the browser doesn't run out of WebGL contexts.
+let threeLoading = null;
+
+function loadThree() {
+	threeLoading ??= new Promise((resolve, reject) => {
+		if (window.THREE) return resolve(window.THREE);
+		const script = document.createElement("script");
+		script.src = "/static/vendor/three/three.min.js";
+		script.onload = () => resolve(window.THREE);
+		script.onerror = () => { threeLoading = null; reject(new Error("three.js did not load")); };
+		document.head.append(script);
+	});
+	return threeLoading;
+}
+
+async function setupThree(canvas) {
+	const stats = canvas.parentElement.querySelector("[data-three-stats]");
+	const say = (html) => { if (stats) stats.innerHTML = html; };
+	let THREE;
+	try {
+		THREE = await loadThree();
+	} catch (error) {
+		return say("<b>Three.js did not load</b>");
+	}
+	if (!document.contains(canvas)) return;
+	let renderer;
+	try {
+		renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+	} catch (error) {
+		return say("<b>No WebGL here</b>");
+	}
+	renderer.setPixelRatio(1);
+	renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+	const scene = new THREE.Scene();
+	const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 200);
+	const update = THREE_SCENES[canvas.dataset.three](THREE, renderer, scene, camera);
+	const gl = renderer.getContext();
+	const debug = gl.getExtension("WEBGL_debug_renderer_info");
+	const chip = debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : "unknown graphics";
+
+	const started = performance.now();
+	let last = started, windowStart = started, frames = 0, total = 0, slowest = Infinity, fps = 0;
+	const frame = (now) => {
+		if (!document.contains(canvas)) {   // the slide is gone
+			renderer.dispose();
+			renderer.forceContextLoss();
+			return;
+		}
+		requestAnimationFrame(frame);
+		update((now - started) / 1000, (now - last) / 1000);
+		renderer.render(scene, camera);
+		last = now;
+		frames++;
+		total++;
+		if (now - windowStart >= 500) {
+			fps = frames * 1000 / (now - windowStart);
+			if (now - started > 1500) slowest = Math.min(slowest, fps);   // not the first moments: the shaders compile then
+			const average = total * 1000 / (now - started);
+			const verdict = average >= 50 ? ["smooth", "good"] : average >= 28 ? ["so-so", "ok"] : ["too slow", "bad"];
+			const info = renderer.info.render;
+			say(`<span class="three-fps">${Math.round(fps)}<small> fps</small></span>`
+				+ `<span class="three-verdict ${verdict[1]}">${verdict[0]}</span>`
+				+ `<span>average ${Math.round(average)} &middot; slowest ${slowest === Infinity ? "..." : Math.round(slowest)}</span>`
+				+ `<span>${info.calls} draw calls &middot; ${info.triangles.toLocaleString("en")} triangles</span>`
+				+ `<span class="three-chip">${chip}</span>`);
+			frames = 0;
+			windowStart = now;
+		}
+	};
+	requestAnimationFrame(frame);
+}
+
+// Each scene sets up `scene` and `camera` and returns update(seconds, delta), called before every frame.
+const THREE_SCENES = {
+	// Simple: a lit, spinning knot and a cube. Two objects, one light.
+	simple(THREE, renderer, scene, camera) {
+		scene.background = new THREE.Color(0x0b1b3a);
+		camera.position.set(0, 0, 7);
+		scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+		const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+		sun.position.set(3, 4, 5);
+		scene.add(sun);
+		const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(1.4, 0.45, 128, 16), new THREE.MeshStandardMaterial({ color: 0xe0314b, roughness: 0.35, metalness: 0.2 }));
+		knot.position.x = -1.6;
+		const cube = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), new THREE.MeshStandardMaterial({ color: 0xf5b800, roughness: 0.5 }));
+		cube.position.x = 2.8;
+		scene.add(knot, cube);
+		return (t) => {
+			knot.rotation.set(t * 0.6, t * 0.9, 0);
+			cube.rotation.set(t * 0.7, t * 0.5, t * 0.3);
+		};
+	},
+
+	// Medium: 400 separate meshes (400 draw calls) orbiting in fog under three coloured lights, with a reflective ground.
+	medium(THREE, renderer, scene, camera) {
+		scene.background = new THREE.Color(0x120a24);
+		scene.fog = new THREE.Fog(0x120a24, 12, 38);
+		camera.position.set(0, 7, 22);
+		scene.add(new THREE.AmbientLight(0x404060, 1));
+		const lights = [0xff3366, 0x33ccff, 0xffcc33].map((colour) => {
+			const light = new THREE.PointLight(colour, 900, 40);
+			scene.add(light);
+			return light;
+		});
+		const shapes = [new THREE.IcosahedronGeometry(0.6, 1), new THREE.BoxGeometry(0.9, 0.9, 0.9), new THREE.TorusGeometry(0.5, 0.2, 12, 24), new THREE.ConeGeometry(0.5, 1.1, 16)];
+		const things = [];
+		for (let i = 0; i < 400; i++) {
+			const material = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(i / 400, 0.75, 0.55), roughness: 0.3, metalness: 0.4 });
+			const mesh = new THREE.Mesh(shapes[i % shapes.length], material);
+			things.push({ mesh, radius: 3 + (i % 20) * 0.9, phase: i * 0.37, height: ((i * 7) % 11) - 3, speed: 0.15 + (i % 7) * 0.03 });
+			scene.add(mesh);
+		}
+		const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x1b1235, roughness: 0.2, metalness: 0.6 }));
+		ground.rotation.x = -Math.PI / 2;
+		ground.position.y = -5;
+		scene.add(ground);
+		return (t) => {
+			for (const o of things) {
+				const a = o.phase + t * o.speed;
+				o.mesh.position.set(Math.cos(a) * o.radius, o.height + Math.sin(a * 2) * 0.8, Math.sin(a) * o.radius);
+				o.mesh.rotation.set(t * 0.8 + o.phase, t * 0.5, 0);
+			}
+			lights.forEach((light, i) => light.position.set(Math.cos(t * 0.5 + i * 2.1) * 9, 4 + i, Math.sin(t * 0.5 + i * 2.1) * 9));
+			camera.position.x = Math.sin(t * 0.2) * 6;
+			camera.lookAt(0, 0, 0);
+		};
+	},
+
+	// Complex: 6,000 instanced spheres rippling like a wave (about 3 million triangles, every instance moved by the CPU each frame),
+	// 30,000 glowing points, a shiny high-detail knot, a shadow-casting light with a 2048 shadow map, and fog.
+	complex(THREE, renderer, scene, camera) {
+		scene.background = new THREE.Color(0x02060f);
+		scene.fog = new THREE.FogExp2(0x02060f, 0.018);
+		camera.position.set(0, 14, 34);
+		renderer.shadowMap.enabled = true;
+		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		scene.add(new THREE.HemisphereLight(0x88aaff, 0x221133, 0.8));
+		const sun = new THREE.DirectionalLight(0xfff0d0, 3);
+		sun.position.set(20, 30, 10);
+		sun.castShadow = true;
+		sun.shadow.mapSize.set(2048, 2048);
+		Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 90 });
+		scene.add(sun);
+
+		const side = 80, count = side * 75;
+		const spheres = new THREE.InstancedMesh(new THREE.SphereGeometry(0.28, 24, 16), new THREE.MeshStandardMaterial({ roughness: 0.25, metalness: 0.3 }), count);
+		spheres.castShadow = spheres.receiveShadow = true;
+		const colour = new THREE.Color();
+		for (let i = 0; i < count; i++) spheres.setColorAt(i, colour.setHSL(0.55 + (i % side) / side * 0.4, 0.8, 0.55));
+		scene.add(spheres);
+		const matrix = new THREE.Matrix4();
+
+		const points = 30000, positions = new Float32Array(points * 3);
+		for (let i = 0; i < points; i++) {
+			const r = 18 + Math.random() * 40, a = Math.random() * Math.PI * 2, b = Math.random() * Math.PI - Math.PI / 2;
+			positions.set([Math.cos(a) * Math.cos(b) * r, Math.sin(b) * r * 0.6 + 10, Math.sin(a) * Math.cos(b) * r], i * 3);
+		}
+		const cloud = new THREE.BufferGeometry();
+		cloud.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+		const dust = new THREE.Points(cloud, new THREE.PointsMaterial({ color: 0x9fd0ff, size: 0.18, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
+		scene.add(dust);
+
+		const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(3.2, 1, 400, 64), new THREE.MeshPhysicalMaterial({ color: 0xffb400, metalness: 1, roughness: 0.15, clearcoat: 1 }));
+		knot.position.y = 8;
+		knot.castShadow = true;
+		scene.add(knot);
+		return (t) => {
+			for (let i = 0; i < count; i++) {
+				const x = (i % side) - side / 2, z = Math.floor(i / side) - 37;
+				const y = Math.sin(x * 0.35 + t * 1.6) * Math.cos(z * 0.3 + t * 1.2) * 2.2;
+				matrix.makeTranslation(x * 0.75, y, z * 0.75);
+				spheres.setMatrixAt(i, matrix);
+			}
+			spheres.instanceMatrix.needsUpdate = true;
+			dust.rotation.y = t * 0.03;
+			knot.rotation.set(t * 0.4, t * 0.6, 0);
+			camera.position.x = Math.sin(t * 0.15) * 14;
+			camera.lookAt(0, 4, 0);
+		};
+	},
+};

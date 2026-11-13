@@ -31,6 +31,7 @@ from .providers.compucie import CompucieProvider
 from .providers.borrelcie import BorrelcieProvider
 from .providers.fotocie import FotocieProvider
 from .providers.mscie import MscieProvider
+from .providers.three import ThreeProvider
 from .providers.sjaarscie import SjaarscieProvider
 from .providers.francken_vrij import FranckenVrijProvider
 from .providers.graafmachine import GraafmachineProvider
@@ -204,6 +205,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		FotocieProvider(config.get("fotocie", {})),
 		SjaarscieProvider(config.get("sjaarscie", {})),
 		MscieProvider(config.get("mscie", {})),
+		ThreeProvider(config.get("three", {})),
 		MembershipProvider(config.get("membership", {})),
 		SocksProvider(config.get("socks", {})),
 		SocialsProvider(config.get("socials", {})),

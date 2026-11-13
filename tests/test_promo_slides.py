@@ -9,6 +9,7 @@ from francken_tv.providers.francken_vrij import FranckenVrijProvider
 from francken_tv.providers.francken_vrij_subscribe import FranckenVrijSubscribeProvider
 from francken_tv.providers.mscie import MscieProvider
 from francken_tv.providers.sjaarscie import SjaarscieProvider
+from francken_tv.providers.three import ThreeProvider
 from francken_tv.providers.socials import LINE_SAG, SocialsProvider
 from francken_tv.providers.streep import PRODUCTS, TAPS, cursor_keyframes, taps, tiles
 
@@ -40,6 +41,19 @@ class MscieTest(unittest.TestCase):
 			self.assertGreater(cap["y"], 0)
 			self.assertGreater(cap["peak"], cap["y"] + cap["size"])
 			self.assertLess(cap["delay"] + 0.4 + cap["seconds"], 5.4)
+
+
+class ThreeTest(unittest.TestCase):
+	def test_three_scenes_each_with_a_widget_scene_that_exists(self):
+		slides = ThreeProvider({}).slides(NOW)
+		self.assertEqual([slide.data["scene"] for slide in slides], ["simple", "medium", "complex"])
+		widgets = (Path(__file__).parent.parent / "francken_tv" / "static" / "widgets.js").read_text()
+		for slide in slides:
+			self.assertIn(f"\t{slide.data['scene']}(THREE", widgets)
+
+	def test_scenes_can_be_left_out(self):
+		slides = ThreeProvider({"scenes": ["complex"]}).slides(NOW)
+		self.assertEqual([slide.data["scene"] for slide in slides], ["complex"])
 
 
 class SocialsTest(unittest.TestCase):

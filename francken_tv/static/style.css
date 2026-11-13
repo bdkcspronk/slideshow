@@ -4440,3 +4440,23 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 @keyframes ms-name { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
 @keyframes ms-fade { from { opacity: 0; transform: translateY(2vh); } to { opacity: 1; transform: none; } }
 @keyframes ms-glint { from { background-position: 130% 0, 0 0; } to { background-position: -30% 0, 0 0; } }
+
+/* Three.js test (providers/three.py): a scene on a canvas (data-three) filling the slide, its title bottom left and the
+   frames-per-second panel (data-three-stats) top right. */
+.three-slide { position: relative; overflow: hidden; background: #000; color: #fff; font-family: "Familjen Grotesk", sans-serif; }
+.three-slide canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.three-title { position: absolute; left: 3vw; bottom: 3vh; font-size: 3.2vh; text-shadow: 0 0 1vh #000; }
+.three-title b { font-size: 5vh; margin-right: 1vw; }
+.three-title span { opacity: 0.8; }
+.three-stats {
+	position: absolute; top: 3vh; right: 3vw; min-width: 24vw; padding: 1.5vh 1.5vw;
+	display: flex; flex-direction: column; gap: 0.6vh; font-size: 2.2vh;
+	background: rgba(0, 0, 0, 0.6); border-radius: 1vh; font-variant-numeric: tabular-nums;
+}
+.three-fps { font-size: 9vh; font-weight: 700; line-height: 1; }
+.three-fps small { font-size: 3vh; font-weight: 400; }
+.three-verdict { font-size: 3.4vh; font-weight: 700; text-transform: uppercase; }
+.three-verdict.good { color: #4cd964; }
+.three-verdict.ok { color: #ffcc00; }
+.three-verdict.bad { color: #ff4d4d; }
+.three-chip { font-size: 1.6vh; opacity: 0.6; max-width: 24vw; }
