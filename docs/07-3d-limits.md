@@ -44,7 +44,7 @@ On the TV PC press Esc -> Fun -> "3D benchmark" and tap **Start** (or press Ente
 | Separate meshes | the most draw calls (many small objects) |
 | Shadows | what a shadow map of 512 to 4096 costs on a 100,000 triangle scene |
 | Overdraw | the most full-screen see-through layers, and whether half the resolution helps |
-| Textures, one big texture | how many pictures (like book covers) can be on screen, and how long uploading them takes |
+| Textures, one big texture | how many pictures (like book covers) can be loaded, flown into until one is shown 1:1, and how long uploading them takes |
 | Moving instances | how many objects JavaScript can move every frame |
 
 At the end the results are saved in [benchmarks/](../benchmarks/README.md) as `3d-<date>.json` and `3d-<date>.md`. **Commit them

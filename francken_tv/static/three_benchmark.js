@@ -187,7 +187,9 @@
 			return { scene, camera: cam, update: (t) => planes.forEach((p, i) => { p.rotation.z = Math.sin(t * 0.3 + i * 0.1) * 0.3; }) };
 		}
 
-		// Textures: that many different 512x512 pictures (like book covers) on quads. The first frame is when they upload.
+		// Textures: that many different pictures (512x512, like book covers) on quads, seen from far away (the whole grid: every picture is
+		// loaded) and then flown into and out of every 3 seconds until one picture is shown at its own size (1:1, no mipmap shortcut),
+		// moving on to another one each time. The first frame is when they upload. With one picture (the big texture test) it fills the screen.
 		function texturesRig(count, size = 512) {
 			const scene = new THREE.Scene();
 			scene.background = new THREE.Color(0x101010);
@@ -211,8 +213,19 @@
 				scene.add(mesh);
 			}
 			const cam = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 500);
-			cam.position.z = Math.max(rows, cols / (canvas.clientWidth / canvas.clientHeight)) / 2 / Math.tan(25 * Math.PI / 180) + 1;
-			return { scene, camera: cam };
+			const tan = Math.tan(25 * Math.PI / 180);
+			const fit = Math.max(rows, cols / (canvas.clientWidth / canvas.clientHeight)) / 2 / tan + 1;   // the whole grid in view
+			if (count === 1) {   // one picture, as big as the screen is high
+				cam.position.z = 0.45 / tan * 1.05;
+				return { scene, camera: cam };
+			}
+			const close = canvas.clientHeight / (2 * tan * 0.9 * size);   // where one picture (0.9 wide) is `size` pixels high: 1:1
+			cam.position.z = fit;
+			return { scene, camera: cam, update: (t) => {
+				const zoom = 0.5 - 0.5 * Math.cos(t / 3 * 2 * Math.PI);   // 0: the whole grid, 1: one picture at its own size
+				const target = scene.children[Math.floor(t / 3) % count].position;
+				cam.position.set(target.x * zoom, target.y * zoom, fit + (close - fit) * zoom);
+			} };
 		}
 
 		// ---- The tests. --------------------------------------------------------------------------------------------------
