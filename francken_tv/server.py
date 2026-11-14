@@ -391,6 +391,8 @@ class Handler(BaseHTTPRequestHandler):
 		slide = None
 		if name == "rain" and "weather" in app.providers:
 			slide = app.providers["weather"].rain_preview(now)
+		elif name == "spotify-lyrics" and "spotify" in app.providers:
+			slide = menu.slide_for(app, name)
 		elif name in app.providers:
 			slide = app.providers[name].shortcut_slide(now)   # e.g. Spotify also when nothing plays
 		elif name in app.takeovers:
