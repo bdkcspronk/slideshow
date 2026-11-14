@@ -149,10 +149,17 @@ async function showAgain(slide) {
 
 // Redraw the current slide (e.g. the ticking countdown). If the slide's data-state is unchanged,
 // only elements marked data-live="..." are updated, so animations keep running smoothly.
+// The slide on screen drawn again (its clock, the song's progress...). It asks for this slide by its number, not for the
+// server's current slide: another screen on the same server (a second browser, a phone) or a reply that came too late
+// moves that on, and redrawing to it every second made a slide replay its first second over and over.
 async function refresh() {
 	try {
 		const started = showCount;
-		const slide = await getJson("/api/current");
+		if (!current?.id) return;
+		const response = await fetch(`/api/refresh/${current.id}`);
+		if (response.status === 404) return clearInterval(refreshTimer);   // too long ago: the server forgot it
+		if (!response.ok) throw new Error(`refresh: ${response.status}`);
+		const slide = await response.json();
 		if (started !== showCount) return;   // the slide changed meanwhile
 		const layer = layers[front];
 		const fresh = document.createElement("div");
@@ -402,6 +409,7 @@ async function sendAction(slide, action, values, provider = slide.dataset.provid
 		body: JSON.stringify({ provider, action, values }),
 	});
 	if (result.html) {
+		if (result.id && current) current = { ...current, id: result.id };   // the redrawn slide is now the one to refresh
 		const fresh = new DOMParser().parseFromString(result.html, "text/html");
 		const effect = fresh.querySelector("[data-effect]");
 		if (effect && effects[effect.dataset.effect]) await effects[effect.dataset.effect](slide);

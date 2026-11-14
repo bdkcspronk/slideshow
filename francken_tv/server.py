@@ -3,6 +3,8 @@
 	/               the slideshow (templates/player.html + static/player.js)
 	/api/next       the next slide as HTML, plus how long to show it
 	/api/current    the current slide re-rendered (for slides that update, like the countdown)
+	/api/refresh/<n>  slide number n re-rendered: what player.js refreshes, the slide it shows (not
+	                another screen's current one; see refresh() in player.js)
 	/api/shortcut/<key>  the slide for a shortcut key (see [shortcuts] in config.toml), right away
 	/api/slide/<n>  a recent slide again, freshly drawn (going back with the left arrow)
 	/api/mute       POST: toggle muting all sound (the m key)
@@ -148,16 +150,21 @@ class SlideRenderer:
 			response = {"html": "", "seconds": 0.1, "refresh": None}   # skip it
 		response["version"] = static_version()
 		response["permanent_pause"] = self.app.settings.permanent_pause   # how long a pause lasts (player.js)
-		self.count += 1
-		response["id"] = self.count
-		self.recent[self.count] = slide
-		self.recent.pop(self.count - RECENT_SLIDES, None)
-		self.current = slide
+		response["id"] = self.remember(slide)
 		if slide.announce:
 			self.app.announcer.say_quote(slide.announce)
 		if rotation and slide.sound:
 			self.app.announcer.play_sound(slide.sound)
 		return response
+
+	def remember(self, slide: Slide) -> int:
+		"""Make `slide` the current one and number it, so a screen can ask for exactly this slide again (its
+		once-a-second updates: /api/refresh/<n>), whatever another screen is showing meanwhile."""
+		self.count += 1
+		self.recent[self.count] = slide
+		self.recent.pop(self.count - RECENT_SLIDES, None)
+		self.current = slide
+		return self.count
 
 	def again(self, number: int) -> dict | None:
 		"""A recent slide drawn again, now (e.g. going back to the Spotify slide): it becomes the
@@ -256,6 +263,12 @@ class Handler(BaseHTTPRequestHandler):
 				self.send_error(HTTPStatus.NOT_FOUND)
 			else:
 				self.send_json(again)
+		elif path.startswith("/api/refresh/") and path.removeprefix("/api/refresh/").isdigit():
+			slide = renderer.recent.get(int(path.removeprefix("/api/refresh/")))   # doesn't change the current slide
+			if slide is None:
+				self.send_error(HTTPStatus.NOT_FOUND)
+			else:
+				self.send_json(renderer.as_json(slide))
 		elif path == "/api/current":
 			slide = renderer.current
 			self.send_json(renderer.as_json(slide) if slide else {"html": "", "seconds": 0, "refresh": None})
@@ -355,9 +368,8 @@ class Handler(BaseHTTPRequestHandler):
 		except NotImplementedError:
 			self.send_error(HTTPStatus.BAD_REQUEST, "this slide is not interactive")
 			return
-		if slide is not None:
-			self.server.renderer.current = slide
-		self.send_json({"html": self.server.renderer.render(slide) if slide else None, "message": message})
+		number = self.server.renderer.remember(slide) if slide is not None else None   # its updates now come from this slide
+		self.send_json({"html": self.server.renderer.render(slide) if slide else None, "message": message, "id": number})
 
 	def overlay(self) -> dict:
 		"""The first thing an overlay source has to show: {"html", "seconds"}, or {} for nothing."""

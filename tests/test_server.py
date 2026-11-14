@@ -65,6 +65,24 @@ class GoingBackTest(unittest.TestCase):
 		self.assertEqual((again["id"], again["refresh"], renderer.current), (1, 1, music))
 		self.assertIsNone(renderer.again(99))
 
+	def test_a_screen_refreshes_its_own_slide_after_another_screen_moved_on(self):
+		# /api/refresh/<n> draws slide n, not the current one: a second screen (or a late reply) moving the server on
+		# made the first one redraw to the other slide every second, replaying its first second over and over.
+		from datetime import datetime
+		from francken_tv.slides import Slide
+		music = Slide("empty.html", 10, update=lambda now: {}, refresh_seconds=1)
+		poster, lyrics = Slide("empty.html", 10), Slide("empty.html", 10, refresh_seconds=1)
+		slides = iter([music, poster])
+		app = SimpleNamespace(clock=SimpleNamespace(now=datetime.now), announcer=None, settings=Settings(),
+			scheduler=SimpleNamespace(next_slide=lambda now: next(slides)))
+		renderer = server.SlideRenderer(app)
+		mine = renderer.next_slide()["id"]
+		renderer.next_slide()   # another screen
+		self.assertIs(renderer.recent[mine], music)
+		self.assertIs(renderer.current, poster)
+		after_tap = renderer.remember(lyrics)   # an action's redrawn slide gets its own number to refresh
+		self.assertEqual((after_tap, renderer.recent[after_tap]), (3, lyrics))
+
 
 class ShortcutTest(unittest.TestCase):
 	def test_a_shortcut_key_shows_that_slide_type_now(self):
