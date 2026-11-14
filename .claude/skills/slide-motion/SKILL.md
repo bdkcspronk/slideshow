@@ -17,6 +17,8 @@ ways, and every rule below follows from them:
 2. **Some slides can be tapped, but that comes second.** A few slides (puzzles, Spotify, news, the pet)
    and the menu react to a tap. There Emil's rules for apps apply just enough that nothing feels broken:
    answer at once, keep it short, never make people wait for an animation. Don't polish it like an app.
+   But it must work **with the keyboard alone**: often no mouse is connected (see "Everything works
+   without a mouse").
 3. **Every tap goes to the server.** `sendAction()` in `static/player.js` posts the action and swaps in the
    slide's new HTML. Without care, every tap replays every entrance animation on the slide.
 4. **The TV PC is weak.** Intel HD Graphics at 1920x1080 in Firefox kiosk, limited by pixels
@@ -81,6 +83,26 @@ Keep these minimal. They exist so a tap never seems broken: no reaction at all, 
 appears, a slideshow that stalls, the screen emptying and rebuilding. They are not a reason for app polish:
 don't spend code on touch-target sizes, carrying scroll positions or bar values across a redraw, or new
 mechanisms in `player.js` for small refinements.
+
+### Everything works without a mouse
+
+Often no mouse (or touchscreen) is connected, and the TV is used with a keyboard alone. So keyboard use is
+not polish: a button you can't reach or can't see focused is broken.
+
+- Every button can be reached and pressed from the keyboard: Tab to it, Enter or Space to press it. On the
+  puzzle slides the arrow keys move to the nearest button (`nearestButton()` and `PUZZLE_PROVIDERS` in
+  `player.js`), and the menu has its own (`moveMenuFocus()`); at the edge the arrows change slides as
+  always. A new interactive slide with many buttons should join one of these.
+- The focused element is visible from across the room: a `:focus` look of its own (a ring, a lighter
+  background, a slight scale). A `.squircle` clips its outline and box-shadow rings, so give it a
+  background or scale instead (see Corners).
+- Hover is never the only cue: hover looks go inside `@media (hover: hover)`, and the `:focus` rule stands
+  on its own.
+- Anything done by pointer position (a click on a timeline, placing a pin on a map, picking by tapping)
+  needs a keyboard way too, or the slide must still be playable without it.
+- The keys the slideshow already uses keep their meaning: Esc closes the menu, Enter presses a
+  `data-enter` button and sends typed text, typing goes into `data-input-cell`/`data-input-text`, Space
+  pauses (or the slide's `data-space-action`), digits are shortcuts.
 
 ### Every button shows the press
 
@@ -284,7 +306,8 @@ When asked to review a slide's motion, go through it in this order and report fi
 4. Check performance: animated layout or paint properties, full-screen layers, 3D budget.
 5. Check corners: plain `border-radius` on boxes (not circles) should be continuous corners (`.squircle`).
 6. Check the Use items only for what is broken: no reaction to a tap, a message that never shows, a stalled
-   slideshow, an entrance replayed after a redraw. Leave app polish out of the findings.
+   slideshow, an entrance replayed after a redraw, and anything that can't be reached, seen focused or
+   used with the keyboard alone. Leave app polish out of the findings.
 7. Say what's fine as well, and why (ease-in on something falling is right). Say what you couldn't
    verify without the TV.
 
