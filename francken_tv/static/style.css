@@ -3842,7 +3842,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .streep-sidebar-icons { fill: #ffffff; stroke: #ffffff; stroke-width: 4; stroke-linecap: round; }
 .streep-who, .streep-assoc { font-family: "Segoe UI", "DejaVu Sans", sans-serif; font-weight: 400; font-size: 22px; fill: #3a3a3a; }
 .streep-assoc { text-anchor: end; }
-.streep-tile, .streep-tile-name { opacity: 0; animation: streep-tile 0.4s ease-out calc(1.2s + var(--i) * 0.06s) forwards; }
+.streep-tile, .streep-tile-name { opacity: 0; animation: streep-tile 0.4s ease-out calc(1.5s + var(--i) * 0.06s) forwards; }   /* starts when the PC has landed (0.6s + 0.9s, .streep-pc): the screen loads once the PC is there */
 @keyframes streep-tile { to { opacity: 1; } }
 .streep-tile-name { font-family: "Segoe UI", "DejaVu Sans", sans-serif; font-weight: 700; font-size: 19px; fill: #ffffff; text-anchor: middle; paint-order: stroke; stroke: rgba(0, 0, 0, 0.35); stroke-width: 3px; }
 .streep-corner { fill: var(--navy); }
@@ -4387,6 +4387,12 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .pet-cameo .pet-creature { position: static; width: 100%; margin: 0; animation: none; }
 .pet-cameo-bubble { position: absolute; right: 85%; bottom: 72%; width: max-content; max-width: 34vh; padding: 1.4vh 2vh; border-radius: 2.2vh; background: #fdf8ec; color: #0d1f3c; font-size: 2.8vh; line-height: 1.2; box-shadow: 0 1vh 3vh rgba(0, 0, 0, 0.3); animation: pet-pop 0.4s ease-out 1.2s both; }
 .pet-cameo-bubble::after { content: ""; position: absolute; right: -1.6vh; bottom: 1.6vh; border: 1vh solid transparent; border-left: 1.6vh solid #fdf8ec; }
+/* On the Spotify now-playing slide the bottom right is where Lyrics, Search, Playlists and the volume are: the pet goes to the bottom left
+   (under the cover, nothing to tap there) and its speech bubble flips to its right. The other Spotify pages fill the screen, and the pet only
+   covers lyrics or a list there, so it stays where it is. */
+body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyrics-slide)) .pet-cameo { right: auto; left: 3vw; }
+body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyrics-slide)) .pet-cameo-bubble { right: auto; left: 85%; }
+body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyrics-slide)) .pet-cameo-bubble::after { right: auto; left: -1.6vh; border-left-color: transparent; border-right: 1.6vh solid #fdf8ec; }
 .pet-cameo-plus { position: absolute; left: 50%; top: 0; transform: translateX(-50%); color: #3fae5a; font-size: 4vh; text-shadow: 0 0.3vh 0 #fff, 0 0 1.2vh rgba(255, 255, 255, 0.9); white-space: nowrap; animation: pet-cameo-plus 2.2s ease-out 1.6s both; }
 @keyframes pet-cameo-plus { 0% { opacity: 0; transform: translate(-50%, 2vh); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -10vh); } }
 
