@@ -3535,7 +3535,6 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	animation: member-up 0.8s ease-out calc(1.8s + var(--i) * 0.4s) both;
 }
 .member-reasons li svg { flex: none; width: 6vh; height: 6vh; fill: var(--crimson); overflow: visible; }
-	--r: 1.9vh;   /* continuous corners */
 @keyframes member-up { from { transform: translateY(3vh); opacity: 0; } }
 .member-handle { fill: none; stroke: var(--crimson); stroke-width: 5; }
 .member-steam path { fill: none; stroke: var(--paper); stroke-width: 3; stroke-linecap: round; opacity: 0; animation: member-steam 3s ease-out infinite; }
@@ -3552,6 +3551,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .member-qr path { fill: var(--navy); }
 .member-tile {   /* the professor (templates/francken_portrait.svg) on a cream tile in the middle of the code */
 	position: absolute;
+	--r: 1.9vh;   /* continuous corners */
 	inset: 37%;
 	padding: 1%;
 	background: var(--paper);
