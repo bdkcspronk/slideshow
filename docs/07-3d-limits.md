@@ -56,6 +56,15 @@ It shows the right time from the first frame and only draws when a flap falls: o
 colour flaps (about a second every few seconds; some 110 flaps in all). It reads the time from the
 slide's text (the `data-live` element the player updates every second), which is shown without WebGL. Like the books it
 drops to 75% resolution when its first flips are slow.
+At bieruur itself the same display parties: every flap turns to a colour, then the colours flow over the flaps like a fluid (a small fluid simulation in JavaScript, some 1,000 cells, a fraction of a millisecond a step; each flap shows the colour under it),
+and some 180 pieces of confetti (one more `InstancedMesh`, 4 draw calls in all) fall in front of it. Then it draws every
+frame, for the two minutes until the takeover ends.
+The falling flaps have motion blur (`FLAPS.blur`): each falling flap is drawn again 8 times (the time's big flaps 16), see-through, at the angles it
+went through during the whole frame (a 360-degree shutter). That is one more draw call, with room for 16 ghosts on every flap: some
+35,000 triangles through the vertex shader, of which some 18,000 are drawn while everything falls at once, at the burst (a small
+flap's spare ghosts and the ghosts of flaps standing still are dropped before anything is drawn). To judge whether that is worth it, Esc -> Fun -> "Bieruur motion blur test" shows the display twice,
+without and with blur, side by side, over and over (Pause / P to compare them standing still, Slow motion / S to watch
+a flap fall and bounce).
 
 ## The benchmark: measuring again (a new PC, a new browser, a new slideshow version)
 

@@ -53,8 +53,8 @@ def countdown_data(now: datetime, bieruur: datetime, settings: BieruurSettings |
 	"""Everything the bieruur slide shows at this moment (see templates/slides/bieruur.html)."""
 	settings = settings or BieruurSettings()
 	remaining = int((bieruur - now).total_seconds())
-	if remaining <= 0:
-		return {"state": "bieruur"}
+	if remaining <= 0:   # the same slide, all flaps in colour (see static/bieruur_3d.js)
+		return {"state": "bieruur", "countdown": "00:00:00"}
 
 	hours, rest = divmod(remaining, 3600)
 	minutes, seconds = divmod(rest, 60)
@@ -118,6 +118,18 @@ class BieruurTakeover(Takeover):
 		if window is None or now >= window[0]:
 			return None
 		return window[0]
+
+
+class BieruurBlurTestProvider(Provider):
+	"""A test slide, not in the rotation (menu.MENU_ONLY; Esc -> Fun): the bieruur display twice, side by side, without
+	and with motion blur on the falling flaps, playing the last seconds before bieruur and the party over and over
+	(templates/slides/bieruur_blur.html), to see whether the blur makes a difference on the TV."""
+
+	name = "bieruur_blur"
+	title = "Bieruur motion blur test"
+
+	def slides(self, now: datetime) -> list[Slide]:
+		return [Slide("bieruur_blur.html", 600)]
 
 
 class BieruurSong(Job):

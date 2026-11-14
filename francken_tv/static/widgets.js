@@ -34,6 +34,7 @@
 // - data-three: a Three.js scene (see THREE_SCENES) with a live frames-per-second readout and buttons to switch scene and resolution: a test of the TV PC's graphics.
 // - data-books-3d: the books slide's books in real 3D on a <canvas> (static/books_3d.js).
 // - data-bieruur-3d: the bieruur countdown as a split-flap display in 3D on a <canvas> (static/bieruur_3d.js).
+// - data-bieruur-demo: the motion blur test, two of those side by side on one clock (static/bieruur_3d.js).
 // - data-three-benchmark: the 3D benchmark's slide: its Start button runs static/three_benchmark.js and sends the results to the server.
 // - data-play-at-start: a <video> that plays from the start of its slide, also while it is out of view
 //   (a post further down the Instagram feed): the browser holds back a video with the autoplay
@@ -61,6 +62,7 @@ function setupWidgets(root) {
 	root.querySelectorAll("canvas[data-three]").forEach(setupThree);
 	root.querySelectorAll("canvas[data-books-3d]").forEach(setupBooks3d);
 	root.querySelectorAll("canvas[data-bieruur-3d]").forEach(setupBieruur3d);
+	root.querySelectorAll("[data-bieruur-demo]").forEach(setupBieruurDemo);
 	root.querySelectorAll("[data-three-benchmark]").forEach(setupThreeBenchmark);
 	startVideos(root);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {

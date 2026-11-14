@@ -115,7 +115,7 @@ class BieruurTest(unittest.TestCase):
 		self.assertEqual(slide.refresh_seconds, 1)
 		self.assertEqual(slide.update(at(THURSDAY, "15:59:30"))["countdown"], "00:30")
 		self.assertEqual(slide.update(at(THURSDAY, "15:59:30"))["state"], "final")
-		self.assertEqual(slide.update(at(THURSDAY, "16:00:00")), {"state": "bieruur"})
+		self.assertEqual(slide.update(at(THURSDAY, "16:00:00")), {"state": "bieruur", "countdown": "00:00:00"})
 
 	def test_slide_before_takeover_is_cut_short(self):
 		slide = self.scheduler.next_slide(at(THURSDAY, "15:57:57"))

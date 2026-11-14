@@ -53,7 +53,7 @@ from .providers.lyric_video import LyricVideoProvider
 from .providers.timetable import TimetableProvider
 from .providers.timeguessr import TimeGuessrProvider
 from .providers.wordle import WordleProvider
-from .providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
+from .providers.bieruur import BieruurBlurTestProvider, BieruurCountdownProvider, BieruurSettings, BieruurSong, BieruurTakeover
 from .providers.event_photos import EventPhotosProvider
 from .providers.images import ImagesProvider
 from .providers.news import NewsProvider
@@ -207,6 +207,7 @@ def build_app(config: dict, clock: Clock) -> App:
 		MscieProvider(config.get("mscie", {})),
 		ThreeProvider(config.get("three", {})),
 		ThreeBenchmarkProvider(),
+		BieruurBlurTestProvider(),
 		MembershipProvider(config.get("membership", {})),
 		SocksProvider(config.get("socks", {})),
 		SocialsProvider(config.get("socials", {})),

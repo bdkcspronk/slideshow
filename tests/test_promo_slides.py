@@ -13,6 +13,7 @@ import json
 import tempfile
 
 from francken_tv.providers.three import ThreeBenchmarkProvider, ThreeProvider, markdown
+from francken_tv.providers.bieruur import BieruurBlurTestProvider
 from francken_tv.providers.socials import LINE_SAG, SocialsProvider
 from francken_tv.providers.streep import PRODUCTS, TAPS, cursor_keyframes, taps, tiles
 
@@ -88,6 +89,12 @@ class ThreeBenchmarkTest(unittest.TestCase):
 		from francken_tv import menu
 		self.assertEqual(menu.GROUPS[menu.group_of("three-benchmark")][0], "Fun")
 		self.assertIn("three_benchmark", menu.MENU_ONLY)
+
+	def test_the_bieruur_blur_test_is_a_slide_of_its_own_and_in_the_menu(self):
+		self.assertEqual([slide.template for slide in BieruurBlurTestProvider().slides(NOW)], ["bieruur_blur.html"])
+		from francken_tv import menu
+		self.assertEqual(menu.GROUPS[menu.group_of("bieruur-blur")][0], "Fun")
+		self.assertIn("bieruur_blur", menu.MENU_ONLY)
 
 
 class SocialsTest(unittest.TestCase):

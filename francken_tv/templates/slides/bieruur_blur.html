@@ -1,0 +1,25 @@
+{#
+	The motion blur test (BieruurBlurTestProvider in providers/bieruur.py): the bieruur display twice, side by side,
+	without and with motion blur on the falling flaps, playing the last seconds before bieruur and the party over and
+	over (setupBieruurDemo in static/bieruur_3d.js). Pause (P) stops both at the same moment; Slow motion (S) runs them at
+	a fifth of the speed; Restart (R) starts over.
+	Interactive: tapping keeps the slideshow on this slide.
+#}
+<div class="slide bieruur-blur-slide" data-interactive data-idle-seconds="300" data-bieruur-demo>
+	{% for blur, caption in [("off", "Without motion blur"), ("on", "With motion blur")] %}
+	<div class="bieruur-slide">
+		<canvas class="bieruur-3d" data-bieruur-3d data-blur="{{ blur }}" aria-hidden="true"></canvas>
+		<div class="bieruur-info" data-phase="final">
+			<div class="bieruur-label">Bijna bieruur!</div>
+			<div class="bieruur-countdown">00:00:05</div>
+		</div>
+		<div class="bieruur-blur-caption">{{ caption }}</div>
+	</div>
+	{% endfor %}
+	<div class="bieruur-blur-controls">
+		<button data-bieruur-pause>Pause</button>
+		<button data-bieruur-slow>Slow motion</button>
+		<button data-bieruur-restart>Restart</button>
+		<small>Tap, or press P, S and R</small>
+	</div>
+</div>

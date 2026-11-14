@@ -1,35 +1,14 @@
 {#
-	The bieruur countdown: the time left on split flaps set into a white wall, in 3D (static/bieruur_3d.js); at
-	bieruur itself a screen full of beer. The values come from countdown_data() in providers/bieruur.py. It is
-	redrawn every second; elements with data-live="..." are updated in place, so the flaps keep their state. The
-	flaps read the time from the text below, which is hidden then (and shown without WebGL).
+	The bieruur countdown: the time left on split flaps set into a white wall, in 3D (static/bieruur_3d.js). The values
+	come from countdown_data() in providers/bieruur.py. It is redrawn every second; elements with data-live="..." are
+	updated in place (data-state stays the same), so the flaps keep their state, also when bieruur comes: then the label
+	says so, the time is 00:00:00 and data-phase on the info turns to "bieruur", which starts the party on the flaps
+	(all in colour, confetti). The flaps read the time from the text below, which is hidden then (and shown without WebGL).
 #}
-{% macro beer(level, live=false) %}
-{# Beer from the bottom up to `level` % of the screen, with a foam head and rising bubbles. #}
-<div class="beer" style="height: {{ level }}%" {% if live %}data-live="beer"{% endif %}>
-	<div class="beer-head"></div>
-	{% for i in range(28) %}
-	<i class="beer-rising" style="left: {{ (i * 37) % 100 }}%; --size: {{ 0.6 + (i * 13) % 9 / 10 }}vh;
-		--rise: {{ 3 + (i * 7) % 5 }}s; --wait: {{ (i * 11) % 40 / 10 }}s"></i>
-	{% endfor %}
-</div>
-{% endmacro %}
-
-{% if state == "bieruur" %}
-<div class="slide bieruur-slide bieruur-party" data-state="bieruur">
-	{{ beer(100) }}
-	<div class="party-text">
-		<div class="party-title">Het is bieruur!</div>
-		<div class="party-subtitle">Proost!</div>
-	</div>
-</div>
-
-{% else %}
-<div class="slide bieruur-slide bieruur-{{ state }}" data-state="{{ state }}">
+<div class="slide bieruur-slide" data-state="flaps">
 	<canvas class="bieruur-3d" data-bieruur-3d aria-hidden="true"></canvas>
-	<div class="bieruur-info" data-live="info">
-		<div class="bieruur-label">{{ "Bijna bieruur!" if state == "final" else "Bieruur in" }}</div>
+	<div class="bieruur-info" data-live="info" data-phase="{{ state }}">
+		<div class="bieruur-label" data-live="label">{{ {"bieruur": "Het is bieruur!", "final": "Bijna bieruur!"}.get(state, "Bieruur in") }}</div>
 		<div class="bieruur-countdown" data-live="countdown">{{ countdown }}</div>
 	</div>
 </div>
-{% endif %}

@@ -1353,8 +1353,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 @keyframes practice-ticket { from { opacity: 0; transform: translateX(calc(320 * var(--px))) rotate(5deg); } }
 @keyframes practice-drift { to { translate: calc(40 * var(--px)) calc(-30 * var(--px)); } }
 
-/* Bieruur: the countdown on a background filling up with beer; a party at bieruur itself. Dark blue text on
-   white, which stays readable on the beer too; the foam is off-white, so it still shows on the white. */
+/* Bieruur: the countdown on a white wall, dark blue text; at bieruur itself the same slide in party mode. */
 .bieruur-slide {
 	display: flex;
 	align-items: center;
@@ -1363,11 +1362,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	padding: 0 3vw;
 	position: relative;
 	overflow: hidden;
-	background: #ffffff;
 	color: var(--blue);
 }
 
-.bieruur-info { text-align: center; flex: 1; min-width: 0; }
+.bieruur-info { text-align: center; flex: 1; min-width: 0; position: relative; z-index: 1; }
 .bieruur-label {
 	font-size: 8vh;
 	font-weight: bold;
@@ -1382,49 +1380,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	line-height: 1.1;
 }
 
-/* The background fills up with beer towards bieruur: a beer layer from the bottom (its height is
-   updated every second), a foam head on top, and bubbles rising through it. */
-.bieruur-slide > :not(.beer) { position: relative; z-index: 1; }
-.beer {
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: linear-gradient(#f5c340, #e9a21a 60%, #c97f0e);
-	transition: height 1s linear;
-}
-.beer-head {
-	position: absolute;
-	left: -5vh;
-	right: -5vh;
-	bottom: calc(100% - 2vh);
-	height: 6vh;
-	/* a row of bubbly foam on a solid band */
-	background:
-		radial-gradient(circle at 50% 70%, #efe3c4 55%, transparent 57%) 0 0 / 5vh 5vh repeat-x,
-		linear-gradient(transparent 45%, #efe3c4 45%);
-	animation: foam-drift 7s linear infinite;
-}
-@keyframes foam-drift { to { transform: translateX(-5vh); } }   /* one foam bubble along, so it loops */
-.beer-rising {
-	position: absolute;
-	bottom: 0;
-	width: var(--size);
-	height: var(--size);
-	border-radius: 50%;
-	background: rgba(255, 248, 225, 0.75);
-	animation: beer-rise var(--rise) ease-in var(--wait) infinite;
-}
-@keyframes beer-rise {
-	from { bottom: 0; opacity: 0.9; transform: translateX(0); }
-	50% { transform: translateX(0.6vh); }
-	to { bottom: 100%; opacity: 0.4; transform: translateX(-0.4vh); }
-}
-
 /* The countdown on a white wall: plaster (a faint grain), lit from the top left. In 3D (static/bieruur_3d.js) the
    time is on split flaps in a slot in it, where the countdown's text is: that is hidden (it is what the flaps read),
    with room for the slot; shown again without WebGL. */
-.bieruur-slide:not(.bieruur-party) {
+.bieruur-slide {
 	background:
 		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url%28%23n%29'/%3E%3C/svg%3E"),
 		radial-gradient(ellipse 90% 80% at 20% 0%, #ffffff, #f1efea 55%, #dedbd3);
@@ -1433,17 +1392,42 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .bieruur-flaps .bieruur-countdown { visibility: hidden; height: 72vh; margin-top: 2vh; animation: none; }   /* the board: the time with colour flaps around it */
 
 /* The last two minutes: the countdown pulses. */
-.bieruur-final .bieruur-countdown { animation: pulse 1s ease-in-out infinite; }
+[data-phase="final"] .bieruur-countdown { animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse {
 	50% { transform: scale(1.06); }
 }
 
-/* Bieruur itself: a screen full of beer, without the foam. */
-.bieruur-party { justify-content: center; color: var(--blue); }
-.bieruur-party .beer-head { display: none; }
-.party-text { text-align: center; }
-.party-title { font-size: 14vh; font-weight: bold; line-height: 1; }
-.party-subtitle { font-size: 7vh; margin-top: 3vh; }
+/* Bieruur itself: the label pops in in Francken red, then bounces along with the display's beat (FLAPS.party.wave in bieruur_3d.js). */
+[data-phase="bieruur"] .bieruur-label {
+	color: var(--red-dark);   /* red text on white */
+	animation: party-pop 0.9s cubic-bezier(0.2, 1.6, 0.4, 1) 0.5s backwards, party-bounce 1.3s ease-in-out 1.4s infinite;
+}
+@keyframes party-pop { from { transform: scale(0.2) rotate(-6deg); opacity: 0; } }
+@keyframes party-bounce { 50% { transform: translateY(-1.2vh) scale(1.04); } }
+
+/* The motion blur test (templates/slides/bieruur_blur.html): two bieruur displays side by side, each with its caption
+   above it, a line between them, and the buttons below. */
+.bieruur-blur-slide { display: flex; position: relative; overflow: hidden; }
+.bieruur-blur-slide > .bieruur-slide { flex: 1; height: 100%; min-width: 0; padding: 0 1vw; }
+.bieruur-blur-slide > .bieruur-slide + .bieruur-slide { border-left: 0.4vh solid #c9c4ba; }
+.bieruur-blur-slide .bieruur-label { font-size: 5vh; }
+.bieruur-blur-slide .bieruur-flaps .bieruur-countdown { height: 42vh; }
+.bieruur-blur-caption {
+	position: absolute; top: 6vh; left: 0; right: 0; z-index: 1;
+	text-align: center; font-size: 3.4vh; font-weight: bold; letter-spacing: 0.2vh; text-transform: uppercase; opacity: 0.55;
+}
+.bieruur-blur-controls {
+	position: absolute; left: 0; right: 0; bottom: 5vh; z-index: 2;
+	display: flex; justify-content: center; align-items: center; gap: 1.5vw; font-size: 2.6vh; color: var(--blue);
+}
+.bieruur-blur-controls small { opacity: 0.6; font-size: 2vh; }
+.bieruur-blur-controls button {
+	font: inherit; font-weight: bold; color: #fff; background: var(--blue); border: 0; border-radius: 1vh;
+	padding: 1vh 2vw; cursor: pointer;
+}
+.bieruur-blur-controls button.selected { background: var(--red); }
+.bieruur-blur-controls button { transition: transform 0.1s ease-out; }   /* a touchscreen: the press is the only feedback */
+.bieruur-blur-controls button:active { transform: scale(0.95); }
 
 /* Activity chart (activity_chart.py + templates/slides/presence.html), on the navy poster (see "The navy
    and crimson posters"), the chart on a see-through panel rising in. Rows are 1/--rows of the chart
