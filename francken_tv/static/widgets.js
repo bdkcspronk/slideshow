@@ -479,19 +479,35 @@ function setupMatrix(canvas) {
 	const ctx = canvas.getContext("2d");
 	const words = (canvas.dataset.words || "").split(" ").filter(Boolean).map((word) => word.replaceAll("|", " "));
 	let size = 0, drops = [];
-	const speed = () => 0.18 + Math.random() * 0.35;   // cells per frame
+	// Cells per tick. A cell is 1/40 of the height, so at 60 ticks a second a column falls 27–80% of the
+	// screen's height per second, at any resolution.
+	const speed = () => 0.18 + Math.random() * 0.35;
+	// Canvas sizes are whole pixels: with display scaling (devicePixelRatio 1.25, 1.5) the product is a
+	// fraction, so round it, or the check in frame() never matches and it clears the rain every frame.
+	const pixels = (length) => Math.round(length * devicePixelRatio);
 	const resize = () => {
-		canvas.width = canvas.clientWidth * devicePixelRatio;
-		canvas.height = canvas.clientHeight * devicePixelRatio;
+		canvas.width = pixels(canvas.clientWidth);
+		canvas.height = pixels(canvas.clientHeight);
 		size = Math.max(8, Math.round(canvas.height / 40));
 		drops = Array.from({ length: Math.ceil(canvas.width / size) }, () => ({ y: -Math.random() * 25, speed: speed(), word: null, i: 0, last: null }));
 		ctx.fillStyle = "#000";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 	};
 	resize();
-	const frame = () => {
+	// The rain moves in fixed ticks of 1/60 s (speeds, the trail's fade and the restart chance are all per
+	// tick), however often the screen refreshes: a 144 Hz monitor runs a tick every few frames, a slow PC
+	// runs a few per frame. So it looks the same on any screen.
+	const TICK = 1000 / 60;
+	let last = null, behind = 0;
+	const frame = (now) => {
 		if (!document.contains(canvas)) return;   // the slide is gone
-		if (canvas.width !== canvas.clientWidth * devicePixelRatio) resize();
+		if (canvas.width !== pixels(canvas.clientWidth)) resize();
+		behind = Math.min(behind + (last === null ? TICK : now - last), TICK * 5);   // no rush to catch up after a pause
+		last = now;
+		for (; behind >= TICK; behind -= TICK) tick();
+		requestAnimationFrame(frame);
+	};
+	const tick = () => {
 		ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 		ctx.font = `${size}px Consolas, "DejaVu Sans Mono", monospace`;
@@ -520,7 +536,6 @@ function setupMatrix(canvas) {
 					word: words.length && Math.random() < 0.08 ? words[Math.floor(Math.random() * words.length)] : null });
 			}
 		});
-		requestAnimationFrame(frame);
 	};
 	requestAnimationFrame(frame);
 }
