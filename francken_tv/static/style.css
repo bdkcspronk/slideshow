@@ -3611,6 +3611,14 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .ig-phone::before { content: ""; position: absolute; z-index: 2; top: 2.6vh; left: 50%; width: 9vh; height: 2.4vh; margin-left: -4.5vh; border-radius: 99vh; background: #000; }
 .ig-screen { --r: 7.7vh; position: relative; height: 100%; overflow: hidden; background: #ffffff; color: #111111; container-type: size; }
 .ig-feed { animation: ig-scroll var(--scroll) ease-in-out 2.5s both; }
+/* The phone in 3D (static/instagram_3d.js): its canvas covers the right part of the slide (room for a post lifting out,
+   and fewer pixels than the whole screen); the HTML phone then only holds the place, invisible and still. Its videos
+   move to .ig-video-holder, a speck behind the 3D phone: Firefox stops decoding a video it can't see. */
+.ig-3d { position: absolute; z-index: 1; top: 0; right: 0; width: 62vw; height: 100%; pointer-events: none; }
+.ig-3d-on .ig-phone { visibility: hidden; animation: none; }
+.ig-3d-on .ig-feed { animation: none; }
+.ig-video-holder { position: absolute; width: 2px; height: 2px; overflow: hidden; }
+.ig-video-holder video { display: block; width: 2px; height: 2px; }
 .ig-feed.still { animation: none; }   /* no posts: nothing to scroll */
 @keyframes ig-scroll { from { transform: translateY(calc(-100% + 100cqh)); } }   /* from the bottom to the top */
 .ig-topbar { padding: 6vh 2vh 1.6vh; font-size: 2.9vh; }

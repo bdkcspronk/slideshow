@@ -57,3 +57,15 @@ The falling flaps have motion blur (`FLAPS.blur`): each falling flap is drawn ag
 went through during the whole frame (a 360-degree shutter). That is one more draw call, with room for 16 ghosts on every flap: some
 35,000 triangles through the vertex shader, of which some 18,000 are drawn while everything falls at once, at the burst (a small
 flap's spare ghosts and the ghosts of flaps standing still are dropped before anything is drawn).
+
+## A slide in 3D: the Instagram phone
+
+The Instagram slide (`static/instagram_3d.js`) draws the phone in 3D: it comes up from below and stands turned a little towards
+"Follow us", swaying slowly. The feed on its screen is drawn on canvases from the HTML phone (one texture for the profile, one per
+post), each video a plane with a `VideoTexture` over its post's picture; the stencil buffer keeps the feed inside the screen. One
+post at a time (the latest three, oldest first: `posts` in `[instagram]`) scrolls to the middle and lifts out of the screen towards
+the room while the feed behind it dims, hovers for a few seconds and sinks back in. An album (at most 4 pictures) is swiped through while it hovers, like a carousel on Instagram, and swiped back to its first picture before it sinks: one plane drawing two of its pictures at a time with a small shader, and one for its dots; it hovers longer than a single picture. About 12 draw calls, a few thousand triangles,
+4 textures plus the videos and the albums' pictures, no shadows, on a canvas over the right 62% of the slide only. Unlike the books it draws every frame
+(the feed moves, the videos play), so a post off the screen isn't drawn and its video isn't uploaded. Like the books it drops to 75%
+resolution when its first seconds are slow; without WebGL the HTML phone scrolls as before. The `<video>` elements move to a speck
+behind the 3D phone, because Firefox stops decoding a video it can't see.

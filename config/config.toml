@@ -230,7 +230,7 @@ seconds = 15   # everything is done after about 6 s
 # Our latest Instagram posts on a phone, with a QR code to the account. Setup: docs/setup/instagram.md.
 username = "tfvprofessorfrancken"   # shown (with the QR code) while not connected; once connected, from Instagram
 credentials = "~/.config/slideshow/instagram.json"
-posts = 4          # the latest this many, scrolling by on the phone (fewer: slower)
+posts = 3          # the latest this many, each lifting out of the phone in turn (more: each one shorter)
 seconds = 20
 
 [confidential]

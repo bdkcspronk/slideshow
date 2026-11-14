@@ -33,6 +33,7 @@
 //   slide gets .typed (e.g. to show what comes after).
 // - data-books-3d: the books slide's books in real 3D on a <canvas> (static/books_3d.js).
 // - data-bieruur-3d: the bieruur countdown as a split-flap display in 3D on a <canvas> (static/bieruur_3d.js).
+// - data-instagram-3d: the Instagram slide's phone in 3D on a <canvas>, its posts lifting out (static/instagram_3d.js).
 // - data-play-at-start: a <video> that plays from the start of its slide, also while it is out of view
 //   (a post further down the Instagram feed): the browser holds back a video with the autoplay
 //   attribute until it is on screen. startVideos() is called when the slide is drawn and again when it fades in.
@@ -58,6 +59,7 @@ function setupWidgets(root) {
 	root.querySelectorAll("[data-terminal]").forEach(setupTerminal);
 	root.querySelectorAll("canvas[data-books-3d]").forEach(setupBooks3d);
 	root.querySelectorAll("canvas[data-bieruur-3d]").forEach(setupBieruur3d);
+	root.querySelectorAll("canvas[data-instagram-3d]").forEach(setupInstagram3d);
 	startVideos(root);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
 		input.addEventListener("input", () => fieldChanged(input));

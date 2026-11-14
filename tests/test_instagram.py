@@ -13,6 +13,14 @@ MEDIA = {"data": [
 		"timestamp": "2026-10-26T17:00:00+0000", "like_count": 12345, "comments_count": 3, "caption": "Borrel!"},
 	{"id": "2", "media_type": "VIDEO", "media_url": "https://cdn.example/v.mp4", "thumbnail_url": "https://cdn.example/v.jpg",
 		"permalink": "https://instagram.com/p/v", "timestamp": "2026-10-20T10:00:00+0000", "comments_count": 0},
+	{"id": "3", "media_type": "CAROUSEL_ALBUM", "media_url": "https://cdn.example/c1.jpg", "permalink": "https://instagram.com/p/c",
+		"timestamp": "2026-10-18T10:00:00+0000", "comments_count": 1, "children": {"data": [
+			{"media_type": "IMAGE", "media_url": "https://cdn.example/c1.jpg"},
+			{"media_type": "VIDEO", "media_url": "https://cdn.example/c2.mp4", "thumbnail_url": "https://cdn.example/c2.jpg"},
+			{"media_type": "IMAGE", "media_url": "https://cdn.example/c3.jpg"},
+			{"media_type": "IMAGE", "media_url": "https://cdn.example/c4.jpg"},
+			{"media_type": "IMAGE", "media_url": "https://cdn.example/c5.jpg"},
+		]}},
 ]}
 
 
@@ -42,8 +50,9 @@ def instagram(url, params=None, **kwargs):
 	if url.endswith("/me"):
 		return Response(data={"username": "tfvprofessorfrancken", "name": "T.F.V. 'Professor Francken'",
 			"profile_picture_url": "https://cdn.example/me.jpg", "followers_count": 812, "media_count": 140})
-	if url.endswith("/me/media"):
-		return Response(data=MEDIA)
+	if url.endswith("/me/media"):   # an album's pictures (children) only when asked for
+		asked = "children" in ((params or {}).get("fields") or "")
+		return Response(data={"data": [item if asked else {key: value for key, value in item.items() if key != "children"} for item in MEDIA["data"]]})
 	if url.startswith("https://cdn.example/v.mp4"):
 		return Response(content=b"video")
 	return Response(content=b"picture")
@@ -59,7 +68,7 @@ class InstagramTest(unittest.TestCase):
 		self.addCleanup(patcher.stop)
 
 	def test_parse_posts(self):
-		image, video = parse_posts(MEDIA)
+		image, video, _ = parse_posts(MEDIA)
 		self.assertEqual((image.picture_url, image.likes, image.caption), ("https://cdn.example/a.jpg?x=1", 12345, "Borrel!"))
 		self.assertEqual((video.picture_url, video.likes, video.kind), ("https://cdn.example/v.jpg", None, "VIDEO"))   # a video: its cover
 		self.assertEqual((video.video_url, image.video_url), ("https://cdn.example/v.mp4", ""))   # ...and its file, to play
@@ -85,11 +94,30 @@ class InstagramTest(unittest.TestCase):
 		self.assertEqual((saved["access_token"], saved["renewed_at"]), ("renewed", "2026-10-26T20:00:00"))
 		[slide] = self.provider.slides(NOW)
 		self.assertEqual((slide.data["username"], slide.data["followers"], slide.data["link"]), ("tfvprofessorfrancken", "812", "https://instagram.com/tfvprofessorfrancken"))
-		self.assertEqual([post["likes"] for post in slide.data["posts"]], ["12.3K", ""])
+		self.assertEqual([post["likes"] for post in slide.data["posts"]], ["12.3K", "", ""])
 		self.assertRegex(slide.data["posts"][0]["ago"], r"^\d hours ago$")   # 17:00 UTC: how many hours depends on the time zone
 		self.assertTrue(all(post["picture"].startswith("/files/") for post in slide.data["posts"]))
-		self.assertEqual(len(list((self.folder / "pictures").iterdir())), 4)   # the profile picture, two posts and the video
-		self.assertEqual([post["video"][-4:] for post in slide.data["posts"]], ["", ".mp4"])   # the video plays on the phone
+		# the profile picture, three posts, the video, and the album's other three pictures (its first is the post's)
+		self.assertEqual(len(list((self.folder / "pictures").iterdir())), 8)
+		self.assertEqual([post["video"][-4:] for post in slide.data["posts"]], ["", ".mp4", ""])   # the video plays on the phone
+		album = slide.data["posts"][2]["album"]
+		self.assertEqual((len(album), album[0]), (4, slide.data["posts"][2]["picture"]))   # at most 4, the cover first
+		self.assertEqual((slide.seconds, slide.data["seconds"]), (29, 29))   # 20, and 3 s for each album picture after the first
+
+	def test_parse_albums(self):
+		*_, album = parse_posts(MEDIA)
+		self.assertEqual(album.album_urls, ["https://cdn.example/c1.jpg", "https://cdn.example/c2.jpg", "https://cdn.example/c3.jpg", "https://cdn.example/c4.jpg"])
+		self.assertEqual(parse_posts({"data": [{**MEDIA["data"][2], "children": {"data": MEDIA["data"][2]["children"]["data"][:1]}}]})[0].album_urls, [])   # one picture: no album
+
+	def test_an_app_refused_albums_shows_their_first_picture(self):
+		self.credentials.write_text(json.dumps({"access_token": "t", "renewed_at": NOW.isoformat()}))
+		def no_children(url, params=None, **kwargs):
+			if url.endswith("/me/media") and "children" in params["fields"]:
+				return Response(400, {"error": {"message": "Tried accessing nonexisting field (children)"}})
+			return instagram(url, params, **kwargs)
+		with mock.patch("francken_tv.providers.instagram.requests.get", side_effect=no_children):
+			self.provider.refresh(NOW)
+		self.assertEqual([post["album"] for post in self.provider.slides(NOW)[0].data["posts"]], [[], [], []])
 
 	def test_the_token_is_renewed_once_a_week(self):
 		self.credentials.write_text(json.dumps({"access_token": "fresh", "renewed_at": (NOW - timedelta(days=3)).isoformat()}))
@@ -113,7 +141,7 @@ class InstagramTest(unittest.TestCase):
 		self.credentials.write_text(json.dumps({"access_token": "t", "renewed_at": NOW.isoformat()}))
 		with mock.patch("francken_tv.providers.instagram.requests.get", side_effect=instagram):
 			self.provider.refresh(NOW)
-		self.assertEqual(len(slide.update(NOW)["posts"]), 2)   # when it's shown, it has the posts
+		self.assertEqual(len(slide.update(NOW)["posts"]), 3)   # when it's shown, it has the posts
 
 	def test_a_token_too_young_to_renew_is_tried_again_the_next_day(self):
 		self.credentials.write_text(json.dumps({"access_token": "new"}))
@@ -135,7 +163,7 @@ class InstagramTest(unittest.TestCase):
 		with mock.patch("francken_tv.providers.instagram.requests.get", side_effect=no_captions):
 			self.provider.refresh(NOW)
 		self.assertFalse(self.provider.captions)
-		self.assertEqual(len(self.provider.slides(NOW)[0].data["posts"]), 2)
+		self.assertEqual(len(self.provider.slides(NOW)[0].data["posts"]), 3)
 
 
 if __name__ == "__main__":

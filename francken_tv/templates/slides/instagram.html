@@ -4,6 +4,9 @@
 	while the slide is shown (--scroll); a video plays in its post from the start of the slide, even while it is still below the phone's screen (data-play-at-start,
 	widgets.js), muted and over and over. Without a connection to Instagram (no posts) the phone shows the
 	profile with empty tiles (`tiles`). See "Instagram" in style.css.
+	With posts and WebGL the phone is drawn in 3D instead (static/instagram_3d.js, on the canvas): the same feed, each post
+	in turn lifting out of the screen; the HTML phone below then stays hidden, to say where the 3D one stands and what's on it
+	(the data-* on each post are for its drawing).
 #}
 <div class="slide instagram-slide" style="--scroll: {{ scroll_seconds }}s">
 	<div class="ig-glows" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -18,6 +21,7 @@
 			</div>
 		</div>
 	</div>
+	{% if posts %}<canvas class="ig-3d" data-instagram-3d data-seconds="{{ seconds }}" data-album-seconds="{{ album_seconds }}" aria-hidden="true"></canvas>{% endif %}
 	<div class="ig-phone">
 		<div class="ig-screen squircle">   {# the phone's bezel keeps its plain round corners #}
 			<div class="ig-feed{{ ' still' if not posts }}">
@@ -39,7 +43,7 @@
 				<p class="ig-tiles-hint">Scan the code to see our posts</p>
 				{% endif %}
 				{% for post in posts %}
-				<article class="ig-post">
+				<article class="ig-post" data-ago="{{ post.ago }}" data-likes="{{ post.likes }}" data-comments="{{ post.comments }}" data-caption="{{ post.caption }}" data-kind="{{ post.kind }}"{% if post.album %} data-album="{{ post.album | tojson | forceescape }}"{% endif %}>
 					<header>
 						{% if picture %}<img class="ig-avatar" src="{{ picture }}" alt="">{% else %}<span class="ig-avatar"></span>{% endif %}
 						<b>{{ username }}</b><span>{{ post.ago }}</span>

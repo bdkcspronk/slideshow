@@ -7,7 +7,8 @@ The token lives in the credentials file ({"access_token": "..."}), together with
 
 The posts' pictures and videos are downloaded (data/cache/instagram): Instagram's links to them expire.
 A video plays muted on the phone; one bigger than MAX_DOWNLOAD (or that Instagram gives no file for, e.g.
-with licensed music) shows its cover.
+with licensed music) shows its cover. Of an album (CAROUSEL_ALBUM) the first ALBUM_PICTURES pictures are
+downloaded (a video in it as its cover): the 3D phone swipes through them while the post is lifted out.
 
 Without a connection (no token yet, or Instagram never answered) the slide is shown all the same, for the
 account in [instagram] username: "Follow us" with the QR code, and on the phone a profile with empty
@@ -20,7 +21,7 @@ import hashlib
 import json
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -35,6 +36,9 @@ API = "https://graph.instagram.com/v26.0"
 REFRESH_URL = "https://graph.instagram.com/refresh_access_token"
 PROFILE_FIELDS = "user_id,username,name,profile_picture_url,followers_count,media_count"
 POST_FIELDS = "id,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count"
+ALBUM_PICTURES = 4                     # of an album, at most this many pictures (each one more texture on the TV PC)
+ALBUM_SECONDS = 3                      # the slide is this much longer for each album picture after the first (to look at it)
+ALBUM_FIELDS = ",children{media_type,media_url,thumbnail_url}"
 MAX_DOWNLOAD = 50 * 1024 * 1024        # a bigger video isn't downloaded: it shows its cover
 REFRESH_EVERY = timedelta(days=7)      # renew the token (valid 60 days) this often
 EXPIRY_WARNING = timedelta(days=14)    # warn on /status when the token is this close to expiring
@@ -53,10 +57,13 @@ class Post:
 	picture: str = ""       # the downloaded copy, as a /files/ url
 	video_url: str = ""     # Instagram's link to a video's file, "" if there's none
 	video: str = ""         # the downloaded copy, as a /files/ url
+	album_urls: list[str] = field(default_factory=list)   # an album's pictures (Instagram's links), the first one first
+	album: list[str] = field(default_factory=list)        # their downloaded copies, as /files/ urls
 
 
 def parse_posts(data: dict) -> list[Post]:
-	"""The posts from /me/media, newest first; a video shows its cover, an album its first picture."""
+	"""The posts from /me/media, newest first; a video shows its cover, an album its first picture (and
+	album_urls its first ALBUM_PICTURES, when Instagram gave its children)."""
 	posts = []
 	for item in data.get("data") or []:
 		kind = item.get("media_type", "IMAGE")
@@ -67,8 +74,17 @@ def parse_posts(data: dict) -> list[Post]:
 			time = None
 		posts.append(Post(picture or item.get("thumbnail_url") or "", item.get("permalink", ""), time,
 			item.get("like_count"), item.get("comments_count", 0), (item.get("caption") or "").strip(), kind,
-			video_url=item.get("media_url", "") if kind == "VIDEO" else ""))
+			video_url=item.get("media_url", "") if kind == "VIDEO" else "",
+			album_urls=album_pictures(item) if kind == "CAROUSEL_ALBUM" else []))
 	return posts
+
+
+def album_pictures(item: dict) -> list[str]:
+	"""An album's pictures (a video's cover), at most ALBUM_PICTURES; none when it has fewer than two."""
+	children = (item.get("children") or {}).get("data") or []
+	urls = [child.get("thumbnail_url") if child.get("media_type") == "VIDEO" else child.get("media_url") for child in children]
+	urls = [url for url in urls if url][:ALBUM_PICTURES]
+	return urls if len(urls) > 1 else []
 
 
 def count(number: int | None) -> str:
@@ -95,6 +111,7 @@ class InstagramProvider(Provider):
 		self.profile: dict = {}
 		self.posts: list[Post] = []
 		self.captions = True   # Instagram may refuse captions to this kind of app; then we stop asking
+		self.albums = True     # the same for an album's pictures (its children)
 
 	def credentials(self) -> dict:
 		try:
@@ -148,17 +165,24 @@ class InstagramProvider(Provider):
 		profile = response.json()
 		posts = self.fetch_posts(token)
 		pictures = [profile.get("profile_picture_url") or ""] + [post.picture_url for post in posts]
-		files = self.download([(url, ".jpg") for url in pictures] + [(post.video_url, ".mp4") for post in posts])
+		albums = [url for post in posts for url in post.album_urls]
+		files = self.download([(url, ".jpg") for url in pictures] + [(post.video_url, ".mp4") for post in posts] + [(url, ".jpg") for url in albums])
 		profile["picture"], *post_pictures = files[:len(pictures)]
-		for post, picture, video in zip(posts, post_pictures, files[len(pictures):]):
+		videos, album_files = files[len(pictures):len(pictures) + len(posts)], iter(files[len(pictures) + len(posts):])
+		for post, picture, video in zip(posts, post_pictures, videos):
 			post.picture, post.video = picture, video
+			album = [next(album_files) for _ in post.album_urls]
+			post.album = [file for file in album if file] if len([file for file in album if file]) > 1 else []
 		self.profile, self.posts = profile, [post for post in posts if post.picture]   # a post without its picture is left out
 
 	def fetch_posts(self, token: str) -> list[Post]:
-		fields = POST_FIELDS + (",caption" if self.captions else "")
+		fields = POST_FIELDS + (",caption" if self.captions else "") + (ALBUM_FIELDS if self.albums else "")
 		response = requests.get(f"{API}/me/media", params={"fields": fields, "limit": self.posts_shown, "access_token": token}, timeout=20)
 		if response.status_code == 400 and self.captions and "caption" in response.text:
 			self.captions = False   # not for this kind of app: the posts without their captions
+			return self.fetch_posts(token)
+		if response.status_code == 400 and self.albums and "children" in response.text:
+			self.albums = False   # the same for albums: only their first picture
 			return self.fetch_posts(token)
 		response.raise_for_status()
 		return parse_posts(response.json())
@@ -202,15 +226,16 @@ class InstagramProvider(Provider):
 		data = self.slide_data(now)
 		# Drawn with the newest data when it's shown: a round is put together in advance, maybe before the
 		# first posts came in (right after a restart), and should still show them.
-		return [Slide("instagram.html", self.seconds, data, update=lambda when: self.slide_data(when) or data)] if data else []
+		return [Slide("instagram.html", data["seconds"], data, update=lambda when: self.slide_data(when) or data)] if data else []
 
 	def slide_data(self, now: datetime) -> dict | None:
 		if not self.profile or not self.posts:   # not connected: the account all the same, without its posts
 			if not self.username:
 				return None
 			return {"username": self.username, "name": "", "picture": "", "followers": "", "post_count": "",
-				"link": f"https://instagram.com/{self.username}", "scroll_seconds": 0, "posts": [], "tiles": 9}
+				"link": f"https://instagram.com/{self.username}", "scroll_seconds": 0, "posts": [], "tiles": 9, "seconds": self.seconds}
 		username = self.profile.get("username", "")
+		seconds = self.seconds + ALBUM_SECONDS * sum(max(len(post.album) - 1, 0) for post in self.posts)
 		return {
 			"username": username,
 			"name": self.profile.get("name") or username,
@@ -218,7 +243,9 @@ class InstagramProvider(Provider):
 			"followers": count(self.profile.get("followers_count")),
 			"post_count": count(self.profile.get("media_count")),
 			"link": f"https://instagram.com/{username}",
-			"scroll_seconds": max(self.seconds - 5, 5),   # the posts scroll by, after a moment and with a moment left
+			"scroll_seconds": max(seconds - 5, 5),   # the posts scroll by, after a moment and with a moment left
+			"seconds": seconds,   # longer with albums; the 3D phone's timeline (static/instagram_3d.js)
+			"album_seconds": ALBUM_SECONDS,
 			"posts": [{"picture": post.picture, "likes": count(post.likes), "comments": count(post.comments), "caption": post.caption,
-				"ago": ago(post.time, now), "kind": post.kind, "video": post.video} for post in self.posts],
+				"ago": ago(post.time, now), "kind": post.kind, "video": post.video, "album": post.album} for post in self.posts],
 		}

@@ -211,8 +211,9 @@ def prepare(now: datetime):
 		photo(CACHE_DIR / f"fake_instagram/{i}.jpg", (600, 600), 100 + i)
 		posts.append(Post("", "", now - timedelta(days=3 * i + 1), 40 + i * 7, i, caption=caption,
 			picture=media_url(CACHE_DIR / f"fake_instagram/{i}.jpg")))
+	posts[1].kind, posts[1].album = "CAROUSEL_ALBUM", [post.picture for post in posts[1:5]]   # an album: swiped through in 3D
 	instagram = providers["instagram"]
-	instagram.posts = posts
+	instagram.posts = posts[:instagram.posts_shown]   # as many as the TV shows
 	instagram.profile = {"username": instagram.username or "francken", "name": "T.F.V. 'Professor Francken'",
 		"picture": posts[0].picture, "followers_count": 812, "media_count": 245}
 
@@ -390,7 +391,7 @@ def page(project: Path, slides: list[dict], assets: list[str], tiles: dict, now:
 	style = inline_css((static / "style.css").read_text(encoding="utf-8"), static)
 	leaflet_css = inline_css((static / "vendor/leaflet/leaflet.css").read_text(encoding="utf-8"), static / "vendor/leaflet")
 	scripts = "\n".join((static / name).read_text(encoding="utf-8") for name in
-		["vendor/leaflet/leaflet.js", "vendor/qrcode/qrcode.js", "widgets.js", "books_3d.js", "bieruur_3d.js"])
+		["vendor/leaflet/leaflet.js", "vendor/qrcode/qrcode.js", "widgets.js", "books_3d.js", "bieruur_3d.js", "instagram_3d.js"])
 	frame = FRAME.replace("/*STYLE*/", leaflet_css + "\n" + style).replace("/*SCRIPTS*/", scripts.replace("</script", "<\\/script"))
 	grotesk = base64.b64encode((static / "vendor/familjen-grotesk/familjen-grotesk-700.woff2").read_bytes()).decode()
 	data = {"slides": slides, "assets": assets, "tiles": tiles, "frame": frame,
