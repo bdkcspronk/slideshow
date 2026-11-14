@@ -3011,7 +3011,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 
 /* ---- The menu (Esc): previews, settings, power. See "The menu" in player.js. ---- */
 #menu {
-	--menu-bg: rgba(10, 29, 45, 0.8);   /* Francken blue, darker */
+	--menu-bg: rgba(10, 29, 45, 0.88);   /* Francken blue, darker; no blur behind it (a blur over the whole screen is recomputed every frame while the menu fades in, too much for the TV PC), so a bit more opaque keeps the slide behind from distracting */
 	--menu-panel: #0e283e;
 	--menu-raised: #1f4060;
 	--menu-text: #f4f6f9;
@@ -3025,7 +3025,6 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	align-items: center;
 	justify-content: center;
 	background: var(--menu-bg);
-	backdrop-filter: blur(1.2vh);
 	color: var(--menu-text);
 	animation: menu-in 0.2s ease-out;
 }
@@ -3041,7 +3040,18 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 :where(#menu button):focus { outline: none; }
-#menu button.busy { opacity: 0.6; }
+/* Waiting for the server: the same look as the shared .busy (dimmed and a little smaller, ease-out), so a tap is seen to
+   have landed. Big buttons shrink less (0.97, like their press) or they would jump. */
+#menu button.busy { opacity: 0.55; transform: scale(0.95); transition: opacity 0.1s ease-out, transform 0.1s ease-out; }
+#menu button.busy.menu-card, #menu button.busy.menu-row, #menu button.busy.menu-power-button { transform: scale(0.97); }
+/* The press: every button in the menu shrinks a little while the finger is on it (the touchscreen gives no other feedback). */
+.menu-tab, .menu-button, .menu-back, .menu-stepper button, .menu-choices button, .menu-chip, .menu-small-button,
+.menu-row, .menu-power-button { transition: transform 0.1s ease-out; }
+.menu-tab:active:not([disabled]), .menu-button:active:not([disabled]), .menu-back:active:not([disabled]),
+.menu-stepper button:active:not([disabled]), .menu-choices button:active:not([disabled]), .menu-chip:active:not([disabled]),
+.menu-small-button:active:not([disabled]) { transform: scale(0.95); }
+/* button.menu-row: the volume row is a div, and it would shrink whenever a button inside it is pressed (:active reaches the parents). */
+button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]) { transform: scale(0.97); }
 :where(#menu) svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 #menu kbd {
 	display: inline-block;
@@ -3061,6 +3071,9 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	flex-direction: column;
 	align-items: center;
 }
+/* Settings and Power: the panel is a shadow carrier (it keeps the shadow, the old rounding and the entrance) around
+   .menu-card-panel, which has the colour and the continuous corners (the clip would cut a shadow off). */
+.menu-card-panel { --r: 3.2vh; display: flex; flex-direction: column; align-items: stretch; width: 100%; max-height: 90vh; box-sizing: border-box; padding: 4vh 3.5vw; background: var(--menu-panel); }
 .menu-enter { animation: menu-panel-in 0.25s ease-out; }
 @keyframes menu-panel-in { from { transform: scale(0.97); opacity: 0; } }
 .menu-hint { margin: 4vh 0 0; color: var(--menu-muted); font-size: 2.2vh; }
@@ -3091,27 +3104,35 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	justify-content: center;
 	width: 100%;
 	aspect-ratio: 16 / 9;
-	overflow: hidden;
-	border-radius: 1.4vh;
-	background: var(--menu-raised);
+	border-radius: 1.4vh;   /* only shapes the shadow and the focus ring; the picture has its own continuous corners */
 	color: var(--menu-muted);
 	font-size: 2.4vh;
 	box-shadow: 0 1.5vh 4vh rgba(0, 0, 0, 0.45);
 	outline: 0.6vh solid transparent;
 	outline-offset: 0.6vh;
-	transition: transform 0.15s ease, outline-color 0.15s ease;
+	transition: transform 0.15s ease-out, outline-color 0.15s ease-out;   /* ease-out: it answers a hover or the keys */
 }
+/* The shadow carrier's inner card: the clip would cut off a shadow or an outline, so those stay on .menu-preview. */
+.menu-preview-card { --r: 2.2vh; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: var(--menu-raised); }
 /* The slides size themselves to the screen (vw/vh), so in a small frame they show as a small copy. */
 .menu-preview iframe { width: 100%; height: 100%; border: 0; pointer-events: none; }
 .menu-card-title { font-size: 3vh; font-weight: bold; }
-.menu-card:focus .menu-preview, .menu-card:hover:not([disabled]) .menu-preview { outline-color: var(--menu-text); transform: scale(1.03); }
+.menu-card:focus .menu-preview { outline-color: var(--menu-text); transform: scale(1.03); }
+/* Hover only where there is a real hover (a mouse): a finger leaves the card looking hovered after a tap. Focus stays for keys and remote. */
+@media (hover: hover) {
+	.menu-card:hover:not([disabled]) .menu-preview { outline-color: var(--menu-text); transform: scale(1.03); }
+}
+/* The press shrinks the preview (it already transitions transform), not the button, so the card's grow on focus (1.03) and the
+   press (0.97) don't fight: it comes after the hover rule and is more specific, so it wins while the finger is down. */
+.menu-card:active:not([disabled]) .menu-preview { transform: scale(0.97); }
 .menu-card[disabled] { opacity: 0.55; }
 
 /* The groups (the same as in the emulator): a row of tabs above the cards. Left and right choose one (player.js). */
 .menu-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 1vh 0.8vw; width: 94vw; margin-bottom: 4vh; }
 .menu-tab { padding: 1.1vh 1.5vw; border-radius: 99vh; background: var(--menu-raised); color: var(--menu-muted); font-size: 2.5vh; font-weight: bold; white-space: nowrap; }
 .menu-tab[aria-selected="true"] { background: var(--menu-accent); color: #ffffff; }
-.menu-tab:focus, .menu-tab:hover { box-shadow: 0 0 0 0.4vh var(--menu-text); color: var(--menu-text); }
+.menu-tab:focus { box-shadow: 0 0 0 0.4vh var(--menu-text); color: var(--menu-text); }
+@media (hover: hover) { .menu-tab:hover { box-shadow: 0 0 0 0.4vh var(--menu-text); color: var(--menu-text); } }   /* hover only for a mouse: no sticky hover after a tap */
 /* A fixed height, so the tabs stay at the top and the buttons and hint at the bottom, whatever the number of slides (one row or two)
    in between. */
 .menu-page-overview { height: 90vh; }
@@ -3135,7 +3156,8 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	outline: 0.5vh solid transparent;
 	outline-offset: 0.4vh;
 }
-.menu-button:focus, .menu-button:hover { outline-color: var(--menu-text); }
+.menu-button:focus { outline-color: var(--menu-text); }
+@media (hover: hover) { .menu-button:hover { outline-color: var(--menu-text); } }   /* hover only for a mouse: no sticky hover after a tap */
 /* The sound on the overview: Mute, then - [bar] + and the volume; dimmed while muted. */
 .menu-sound { display: flex; align-items: center; gap: 1.5vw; margin-right: auto; }
 .menu-sound .menu-button { min-width: 14vw; justify-content: center; }   /* Mute and Unmute equally wide: nothing shifts */
@@ -3149,17 +3171,14 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .menu-page-settings, .menu-page-power {
 	align-items: stretch;
 	width: min(84vw, 150vh);
-	max-height: 90vh;
-	box-sizing: border-box;
-	padding: 4vh 3.5vw;
-	border-radius: 2vh;
-	background: var(--menu-panel);
+	border-radius: 2vh;   /* shapes the shadow only; .menu-card-panel inside has the continuous corners */
 	box-shadow: 0 2vh 6vh rgba(0, 0, 0, 0.5);
 }
 .menu-header { display: flex; align-items: center; gap: 2vw; margin-bottom: 2.5vh; }
 .menu-header h1 { margin: 0; font-size: 5vh; }
 .menu-back { padding: 1vh 1.4vw; border-radius: 99vh; background: var(--menu-raised); font-size: 2.4vh; font-weight: bold; }
-.menu-back:focus, .menu-back:hover { box-shadow: 0 0 0 0.4vh var(--menu-text); }
+.menu-back:focus { box-shadow: 0 0 0 0.4vh var(--menu-text); }
+@media (hover: hover) { .menu-back:hover { box-shadow: 0 0 0 0.4vh var(--menu-text); } }   /* hover only for a mouse */
 
 .menu-settings {
 	display: grid;
@@ -3181,13 +3200,15 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	gap: 1.5vw;
 	min-height: 5.6vh;
 	padding: 0.8vh 1.2vw;
-	border-radius: 1.2vh;
+	--r: 1.9vh;   /* continuous corners (.squircle in the markup) */
 	background: var(--menu-raised);
 	font-size: 2.5vh;
 	text-align: left;
 }
 .menu-row small { display: block; margin-top: 0.4vh; font-size: 1.9vh; color: var(--menu-muted); }
-.menu-toggle:focus, .menu-toggle:hover, .menu-row-button:focus, .menu-row-button:hover { box-shadow: 0 0 0 0.4vh var(--menu-text); }
+/* The clip of .squircle cuts off a box-shadow ring, so a focused row gets a lighter background instead. */
+.menu-toggle:focus, .menu-row-button:focus { background: #2c4d6e; }
+@media (hover: hover) { .menu-toggle:hover, .menu-row-button:hover { background: #2c4d6e; } }   /* hover only for a mouse */
 
 /* An on/off switch. */
 .menu-switch {
@@ -3228,8 +3249,10 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .menu-choices button[aria-pressed="true"], .menu-chip[aria-pressed="true"] { background: var(--menu-accent); color: #ffffff; }
 .menu-chip[aria-pressed="false"] { color: var(--menu-muted); text-decoration: line-through; }
 .menu-chips { display: flex; flex-wrap: wrap; gap: 0.8vh 0.6vw; }
-.menu-stepper button:focus, .menu-choices button:focus, .menu-chip:focus, .menu-small-button:focus,
-.menu-stepper button:hover, .menu-choices button:hover, .menu-chip:hover, .menu-small-button:hover { box-shadow: 0 0 0 0.4vh var(--menu-text); }
+.menu-stepper button:focus, .menu-choices button:focus, .menu-chip:focus, .menu-small-button:focus { box-shadow: 0 0 0 0.4vh var(--menu-text); }
+@media (hover: hover) {   /* hover only for a mouse: no sticky hover after a tap */
+	.menu-stepper button:hover, .menu-choices button:hover, .menu-chip:hover, .menu-small-button:hover { box-shadow: 0 0 0 0.4vh var(--menu-text); }
+}
 #menu button[disabled] { opacity: 0.35; }
 .menu-small-button { flex: none; }
 .menu-wide { align-self: flex-start; }
@@ -3263,13 +3286,16 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	gap: 2vh;
 	width: 24vh;
 	height: 24vh;
-	border-radius: 3vh;
+	--r: 4.8vh;   /* continuous corners (.squircle in the markup) */
 	background: var(--menu-raised);
 	font-size: 3vh;
 	font-weight: bold;
 }
 .menu-power-button svg { width: 8vh; height: 8vh; stroke-width: 1.6; }
-.menu-power-button:focus, .menu-power-button:hover { box-shadow: 0 0 0 0.5vh var(--menu-text); }
+/* The clip of .squircle cuts off a box-shadow ring, so a focused power button gets a lighter background and grows a little. */
+.menu-power-button:focus { background: #2c4d6e; transform: scale(1.05); }
+@media (hover: hover) { .menu-power-button:hover { background: #2c4d6e; transform: scale(1.05); } }   /* hover only for a mouse */
+.menu-power-button:active:not([disabled]) { transform: scale(0.97); }   /* after the focus grow: the press wins */
 .menu-page-power .menu-hint { text-align: center; }
 
 /* Graafmachine (providers/graafmachine.py), on the navy poster: one 14 s film in SVG under the title. The

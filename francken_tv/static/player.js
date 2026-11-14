@@ -638,10 +638,12 @@ function menuActivity() {
 
 // focus: the data-focus of the element to select, e.g. the button that was just pressed.
 function showMenuPage(page, focus) {
-	const entering = page !== menuPage || !menu.firstElementChild;   // a new page zooms in; a redraw after a change doesn't
+	const entering = page !== menuPage && !!menu.firstElementChild;   // a new page zooms in; a redraw after a change doesn't, and neither does the first page of a menu just opened (#menu fades in itself: both would double the fade)
 	menuPage = page;
 	confirming = null;
-	menu.innerHTML = `<div class="menu-panel menu-page-${page}${entering ? " menu-enter" : ""}">${menuPages[page](menuData)}</div>`;
+	const body = menuPages[page](menuData);
+	// Settings and Power: the panel carries the shadow, the card inside it has the continuous corners (see .menu-card-panel).
+	menu.innerHTML = `<div class="menu-panel menu-page-${page}${entering ? " menu-enter" : ""}">${page === "overview" ? body : `<div class="menu-card-panel squircle">${body}</div>`}</div>`;
 	const target = (focus && menu.querySelector(`[data-focus="${focus}"]:not([disabled])`))
 		|| menu.querySelector(".menu-tab-content [data-focus]:not([disabled])")   // the overview: the first slide of the group
 		|| menu.querySelector("[data-focus]:not([disabled]):not(.menu-back)");
@@ -667,10 +669,10 @@ function menuTabs(data) {
 // whether they have something to show, then as soon as it is).
 function menuTabContent(data) {
 	const card = (focus, jump, preview, key, label, available, empty) => `
-		<button class="menu-card" data-focus="${escapeHtml(focus)}" data-menu="jump" data-value="${escapeHtml(jump)}"${available === false ? " disabled" : ""}>
-			<span class="menu-preview">${available
+		<button class="menu-card" data-focus="${escapeHtml(focus)}" data-menu="jump" data-value="${escapeHtml(jump)}"${available === false || available === null ? " disabled" : ""}>
+			<span class="menu-preview"><span class="menu-preview-card squircle">${available
 				? `<iframe src="/preview/${encodeURIComponent(preview)}" tabindex="-1"></iframe>`
-				: `<span>${escapeHtml(empty)}</span>`}</span>
+				: `<span>${escapeHtml(empty)}</span>`}</span></span>
 			<span class="menu-card-title">${key ? `<kbd>${escapeHtml(key)}</kbd>` : ""}${escapeHtml(label)}</span>
 		</button>`;
 	let cards;
@@ -683,7 +685,7 @@ function menuTabContent(data) {
 		cards = group.channels.map((channel) => {
 			const found = status?.find((entry) => entry.name === channel.name);
 			return card(`go-${channel.name}`, `go-${channel.name}`, channel.name, keys[channel.name], channel.label,
-				found ? found.available : null, found ? found.empty : "…");   // null: not known yet
+				found ? found.available : status ? undefined : null, found ? found.empty : "…");   // null: still loading (disabled); undefined: no status (e.g. it failed), tappable
 		});
 	}
 	return `<div class="menu-cards" style="--columns: ${menuColumns(cards.length)}">${cards.join("")}</div>`;
@@ -724,7 +726,7 @@ const menuPages = {
 	settings: (data) => {
 		const settings = data.settings;
 		const toggle = (name, label, note = "") => `
-			<button class="menu-row menu-toggle" role="switch" aria-checked="${settings[name]}" data-focus="${name}"
+			<button class="menu-row menu-toggle squircle" role="switch" aria-checked="${settings[name]}" data-focus="${name}"
 				data-menu="toggle" data-value="${name}">
 				<span>${label}${note && `<small>${note}</small>`}</span><span class="menu-switch"></span>
 			</button>`;
@@ -740,7 +742,7 @@ const menuPages = {
 					${toggle("muted", "Mute all sound", "Everything on the TV PC: Spotify, greetings, quotes and the bieruur song")}
 					${toggle("quotes_aloud", "Read quotes aloud")}
 					${toggle("greetings", "Greet people who walk in")}
-					<div class="menu-row">
+					<div class="menu-row squircle">
 						<span>Volume<small>Of everything, Spotify too</small></span>
 						<span class="menu-stepper">
 							<button data-focus="volume-down" data-menu="volume" data-value="-10" aria-label="Quieter"${settings.volume <= 0 ? " disabled" : ""}>&minus;</button>
@@ -752,7 +754,7 @@ const menuPages = {
 				<section>
 					<h2>Today's puzzles</h2>
 					${data.puzzles.map((puzzle) => `
-					<div class="menu-row">
+					<div class="menu-row squircle">
 						<span>${escapeHtml(puzzle.title)}<small>${escapeHtml(puzzle.status)}</small></span>
 						<button class="menu-small-button" data-focus="reset-${puzzle.name}" data-menu="reset" data-value="${puzzle.name}"
 							data-confirm="Sure?"${puzzle.state === "new" ? " disabled" : ""}>Start over</button>
@@ -764,7 +766,7 @@ const menuPages = {
 			<div class="menu-column">
 				<section>
 					<h2>Slides</h2>
-					<div class="menu-row">
+					<div class="menu-row squircle">
 						<span>Speed</span>
 						<span class="menu-choices">${data.speeds.map((speed) => `
 							<button data-focus="speed-${speed}" data-menu="speed" data-value="${speed}" aria-pressed="${speed === settings.speed}">${speed}&times;</button>`).join("")}
@@ -780,7 +782,7 @@ const menuPages = {
 				</section>
 				<section>
 					<h2>Other</h2>
-					<button class="menu-row menu-row-button" data-focus="reload-devices" data-menu="reload_devices">
+					<button class="menu-row menu-row-button squircle" data-focus="reload-devices" data-menu="reload_devices">
 						<span>Reload devices.json<small>After adding someone's phone, so the chart and greetings know them</small></span>
 					</button>
 				</section>
@@ -794,8 +796,8 @@ const menuPages = {
 			<h1>Power</h1>
 		</header>
 		<div class="menu-power">
-			<button class="menu-power-button" data-focus="shutdown" data-menu="power" data-value="shutdown" data-confirm="Press again to shut down">${ICONS.power}<span>Shut down</span></button>
-			<button class="menu-power-button" data-focus="restart" data-menu="power" data-value="restart" data-confirm="Press again to restart">${ICONS.restart}<span>Restart</span></button>
+			<button class="menu-power-button squircle" data-focus="shutdown" data-menu="power" data-value="shutdown" data-confirm="Press again to shut down">${ICONS.power}<span>Shut down</span></button>
+			<button class="menu-power-button squircle" data-focus="restart" data-menu="power" data-value="restart" data-confirm="Press again to restart">${ICONS.restart}<span>Restart</span></button>
 		</div>
 		<p class="menu-hint">Shuts down or restarts the TV PC</p>`,
 };
@@ -936,7 +938,7 @@ menu.addEventListener("click", (event) => {
 		menuActivity();
 		return sendMenu(button, "settings", { volume });
 	}
-	if (button && !button.disabled) menuChoose(button);
+	if (button && !button.disabled && !button.classList.contains("busy")) menuChoose(button);   // a second tap while the answer is on the way would send stale settings
 });
 menu.addEventListener("mousemove", menuActivity);
 
