@@ -26,7 +26,7 @@ class BieruurSettings:
 	time: str = "16:00"
 	takeover_minutes_before: float = 2
 	takeover_minutes_after: float = 2
-	countdown_seconds: float = 5
+	countdown_seconds: float = 12
 	days: tuple[str, ...] = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 	songs_folder: str = "media/bieruur"
 	choose_song_minutes_before: float = 10

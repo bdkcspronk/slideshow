@@ -1,7 +1,8 @@
 {#
-	The bieruur countdown: the time left, on a background that fills up with beer towards bieruur.
-	The values come from countdown_data() in providers/bieruur.py. It is redrawn every second;
-	elements with data-live="..." are updated in place, so the animations (bubbles, foam) keep running.
+	The bieruur countdown: the time left on split flaps set into a white wall, in 3D (static/bieruur_3d.js); at
+	bieruur itself a screen full of beer. The values come from countdown_data() in providers/bieruur.py. It is
+	redrawn every second; elements with data-live="..." are updated in place, so the flaps keep their state. The
+	flaps read the time from the text below, which is hidden then (and shown without WebGL).
 #}
 {% macro beer(level, live=false) %}
 {# Beer from the bottom up to `level` % of the screen, with a foam head and rising bubbles. #}
@@ -25,7 +26,7 @@
 
 {% else %}
 <div class="slide bieruur-slide bieruur-{{ state }}" data-state="{{ state }}">
-	{{ beer(beer_level, live=true) }}
+	<canvas class="bieruur-3d" data-bieruur-3d aria-hidden="true"></canvas>
 	<div class="bieruur-info" data-live="info">
 		<div class="bieruur-label">{{ "Bijna bieruur!" if state == "final" else "Bieruur in" }}</div>
 		<div class="bieruur-countdown" data-live="countdown">{{ countdown }}</div>

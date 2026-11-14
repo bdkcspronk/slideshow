@@ -45,6 +45,18 @@ the browser console); without WebGL it shows the covers flat, without a bookcase
 would flicker without it; check on the TV that it doesn't fall back to 75%. Copy its approach for a new 3D slide: whatever stands
 still, draw once.
 
+## A slide in 3D: the bieruur countdown
+
+The bieruur countdown (`static/bieruur_3d.js`) shows the time left (HH:MM:SS) on split flaps in a display hanging on the wall,
+with smaller colour flaps around it that flip in waves (the canvas is see-through: the wall is the slide's background, white plaster). All flaps are one `InstancedMesh` drawn by a
+small shader from one texture with every letter (each flap the black window and three thin boxes: the two fixed halves and
+the falling flap). With the display's case (a box) and its soft shadow on the
+wall (one small see-through plane) that is 3 draw calls and some 4,000 triangles.
+It shows the right time from the first frame and only draws when a flap falls: once a second, and during the waves of the
+colour flaps (about a second every few seconds; some 110 flaps in all). It reads the time from the
+slide's text (the `data-live` element the player updates every second), which is shown without WebGL. Like the books it
+drops to 75% resolution when its first flips are slow.
+
 ## The benchmark: measuring again (a new PC, a new browser, a new slideshow version)
 
 On the TV PC press Esc -> Fun -> "3D benchmark" and tap **Start** (or press Enter). It takes about 3 minutes; leave the PC alone

@@ -46,7 +46,7 @@ It shows:
 | What's playing on Spotify (only while something plays) | Spotify | `providers/spotify.py` |
 | A lyric video of the playing song: the line being sung, big, each line in its own style (only after bieruur, when it has synced lyrics) | Spotify, lrclib.net | `providers/lyric_video.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing \| TimeGuessr, with today's status; tap one to play it. Left out once all are done for the day | nytimes.com, catfishing.net, timeguessr.com (map: OpenStreetMap) | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py`, `timeguessr.py` |
-| Bieruur countdown; full screen from 15:58 to 16:02, with a song (Spotify on the TV turns down meanwhile) | | `providers/bieruur.py` |
+| Bieruur countdown: the time (HH:MM:SS) on a 3D split-flap display hanging on the wall (Three.js), with colour flaps around it flipping in waves; a screen full of beer at bieruur; full screen from 15:58 to 16:02, with a song (Spotify on the TV turns down meanwhile) | | `providers/bieruur.py`, `static/bieruur_3d.js` |
 | The vrijmibo GIF, every 15 minutes on Fridays | `media/vrijmibo.gif` | `providers/vrijmibo.py` |
 
 Everything you'd want to change (times, durations, order, URLs) is in **`config/config.toml`**.
