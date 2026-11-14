@@ -415,6 +415,19 @@ class SpotifyTest(unittest.TestCase):
 		self.assertEqual(request.call_args.kwargs["json"],
 			{"context_uri": "spotify:playlist:borrel", "offset": {"uri": "spotify:track:abc"}, "position_ms": 0})
 
+	def test_a_playlist_spotify_keeps_to_itself_has_no_name(self):
+		provider = self.idle_provider()
+		recent = {"items": [{"track": TRACK["item"] | {"uri": "spotify:track:abc"}, "context": {"uri": "spotify:playlist:dailymix"}}]}
+		with mock.patch("francken_tv.providers.spotify.requests.request",
+				side_effect=[FakeResponse(204), FakeResponse(200, recent), FakeResponse(401, {"error": {}}),   # token ran out: ask again
+					FakeResponse(204), FakeResponse(404, {"error": {"status": 404}}), FakeResponse(204)]) as request:
+			provider.refresh(NOW)
+			provider.access_token = "a"   # (the new token)
+			provider.refresh(NOW)   # Daily Mix and such give newer apps a 404
+			provider.refresh(NOW)   # not asked again
+		self.assertEqual(request.call_count, 6)
+		self.assertEqual(provider.slides(NOW)[0].data["device"], provider.speaker)
+
 	def test_what_played_while_watching_continues_where_it_stopped(self):
 		provider = self.idle_provider()
 		with mock.patch("francken_tv.providers.spotify.requests.request",

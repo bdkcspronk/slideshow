@@ -411,16 +411,22 @@ class SpotifyProvider(Provider):
 			if items:
 				self.last = parse_playing({"item": items[0]["track"], "context": items[0].get("context")}, time.monotonic())
 		if self.last and self.last.context != self.last_context[0]:
-			self.last_context = (self.last.context, self.context_name(self.last.context))
+			name = self.context_name(self.last.context)
+			if name is not None:
+				self.last_context = (self.last.context, name)
 
-	def context_name(self, uri: str) -> str:
-		"""The name of a playlist, album, artist or podcast ("" if a song played on its own)."""
+	def context_name(self, uri: str) -> str | None:
+		"""The name of a playlist, album, artist or podcast ("" if a song played on its own, or if Spotify
+		won't say: its own playlists, like Daily Mix, give a 404 to newer apps). None: try again later."""
 		kind = uri.split(":")[1] if uri else ""
 		if uri.endswith(":collection"):
 			return "Liked Songs"
 		if kind not in ("playlist", "album", "artist", "show"):
 			return ""
-		return self.api("GET", f"{API}/{kind}s/{uri.rsplit(':', 1)[-1]}").json()["name"]
+		response = self.api("GET", f"{API}/{kind}s/{uri.rsplit(':', 1)[-1]}")
+		if response.status_code == 401:
+			return None   # the token expired early: ask again at the next refresh
+		return response.json().get("name", "") if response.status_code == 200 else ""
 
 	def continue_last(self, from_start: bool = False) -> str | None:
 		"""Play the last song again from where it stopped, going on with its playlist or album."""
