@@ -164,6 +164,9 @@ class InstagramProvider(Provider):
 		response.raise_for_status()
 		profile = response.json()
 		posts = self.fetch_posts(token)
+		for post in posts:
+			if post.kind == "VIDEO" and not post.video_url:   # Instagram leaves it out for e.g. copyrighted music
+				log.warning("Instagram gave no file for the video %s: showing its cover", post.permalink)
 		pictures = [profile.get("profile_picture_url") or ""] + [post.picture_url for post in posts]
 		albums = [url for post in posts for url in post.album_urls]
 		files = self.download([(url, ".jpg") for url in pictures] + [(post.video_url, ".mp4") for post in posts] + [(url, ".jpg") for url in albums])
@@ -193,9 +196,7 @@ class InstagramProvider(Provider):
 		self.image_folder.mkdir(parents=True, exist_ok=True)
 		names, result = set(), []
 		for url, suffix in files:
-			if not url:
-				if suffix == ".mp4":
-					log.warning("Instagram gave no file for a video: showing its cover")
+			if not url:   # e.g. a post that isn't a video has no video to fetch
 				result.append("")
 				continue
 			path = self.image_folder / (hashlib.sha1(url.split("?")[0].encode()).hexdigest()[:16] + suffix)
