@@ -134,7 +134,7 @@ class FranckenVrijProvider(Provider):
 		urls = [media_url(path) for path in issue.pages]
 		leaves = [{"front": urls[2 * k], "back": urls[2 * k + 1] if 2 * k + 1 < len(urls) else "",
 			"turns_at": starts[k] if k < len(starts) else None} for k in range((len(urls) + 1) // 2)]
-		return [Slide("francken_vrij.html", end + 1, {
+		return [Slide("francken_vrij.html", end + 3, {
 			"title": issue.title, "leaves": leaves, "aspect": round(issue.aspect, 4), "turn": self.turn,
 			"opens_at": starts[0] if starts else None,
 			"closes_at": starts[-1] if len(urls) % 2 == 0 and len(starts) > 1 else None,   # the back cover alone

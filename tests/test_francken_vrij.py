@@ -83,7 +83,7 @@ class ProviderTest(unittest.TestCase):
 		self.assertEqual((data["title"], data["aspect"], len(data["leaves"])), ("Volume 29 · Issue 3", 0.7, 4))
 		self.assertEqual([leaf["turns_at"] for leaf in data["leaves"]], [6, 12, 18, 24])   # pauses on 2, 4-5 and 6
 		self.assertEqual((data["leaves"][0]["front"], data["leaves"][0]["back"]), ("/files/page-1.jpg", "/files/page-2.jpg"))
-		self.assertEqual((data["opens_at"], data["closes_at"], slide.seconds), (6, 24, 26.5))
+		self.assertEqual((data["opens_at"], data["closes_at"], slide.seconds), (6, 24, 28.5))   # the back cover is held 3 s after its turn (end + 3)
 
 	def test_a_new_issue_replaces_the_old_pages(self):
 		old = self.folder / "issues" / "29-2.pdf"

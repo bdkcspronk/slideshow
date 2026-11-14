@@ -18,7 +18,10 @@ from ..slides import Provider, Slide
 
 log = logging.getLogger(__name__)
 
-TYPING_STARTS_MS = 2700     # once the logo has built itself (style.css)
+TYPING_STARTS_MS = 1200     # typing starts while the logo is still building underneath, so there is text to read early (style.css .quote-watermark)
+READ_EXTRA_AFTER_LETTERS = 80   # quotes longer than this get extra reading time...
+READ_EXTRA_PER_LETTER = 0.03    # ...this many seconds per extra letter...
+READ_EXTRA_MAX = 6.0            # ...but never more than this
 AUTHOR_FADE_SECONDS = 1.5
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
 
@@ -100,7 +103,9 @@ class QuoteProvider(Provider):
 		letters = len(quote["quote"]) + 2   # with the quotation marks
 		letter_ms = min(self.letter_ms, self.max_typing_seconds * 1000 / letters)
 		typing_ms = TYPING_STARTS_MS + letters * letter_ms
-		return [Slide("quote.html", typing_ms / 1000 + AUTHOR_FADE_SECONDS + self.seconds, {
+		# A long quote takes longer to read than a short one, so the hold after typing grows with its length.
+		extra = min(READ_EXTRA_MAX, max(0, letters - READ_EXTRA_AFTER_LETTERS) * READ_EXTRA_PER_LETTER)
+		return [Slide("quote.html", typing_ms / 1000 + AUTHOR_FADE_SECONDS + self.seconds + extra, {
 			"quote": quote["quote"],
 			"start_ms": TYPING_STARTS_MS,
 			"letter_ms": round(letter_ms),

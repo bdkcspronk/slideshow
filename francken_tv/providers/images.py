@@ -24,7 +24,10 @@ class ImagesProvider(Provider):
 		paths = find_images(self.folder)
 		if self.shuffle:
 			random.shuffle(paths)
-		return [
-			Slide("image.html", max(self.seconds, animation_seconds(path)), {"url": media_url(path), "backdrop": True})
-			for path in paths
-		]
+		slides = []
+		for path in paths:
+			loop = animation_seconds(path)
+			# The blurred backdrop is a full-screen filter that repaints on every frame of a GIF, which the
+			# weak TV PC can't keep up with: only still images get one.
+			slides.append(Slide("image.html", max(self.seconds, loop), {"url": media_url(path), "backdrop": loop == 0}))
+		return slides

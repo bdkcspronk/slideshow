@@ -123,7 +123,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	object-fit: contain;
 }
 /* Posters: the image itself, zoomed in and blurred, fills the bars beside it (like the Spotify slide).
-   Not for event photos or the vrijmibo GIF. */
+   Not for event photos or any GIF (a GIF would repaint the blur on every frame; images.py leaves it out). */
 .image-backdrop {
 	position: absolute;
 	inset: -10%;
@@ -946,6 +946,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	r: 0;
 	animation: logo-build-ball 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) calc(0.7s + var(--layer) * 0.6s + var(--i) * 0.07s) forwards;
 }
+/* On the quote slide the logo builds faster (0.35 s between layers instead of 0.6 s) and is done at about 2.2 s: the
+   typing starts at 1.2 s, so the quote is readable early and the watermark only finishes underneath it. */
+.quote-watermark .logo-ball { animation-delay: calc(0.7s + var(--layer) * 0.35s + var(--i) * 0.07s); }
 @keyframes logo-build-arms { to { opacity: 1; } }
 @keyframes logo-build-ball { to { r: 24.063px; } }
 
@@ -979,6 +982,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	font-weight: 200;
 	line-height: 1.15;
 }
+/* Long quotes: a smaller size so they still fit the screen (at 7.4vh about 40 letters fit a line and about 8
+   lines fit the height; the thresholds are in templates/slides/quote.html) */
+.quote-slide blockquote.long { font-size: 5.6vh; }
+.quote-slide blockquote.longer { font-size: 4.4vh; }
 /* Typed letter by letter: each letter appears after --i letters, with a blinking cursor behind the
    newest one (a shadow, so nothing shifts); then the author fades in. */
 .quote-text span {
@@ -1288,17 +1295,17 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	margin-top: calc(32 * var(--px));
 	font-size: calc(94 * var(--px));
 	letter-spacing: calc(4 * var(--px));
-	animation: extern-in 0.8s ease-out calc(0.6s + var(--i) * 0.5s) both;
+	animation: extern-in 0.8s ease-out calc(0.6s + var(--q) * 0.5s) both;   /* after the last question (--q questions, set on .extern-text) */
 }
 .extern-contacts { margin-top: calc(33 * var(--px)); display: grid; grid-template-columns: auto auto auto; justify-content: start; column-gap: calc(26 * var(--px)); padding-left: calc(210 * var(--px)); text-align: left; }
 .extern-contact { display: contents; }
-.extern-contact span { font-size: calc(53 * var(--px)); line-height: calc(72 * var(--px)); white-space: nowrap; color: #d0b5c5; animation: extern-in 0.8s ease-out calc(0.9s + var(--i) * 0.4s) both; }
+.extern-contact span { font-size: calc(53 * var(--px)); line-height: calc(72 * var(--px)); white-space: nowrap; color: #d0b5c5; animation: extern-in 0.8s ease-out calc(1.2s + var(--q) * 0.5s + var(--i) * 0.4s) both; }   /* always after the ask (which starts at 0.6 s + --q * 0.5 s) for any number of questions, the first contact 0.6 s behind it */
 .extern-photo {
 	position: absolute;
 	left: calc(1174 * var(--px));
 	top: calc(105 * var(--px));
 	width: calc(680 * var(--px));
-	animation: extern-photo-in 1.3s cubic-bezier(0.2, 0.8, 0.3, 1) 0.2s both;
+	animation: extern-photo-in 1.3s cubic-bezier(0.2, 0.8, 0.3, 1) 1s both;   /* after the first question has landed (0.4 s + 0.9 s), so the headline leads and the photo follows */
 }
 @keyframes extern-pop {
 	from { opacity: 0; transform: translateY(8vh) scale(0.7) rotate(-6deg); }
@@ -2344,14 +2351,14 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .lv-word { display: inline-block; white-space: nowrap; }
 .lv-measuring, .lv-measuring * { animation: none !important; transform: none !important; rotate: none !important; translate: none !important; scale: none !important; }   /* while widgets.js measures it */
 .lv-key { color: var(--lv-accent); }
-.lv-line.leaving { animation: lv-out 0.5s ease-in forwards; }
+.lv-line.leaving { animation: lv-out 0.3s ease-in forwards; }   /* 0.3 s, not 0.5: the new line sits in the same cell and its first word must not land on a line that is still leaving (same for the slam and stack exits below) */
 @keyframes lv-out { to { opacity: 0; transform: translateY(-14vh) scale(0.92); filter: blur(0.8vh); } }
 
 /* slam: fat capitals crashing in from big and blurred. */
 .lv-style-slam { font-family: "Londrina Solid", "DejaVu Sans", sans-serif; font-weight: 900; text-transform: uppercase; line-height: 0.95; }
 .lv-style-slam .lv-word { animation: lv-slam 0.38s cubic-bezier(0.2, 1.5, 0.4, 1) var(--delay) both; }
 @keyframes lv-slam { from { opacity: 0; transform: scale(2.6); filter: blur(1vh); } }
-.lv-style-slam.leaving { animation: lv-slam-out 0.45s ease-in forwards; }
+.lv-style-slam.leaving { animation: lv-slam-out 0.3s ease-in forwards; }
 @keyframes lv-slam-out { to { opacity: 0; transform: scale(1.7); filter: blur(1.5vh); } }
 
 /* rise: tight grotesque, each word sliding up and straightening. */
@@ -2365,7 +2372,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .lv-style-stack .lv-word { display: block; width: max-content; margin: 0 auto; animation: lv-drop 0.4s cubic-bezier(0.3, 1.4, 0.5, 1) var(--delay) both; }
 .lv-style-stack .lv-word:nth-child(even) { color: var(--lv-accent); }
 @keyframes lv-drop { from { opacity: 0; transform: translateY(-50%) rotate(-5deg); } }
-.lv-style-stack.leaving { animation: lv-fall 0.5s ease-in forwards; }
+.lv-style-stack.leaving { animation: lv-fall 0.3s ease-in forwards; }
 @keyframes lv-fall { to { opacity: 0; transform: translateY(40vh) rotate(8deg); } }
 
 /* sticker: each word on its own tilted label, popping on like a sticker. */
@@ -2382,7 +2389,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 .lv-style-sticker .lv-word:nth-child(even) { rotate: 2.5deg; }
 .lv-style-sticker .lv-key { background: var(--lv-accent); color: var(--lv-fg); box-shadow: 0.07em 0.07em 0 var(--lv-fg); }
-@keyframes lv-pop { from { opacity: 0; transform: scale(0) rotate(-25deg); } }
+@keyframes lv-pop { from { opacity: 0; transform: scale(0.5) rotate(-25deg); } }   /* not from nothing: from half size */
 
 /* outline: the whole line in outline at once, each word filling in as it's sung, like karaoke. */
 .lv-style-outline { font-family: "Familjen Grotesk", "DejaVu Sans", sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: -0.01em; animation: lv-fade-in 0.3s ease-out both; }
@@ -3413,52 +3420,56 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 /* The arm, like a real backhoe: reach out with the bucket open, drag it through the hole towards the
    machine while curling it shut, lift, stretch out over the heap and tip it open, then dig again. All
    three joints share the keyframes, so they move together (the poses were solved for where the bucket
-   pin should be). */
+   pin should be).
+   Re-timed so both loads get dumped and the film ends calm: the first load is dumped at 46-54%, the second at
+   87-95% (the heap grows after each), then the arm settles to rest with an empty bucket by 100%. Before, the
+   second dig was still going at 100%, so the film stopped mid-scoop with a full bucket. Each cycle is now
+   about 41 units instead of 52, so everything shares these percentages: change them together. */
 .graaf-boom { transform-origin: 300px 650px; animation-name: graaf-boom; }
 @keyframes graaf-boom {
 	0%, 18% { transform: rotate(-16.5deg); }
-	26%, 78% { transform: rotate(9.7deg); }
-	31%, 84% { transform: rotate(19.9deg); }
-	36%, 90% { transform: rotate(9.1deg); }
-	44% { transform: rotate(-11.2deg); }
-	52%, 58%, 62% { transform: rotate(4.7deg); }
-	70% { transform: rotate(-3.5deg); }
+	25%, 66% { transform: rotate(9.7deg); }
+	29%, 70% { transform: rotate(19.9deg); }
+	33%, 74% { transform: rotate(9.1deg); }
+	40%, 81% { transform: rotate(-11.2deg); }
+	46%, 54%, 87%, 95% { transform: rotate(4.7deg); }
+	59% { transform: rotate(-3.5deg); }
 	100% { transform: rotate(-8.8deg); }
 }
 .graaf-stick { transform-origin: 565px 450px; animation-name: graaf-stick; }
 @keyframes graaf-stick {
 	0%, 18% { transform: rotate(10.2deg); }
-	26%, 78% { transform: rotate(-17.1deg); }
-	31%, 84% { transform: rotate(-20.1deg); }
-	36%, 90% { transform: rotate(2.7deg); }
-	44% { transform: rotate(-7.5deg); }
-	52%, 58%, 62% { transform: rotate(-55.6deg); }
-	70% { transform: rotate(-12.1deg); }
+	25%, 66% { transform: rotate(-17.1deg); }
+	29%, 70% { transform: rotate(-20.1deg); }
+	33%, 74% { transform: rotate(2.7deg); }
+	40%, 81% { transform: rotate(-7.5deg); }
+	46%, 54%, 87%, 95% { transform: rotate(-55.6deg); }
+	59% { transform: rotate(-12.1deg); }
 	100% { transform: rotate(-1.6deg); }
 }
 .graaf-bucket { transform-origin: 652px 688px; animation-name: graaf-bucket; }
 @keyframes graaf-bucket {
 	0%, 18% { transform: rotate(126.3deg); }
-	26%, 78% { transform: rotate(-2.5deg); }
-	31%, 84% { transform: rotate(45.2deg); }
-	36%, 90% { transform: rotate(88.3deg); }
-	44% { transform: rotate(118.7deg); }
-	52% { transform: rotate(145.9deg); }
-	58%, 62% { transform: rotate(5.9deg); }
-	70% { transform: rotate(35.6deg); }
+	25%, 66% { transform: rotate(-2.5deg); }
+	29%, 70% { transform: rotate(45.2deg); }
+	33%, 74% { transform: rotate(88.3deg); }
+	40%, 81% { transform: rotate(118.7deg); }
+	46%, 87% { transform: rotate(145.9deg); }
+	51%, 54%, 92%, 95% { transform: rotate(5.9deg); }
+	59% { transform: rotate(35.6deg); }
 	100% { transform: rotate(110.5deg); }
 }
 .graafmachine-slide .graaf-load { animation-name: graaf-load; animation-timing-function: step-end; }
-@keyframes graaf-load { 0% { opacity: 0; } 32% { opacity: 1; } 55% { opacity: 0; } 85% { opacity: 1; } }
+@keyframes graaf-load { 0% { opacity: 0; } 30% { opacity: 1; } 49% { opacity: 0; } 71% { opacity: 1; } 90% { opacity: 0; } }
 .graafmachine-slide .graaf-falling { fill: var(--sand); animation-name: graaf-fall; animation-timing-function: ease-in; }
 @keyframes graaf-fall {
-	0%, 55% { opacity: 0; transform: translateY(0); }
-	56% { opacity: 1; transform: translateY(0); }
-	62% { opacity: 1; transform: translateY(140px); }
-	63%, 100% { opacity: 0; transform: translateY(140px); }
+	0%, 49%, 90% { opacity: 0; transform: translateY(0); }
+	50%, 91% { opacity: 1; transform: translateY(0); }
+	56%, 97% { opacity: 1; transform: translateY(140px); }
+	57%, 98%, 100% { opacity: 0; transform: translateY(140px); }
 }
 .graaf-heap { transform-origin: 1190px 822px; animation-name: graaf-heap; }
-@keyframes graaf-heap { 0%, 58% { transform: scale(0.8, 0.7); } 64%, 100% { transform: scale(1, 1); } }
+@keyframes graaf-heap { 0%, 54% { transform: scale(0.8, 0.7); } 58%, 94% { transform: scale(0.9, 0.82); } 98%, 100% { transform: scale(1, 1); } }
 
 /* Compucie (providers/compucie.py), Matrix style: green code rain on a canvas (data-matrix), a glowing
    panel rising out of it with the name decoding (data-decode), a terminal typing a session
@@ -3670,7 +3681,9 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .francken-vrij-slide { flex-direction: row; align-items: center; gap: 3vw; padding: 5vh 4vw; }
 .fv-info { flex: none; width: 30vw; display: flex; flex-direction: column; align-items: flex-start; }
 .francken-vrij-slide .poster-title { white-space: nowrap; }
-.fv-issue { margin: 1vh 0 0; font-size: 3.6vh; opacity: 0.85; }
+/* the issue line drops in right behind the title (title 0.25 s, this 0.55 s, same curve), instead of standing there before it; the end opacity stays 0.85 */
+.fv-issue { margin: 1vh 0 0; font-size: 3.6vh; opacity: 0.85; animation: fv-issue-in 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.55s both; }
+@keyframes fv-issue-in { from { opacity: 0; transform: translateY(-1.5vh); } to { opacity: 0.85; transform: none; } }
 .fv-stage { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center; transform: perspective(200vh) rotateX(14deg); }
 .fv-preload { display: none; }
 .fv-book {
@@ -3846,7 +3859,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 	top: calc(var(--line-top) + 1vh + var(--y));
 	width: 36vh;
 	margin-left: -18vh;
-	--drop: calc(1.2s + var(--i) * 0.35s);
+	--drop: calc(1.2s + var(--wait, 0s));   /* --wait (0 / 0.3 / 0.55 / 0.95 s, set in socials.html): uneven gaps, not a metronome; the last one lands by about 3.2 s */
 	animation: socials-drop 1.5s linear var(--drop) both;
 }
 @keyframes socials-drop {   /* falls, slowing down, lands at 65 % (about 1 s), dips onto the line and settles */
@@ -3912,8 +3925,10 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 	font-size: 6vh;
 	letter-spacing: 0.2vh;
 	transform: rotate(-5deg);
-	animation-delay: 0.32s;
+	animation-delay: 0.4s;   /* "Streep" 0.25 s, "your" 0.4 s, "food" 0.55 s: 0.15 s steps so the three words read as three drops, not one */
 }
+.streep-pitch .poster-title .poster-marked { animation-delay: 0.55s !important; }
+.streep-pitch .poster-title .poster-marked::before { animation-delay: 1.05s; }   /* the highlighter follows its word, as before (0.5 s after it) */
 .streep-line { margin: 0; max-width: 18ch; font-size: 4.4vh; line-height: 1.2; animation: member-up 0.8s ease-out 1.5s both; }
 .streep-pc { flex: none; display: flex; flex-direction: column; align-items: center; animation: streep-pc 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.6s both; }
 @keyframes streep-pc { from { transform: translateY(100vh); } }
@@ -4075,10 +4090,11 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 	color: var(--paper);
 	font-size: 3.6vh;
 	box-shadow: 0 1vh 3vh rgba(0, 0, 0, 0.4);
-	transform: rotate(-8deg) scale(0);
+	transform: rotate(-8deg) scale(0.6);   /* not from nothing: it pops up from 60% (opacity too) */
+	opacity: 0;
 	animation: fvs-badge 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 5.5s forwards;
 }
-@keyframes fvs-badge { to { transform: rotate(-8deg) scale(1); } }
+@keyframes fvs-badge { to { opacity: 1; transform: rotate(-8deg) scale(1); } }
 .fvs-cursor { position: absolute; z-index: 6; left: 0; top: 0; width: 5.5vh; height: 5.5vh; transform-origin: 0 0; animation: fvs-cursor 7s ease-in-out both; }
 .fvs-cursor svg { display: block; width: 100%; height: 100%; overflow: visible; fill: #111111; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: round; filter: drop-shadow(0 0.4vh 0.6vh rgba(0, 0, 0, 0.4)); }
 @keyframes fvs-cursor {   /* 7 s: in at 2 s, "Francken Vrij" at 3 s (click), Subscribe at 4.7 s (click), away at 6 s */
@@ -4547,16 +4563,16 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 /* Two texts in turn, one over the other: "Do you like taking pictures? Join the Fotocie!", then what the Fotocie does. The words of the
    second drop in after the first is gone (the delays are from the start of the slide). */
 .fc-phase { grid-area: 1 / 1; min-width: 0; }
-.fc-phase-a { animation: fc-phase-out 0.6s ease-in 4.6s both; }
+.fc-phase-a { animation: fc-phase-out 0.6s ease-in 5.1s both; }   /* the join line stands about 2.2 s before it goes */
 @keyframes fc-phase-out { to { opacity: 0; transform: translateY(-3vh); } }
-.fc-phase-b { opacity: 0; animation: fc-phase-in 0.01s linear 5.2s both; }
+.fc-phase-b { opacity: 0; animation: fc-phase-in 0.01s linear 5.7s both; }
 @keyframes fc-phase-in { to { opacity: 1; } }
-.fc-phase-b .poster-title span { animation-delay: 5.4s; }
-.fc-phase-b .poster-marked { animation-delay: 5.55s !important; }
-.fc-phase-b .poster-marked::before { animation-delay: 6s; }
-.fc-phase-b .fc-join { animation-delay: 6.6s; }
+.fc-phase-b .poster-title span { animation-delay: 5.9s; }
+.fc-phase-b .poster-marked { animation-delay: 6.05s !important; }
+.fc-phase-b .poster-marked::before { animation-delay: 6.5s; }
+.fc-phase-b .fc-join { animation-delay: 7.1s; }
 .fc-text .poster-title { margin: 0 0 5vh; font-size: 12vh; line-height: 1.05; }
-.fc-join { margin: 0; font-size: 9vh; color: var(--crimson); animation: member-up 0.8s ease-out 1.4s both; }
+.fc-join { margin: 0; font-size: 9vh; color: var(--crimson); animation: member-up 0.8s ease-out 2.1s both; }   /* after the flash (fires at 1.95 s) instead of landing in it; lands by 2.9 s and stands 2.2 s before phase A leaves at 5.1 s */
 .fc-stage { flex: none; height: 84vh; aspect-ratio: 1; margin-right: 1vw; }
 .fc-stage path, .fc-stage circle.fc-bulb { fill: #fff; fill-rule: evenodd; }
 .fc-stage * { transform-box: view-box; }
@@ -4667,10 +4683,11 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 .sj-bg path { fill: #f8b4cf; }
 .sj-q { position: absolute; left: 5vw; right: 5vw; top: 50%; margin: 0; font-size: 11vh; line-height: 1.1; transform: translateY(-50%); }
 .sj-q { opacity: 0; }
-.sj-q1 { animation: sj-show 2s ease-in-out 0.3s both; }
-.sj-q2 { animation: sj-show 2s ease-in-out 2.8s both; }
-.sj-join { top: 77%; font-size: 12vh; animation: sj-join 0.9s ease-out 5.3s both; }
-.sj-logo { position: absolute; left: 50%; top: 7vh; height: 56vh; aspect-ratio: 1; margin-left: -28vh; opacity: 0; animation: sj-pop 1s cubic-bezier(0.2, 0.9, 0.3, 1.25) 5.3s both; }
+/* each question stands still ~2.8 s (3.8 s film, 0.5 s in and out) so two lines can be read from across the room */
+.sj-q1 { animation: sj-show 3.8s ease-in-out 0.3s both; }
+.sj-q2 { animation: sj-show 3.8s ease-in-out 4s both; }   /* right after q1 is gone (4.1 s) */
+.sj-join { top: 77%; font-size: 12vh; animation: sj-join 0.9s ease-out 8.5s both; }   /* follows the baby by 0.3 s instead of landing on the same frame; then it all holds until 14 s */
+.sj-logo { position: absolute; left: 50%; top: 7vh; height: 56vh; aspect-ratio: 1; margin-left: -28vh; opacity: 0; animation: sj-pop 1s cubic-bezier(0.2, 0.9, 0.3, 1.25) 8.2s both; }   /* the baby leads, after q2 is gone (7.8 s) */
 .sj-logo svg { display: block; width: 100%; height: 100%; }
 .sj-logo > svg { position: relative; }   /* the logo itself must be positioned too, or the absolute shadow before it paints on top of it */
 .sj-logo path { fill: #fff; }
@@ -4678,7 +4695,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
    that is scaling and fading is redone every frame). blur(1vh) is the same spread as the old drop-shadow's 2vh. */
 .sj-logo-shadow { position: absolute; inset: 0; opacity: 0.25; filter: blur(1vh); translate: 0 1vh; }
 .sj-logo-shadow path { fill: rgb(60, 90, 140) !important; }   /* !important: the svg file's own style="fill:#fff" would win */
-@keyframes sj-show { 0% { opacity: 0; transform: translateY(-40%); } 20%, 80% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-60%); } }
+@keyframes sj-show { 0% { opacity: 0; transform: translateY(-40%); } 13%, 87% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-60%); } }
 @keyframes sj-join { from { opacity: 0; transform: translateY(-30%); } to { opacity: 1; transform: translateY(-50%); } }
 @keyframes sj-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
 

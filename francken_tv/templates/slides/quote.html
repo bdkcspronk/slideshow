@@ -6,7 +6,8 @@
 {% set text = "\u201c" ~ quote[:1] | upper ~ quote[1:] ~ "\u201d" %}
 <div class="slide quote-slide" style="--start: {{ start_ms }}ms; --letter: {{ letter_ms }}ms; --typed: {{ typing_ms }}ms">
 	<div class="quote-watermark logo-build" aria-hidden="true">{% include "francken_logo_balls.svg" %}</div>
-	<blockquote>
+	{# Longer quotes get a smaller size so they still fit (see .quote-slide blockquote.long in style.css) #}
+	<blockquote{% if quote | length > 260 %} class="longer"{% elif quote | length > 120 %} class="long"{% endif %}>
 		<span class="quote-text">{% for letter in text %}<span style="--i: {{ loop.index0 }}"{% if loop.last %} class="last"{% endif %}>{{ letter }}</span>{% endfor %}</span>
 		{% if author %}<footer>~ {{ author | title }}</footer>{% endif %}
 	</blockquote>

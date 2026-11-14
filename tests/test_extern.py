@@ -38,7 +38,8 @@ class ExternTest(unittest.TestCase):
 		html = Environment(loader=FileSystemLoader(PROJECT_DIR / "francken_tv" / "templates"), autoescape=select_autoescape()).get_template(
 			"slides/extern.html").render(**slide.data)
 		self.assertIn("+31 6 12345678&ensp;(also WhatsApp)", html)
-		self.assertIn('style="--i: 4"', html)   # the second contact comes in after the three questions and the first contact
+		self.assertIn('style="--i: 1"', html)   # the second contact follows the first (both start after the ask: style.css, from --q)
+		self.assertIn('--q: 3', html)   # the ask and the contacts are timed from the number of questions
 
 	def test_no_file_no_slide(self):
 		self.assertEqual(ExternProvider({"file": str(self.path)}, 15).slides(NOW), [])

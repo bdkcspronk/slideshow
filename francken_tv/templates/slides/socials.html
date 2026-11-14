@@ -33,7 +33,7 @@
 	</svg>
 
 	{% for card in cards %}
-	<div class="socials-card" style="--x: {{ card.x }}%; --y: {{ card.y }}vh; --i: {{ card.i }}; --tilt: {{ [-3, 2, -2, 3][card.i % 4] }}deg">
+	<div class="socials-card" style="--x: {{ card.x }}%; --y: {{ card.y }}vh; --i: {{ card.i }}; --wait: {{ [0, 0.3, 0.55, 0.95][card.i % 4] }}s; --tilt: {{ [-3, 2, -2, 3][card.i % 4] }}deg">
 		<div class="socials-swing">
 			<i class="socials-peg" aria-hidden="true"></i>
 			<div class="socials-photo">

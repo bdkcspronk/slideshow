@@ -219,3 +219,38 @@ class MembershipMonthsTest(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+class QuoteReadingTimeTest(unittest.TestCase):
+	def hold_after_typing(self, letters):
+		"""The slide's seconds minus the typing and the author's fade: the time left for reading."""
+		from francken_tv.providers.quote import AUTHOR_FADE_SECONDS, QuoteProvider, TYPING_STARTS_MS
+
+		class SilentAnnouncer:
+			quotes_enabled = False
+
+			def prepare(self, text):
+				pass
+		provider = QuoteProvider({}, Path("unused.csv"), SilentAnnouncer(), 8)
+		provider.quotes = [{"quote": "a" * letters, "author": "x"}]
+		slide = provider.slides(datetime(2026, 10, 14))[0]
+		return slide.seconds - slide.data["typing_ms"] / 1000 - AUTHOR_FADE_SECONDS
+
+	def test_long_quotes_are_held_longer_after_typing(self):
+		self.assertAlmostEqual(self.hold_after_typing(40), 8, places=2)       # short: the flat reading time (8 s here)
+		self.assertAlmostEqual(self.hold_after_typing(78), 8, places=2)       # 80 letters with the quotation marks: still flat
+		self.assertAlmostEqual(self.hold_after_typing(198), 8 + 0.03 * 120, places=2)   # 200 letters: 3.6 s more
+		self.assertAlmostEqual(self.hold_after_typing(2000), 8 + 6, places=2)   # but never more than 6 s extra
+
+
+class PostersBackdropTest(unittest.TestCase):
+	def test_only_still_images_get_the_blurred_backdrop(self):
+		from PIL import Image
+		from francken_tv.config import project_path
+		from francken_tv.providers.images import ImagesProvider
+		with TemporaryDirectory(dir=project_path("data")) as folder:   # inside the project: media_url needs that
+			Image.new("RGB", (4, 4)).save(Path(folder) / "a-still.png")
+			frames = [Image.new("RGB", (4, 4), color) for color in ("red", "blue")]
+			frames[0].save(Path(folder) / "b-moving.gif", save_all=True, append_images=frames[1:], duration=100, loop=0)
+			slides = ImagesProvider({"folder": folder}, 8).slides(datetime(2026, 10, 14))
+		self.assertEqual([slide.data["backdrop"] for slide in slides], [True, False])
