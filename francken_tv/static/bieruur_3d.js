@@ -70,8 +70,7 @@ const FLAPS = {
 	fluid: { cells: 48, flip: 0.15, margin: 0.08, kick: 25, stirrers: 3, push: 1.6, colourEvery: 3.5, swirl: 6 },
 	// Motion blur on the falling flaps: `ghosts` see-through copies of each falling flap behind it, spread over the angle
 	// it falls while the shutter is open (`shutter` of a frame: 0.5 is a film camera's 180 degrees), fading out
-	// (the first `strength` opaque); the time's big flaps, which sweep over more of the screen, `bigGhosts`. Off on a
-	// canvas with data-blur="off" (the side by side test: bieruur_blur.html).
+	// (the first `strength` opaque); the time's big flaps, which sweep over more of the screen, `bigGhosts`.
 	blur: { ghosts: 8, bigGhosts: 16, shutter: 1, strength: 0.6 },
 	palette: [   // the filler flaps' colours (r, g, b), in the order they go round: beer to Francken blue
 		[0.96, 0.76, 0.25],   // gold
@@ -156,9 +155,6 @@ async function drawBieruur3d(THREE, canvas, slide) {
 	// The time as the page says it now (the player replaces this element's text every second), always as HH:MM:SS.
 	const countdown = slide.querySelector(".bieruur-countdown");
 	const info = slide.querySelector(".bieruur-info");
-	// In the side by side test (bieruur_blur.html) both displays run on one clock, which can be paused there.
-	const demo = slide.closest("[data-bieruur-demo]");
-	const blurred = canvas.dataset.blur !== "off";
 	const phase = () => info?.dataset.phase;   // "countdown", "final" (the last two minutes) or "bieruur"
 	const text = () => clockText(flapText(countdown?.textContent));
 	const first = text();
@@ -289,15 +285,12 @@ async function drawBieruur3d(THREE, canvas, slide) {
 	// The motion blur (FLAPS.blur): the falling flaps' ghosts, all in one more mesh with the same flaps (the same
 	// attributes and places), drawn see-through after the rest. Only what falls has ghosts; the others are not drawn.
 	// Room for the most ghosts a flap has (aGhosts); a small flap's spare ghosts are not drawn either.
-	let trail = null;
-	if (blurred) {
-		const trailGeometry = flapGeometry(THREE, Math.max(FLAPS.blur.ghosts, FLAPS.blur.bigGhosts));
-		Object.entries(instanced).forEach(([name, attribute]) => trailGeometry.setAttribute(name, attribute));
-		trail = new THREE.InstancedMesh(trailGeometry, flapShader(THREE, atlas, true), count);
-		trail.instanceMatrix = mesh.instanceMatrix;
-		trail.frustumCulled = false;
-		board.add(trail);
-	}
+	const trailGeometry = flapGeometry(THREE, Math.max(FLAPS.blur.ghosts, FLAPS.blur.bigGhosts));
+	Object.entries(instanced).forEach(([name, attribute]) => trailGeometry.setAttribute(name, attribute));
+	const trail = new THREE.InstancedMesh(trailGeometry, flapShader(THREE, atlas, true), count);
+	trail.instanceMatrix = mesh.instanceMatrix;
+	trail.frustumCulled = false;
+	board.add(trail);
 
 	// The party at bieruur (FLAPS.party). Where each flap is on the board, for the party's patterns: d how far from
 	// the middle (in time flap heights), u and v across and down (0 to 1).
@@ -470,8 +463,8 @@ async function drawBieruur3d(THREE, canvas, slide) {
 
 	// One frame at a time while the slide is on the page, drawn only when something moves; freed when it's gone
 	// (the browser has only a few WebGL contexts).
-	// t: seconds since the slide was shown; stands still while the side by side test is paused.
-	let t = 0, last = null, measured = !!demo, still = true, previous = null;   // (the test: both at full resolution)
+	// t: seconds since the slide was shown.
+	let t = 0, last = null, measured = false, still = true, previous = null;
 	const gaps = [];
 	const frame = (now) => {
 		if (!document.contains(canvas)) {
@@ -483,12 +476,10 @@ async function drawBieruur3d(THREE, canvas, slide) {
 			return;
 		}
 		requestAnimationFrame(frame);
-		const frozen = demo?.dataset.frozen === "true";
-		const rate = Number(demo?.dataset.rate ?? 1);   // the test's slow motion
-		if (last !== null && !frozen) {
-			t += (now - last) / 1000 * rate;
+		if (last !== null) {
+			t += (now - last) / 1000;
 			// The shutter for the motion blur: open for part of this frame (frames over 50 ms count as 1/60 s).
-			if (trail) trail.material.uniforms.shutter.value = FLAPS.blur.shutter * (now - last > 50 ? 1 / 60 : (now - last) / 1000) * rate;
+			trail.material.uniforms.shutter.value = FLAPS.blur.shutter * (now - last > 50 ? 1 / 60 : (now - last) / 1000);
 		}
 		last = now;
 		const time = text();
@@ -516,10 +507,10 @@ async function drawBieruur3d(THREE, canvas, slide) {
 		if (burstAt !== null) {   // the party: confetti, the display moving and the fluid, every frame
 			fly(t);
 			bounce(t);
-			if (fluid && !frozen) flow(t);
+			if (fluid) flow(t);
 			still = false;
 		}
-		if (still || frozen) return void (previous = null);
+		if (still) return void (previous = null);
 		still = !pose(t);
 		renderer.render(scene, camera);
 		// Too slow for this PC? Over the first 30 frames drawn one after the other (flaps falling), drop to 75%
@@ -867,69 +858,4 @@ function flapShader(THREE, atlas, trail = false) {
 			}
 		`,
 	});
-}
-
-// The motion blur test (templates/slides/bieruur_blur.html, BieruurBlurTestProvider in providers/bieruur.py): two
-// displays side by side, without and with motion blur (FLAPS.blur), playing the last seconds before bieruur and the
-// party over and over (DEMO). One clock for both, which Pause (or P) stops, to compare them standing still; Slow
-// motion (or S) runs it at a fifth of the speed (data-rate), to watch a flap fall and bounce; Restart (or R) starts over. Each round the displays start afresh (new canvases).
-const DEMO = { countdown: 5, party: 25 };   // seconds: the party long enough to see the fluid flow
-function setupBieruurDemo(root) {
-	const halves = [...root.querySelectorAll(".bieruur-slide")];
-	const pause = root.querySelector("[data-bieruur-pause]"), restart = root.querySelector("[data-bieruur-restart]");
-	const slow = root.querySelector("[data-bieruur-slow]");
-	let t = 0, last = null, round = 0;
-	const show = (s) => {   // s seconds into a round: the countdown, then bieruur
-		const left = Math.ceil(DEMO.countdown - s);
-		const [time, phase, label] = left > 0 ? [`00:00:0${left}`, "final", "Bijna bieruur!"] : ["00:00:00", "bieruur", "Het is bieruur!"];
-		halves.forEach((half) => {
-			const info = half.querySelector(".bieruur-info");
-			if (info.dataset.phase !== phase) info.dataset.phase = phase;
-			if (info.querySelector(".bieruur-countdown").textContent !== time) info.querySelector(".bieruur-countdown").textContent = time;
-			if (info.querySelector(".bieruur-label").textContent !== label) info.querySelector(".bieruur-label").textContent = label;
-		});
-	};
-	const fresh = () => halves.forEach((half) => {
-		const old = half.querySelector("canvas[data-bieruur-3d]"), canvas = old.cloneNode();
-		old.replaceWith(canvas);   // the old one frees itself (see drawBieruur3d)
-		setupBieruur3d(canvas);
-	});
-	const frame = (now) => {
-		if (!document.contains(root)) return;
-		requestAnimationFrame(frame);
-		if (last !== null && root.dataset.frozen !== "true") t += (now - last) / 1000 * Number(root.dataset.rate ?? 1);
-		last = now;
-		const length = DEMO.countdown + DEMO.party, n = Math.floor(t / length);
-		show(t - n * length);
-		if (n !== round) {
-			round = n;
-			fresh();
-		}
-	};
-	pause.addEventListener("click", () => {
-		const frozen = root.dataset.frozen !== "true";
-		root.dataset.frozen = frozen;
-		pause.textContent = frozen ? "Play" : "Pause";
-		pause.classList.toggle("selected", frozen);
-	});
-	slow.addEventListener("click", () => {
-		const slower = root.dataset.rate !== "0.2";
-		root.dataset.rate = slower ? 0.2 : 1;
-		slow.classList.toggle("selected", slower);
-	});
-	restart.addEventListener("click", () => {
-		t = 0;
-		round = 0;
-		show(0);
-		fresh();
-	});
-	const keys = (event) => {   // clicks, so the slideshow stays on this slide like for a tap
-		if (!document.contains(root)) return document.removeEventListener("keydown", keys);
-		if (event.ctrlKey || event.altKey || event.metaKey) return;
-		if (event.key === "p") pause.click();
-		else if (event.key === "r") restart.click();
-		else if (event.key === "s") slow.click();
-	};
-	document.addEventListener("keydown", keys);
-	requestAnimationFrame(frame);
 }

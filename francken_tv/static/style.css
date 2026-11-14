@@ -1405,30 +1405,6 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 @keyframes party-pop { from { transform: scale(0.2) rotate(-6deg); opacity: 0; } }
 @keyframes party-bounce { 50% { transform: translateY(-1.2vh) scale(1.04); } }
 
-/* The motion blur test (templates/slides/bieruur_blur.html): two bieruur displays side by side, each with its caption
-   above it, a line between them, and the buttons below. */
-.bieruur-blur-slide { display: flex; position: relative; overflow: hidden; }
-.bieruur-blur-slide > .bieruur-slide { flex: 1; height: 100%; min-width: 0; padding: 0 1vw; }
-.bieruur-blur-slide > .bieruur-slide + .bieruur-slide { border-left: 0.4vh solid #c9c4ba; }
-.bieruur-blur-slide .bieruur-label { font-size: 5vh; }
-.bieruur-blur-slide .bieruur-flaps .bieruur-countdown { height: 42vh; }
-.bieruur-blur-caption {
-	position: absolute; top: 6vh; left: 0; right: 0; z-index: 1;
-	text-align: center; font-size: 3.4vh; font-weight: bold; letter-spacing: 0.2vh; text-transform: uppercase; opacity: 0.55;
-}
-.bieruur-blur-controls {
-	position: absolute; left: 0; right: 0; bottom: 5vh; z-index: 2;
-	display: flex; justify-content: center; align-items: center; gap: 1.5vw; font-size: 2.6vh; color: var(--blue);
-}
-.bieruur-blur-controls small { opacity: 0.6; font-size: 2vh; }
-.bieruur-blur-controls button {
-	font: inherit; font-weight: bold; color: #fff; background: var(--blue); border: 0; border-radius: 1vh;
-	padding: 1vh 2vw; cursor: pointer;
-}
-.bieruur-blur-controls button.selected { background: var(--red); }
-.bieruur-blur-controls button { transition: transform 0.1s ease-out; }   /* a touchscreen: the press is the only feedback */
-.bieruur-blur-controls button:active { transform: scale(0.95); }
-
 /* Activity chart (activity_chart.py + templates/slides/presence.html), on the navy poster (see "The navy
    and crimson posters"), the chart on a see-through panel rising in. Rows are 1/--rows of the chart
    height; bars grow from left to right (a clip that opens), like time playing back. */
@@ -4456,57 +4432,3 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 @keyframes ms-name { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
 @keyframes ms-fade { from { opacity: 0; transform: translateY(2vh); } to { opacity: 1; transform: none; } }
 @keyframes ms-glint { from { background-position: 130% 0, 0 0; } to { background-position: -30% 0, 0 0; } }
-
-/* Three.js test (providers/three.py): a scene on a canvas (data-three) filling the slide, its title bottom left and the
-   frames-per-second panel (data-three-stats) top right. */
-.three-slide { position: relative; overflow: hidden; background: #000; color: #fff; font-family: "Familjen Grotesk", sans-serif; }
-.three-slide canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.three-title { position: absolute; left: 3vw; bottom: 11vh; font-size: 3.2vh; text-shadow: 0 0 1vh #000; }
-.three-title b { font-size: 5vh; margin-right: 1vw; }
-.three-title span { opacity: 0.8; }
-.three-stats {
-	position: absolute; top: 3vh; right: 3vw; min-width: 24vw; padding: 1.5vh 1.5vw;
-	display: flex; flex-direction: column; gap: 0.6vh; font-size: 2.2vh;
-	background: rgba(0, 0, 0, 0.6); border-radius: 1vh; font-variant-numeric: tabular-nums;
-}
-.three-fps { font-size: 9vh; font-weight: 700; line-height: 1; }
-.three-fps small { font-size: 3vh; font-weight: 400; }
-.three-verdict { font-size: 3.4vh; font-weight: 700; text-transform: uppercase; }
-.three-verdict.good { color: #4cd964; }
-.three-verdict.ok { color: #ffcc00; }
-.three-verdict.bad { color: #ff4d4d; }
-.three-chip { font-size: 1.6vh; opacity: 0.6; max-width: 24vw; }
-.three-controls { position: absolute; left: 3vw; right: 3vw; bottom: 2vh; display: flex; flex-wrap: wrap; align-items: center; gap: 1vh 2vw; font-size: 2.2vh; }
-.three-controls > div { display: flex; align-items: center; gap: 0.6vw; }
-.three-controls small { opacity: 0.7; font-size: 1.6vh; margin-right: 0.4vw; }
-.three-controls button {
-	font: inherit; color: #fff; background: rgba(0, 0, 0, 0.6); border: 0.2vh solid rgba(255, 255, 255, 0.4);
-	border-radius: 1vh; padding: 0.8vh 1.2vw; cursor: pointer;
-}
-.three-controls button.selected { background: #e0314b; border-color: #fff; font-weight: 700; }
-.three-controls button:focus-visible { outline: 0.4vh solid #ffcc00; outline-offset: 0.2vh; }
-
-/* 3D benchmark (providers/three.py): the test draws on the canvas behind a panel with the Start button, a progress bar,
-   what is running and, at the end, the results. */
-.tb-slide { position: relative; overflow: hidden; background: #0b1b3a; color: #fff; font-family: "Familjen Grotesk", sans-serif; }
-.tb-slide canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.tb-panel {
-	position: absolute; left: 4vw; top: 4vh; width: 52vw; max-height: 92vh; overflow: hidden; padding: 3vh 2.5vw;
-	background: rgba(0, 0, 0, 0.78); border-radius: 2vh; font-size: 2.4vh;
-}
-.tb-panel h1 { margin: 0 0 1vh; font-size: 5vh; }
-.tb-panel h2 { margin: 1vh 0; font-size: 2.6vh; font-weight: 600; opacity: 0.8; }
-.tb-panel p { margin: 0.8vh 0; }
-.tb-panel code { background: rgba(255, 255, 255, 0.15); padding: 0 0.4vw; border-radius: 0.5vh; }
-.tb-panel button {
-	font: inherit; font-size: 3.4vh; color: #fff; background: #e0314b; border: 0; border-radius: 1.2vh; padding: 1.2vh 3vw; cursor: pointer; margin: 1vh 0;
-}
-.tb-panel button:disabled { opacity: 0.4; cursor: default; }
-.tb-panel button:focus-visible { outline: 0.4vh solid #ffcc00; outline-offset: 0.3vh; }
-.tb-progress { height: 1.2vh; background: rgba(255, 255, 255, 0.2); border-radius: 1vh; overflow: hidden; display: none; }
-.tb-progress div { height: 100%; width: 0; background: #4cd964; transition: width 0.4s; }
-.tb-slide.running .tb-progress, .tb-slide.done .tb-progress { display: block; }
-.tb-slide.running .tb-intro { display: none; }
-.tb-live { opacity: 0.7; font-variant-numeric: tabular-nums; }
-.tb-results p { margin: 0.5vh 0; font-size: 2.1vh; }
-.tb-slide.running .tb-panel { background: rgba(0, 0, 0, 0.55); width: 36vw; }

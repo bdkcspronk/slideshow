@@ -120,18 +120,6 @@ class BieruurTakeover(Takeover):
 		return window[0]
 
 
-class BieruurBlurTestProvider(Provider):
-	"""A test slide, not in the rotation (menu.MENU_ONLY; Esc -> Fun): the bieruur display twice, side by side, without
-	and with motion blur on the falling flaps, playing the last seconds before bieruur and the party over and over
-	(templates/slides/bieruur_blur.html), to see whether the blur makes a difference on the TV."""
-
-	name = "bieruur_blur"
-	title = "Bieruur motion blur test"
-
-	def slides(self, now: datetime) -> list[Slide]:
-		return [Slide("bieruur_blur.html", 600)]
-
-
 class BieruurSong(Job):
 	"""Picks a random song shortly before bieruur and plays it on time. Meanwhile Spotify is turned
 	down (duck(True), e.g. SpotifyProvider.duck), and back up when the song is over (duck(False))."""

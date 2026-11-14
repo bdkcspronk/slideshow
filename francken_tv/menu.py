@@ -35,16 +35,15 @@ GROUPS = [
 	("Committees", ["compucie", "borrelcie", "fotocie", "sjaarscie", "mscie"]),
 	("Contacts", ["confidential", "ero", "extern"]),
 	("Join and buy", ["membership", "socks", "books", "francken-vrij", "francken-vrij-subscribe"]),
-	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine", "three", "three-benchmark", "bieruur-blur", "vrijmibo"]),
+	("Fun", ["pet", "quote", "commandments", "xkcd", "graafmachine", "vrijmibo"]),
 	("Full screen", ["bieruur-countdown", "bieruur"]),
 	("Other", []),
 ]
 # More slides to jump to after a slide type's own (not in the rotation by themselves)
 EXTRA = {"weather": [("rain", "Rain warning")], "spotify": [("spotify-lyrics", "Spotify lyrics")],
 	"puzzles": [("connections", ""), ("wordle", ""), ("catfishing", ""), ("timeguessr", "")]}
-# Slide types that are only in the menu, never in the rotation (the 3D test slide and benchmark: too heavy for the TV PC to show in passing;
-# the bieruur motion blur test)
-MENU_ONLY = ["three", "three_benchmark", "bieruur_blur"]
+# Slide types that are only in the menu, never in the rotation (none right now)
+MENU_ONLY: list[str] = []
 KEYS = {"images": "poster", "event_photos": "event-photo"}   # slide types called differently in GROUPS
 
 

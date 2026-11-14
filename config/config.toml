@@ -186,12 +186,6 @@ seconds = 14   # the questions come at 0.3 s and 2.8 s, the baby and "Join the S
 # The MScie's promo: silhouettes of arms throw black graduation caps in the air once, then "MScie" and its tagline (templates/slides/mscie.html).
 seconds = 14   # the arms swing at 0-1.5 s, the caps are gone by 4.9 s; the name lands at 5.4 s and the tagline at 6.6 s
 
-[three]
-# A graphics test: Three.js scenes from simple to complex (and tests of triangles, shadows and overdraw on their own), each with a frames-per-second readout (templates/slides/three.html).
-# Not in the rotation (too heavy for the TV PC); open it with Esc -> Fun -> "Three.js test". Leave scenes out of the list to skip them.
-seconds = 15
-scenes = ["simple", "medium", "heavy", "shadows", "triangles", "overdraw", "complex"]
-
 [membership]
 # Become a member: what it costs and gives (the text is in templates/slides/membership.html) and a QR code to the form.
 link = "https://professorfrancken.nl/register"
