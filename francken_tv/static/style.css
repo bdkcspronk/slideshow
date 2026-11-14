@@ -165,10 +165,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .photo-caption span { font-size: 2.6vh; opacity: 0.85; }
 
 /* The navy and crimson posters (upcoming activities, news, the activity chart, the leaderboard, books, membership, socks,
-   find us online, streep your food, the Francken Vrij on paper, the Francken pet): soft
+   find us online, streep your food, the Francken Vrij on paper, the Francken pet, the daily puzzles): soft
    glows lie over the navy (.navy-glows) and a title with a crimson
    highlighter behind a word (.poster-marked). */
-.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide, .francken-vrij-slide, .membership-slide, .fotocie-slide, .socks-slide, .socials-slide, .streep-slide, .fvs-slide, .pet-slide {
+.activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide, .francken-vrij-slide, .membership-slide, .fotocie-slide, .socks-slide, .socials-slide, .streep-slide, .fvs-slide, .pet-slide, .puzzles-slide {
 	--px: calc(100vw / 1920);   /* the title drop and the cards' slide-in (practice-drop, practice-ticket, weather-tile) are measured in it; without it their transform is invalid and they only fade */
 	--navy: #0d1f3c;
 	--crimson: #c8102e;
@@ -2447,24 +2447,67 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .lyric-video-progress i { display: block; height: 100%; background: var(--lv-fg); transition: width 0.1s linear; }
 .lyric-video-song small { font-size: 1.6vh; opacity: 0.55; }
 
-/* Daily puzzles: a card per puzzle, two by two, tap one to play. Each card has the game's picture on
-   the left and its name, today's status and Play on the right. */
+/* Daily puzzles, on the navy poster (see "The navy and crimson posters"): a cream card per puzzle, two by two,
+   tap one to play. Each card has the game's picture on the left and its name, today's status and Play on the
+   right. A puzzle that's done for today (solved or lost) is greyed out, so what's left to play stands out. */
 .puzzles-slide {
+	--card: var(--paper);          /* the cards' fill and outline: cream, as the other posters' cards */
+	--card-border: var(--paper);
+	--blue-faint: #ece3cc;         /* pressed or focused card: a darker cream */
+}
+.puzzles-slide .poster-title.steady span, .puzzles-slide .poster-title.steady .poster-marked::before { animation: none; }   /* a tap redraws the slide: the title stays put */
+/* Back from a puzzle ("All puzzles"): another slide was showing, so nothing matches data-steady, but it's a tap, not the
+   show (.redrawn, from player.js): the title, cards and crosses are just there, no entrance again. */
+.puzzles-slide.redrawn :is(.poster-title span, .puzzle-shadow), .puzzles-slide.redrawn :is(.poster-marked, .puzzle-cross i)::before { animation: none; }
+.puzzle-grid {
+	position: relative;
+	flex: 1;
+	min-height: 0;
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	grid-auto-rows: 1fr;
 	gap: 3vh 2.5vw;
-	padding: 6vh 5vw;   /* the same space below the cards as above them */
-	background: var(--bg);
-	color: var(--blue);
-	position: relative;
+	color: var(--navy);
 }
 .puzzle-shadow {   /* the card's shadow and grid cell; the card itself is the button inside, with continuous corners (the clip would cut the shadow off) */
 	display: flex;
 	border-radius: 1.2vw;   /* only shapes the (blurred) shadow */
-	box-shadow: var(--shadow);
+	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
 	transition: transform 0.1s;
+	position: relative;   /* for the cross on a lost card */
 }
+.puzzle-shadow {   /* Show: the cards come up one after another, after the title. On translate, not transform, which
+                     the press and focus use: an entrance on transform would take them over while it runs. */
+	animation: puzzle-card-in 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(0.6s + var(--i) * 0.15s) backwards;
+}
+@keyframes puzzle-card-in { from { opacity: 0; translate: 0 6vh; scale: 0.94; } }
+.puzzle-grid.steady .puzzle-shadow, .puzzle-grid.steady .puzzle-cross i::before { animation: none; }   /* a tap redraws the slide: the cards (and crosses) stay put */
+/* Done for today: faded into the navy, the game's picture in grey. Opacity on the card, not the carrier, so a lost
+   card's cross stays at full strength; its shadow lighter to match. The filter only on the small picture: both are
+   drawn once, nothing moves. Focus still lifts and tints it. */
+.puzzle-shadow.done { box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.18); }
+.puzzle-shadow.done .puzzle-card { opacity: 0.5; }
+.puzzle-shadow.done .puzzle-icon { filter: grayscale(1); }
+.puzzle-shadow.done .puzzle-play { background: var(--muted); }
+.puzzle-shadow.done .puzzle-card:focus-visible { opacity: 1; }   /* selected with the keyboard: full strength, so it can be seen from across the room */
+/* Lost: a big crimson marker cross over the picture, struck in two quick strokes once the card has landed (each wipes
+   out from its start, ease-in-out like a hand swiping). The i turns around its middle; its ::before is the stroke,
+   which grows from one end (its own transform-origin). Taps go through it to the card. */
+.puzzle-cross { position: absolute; left: calc(2vw + 14vh); top: 50%; pointer-events: none; }   /* the middle of the picture (the card's padding + half its 28vh column) */
+.puzzle-cross i { position: absolute; left: -17vh; top: -1.6vh; width: 34vh; height: 3.2vh; rotate: 40deg; }
+.puzzle-cross i + i { rotate: -40deg; }
+.puzzle-cross i::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: 1.6vh;   /* a marker's round ends */
+	background: var(--crimson);
+	box-shadow: 0 0.6vh 1.4vh rgba(0, 0, 0, 0.35);
+	transform-origin: left center;
+	animation: puzzle-strike 0.3s ease-in-out calc(1.5s + var(--i) * 0.15s) backwards;
+}
+.puzzle-cross i + i::before { transform-origin: right center; animation-delay: calc(1.95s + var(--i) * 0.15s); }   /* the second stroke from the other side, after the first */
+@keyframes puzzle-strike { from { scale: 0 1; } }
 .puzzle-shadow:has(.puzzle-card:active) { transform: scale(0.98); }   /* pressed: the whole thing dips, shadow too, or the card would shrink away from it */
 .puzzle-shadow:has(.puzzle-card:focus-visible) { transform: scale(1.02); }   /* keyboard selection lifts the card and its shadow together */
 .puzzle-shadow:has(.puzzle-card.busy) { transform: scale(0.97); }   /* waiting for the answer: dips like a press, on the carrier */
@@ -2522,7 +2565,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .puzzle-icon { display: grid; gap: 0.6vh; height: 23vh; align-content: center; }   /* same height, so the titles line up */
 .puzzle-connections .puzzle-icon { grid-template-columns: repeat(4, 5vh); }
 .puzzle-wordle .puzzle-icon { grid-template-columns: repeat(5, 5vh); }
-.puzzle-icon i { display: block; height: 5vh; border-radius: 0.5vh; }
+.puzzle-icon i { display: block; height: 5vh; border-radius: 0.5vh; font-style: normal; }
 .puzzle-icon .yellow { background: #f9df6d; }
 .puzzle-icon .green { background: #a0c35a; }
 .puzzle-icon .blue { background: #b0c4ef; }
@@ -2530,33 +2573,160 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .puzzle-icon .correct { background: #6aaa64; border-radius: 0; }
 .puzzle-icon .present { background: #c9b458; border-radius: 0; }
 .puzzle-icon .absent { background: #787c7e; border-radius: 0; }
+.puzzle-wordle .puzzle-icon i { display: grid; place-items: center; color: #ffffff; font-size: 2.8vh; font-weight: bold; }
 .puzzle-catfishing .puzzle-icon { grid-template-columns: auto; justify-items: center; }
-.puzzle-icon .tag { height: 4.2vh; border-radius: 2.1vh; background: var(--blue-faint); border: 0.3vh solid var(--blue); }
-.puzzle-icon .tag.w1 { width: 22vh; } .puzzle-icon .tag.w2 { width: 16vh; } .puzzle-icon .tag.w3 { width: 19vh; }
-/* TimeGuessr: a photo (hills under a sky) with a pin on it, and a year. */
-.puzzle-timeguessr .puzzle-icon { grid-template-columns: auto; justify-items: center; }
-.puzzle-icon .photo {
-	position: relative;
-	width: 20vh;
-	height: 13vh;
-	border-radius: 0.8vh;
-	/* The hills' edges change colour over a pixel: a hard gradient edge isn't smoothed and looks jagged. */
-	background:
-		linear-gradient(160deg, transparent calc(55% - 0.6px), #7a9a5b calc(55% + 0.6px)),
-		linear-gradient(200deg, transparent calc(50% - 0.6px), #5e7f45 calc(50% + 0.6px)),
-		#9cc3e0;
+.puzzle-icon .tag, .puzzle-icon .answer {   /* a category (a pill), and the guess under them */
+	display: flex;
+	align-items: center;
+	height: 4.2vh;
+	box-sizing: border-box;
+	padding: 0 1.8vh;
+	border-radius: 2.1vh;
+	background: #ffffff;
+	border: 0.3vh solid var(--blue);
+	color: var(--blue);
+	font-size: 2vh;
+	white-space: nowrap;
 }
-/* The map pin on the photo: an SVG (puzzles.html), so its point and outline stay clean. */
-.puzzle-icon .photo .pin { position: absolute; left: 48%; top: 14%; width: 4.2vh; height: 5.6vh; overflow: visible; }
-.puzzle-icon .photo .pin path { fill: var(--red); stroke: #ffffff; stroke-width: 2.2; stroke-linejoin: round; }
-.puzzle-icon .photo .pin circle { fill: #ffffff; }
-.puzzle-icon .year { height: auto; padding: 0.4vh 1.6vh; border-radius: 2vh; background: var(--blue); color: white; font-style: normal; font-weight: bold; font-size: 2.6vh; }
+.puzzle-icon .answer { margin-top: 0.8vh; border-color: #3f8f4a; background: #3f8f4a; color: #ffffff; font-weight: bold; }
+/* TimeGuessr: a globe with a pin on it, and a year. */
+.puzzle-timeguessr .puzzle-icon { grid-template-columns: auto; justify-items: center; }
+.puzzle-icon .globe { position: relative; width: 15vh; height: 15vh; }   /* the pin and the points sit on it, outside the round clip */
+.puzzle-icon .globe img { display: block; width: 100%; height: 100%; }   /* static/globe.svg: the sea, the land and its shading */
+/* The map pin on the globe: an SVG (puzzles.html), so its point and outline stay clean. */
+.puzzle-icon .globe .pin { position: absolute; left: 48%; top: 14%; width: 4.2vh; height: 5.6vh; overflow: visible; }
+.puzzle-icon .globe .pin path { fill: var(--red); stroke: #ffffff; stroke-width: 2.2; stroke-linejoin: round; }
+.puzzle-icon .globe .pin circle { fill: #ffffff; }
+.puzzle-icon .globe .points {   /* the points for the guess: float up from the pin and away in the demo, not there otherwise */
+	position: absolute;
+	z-index: 1;   /* over the pin (which comes after it) */
+	left: calc(48% + 2.1vh);   /* the pin's middle (left 48%, 4.2vh wide) */
+	bottom: 86%;   /* resting on the pin's head (top 14%) */
+	translate: -50% 0;
+	opacity: 0;
+	padding: 0.3vh 1.2vh;
+	border-radius: 2vh;   /* a capsule: white on its own crimson reads on the globe and on the cream card alike */
+	background: var(--red);
+	color: #ffffff;
+	font-size: 2.4vh;
+	font-weight: bold;
+	white-space: nowrap;
+}
+.puzzle-icon .year { height: 3.6vh; overflow: hidden; padding: 0 1.6vh; border-radius: 2vh; background: var(--blue); color: white; font-style: normal; font-weight: bold; font-size: 2.6vh; line-height: 3.6vh; }
+.puzzle-icon .years { display: block; translate: 0 -75%; }   /* four years one above the other: the last (the guess) shows */
+.puzzle-icon .years b { display: block; }
+/* Each picture plays its game, one card after another (data-puzzle-demos in widgets.js gives the icon .play
+   for a few seconds; only puzzles still to play). Every animation is a one-off with "backwards": before its
+   delay the element waits in its "new game" state, and when it ends the picture is back to how the game ends,
+   which is also how it looks without .play. Only transform and opacity on small elements: cheap on the TV PC. */
+.puzzle-icon.play { animation: demo-clear 0.3s ease-out; }   /* a new game: the finished picture gives way to an empty one */
+@keyframes demo-clear { from { opacity: 0; } }
+/* Connections, as the game goes: the 16 tiles start shuffled under a cream cover. A group at a time, its four tiles
+   are picked one by one (a tap and they go dark), slide into their row while the tiles there swap into the gaps
+   (puzzles.html works out the places), and turn the group's colour with a hop. --start: when the picking of the
+   tile's group (--r) starts, 0.85 s apart. */
+.puzzle-connections .puzzle-icon i { position: relative; z-index: calc(4 - var(--r)); }   /* the group moving into its row passes over the tiles it swaps with (earlier groups are in place by then) */
+.puzzle-connections .puzzle-icon i::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: #e3dcc8; opacity: 0; }
+.puzzle-connections .puzzle-icon.play i {
+	--start: calc(0.5s + var(--r) * 0.85s);
+	animation:
+		demo-shuffle 4s ease-in-out backwards,   /* every tile's places, the same timeline for all (the stages in the keyframes) */
+		demo-tap 0.2s ease-out calc(var(--start) + var(--k) * 0.13s),   /* the last dip is over (0.59 s) before the slide (0.6 s) */
+		demo-hop 0.35s ease-out calc(var(--start) + 0.95s);
+}
+.puzzle-connections .puzzle-icon.play i::after {
+	animation:
+		demo-select 0.1s ease-out calc(var(--start) + var(--k) * 0.13s) both,   /* dark once picked, and stays dark ("both")... */
+		demo-reveal 0.2s ease-out calc(var(--start) + 0.95s) backwards;   /* ...until the cover goes once the tiles are in their row */
+}
+/* Group s slides at 1.1 s + s * 0.85 s for 0.35 s (27.5% of 4 s, then every 0.85 s = 21.25%), the start of its picking
+   + 0.6 s. A place is a tile and its gap: 5.6vh (.puzzle-connections .puzzle-icon). */
+@keyframes demo-shuffle {
+	0%, 27.5% { translate: calc(var(--x0) * 5.6vh) calc(var(--y0) * 5.6vh); }
+	36.25%, 48.75% { translate: calc(var(--x1) * 5.6vh) calc(var(--y1) * 5.6vh); }
+	57.5%, 70% { translate: calc(var(--x2) * 5.6vh) calc(var(--y2) * 5.6vh); }
+	78.75%, 91.25% { translate: calc(var(--x3) * 5.6vh) calc(var(--y3) * 5.6vh); }
+	100% { translate: 0 0; }
+}
+@keyframes demo-tap { 50% { scale: 0.86; } }
+@keyframes demo-hop { 50% { scale: 1.1; } }
+@keyframes demo-select { from { background: #e3dcc8; } to { background: #5a594e; } }
+@keyframes demo-reveal { from { opacity: 1; } }
+/* Wordle: each row is typed letter by letter into white tiles, then flips tile by tile to show its colours. The
+   white face is the ::after with the letter (data-l); it goes at the middle of the flip, when the tile is edge-on. */
+.puzzle-wordle .puzzle-icon i { position: relative; }
+.puzzle-wordle .puzzle-icon i::after {
+	content: attr(data-l);
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	box-sizing: border-box;
+	border: 0.3vh solid #878a8c;
+	background: #ffffff;
+	color: #1a1a1b;
+	opacity: 0;
+}
+.puzzle-wordle .puzzle-icon.play i {
+	--type: calc(0.3s + var(--r) * 2s + var(--c) * 0.1s);
+	--flip: calc(1s + var(--r) * 2s + var(--c) * 0.2s);
+	animation: demo-flip 0.45s ease-in-out var(--flip) backwards;
+}
+.puzzle-wordle .puzzle-icon.play i::after { animation: demo-type 0.12s ease-out var(--type) backwards, demo-face 0.45s linear var(--flip) backwards; }
+@keyframes demo-flip { 50% { transform: rotateX(90deg); animation-timing-function: ease-out; } }
+@keyframes demo-type {   /* no letter yet (what "backwards" holds until it's typed), then it lands and the tile pops a little */
+	0% { color: transparent; }
+	1% { color: #1a1a1b; scale: 1.15; }
+}
+@keyframes demo-face { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }   /* gone at the edge-on moment */
+/* Catfishing: an article's categories come in one by one, then the guess, right. */
+.puzzle-catfishing .puzzle-icon.play .tag { animation: demo-pop 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.3) calc(0.5s + var(--c) * 0.8s) backwards; }
+.puzzle-catfishing .puzzle-icon.play .answer { animation: demo-pop 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.3) 3.2s backwards; }
+@keyframes demo-pop { from { opacity: 0; scale: 0.9; } }   /* fades in from just a little smaller, never from tiny */
+/* TimeGuessr, as someone guesses: first the place, then the year. The globe, then the pin falls in (ease-in: gravity),
+   hops to another spot and another while they make up their mind, and settles (2.2 s). Then the year pops up and rolls
+   through guesses (as the year slider is dragged) to 1969, and the points float up from the pin. */
+.puzzle-timeguessr .puzzle-icon.play .globe { animation: demo-pop 0.5s ease-out 0.2s backwards; }
+.puzzle-timeguessr .puzzle-icon.play .pin { animation: demo-pin 2s 0.5s backwards; }
+.puzzle-timeguessr .puzzle-icon.play .year { animation: demo-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) 2.3s backwards; }
+.puzzle-timeguessr .puzzle-icon.play .years { animation: demo-years 1.3s ease-in-out 2.3s backwards; }
+.puzzle-timeguessr .puzzle-icon.play .points { animation: demo-points 0.8s ease-out 3.6s; }
+@keyframes demo-pin {   /* the first spot is left of where it ends, the second right of and below it: the point always on the globe */
+	0% { opacity: 0; translate: -6vh -9vh; animation-timing-function: ease-in; }
+	6% { opacity: 1; }
+	17.3% { translate: -6vh 3vh; scale: 1 1; animation-timing-function: ease-out; }
+	21.2% { scale: 1.15 0.8; }   /* the landing squashes it */
+	25%, 34.6% { scale: 1 1; translate: -6vh 3vh; animation-timing-function: ease-in-out; }
+	42.3% { translate: -1vh 0.5vh; scale: 1.1; }   /* picked up while it moves */
+	50%, 61.5% { translate: 4vh 2.5vh; scale: 1; animation-timing-function: ease-in-out; }
+	69.2% { translate: 2vh -0.5vh; scale: 1.1; }
+	76.9% { translate: 0 0; scale: 1 1; animation-timing-function: ease-out; }
+	80.8% { scale: 1.1 0.88; }
+	84.6%, 100% { translate: 0 0; scale: 1 1; }
+}
+@keyframes demo-years {   /* a quick roll to each next year, a moment on it */
+	0%, 15% { translate: 0 0; }
+	28%, 45% { translate: 0 -25%; }
+	58%, 75% { translate: 0 -50%; }
+	88%, 100% { translate: 0 -75%; }
+}
+@keyframes demo-points { 0% { opacity: 0; translate: -50% 1vh; } 20%, 60% { opacity: 1; } 100% { opacity: 0; translate: -50% -4vh; } }
+.puzzle-icon .globe .pin { transform-origin: 50% 100%; }   /* squashes on its point */
+/* Waiting for the first turn (.held, from widgets.js): Connections and Wordle already show the new game (cream tiles,
+   empty tiles): their animations are there but paused before their delay, so "backwards" holds the first frame.
+   Catfishing and TimeGuessr would be blank, so they keep their picture. On the first turn of Connections and Wordle
+   nothing gives way (.fresh): their board is already empty; the other two fade to blank as on every turn. These come
+   after the .play rules: same or higher specificity, so they win. */
+.puzzle-connections .puzzle-icon.fresh, .puzzle-wordle .puzzle-icon.fresh { animation: none; }
+.puzzle-connections .puzzle-icon.held i, .puzzle-connections .puzzle-icon.held i::after,
+.puzzle-wordle .puzzle-icon.held i, .puzzle-wordle .puzzle-icon.held i::after { animation-play-state: paused; }
+.puzzle-catfishing .puzzle-icon.play.held :is(.tag, .answer),
+.puzzle-timeguessr .puzzle-icon.play.held :is(.globe, .pin, .year, .years, .points) { animation: none; }
 .puzzle-title { font-size: 4.2vh; font-weight: bold; letter-spacing: 0.2vh; text-transform: uppercase; }
 .puzzle-status { font-size: 3.4vh; color: var(--muted); }
-.status-solved .puzzle-status { color: var(--blue-light); font-weight: bold; }
+.status-solved .puzzle-status { color: var(--blue-light); font-weight: bold; }   /* (on a greyed-out card, see .puzzle-shadow.done) */
 .status-playing .puzzle-status { color: var(--red-dark); font-weight: bold; }
 .status-lost .puzzle-status { color: var(--muted); font-weight: bold; }
-.puzzle-status small { display: block; margin-top: 0.6vh; font-size: 2.4vh; font-weight: normal; color: var(--muted); }   /* the high score */
 /* Under a finished game's score: the high score, or a celebration when it was just beaten. */
 .puzzle-highscore { margin: -1vh 0 2.5vh; font-size: 2.8vh; color: var(--muted); }
 .puzzle-highscore.new { font-size: 3.6vh; font-weight: bold; color: var(--red-dark); animation: highscore-pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) 0.4s both; }

@@ -32,7 +32,7 @@ class PuzzlesHubTest(unittest.TestCase):
 	def test_status_of_each_puzzle(self):
 		hub, connections, wordle = make_hub()
 		hub.refresh(NOW)
-		self.assertEqual(statuses(hub), {"connections": ("new", "Not tried yet"), "wordle": ("new", "Not tried yet")})
+		self.assertEqual(statuses(hub), {"connections": ("new", ""), "wordle": ("new", "")})
 		connections.action("submit", group(0), NOW)
 		wordle.action("submit", ["SLATE"], NOW)
 		self.assertEqual(statuses(hub), {"connections": ("playing", "1 of 4 groups found"), "wordle": ("playing", "1 of 6 guesses used")})
@@ -61,12 +61,12 @@ class PuzzlesHubTest(unittest.TestCase):
 		with TemporaryDirectory() as folder:
 			path = Path(folder) / "highscores.json"
 			scores = HighScores(path)
-			self.assertEqual(scores.text("timeguessr"), "")   # none yet
+			self.assertIsNone(scores.best("timeguessr"))   # none yet
 			self.assertTrue(scores.record("timeguessr", 31000, date(2026, 10, 14)))
 			self.assertFalse(scores.record("timeguessr", 25000, date(2026, 10, 15)))   # lower: the old one stays
 			self.assertFalse(scores.record("timeguessr", 31000, date(2026, 10, 16)))   # as high: the first one stays
 			again = HighScores(path)   # after a restart
-			self.assertEqual(again.text("timeguessr"), "Highscore: 31,000 \u00b7 14 Oct")
+			self.assertEqual(again.best("timeguessr")["score"], 31000)
 			self.assertEqual(again.best("timeguessr", date(2026, 10, 14))["new"], True)   # set by that day's game
 			self.assertEqual(again.best("timeguessr", date(2026, 10, 15))["new"], False)
 

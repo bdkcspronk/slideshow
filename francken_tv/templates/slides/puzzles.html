@@ -1,27 +1,59 @@
 {#
-	The Daily puzzles slide: one card per puzzle, two by two. Tapping a half sends "open" to
+	The Daily puzzles slide, on the navy and crimson poster: one cream card per puzzle, two by two; a
+	puzzle that's done for today (solved or lost) is greyed out. Tapping a card sends "open" to
 	PuzzlesProvider.action() in providers/puzzles.py, which returns that puzzle's slide.
+	The pictures show how each game goes: one card after another (data-puzzle-demos in widgets.js gives
+	the next one .play), only the puzzles still to play. The CSS animations are in style.css
+	("Each picture plays its game"); without .play a picture shows how its game ends.
 #}
 <div class="slide puzzles-slide" data-interactive data-idle-seconds="240" data-provider="puzzles">
+	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<h1 class="poster-title" data-steady="puzzles-title"><span>Daily</span> <span class="poster-marked">puzzles</span></h1>
+	<div class="puzzle-grid" data-steady="puzzles-grid" data-puzzle-demos="4.7">
 	{% for card in cards %}
-	<div class="puzzle-shadow">   {# the card's shadow (the clip on the button would cut it off) #}
+	<div class="puzzle-shadow{% if card.state in ['solved', 'lost'] %} done{% endif %}" style="--i: {{ loop.index0 }}">   {# the card's shadow (the clip on the button would cut it off) #}
 	<button class="puzzle-card squircle squircle-edge puzzle-{{ card.name }} status-{{ card.state }}"{% if loop.first %} data-autofocus{% endif %} data-action="open" data-value="{{ card.name }}">
 		{# A small picture of each game, in its own colours. #}
-		<span class="puzzle-icon" aria-hidden="true">
+		<span class="puzzle-icon" aria-hidden="true"{% if card.state not in ['solved', 'lost'] %} data-demo{% endif %}>
 			{% if card.name == "connections" %}
-			{% for colour in ["yellow", "green", "blue", "purple"] %}<i class="{{ colour }}"></i><i class="{{ colour }}"></i><i class="{{ colour }}"></i><i class="{{ colour }}"></i>{% endfor %}
+			{# The tiles in their final places (a group per row). In the demo they start shuffled and a group at a time is
+			   picked, slides into its row (the tiles there swap into the gaps, as on the NYT site) and shows its colour.
+			   --x<s>/--y<s>: how many places left/right and up/down of its final place a tile is before group s is
+			   solved; --k: the order in which the tiles of a group are picked. #}
+			{% set moves = [
+				"--k: 0; --x0: 3; --y0: 2; --x1: 0; --y1: 0; --x2: 0; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 1; --x0: 1; --y0: 2; --x1: 0; --y1: 0; --x2: 0; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 2; --x0: 0; --y0: 3; --x1: 0; --y1: 0; --x2: 0; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 3; --x0: -3; --y0: 0; --x1: 0; --y1: 0; --x2: 0; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 0; --x0: 2; --y0: 0; --x1: 2; --y1: 0; --x2: 0; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 1; --x0: 2; --y0: 0; --x1: 2; --y1: 0; --x2: 0; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 2; --x0: -1; --y0: 2; --x1: -1; --y1: 2; --x2: 0; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 3; --x0: -1; --y0: -1; --x1: -1; --y1: 2; --x2: 0; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 0; --x0: 1; --y0: 0; --x1: 1; --y1: 0; --x2: 1; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 1; --x0: 2; --y0: -2; --x1: 2; --y1: 0; --x2: 2; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 2; --x0: 1; --y0: 1; --x1: 1; --y1: 1; --x2: 1; --y2: 1; --x3: 0; --y3: 0",
+				"--k: 3; --x0: -2; --y0: -1; --x1: -2; --y1: -1; --x2: -1; --y2: 1; --x3: 0; --y3: 0",
+				"--k: 0; --x0: 0; --y0: -1; --x1: 0; --y1: -1; --x2: 0; --y2: -1; --x3: 2; --y3: 0",
+				"--k: 1; --x0: -1; --y0: -2; --x1: -1; --y1: -2; --x2: 0; --y2: 0; --x3: 0; --y3: 0",
+				"--k: 2; --x0: -1; --y0: -3; --x1: 0; --y1: -1; --x2: 0; --y2: -1; --x3: 1; --y3: 0",
+				"--k: 3; --x0: -3; --y0: 0; --x1: -3; --y1: 0; --x2: -3; --y2: 0; --x3: -3; --y3: 0"] %}
+			{% for colour in ["yellow", "green", "blue", "purple"] %}{% set row = loop.index0 %}{% for k in range(4) %}<i class="{{ colour }}" style="--r: {{ row }}; {{ moves[row * 4 + k] }}"></i>{% endfor %}{% endfor %}
 			{% elif card.name == "wordle" %}
-			{% for state in ["absent", "present", "absent", "correct", "absent", "correct", "correct", "correct", "correct", "correct"] %}<i class="{{ state }}"></i>{% endfor %}
+			{# the guess STONE, then the answer PLANT: typed, then flipped tile by tile (data-l: the letter on the tile before it flips) #}
+			{% for letter, state in [("S", "absent"), ("T", "present"), ("O", "absent"), ("N", "correct"), ("E", "absent"), ("P", "correct"), ("L", "correct"), ("A", "correct"), ("N", "correct"), ("T", "correct")] %}<i class="{{ state }}" data-l="{{ letter }}" style="--r: {{ loop.index0 // 5 }}; --c: {{ loop.index0 % 5 }}">{{ letter }}</i>{% endfor %}
 			{% elif card.name == "catfishing" %}
-			<i class="tag w1"></i><i class="tag w2"></i><i class="tag w3"></i>
+			{# an article's categories, then the guess #}
+			<i class="tag" style="--c: 0">English rock bands</i><i class="tag" style="--c: 1">Liverpool</i><i class="tag" style="--c: 2">Formed in 1960</i><i class="answer">The Beatles &#10003;</i>
 			{% elif card.name == "timeguessr" %}
-			<i class="photo"><svg class="pin" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 30.5S21.5 19.6 21.5 12a9.5 9.5 0 0 0-19 0c0 7.6 9.5 18.5 9.5 18.5z"/><circle cx="12" cy="12" r="3.6"/></svg></i><i class="year">1969</i>
+			<i class="globe"><img src="/static/globe.svg" alt=""><b class="points">+4,850</b><svg class="pin" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 30.5S21.5 19.6 21.5 12a9.5 9.5 0 0 0-19 0c0 7.6 9.5 18.5 9.5 18.5z"/><circle cx="12" cy="12" r="3.6"/></svg></i><i class="year"><span class="years"><b>1920</b><b>1984</b><b>1958</b><b>1969</b></span></i>   {# the guesses for the year, the last one stays #}
 			{% endif %}
 		</span>
 		<span class="puzzle-title">{{ card.title }}</span>
-		<span class="puzzle-status">{% if card.state == "solved" %}&#10003; {% endif %}{{ card.status }}{% if card.best %}<small>{{ card.best }}</small>{% endif %}</span>
+		{% if card.status %}<span class="puzzle-status">{% if card.state == "solved" %}&#10003; {% endif %}{{ card.status }}</span>{% endif %}   {# none for a puzzle not tried yet; no high score here: that shows when a game is finished #}
 		<span class="puzzle-play">{{ "View" if card.state in ["solved", "lost"] else "Play" }}</span>
 	</button>
+	{% if card.state == "lost" %}<span class="puzzle-cross" aria-hidden="true"><i></i><i></i></span>{% endif %}   {# outside the button: its clip would cut the cross off #}
 	</div>
 	{% endfor %}
+	</div>
 </div>

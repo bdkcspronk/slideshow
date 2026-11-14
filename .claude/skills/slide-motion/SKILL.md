@@ -74,8 +74,9 @@ entrance segment its own curve:
 }
 ```
 
-**Nothing appears from nothing.** Start entrances at `scale(0.6-0.96)` with `opacity: 0`, not `scale(0)`,
-except for small things that really pop (confetti, the pet's pop-ups).
+**Nothing appears from nothing.** Something that fades in starts at `scale(0.9-0.95)` with `opacity: 0`: just
+a little smaller, never tiny (`scale(0.6)`) or `scale(0)`. Only small things that really pop without fading
+(confetti, the pet's pop-ups) may start smaller.
 
 ## The Use rules
 
@@ -144,6 +145,14 @@ entrances replay, so a tap can empty the screen and rebuild it, which is the wor
   pseudo-element, add a rule for them:
   ```css
   .news-slide .poster-title.steady span, .news-feeds.steady li { animation: none; }
+  ```
+- `data-steady` only matches when the *same* slide is drawn again. A tap that brings in another slide (back
+  from a puzzle to the puzzles overview with "All puzzles", an article back to the news) has nothing to match,
+  so every entrance replays. Every slide drawn after a tap gets `.redrawn` on its root (`redraw()` in
+  `player.js`): stop its Show entrances with that, children and pseudo-elements too, and start any widget
+  timers soon instead of after the entrance (`element.closest(".redrawn")`):
+  ```css
+  .puzzles-slide.redrawn :is(.poster-title span, .puzzle-shadow), .puzzles-slide.redrawn :is(.poster-marked, .puzzle-cross i)::before { animation: none; }
   ```
 - Content that really changes (new headlines, new results) may come in again, but as Use motion: no
   initial delay, short stagger, short duration:

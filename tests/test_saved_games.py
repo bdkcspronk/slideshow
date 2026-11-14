@@ -73,12 +73,12 @@ class SavedGamesTest(unittest.TestCase):
 
 	def test_yesterdays_game_is_not_restored(self):
 		self.restart(wordle, "wordle").action("submit", ["SLATE"], NOW)
-		self.assertEqual(self.restart(wordle, "wordle", TOMORROW).status(TOMORROW).text, "Not tried yet")
+		self.assertEqual(self.restart(wordle, "wordle", TOMORROW).status(TOMORROW).state, "new")
 
 	def test_unreadable_file_starts_a_new_game(self):
 		(self.dir / "wordle.json").write_text("{not json")
 		with self.assertLogs("francken_tv.providers.puzzles", "WARNING"):
-			self.assertEqual(self.restart(wordle, "wordle").status(NOW).text, "Not tried yet")
+			self.assertEqual(self.restart(wordle, "wordle").status(NOW).state, "new")
 
 
 if __name__ == "__main__":

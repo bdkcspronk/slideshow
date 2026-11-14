@@ -151,7 +151,7 @@ class ConnectionsProvider(Provider):
 			return PuzzleStatus("lost", f"Lost: {len(game.found)} of 4 groups found")
 		if game.found or game.mistakes:
 			return PuzzleStatus("playing", f"{len(game.found)} of 4 groups found")
-		return PuzzleStatus("new", "Not tried yet")
+		return PuzzleStatus("new", "")   # nothing to say: the card shows Play
 
 	def slides(self, now: datetime, selected: list[str] | None = None, shake: bool = False,
 			new_group: int | None = None, message: str | None = None, revealed: bool = False) -> list[Slide]:

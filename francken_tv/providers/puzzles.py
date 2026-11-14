@@ -26,8 +26,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class PuzzleStatus:
 	state: str     # "new", "playing", "solved" or "lost"
-	text: str      # e.g. "2 of 4 groups"
-	best: str = ""   # the high score, for puzzles with points (e.g. "Highscore: 9,812 · 14 Oct")
+	text: str      # e.g. "2 of 4 groups"; "" for a puzzle not tried yet
 
 
 class HighScores:
@@ -65,9 +64,6 @@ class HighScores:
 		day = date.fromisoformat(best["day"])
 		return {"score": best["score"], "day": day, "new": day == game_day}
 
-	def text(self, name: str) -> str:
-		best = self.best(name)
-		return f"Highscore: {best['score']:,} \u00b7 {best['day'].day} {best['day']:%b}" if best else ""
 
 
 def load_state(path: Path | None, day: date) -> dict | None:
@@ -119,7 +115,7 @@ class PuzzlesProvider(Provider):
 		for puzzle in self.puzzles:
 			status = puzzle.status(now)
 			if status is not None:   # None: today's puzzle couldn't be downloaded
-				cards.append({"name": puzzle.name, "title": puzzle.title, "state": status.state, "status": status.text, "best": status.best})
+				cards.append({"name": puzzle.name, "title": puzzle.title, "state": status.state, "status": status.text})
 		return cards
 
 	def overview(self, now: datetime) -> Slide | None:

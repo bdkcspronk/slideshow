@@ -144,7 +144,7 @@ class WordleProvider(Provider):
 			return PuzzleStatus("lost", "Lost: out of guesses")
 		if count:
 			return PuzzleStatus("playing", f"{count} of {MAX_GUESSES} guesses used")
-		return PuzzleStatus("new", "Not tried yet")
+		return PuzzleStatus("new", "")   # nothing to say: the card shows Play
 
 	def slides(self, now: datetime, typed: str = "", shake: bool = False, new_row: int | None = None,
 			message: str | None = None) -> list[Slide]:

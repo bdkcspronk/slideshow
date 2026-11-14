@@ -108,7 +108,7 @@ class ProviderTest(unittest.TestCase):
 		self.assertTrue(self.provider.photos[0].image.startswith("/files/"))
 
 	def test_status_and_saved_game(self):
-		self.assertEqual(self.provider.status(NOW).text, "Not tried yet")
+		self.assertEqual(self.provider.status(NOW).state, "new")
 		slide, message = self.provider.action("guess", [BERLIN, "1970"], NOW)
 		self.assertEqual((slide.template, message), ("timeguessr.html", None))
 		self.assertEqual(self.provider.status(NOW).state, "playing")
@@ -124,7 +124,7 @@ class ProviderTest(unittest.TestCase):
 		self.assertTrue(self.provider.game.done)
 		best = slide.data["highscore"]
 		self.assertEqual((best["score"], best["new"]), (self.provider.game.score, True))
-		self.assertTrue(self.provider.status(NOW).best.startswith("Highscore: "))
+		self.assertEqual(self.provider.highscores.best("timeguessr")["score"], self.provider.game.score)
 
 	def test_the_high_score_counts_without_pressing_next_after_the_last_photo(self):
 		for number in range(5):
@@ -134,7 +134,7 @@ class ProviderTest(unittest.TestCase):
 		self.assertFalse(self.provider.game.done)   # the last answer is still on screen...
 		status = self.provider.status(NOW)
 		self.assertEqual(status.state, "solved")   # ...but the overview counts it
-		self.assertTrue(status.best.startswith(f"Highscore: {self.provider.game.score:,}"))
+		self.assertEqual(self.provider.highscores.best("timeguessr")["score"], self.provider.game.score)
 
 	def test_slide_data(self):
 		[slide] = self.provider.slides(NOW)

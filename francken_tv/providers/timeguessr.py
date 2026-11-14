@@ -255,12 +255,11 @@ class TimeGuessrProvider(Provider):
 			return None
 		total = MAX_POINTS * 2 * len(game.photos)
 		self.check_highscore(game, now)
-		best = self.highscores.text(self.name)
 		if game.all_guessed:
-			return PuzzleStatus("solved", f"Done: {game.score:,} of {total:,} points", best)
+			return PuzzleStatus("solved", f"Done: {game.score:,} of {total:,} points")
 		if game.guesses:
-			return PuzzleStatus("playing", f"{len(game.guesses)} of {len(game.photos)} photos · {game.score:,} points", best)
-		return PuzzleStatus("new", "Not tried yet", best)
+			return PuzzleStatus("playing", f"{len(game.guesses)} of {len(game.photos)} photos · {game.score:,} points")
+		return PuzzleStatus("new", "")   # nothing to say: the card shows Play
 
 	def check_highscore(self, game: Game, now: datetime) -> None:
 		if game.all_guessed:

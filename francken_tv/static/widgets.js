@@ -37,6 +37,8 @@
 // - data-play-at-start: a <video> that plays from the start of its slide, also while it is out of view
 //   (a post further down the Instagram feed): the browser holds back a video with the autoplay
 //   attribute until it is on screen. startVideos() is called when the slide is drawn and again when it fades in.
+// - data-puzzle-demos: the daily puzzles' cards take turns showing how their game goes: every data-puzzle-demos
+//   seconds the next [data-demo] (a puzzle still to play) gets .play, and the CSS animations play once (style.css).
 
 const maps = new Set();
 
@@ -60,6 +62,7 @@ function setupWidgets(root) {
 	root.querySelectorAll("canvas[data-books-3d]").forEach(setupBooks3d);
 	root.querySelectorAll("canvas[data-bieruur-3d]").forEach(setupBieruur3d);
 	root.querySelectorAll("canvas[data-instagram-3d]").forEach(setupInstagram3d);
+	root.querySelectorAll("[data-puzzle-demos]").forEach(setupPuzzleDemos);
 	startVideos(root);
 	root.querySelectorAll("input[type=range][data-field]").forEach((input) => {
 		input.addEventListener("input", () => fieldChanged(input));
@@ -570,6 +573,29 @@ function setupMatrix(canvas) {
 		});
 	};
 	requestAnimationFrame(frame);
+}
+
+function setupPuzzleDemos(element) {
+	const demos = [...element.querySelectorAll("[data-demo]")];
+	if (!demos.length) return;   // every puzzle done: nothing to show off
+	const seconds = Number(element.dataset.puzzleDemos) || 4.7;
+	// Until its first turn each waits on its new game (.held: the animations paused before they start, see style.css).
+	for (const demo of demos) demo.classList.add("play", "held", "fresh");
+	let turn = 0;
+	const play = () => {
+		if (!document.contains(element)) return;   // the slide is gone
+		const demo = demos[turn++ % demos.length];
+		if (demo.classList.contains("held")) {
+			demo.classList.remove("held");   // its first turn: the paused animations carry on from the start
+		} else {
+			for (const other of demos) if (!other.classList.contains("held")) other.classList.remove("play", "fresh");
+			void demo.offsetWidth;   // with one demo left: lets it start over instead of carrying on
+			demo.classList.add("play");
+		}
+		setTimeout(play, seconds * 1000);
+	};
+	// Once the first card has come in (four turns then fill the 20 s slide); back from a puzzle (.redrawn) nothing comes in, so soon.
+	setTimeout(play, element.closest(".redrawn") ? 300 : 1200);
 }
 
 function setupDecode(element) {

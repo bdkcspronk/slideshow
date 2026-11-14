@@ -91,7 +91,7 @@ class CatfishingGameTest(unittest.TestCase):
 		self.assertEqual(data["game"].score, 0)   # undo
 
 	def test_whole_game_and_status(self):
-		self.assertEqual(self.provider.status(NOW).text, "Not tried yet")
+		self.assertEqual(self.provider.status(NOW).state, "new")
 		self.act("submit", "beatles")
 		self.act("next")
 		self.assertEqual(self.provider.status(NOW).text, "1 of 10 answered · 2 points")
@@ -109,7 +109,7 @@ class CatfishingGameTest(unittest.TestCase):
 			self.act("skip")
 			data, _ = self.act("next")
 		self.assertEqual((data["highscore"]["score"], data["highscore"]["new"]), (2, True))
-		self.assertEqual(self.provider.status(NOW).best, "Highscore: 2 \u00b7 14 Oct")
+		self.assertEqual(self.provider.highscores.best("catfishing")["score"], 2)
 
 	def test_empty_guess_is_not_an_answer(self):
 		data, message = self.act("submit", "   ")
@@ -140,7 +140,7 @@ class CatfishingArchiveTest(unittest.TestCase):
 		self.assertEqual((slide.data["today"], slide.data["day_label"]), (False, "14 Sep 2026"))
 		self.act("submit", "beatles")
 		self.act("next")
-		self.assertEqual(self.provider.status(NOW).text, "Not tried yet")   # today's game is untouched
+		self.assertEqual(self.provider.status(NOW).state, "new")   # today's game is untouched
 		later = self.new_provider()   # e.g. after a restart
 		self.provider = later
 		slide = self.act("open_day", "2026-09-14")
@@ -152,7 +152,7 @@ class CatfishingArchiveTest(unittest.TestCase):
 		for _ in range(10):
 			self.act("submit", "beatles")
 			self.act("next")
-		self.assertEqual(self.provider.highscores.text("catfishing"), "")
+		self.assertIsNone(self.provider.highscores.best("catfishing"))
 
 	def test_calendar_shows_done_and_started_days(self):
 		self.act("open_day", "2026-10-01")

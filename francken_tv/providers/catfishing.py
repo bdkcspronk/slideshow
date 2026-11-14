@@ -271,13 +271,12 @@ class CatfishingProvider(Provider):
 			return None
 		total = 2 * len(game.articles)
 		self.check_highscore(game)   # e.g. a game finished before the slideshow restarted
-		best = self.highscores.text(self.name)
 		if game.done:
-			return PuzzleStatus("solved", f"Done: {game.score} of {total} points", best)
+			return PuzzleStatus("solved", f"Done: {game.score} of {total} points")
 		if game.answers:
 			points = "point" if game.score == 1 else "points"
-			return PuzzleStatus("playing", f"{len(game.answers)} of {len(game.articles)} answered · {game.score} {points}", best)
-		return PuzzleStatus("new", "Not tried yet", best)
+			return PuzzleStatus("playing", f"{len(game.answers)} of {len(game.articles)} answered · {game.score} {points}")
+		return PuzzleStatus("new", "")   # nothing to say: the card shows Play
 
 	def check_highscore(self, game: Game) -> bool | None:
 		"""Today's game, once finished, counts for the high score (an archive day doesn't)."""
