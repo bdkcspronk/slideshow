@@ -2569,6 +2569,27 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 /* Tapped: the photo fills the screen; tapping again shrinks it. */
 .timeguessr-photo.selected { position: absolute; inset: 0; z-index: 5; border-radius: 0; touch-action: none; }   /* fingers zoom the photo, not the page */
 .timeguessr-photo.zoomed .zoom-view { cursor: grab; }
+/* The hint on the photo, as the map's: that tapping enlarges it, and full screen that tapping again goes
+   back. Bottom left, clear of the zoom buttons; taps go through it to the photo. No animation: the
+   text simply changes with the tap, the photo's own change is the response. */
+.timeguessr-photo-hint {
+	position: absolute;
+	left: 1.5vh;
+	bottom: 1.5vh;
+	z-index: 1;
+	padding: 0.8vh 1.4vw;
+	border-radius: 3vh;   /* a pill: capsules keep round ends */
+	background: rgba(23, 50, 73, 0.88);
+	color: white;
+	font-size: 2.2vh;
+	white-space: nowrap;
+	pointer-events: none;
+}
+.timeguessr-photo { position: relative; }   /* the hint's corner (full screen it's absolute already) */
+.timeguessr-photo.selected .timeguessr-photo-hint { left: 2vw; bottom: 3vh; font-size: 2.6vh; }   /* level with the zoom buttons */
+.timeguessr-photo-hint .when-full, .timeguessr-photo.selected .timeguessr-photo-hint .when-small { display: none; }
+.timeguessr-photo.selected .timeguessr-photo-hint .when-full { display: inline; }
+.timeguessr-photo:has(figcaption):not(.selected) .timeguessr-photo-hint { bottom: 5vh; }   /* above the credit, with the answer */
 /* Zoom buttons: only while full screen, in the bottom-right corner. */
 .zoom-buttons { display: none; position: absolute; right: 2vw; bottom: 3vh; gap: 1vw; z-index: 1; }
 .timeguessr-photo.selected .zoom-buttons { display: flex; }

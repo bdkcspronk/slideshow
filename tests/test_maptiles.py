@@ -3,7 +3,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from francken_tv.maptiles import TileCache
+import json
+
+import requests
+
+from francken_tv.maptiles import RETRY_SECONDS, GoogleTiles, TileCache
 
 
 class FakeResponse:
@@ -64,6 +68,73 @@ class TileCacheTest(unittest.TestCase):
 		self.assertEqual(most, PARALLEL_DOWNLOADS)
 		self.assertEqual(len(list(Path(self.folder.name).rglob("*.png"))), 20)   # all fetched
 		self.assertEqual(self.tiles.session.get_adapter("https://tile.openstreetmap.org").poolmanager.connection_pool_kw["maxsize"], PARALLEL_DOWNLOADS)
+
+
+
+class GoogleResponse:
+	def __init__(self, status_code=200, data=None, content=b"png"):
+		self.status_code, self.content, self.data = status_code, content, data or {}
+		self.headers = {"Content-Type": "image/png", "Cache-Control": "private, max-age=3600"}
+
+	def json(self):
+		return self.data
+
+	def raise_for_status(self):
+		if self.status_code >= 400:
+			raise requests.HTTPError(f"{self.status_code}")
+
+
+class GoogleTilesTest(unittest.TestCase):
+	def setUp(self):
+		folder = tempfile.TemporaryDirectory()
+		self.addCleanup(folder.cleanup)
+		self.usage = Path(folder.name) / "google_tiles.json"
+		self.now = 1_794_600_000.0   # November 2026
+		self.google = GoogleTiles("KEY", self.usage, monthly_limit=3, clock=lambda: self.now)
+		self.post = mock.patch.object(self.google.session, "post",
+			return_value=GoogleResponse(data={"session": "S", "expiry": str(self.now + 14 * 86400)})).start()
+		self.get = mock.patch.object(self.google.session, "get", side_effect=self.answer).start()
+		self.addCleanup(mock.patch.stopall)
+		self.tile_status = 200
+
+	def answer(self, url, params, timeout):
+		if "viewport" in url:
+			return GoogleResponse(data={"copyright": "Map data ©2026 Google"})
+		return GoogleResponse(self.tile_status)
+
+	def test_a_tile_in_english(self):
+		self.assertEqual(self.google.get(3, 4, 2), (b"png", "image/png", "private, max-age=3600"))
+		self.assertEqual(self.post.call_args.kwargs["json"]["language"], "en-US")
+		self.assertEqual(self.get.call_args.args[0], "https://tile.googleapis.com/v1/2dtiles/3/4/2")
+		self.assertEqual(self.google.attribution, "Map data ©2026 Google")
+		self.google.get(3, 4, 3)
+		self.assertEqual(self.post.call_count, 1)   # the session is reused
+
+	def test_openstreetmap_once_the_months_tiles_are_used(self):
+		for x in range(3):
+			self.assertIsNotNone(self.google.get(2, x, 0))
+		self.assertFalse(self.google.usable())
+		self.assertIsNone(self.google.get(2, 3, 0))
+		self.assertIn("used up", self.google.warnings()[0])
+		self.assertEqual(json.loads(self.usage.read_text()), {"month": "2026-11", "tiles": 3})
+		self.assertFalse(GoogleTiles("KEY", self.usage, monthly_limit=3, clock=lambda: self.now).usable())   # also after a restart
+		self.now += 31 * 86400   # December: free tiles again
+		self.assertTrue(self.google.usable())
+
+	def test_openstreetmap_for_an_hour_after_an_error(self):
+		self.tile_status = 429
+		self.assertIsNone(self.google.get(3, 4, 2))
+		self.assertFalse(self.google.usable())
+		self.assertIn("failed", self.google.warnings()[0])
+		self.now += RETRY_SECONDS
+		self.tile_status = 200
+		self.assertIsNotNone(self.google.get(3, 4, 2))
+		self.assertEqual(self.google.warnings(), [])
+
+	def test_no_tile_there_is_not_an_error(self):
+		self.tile_status = 404
+		self.assertIsNone(self.google.get(19, 0, 0))
+		self.assertTrue(self.google.usable())
 
 
 if __name__ == "__main__":

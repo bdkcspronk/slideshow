@@ -4,6 +4,7 @@ create it in build_app() below, and add its name to rotation.order in config.tom
 
 from __future__ import annotations
 
+import json
 import logging
 import subprocess
 import threading
@@ -17,7 +18,7 @@ from .background import BackgroundRunner
 from .clock import Clock
 from .line_out import LineOut
 from .config import CACHE_DIR, DATA_DIR, parse_time, project_path
-from .maptiles import ATTRIBUTION, TILES, TileCache
+from .maptiles import ATTRIBUTION, TILES, GoogleTiles, TileCache
 from .devices import DeviceList
 from .presence_store import PresenceStore
 from .providers.activities import ActivitiesProvider
@@ -86,6 +87,7 @@ class App:
 	power_commands: dict[str, list[str]] = field(default_factory=dict)   # "shutdown"/"restart" -> command
 	system_volume: SystemVolume | None = None   # the volume and mute in the settings, also for Spotify
 	tiles: TileCache | None = None              # map tiles for maps in slides (/tiles/..., maptiles.py)
+	google: GoogleTiles | None = None           # Google's map instead, with a key (/tiles/google/...)
 	overlays: list = field(default_factory=list)   # things with overlay(now) -> {"template", "data", "seconds"} or None: shown over any slide (/api/overlay)
 	updater: object | None = None               # updating from GitHub (updater.py, set in __main__.py), for /status
 	settings_lock: threading.Lock = field(default_factory=threading.Lock)   # the server handles requests in parallel
@@ -161,13 +163,14 @@ def build_app(config: dict, clock: Clock) -> App:
 	# The puzzles are shown through the Daily puzzles slide, in the order of puzzles.order.
 	puzzle_settings = config.get("puzzles", {})
 	highscores = HighScores(DATA_DIR / "puzzles" / "highscores.json")   # Catfishing and TimeGuessr
+	google = google_tiles(config.get("maps", {}))
 	available_puzzles = {puzzle.name: puzzle for puzzle in [
 		ConnectionsProvider(config.get("connections", {}), seconds, DATA_DIR / "puzzles" / "connections.json"),
 		WordleProvider(config.get("wordle", {}), seconds, DATA_DIR / "puzzles" / "wordle.json"),
 		CatfishingProvider(config.get("catfishing", {}), seconds, DATA_DIR / "puzzles" / "catfishing.json",
 			DATA_DIR / "puzzles" / "catfishing_history.json", highscores),
 		TimeGuessrProvider(config.get("timeguessr", {}), seconds, CACHE_DIR / "timeguessr", DATA_DIR / "puzzles" / "timeguessr.json",
-			attribution=config.get("maps", {}).get("attribution", ATTRIBUTION), highscores=highscores),
+			attribution=config.get("maps", {}).get("attribution", ATTRIBUTION), google=google, highscores=highscores),
 	]}
 	puzzles = [available_puzzles[name] for name in puzzle_settings.get("order", list(available_puzzles))]
 
@@ -272,9 +275,27 @@ def build_app(config: dict, clock: Clock) -> App:
 			"restart": power.get("restart", ["systemctl", "reboot"])},
 		system_volume=SystemVolume(),
 		tiles=TileCache(CACHE_DIR / "tiles", config.get("maps", {}).get("tiles", TILES)),
+		google=google,
 	)
 	if "pet" in order:
 		app.overlays.append(pet)   # thanks for what was streeped, over any slide
 	app.read_sound()
 	app.apply_settings()
 	return app
+
+
+def google_tiles(maps: dict) -> GoogleTiles | None:
+	"""Google's map for maps in slides, if [maps] google_credentials names a file with a key: {"key": "..."}."""
+	if not maps.get("google_credentials"):
+		return None
+	path = project_path(maps["google_credentials"])
+	try:
+		key = json.loads(path.read_text())["key"]
+	except FileNotFoundError:
+		return None   # no key (yet): OpenStreetMap
+	except (OSError, ValueError, KeyError) as error:
+		log.warning("No Google map tiles: can't read the key in %s (%s)", path, error)
+		return None
+	if not key:
+		return None   # the file is there, the key not filled in yet
+	return GoogleTiles(key, DATA_DIR / "google_tiles.json", maps.get("google_monthly_tiles", 90_000))

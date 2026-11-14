@@ -39,10 +39,11 @@
 	<div class="timeguessr-round">
 		<figure class="timeguessr-photo" data-toggle data-zoom>
 			<div class="zoom-view"><img src="{{ photo.image }}" alt="" draggable="false"></div>
+			{# Says the photo opens full screen; full screen, that tapping again goes back (style.css swaps the two). #}
+			<span class="timeguessr-photo-hint"><span class="when-small">&#128269; Tap to enlarge</span><span class="when-full">Tap again to go back &middot; scroll or + to zoom in</span></span>
 			<div class="zoom-buttons">
 				<button data-zoom-by="1.5" aria-label="Zoom in">+</button>
 				<button data-zoom-by="0.667" aria-label="Zoom out">&minus;</button>
-				<button data-zoom-by="0" aria-label="Whole photo">&#x2922;</button>
 			</div>
 			{% if photo.credit and game.showing_answer %}<figcaption>{{ photo.credit | truncate(100) }}</figcaption>{% endif %}
 		</figure>

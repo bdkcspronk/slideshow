@@ -298,6 +298,12 @@ first_year = 1900             # the year slider runs from here to this year, as 
 # data/cache/tiles, as OpenStreetMap's tile policy asks.
 tiles = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 attribution = "&copy; OpenStreetMap contributors"
+# Google's map instead, which writes every place in English (OpenStreetMap uses each country's own
+# script), with a key from the Google Cloud Console ("Map Tiles API"): {"key": "..."} in this file. Without
+# the file, over google_monthly_tiles this month (Google gives 100,000 free), or for an hour after
+# Google's API fails, the maps use OpenStreetMap. The count is in data/google_tiles.json.
+google_credentials = "~/.config/slideshow/google_maps.json"
+google_monthly_tiles = 90000
 
 [bieruur]
 time = "16:00"

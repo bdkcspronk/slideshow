@@ -390,17 +390,31 @@ class Handler(BaseHTTPRequestHandler):
 		self.send_html(self.server.renderer.templates.get_template("preview.html").render(slide_html=html))
 
 	def send_tile(self, path: str) -> None:
+		"""<z>/<x>/<y>.png from OpenStreetMap, google/<z>/<x>/<y>.png from Google (maptiles.py)."""
+		google = path.startswith("google/")
 		try:
-			z, x, y = (int(part) for part in path.removesuffix(".png").split("/"))
+			z, x, y = (int(part) for part in path.removeprefix("google/").removesuffix(".png").split("/"))
 		except ValueError:
 			self.send_error(HTTPStatus.NOT_FOUND)
 			return
+		if google:
+			tile = self.server.app.google.get(z, x, y) if self.server.app.google else None
+			if tile:
+				content, content_type, cache = tile
+				self.send_response(HTTPStatus.OK)
+				self.send_header("Content-Type", content_type)
+				self.send_header("Content-Length", str(len(content)))
+				self.send_header("Cache-Control", cache)   # Google's: its tiles may only be kept that long
+				self.end_headers()
+				self.wfile.write(content)
+				return
 		tiles = self.server.app.tiles
 		tile = tiles.get(z, x, y) if tiles else None
 		if tile is None:
 			self.send_error(HTTPStatus.NOT_FOUND)
 			return
-		self.send_file(tile, [tiles.folder], cache="max-age=604800")
+		# In place of a Google tile that failed: not kept, so the next map asks Google again.
+		self.send_file(tile, [tiles.folder], cache="no-store" if google else "max-age=604800")
 
 	def send_file(self, path: Path, allowed_folders: list[Path], fit: bool = False, cache: str = "max-age=86400") -> None:
 		"""cache: media URLs change when the file changes (?v=...), so they can be cached;

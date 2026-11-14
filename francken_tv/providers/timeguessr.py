@@ -27,6 +27,7 @@ DAILY_URL = "https://timeguessr.com/play?mode=daily"
 HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"}
 MAX_POINTS = 5000   # for the year, and again for the place, per round
 TILES = "/tiles/{z}/{x}/{y}.png"   # served by the slideshow, see maptiles.py
+GOOGLE_TILES = "/tiles/google/{z}/{x}/{y}.png"   # with a Google Maps key
 
 
 def js_round(x: float) -> int:
@@ -201,7 +202,7 @@ class TimeGuessrProvider(Provider):
 	title = "TimeGuessr"
 
 	def __init__(self, settings: dict, default_seconds: float, cache_folder: Path, state_path: Path | None = None,
-			attribution: str = "", highscores: HighScores | None = None) -> None:
+			attribution: str = "", google=None, highscores: HighScores | None = None) -> None:
 		self.state_path = state_path   # where today's game is saved, so it survives a restart
 		self.highscores = highscores or HighScores(None)
 		self.cache_folder = cache_folder
@@ -209,6 +210,7 @@ class TimeGuessrProvider(Provider):
 		self.refresh_seconds = settings.get("refresh_minutes", 30) * 60
 		self.first_year = settings.get("first_year", 1900)
 		self.attribution = attribution   # of the map tiles
+		self.google = google             # maptiles.GoogleTiles: its map while it's usable, else OpenStreetMap's
 		self.photos: list[Photo] = []
 		self.game: Game | None = None
 
@@ -270,6 +272,7 @@ class TimeGuessrProvider(Provider):
 			return []
 		number = len(game.guesses) + (0 if game.showing_answer else 1)
 		last_year = now.year
+		google = self.google is not None and self.google.usable()
 		return [Slide("timeguessr.html", self.seconds, {
 			"game": game,
 			"photo": game.photo,
@@ -280,8 +283,8 @@ class TimeGuessrProvider(Provider):
 			"first_year": min([self.first_year] + [photo.year for photo in game.photos]),
 			"last_year": last_year,
 			"start_year": (self.first_year + last_year) // 2,
-			"tiles": TILES,
-			"attribution": self.attribution,
+			"tiles": GOOGLE_TILES if google else TILES,
+			"attribution": self.google.attribution if google else self.attribution,
 			"summary": list(zip(game.photos, game.guesses)) if game.done else [],
 			"highscore": self.highscores.best(self.name, now.date()) if game.done else None,
 		})]

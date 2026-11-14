@@ -34,6 +34,9 @@ def problems(app, now: datetime) -> list[Problem]:
 	announcer = getattr(app, "announcer", None)
 	if announcer:
 		found += [Problem("speech", warning, BREAKS) for warning in announcer.warnings()]
+	google = getattr(app, "google", None)
+	if google:
+		found += [Problem("maps", warning, ACCOUNTS) for warning in google.warnings()]
 	updater = app.updater
 	if updater and ("not updating" in updater.last_result or "failed" in updater.last_result):
 		found.append(Problem("updates", updater.last_result, BREAKS + " (\"The slideshow is on an old version\")"))
