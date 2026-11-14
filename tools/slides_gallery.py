@@ -179,6 +179,9 @@ def prepare(now: datetime):
 	from francken_tv.slides import media_url
 
 	config = load_config(DEFAULT_CONFIG)
+	# Nothing is spoken here: don't download the text-to-speech voice (some 120 MB into the copy the emulator throws
+	# away, and Python waits for it before it exits).
+	config.setdefault("announcer", {})["download_voice"] = False
 	app = build_app(config, Clock(now))
 	providers = app.providers
 	made_up = {"spotify", "lyric_video", "event_photos", "instagram", "francken_vrij"}

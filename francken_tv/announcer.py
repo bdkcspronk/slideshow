@@ -41,6 +41,30 @@ def voice_urls(voice: str) -> list[str]:
 	return [base + ".onnx.json", base + ".onnx"]
 
 
+def download(url: str, path: Path) -> None:
+	"""Download url to path, logging how far it is: the size first, then a progress bar every 10% (as log lines, so
+	it shows the same in a terminal, among the other log lines, and in a log file)."""
+	name = url.rsplit("/", 1)[-1]
+	with requests.get(url, stream=True, timeout=60) as response:
+		response.raise_for_status()
+		total = int(response.headers.get("Content-Length") or 0)
+		log.info("Downloading %s (%s) from %s", name, f"{total / 1e6:.0f} MB" if total else "size unknown", url)
+		started = time.monotonic()
+		done, shown = 0, 0
+		with path.open("wb") as file:
+			for chunk in response.iter_content(1 << 20):
+				file.write(chunk)
+				done += len(chunk)
+				if total and total > 5_000_000 and done * 10 // total > shown:   # small files: no bar
+					shown = done * 10 // total
+					speed = done / max(time.monotonic() - started, 0.001)
+					left = f", {(total - done) / speed:.0f} s left" if done < total else ""
+					log.info("  %s [%s%s] %3d%% %.0f/%.0f MB, %.1f MB/s%s", name, "#" * shown, "." * (10 - shown),
+						shown * 10, done / 1e6, total / 1e6, speed / 1e6, left)
+		if total and done < total:
+			raise ValueError(f"{name}: only {done} of {total} bytes")
+
+
 class Announcer:
 	def __init__(self, settings: dict, voices_folder: Path, cache_folder: Path) -> None:
 		self.voice = settings.get("voice", "en_US-ryan-high")
@@ -160,12 +184,7 @@ class Announcer:
 				for url in voice_urls(self.voice):
 					target = self.voices_folder / url.rsplit("/", 1)[-1]
 					temporary = target.with_name(target.name + ".part")
-					log.info("Downloading %s", url)
-					with requests.get(url, stream=True, timeout=60) as response:
-						response.raise_for_status()
-						with temporary.open("wb") as file:
-							for chunk in response.iter_content(1 << 20):
-								file.write(chunk)
+					download(url, temporary)
 					temporary.replace(target)
 			except (requests.RequestException, OSError, ValueError) as error:
 				log.warning("Could not download the voice %s: %s. Trying again in %d minutes", self.voice, error, DOWNLOAD_RETRY_SECONDS // 60)
