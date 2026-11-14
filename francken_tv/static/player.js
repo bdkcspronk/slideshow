@@ -189,7 +189,9 @@ async function refresh() {
 document.addEventListener("click", async (event) => {
 	const slide = interactiveSlide();
 	if (!slide || !slide.contains(event.target)) return;
-	event.target.closest("button")?.blur();   // so Space/Enter later don't press it again
+	// A mouse or finger click: so Space/Enter later don't press it again. Not when it was pressed with the keyboard
+	// (event.detail 0): then it keeps its focus, so the arrows go on from there instead of changing slides.
+	if (event.detail > 0) event.target.closest("button")?.blur();
 	keepPaused(idleSeconds(slide));
 	const toggle = event.target.closest("[data-toggle]");
 	const action = event.target.closest("[data-action]");
@@ -327,6 +329,10 @@ function showInput(text, value, at) {
 // again: pausing shouldn't make the cover disappear and fade back in (.steady in style.css).
 function redraw(layer, html, tapped = false) {
 	const before = new Set([...layer.querySelectorAll("[data-steady]")].map((element) => element.dataset.steady));
+	// Keyboard focus on a button survives the redraw: the same button (same action and value, or key) is focused in the new
+	// slide, so someone without a mouse can go on with the arrows instead of falling back to changing slides.
+	const focused = layer.contains(document.activeElement) ? document.activeElement.closest("button") : null;
+	const same = focused && ["action", "value", "key", "provider"].map((name) => focused.dataset[name]);
 	// An element with data-phase (the pet being chosen: a tap would restart its bob and snap it up to 1.5vh) carries on from where its
 	// loop was: the new copy gets that time as a negative delay in --phase (style.css). data-steady can't do this, it stops the animation.
 	const phases = new Map([...layer.querySelectorAll("[data-phase]")].map((element) => [element.dataset.phase, element.getAnimations()[0]?.currentTime]));
@@ -337,6 +343,11 @@ function redraw(layer, html, tapped = false) {
 	for (const element of layer.querySelectorAll("[data-phase]")) {
 		const time = phases.get(element.dataset.phase);
 		if (typeof time === "number") element.style.setProperty("--phase", `${-time}ms`);
+	}
+	if (same) {
+		const match = [...layer.querySelectorAll("button")].find((button) =>
+			["action", "value", "key", "provider"].every((name, i) => button.dataset[name] === same[i]));
+		if (match && !match.disabled) match.focus({ preventScroll: true });   // no stand-in when it's gone: a random button would catch the next Enter
 	}
 	// After a tap, entrances that would wait for the show come in quickly instead (.redrawn in style.css).
 	if (tapped) layer.firstElementChild?.classList.add("redrawn");
@@ -451,6 +462,13 @@ document.addEventListener("keydown", async (event) => {
 	}
 	// On a slide you can type on, keys go to the game instead of the shortcuts below.
 	const slide = interactiveSlide();
+	// Enter on a button reached with the keyboard (Tab, the arrows) presses that button, like any button: not the slide's own
+	// Enter below (Catfishing's "Next article", submitting the word). A clicked button is blurred, so only keyboard focus gets here.
+	const focused = event.target.closest?.("button");
+	if (event.key === "Enter" && slide && focused && slide.contains(focused)) {
+		keepPaused(idleSeconds(slide));
+		return;   // the browser presses it (a click, handled above)
+	}
 	// A button marked data-enter (e.g. Catfishing's "Next article") is pressed by Enter.
 	const enter = slide?.querySelector("[data-enter]");
 	if (enter && event.key === "Enter" && !event.ctrlKey && !event.altKey && !event.metaKey) {
