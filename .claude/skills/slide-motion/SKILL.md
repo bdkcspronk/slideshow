@@ -92,8 +92,9 @@ not polish: a button you can't reach or can't see focused is broken.
 - Every button can be reached and pressed from the keyboard: Tab to it, Enter or Space to press it. On a
   slide someone is using, the arrow keys move to the nearest button (`nearestButton()` in `player.js`) and
   never change the slide, not even at the edge; the menu has its own (`moveMenuFocus()`). Only on a slide
-  nobody is using yet do the arrows change slides. Enter on a focused button presses that button, not the
-  slide's own Enter, and focus stays on it through the redraw.
+  nobody is using yet do the arrows change slides. A slide marked `data-arrows-need-focus` (Spotify) only
+  captures the arrows while one of its buttons has focus; with nothing focused they change slides. Enter on
+  a focused button presses that button, not the slide's own Enter, and focus stays on it through the redraw.
 - The focused element is visible from across the room: a `:focus` look of its own (a ring, a lighter
   background, a slight scale). A `.squircle` clips its outline and box-shadow rings, so give it a
   background or scale instead (see Corners).

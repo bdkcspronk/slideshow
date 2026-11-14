@@ -186,6 +186,52 @@ async function refresh() {
 // - maps, sliders and other data-field widgets are in widgets.js.
 // action() returns the redrawn slide and an optional message.
 
+// A timeline or volume bar (data-seek, e.g. Spotify's): pressed, it follows the finger or mouse (--drag and .dragging,
+// see style.css); let go, it sends the spot, 0-1 along the bar, as the action's value. A plain click is a drag that didn't move.
+let seekDrag = null;
+
+function dragTo(seek, event) {
+	const box = (seek.firstElementChild || seek).getBoundingClientRect();   // the bar itself, not the taller area around it
+	const fraction = Math.max(0, Math.min(1, (event.clientX - box.left) / box.width));
+	seek.style.setProperty("--drag", `${(fraction * 100).toFixed(2)}%`);
+	return fraction;
+}
+
+document.addEventListener("pointerdown", (event) => {
+	const slide = interactiveSlide();
+	const seek = event.target.closest?.("[data-seek]");
+	if (!seek || !slide?.contains(seek) || event.button !== 0) return;
+	event.preventDefault();   // no text selection while dragging
+	keepPaused(idleSeconds(slide));
+	seek.setPointerCapture(event.pointerId);   // keeps following outside the bar
+	seek.classList.add("dragging");
+	dragTo(seek, event);
+	seekDrag = seek;
+});
+
+document.addEventListener("pointermove", (event) => {
+	if (seekDrag) dragTo(seekDrag, event);
+});
+
+document.addEventListener("pointerup", (event) => {
+	const seek = seekDrag;
+	if (!seek) return;
+	seekDrag = null;
+	const slide = interactiveSlide();
+	const fraction = dragTo(seek, event);
+	// A value shown in place (data-live, Spotify's volume) stays where it was dropped instead of jumping back until the next refresh.
+	seek.querySelector("[data-live]")?.style.setProperty("width", `${(fraction * 100).toFixed(2)}%`);
+	if (!slide?.contains(seek)) return seek.classList.remove("dragging");   // the slide changed meanwhile
+	seek.classList.add("busy");   // shows the tap was seen, until the answer is there (style.css)
+	sendAction(slide, seek.dataset.seek, [fraction.toFixed(4)], seek.dataset.provider)
+		.finally(() => seek.classList.remove("busy", "dragging"));
+});
+
+document.addEventListener("pointercancel", () => {
+	seekDrag?.classList.remove("dragging");
+	seekDrag = null;
+});
+
 document.addEventListener("click", async (event) => {
 	const slide = interactiveSlide();
 	if (!slide || !slide.contains(event.target)) return;
@@ -202,10 +248,7 @@ document.addEventListener("click", async (event) => {
 	if (input) {
 		clickInput(input, event);
 	} else if (seek) {
-		const box = seek.getBoundingClientRect();
-		const fraction = Math.max(0, Math.min(1, (event.clientX - box.left) / box.width));
-		seek.classList.add("busy");   // shows the tap was seen, until the answer is there (style.css)
-		sendAction(slide, seek.dataset.seek, [fraction.toFixed(4)], seek.dataset.provider).finally(() => seek.classList.remove("busy"));
+		// sent when the pointer is let go (pointerup below), whether it was a click or a drag
 	} else if (toggle) {
 		const max = parseInt(slide.dataset.maxSelected || "1000", 10);
 		if (toggle.classList.contains("selected") || selected().length < max) toggle.classList.toggle("selected");
@@ -228,7 +271,7 @@ function nearestButton(slide, from, key) {
 	const centre = (rect) => [rect.left + rect.width / 2, rect.top + rect.height / 2];
 	const [fx, fy] = centre(from.getBoundingClientRect());
 	let best = null, bestScore = Infinity;
-	for (const button of slide.querySelectorAll("button:not([disabled])")) {
+	for (const button of slide.querySelectorAll("button:not([disabled]), [data-seek][tabindex]")) {   // a bar you can Tab to, too
 		if (button === from) continue;
 		const rect = button.getBoundingClientRect();
 		if (!rect.width || !rect.height) continue;
@@ -496,6 +539,17 @@ document.addEventListener("keydown", async (event) => {
 			return;
 		}
 	}
+	// A bar with steps (data-step-down/up, Spotify's volume) that has focus: left and right step it.
+	const bar = event.target.closest?.("[data-seek][data-step-up]");
+	if (bar && slide?.contains(bar) && (event.key === "ArrowLeft" || event.key === "ArrowRight")
+			&& !event.ctrlKey && !event.altKey && !event.metaKey) {
+		event.preventDefault();
+		keepPaused(idleSeconds(slide));
+		bar.classList.add("busy");
+		sendAction(slide, event.key === "ArrowRight" ? bar.dataset.stepUp : bar.dataset.stepDown, [], bar.dataset.provider)
+			.finally(() => bar.classList.remove("busy"));
+		return;
+	}
 	if (event.key.startsWith("Arrow") && event.target.closest?.("input, .leaflet-container")) return;   // they move the slider or map
 	// Up and down scroll a text that's longer than the screen (data-scroll, e.g. a news article).
 	const scroller = slide?.querySelector("[data-scroll]");
@@ -508,8 +562,11 @@ document.addEventListener("keydown", async (event) => {
 	// On a slide someone is using (a button has focus, or they tapped or typed), the arrow keys move to the nearest button in
 	// that direction and never change the slide: at the edge they stay put, and with nothing focused the first one gets focus.
 	// Often there's no mouse, so the arrows are how you get around. A slide nobody is using yet: they change slides, as always.
-	const onButton = event.target.closest?.("button") && slide?.contains(event.target);
-	if (event.key.startsWith("Arrow") && slide && (interacting || onButton)
+	// A slide marked data-arrows-need-focus (Spotify) only does this once a button has focus: with nothing focused the
+	// arrows change slides, even after someone paused the music with the space bar or tapped a button.
+	const onButton = event.target.closest?.("button, [data-seek][tabindex]") && slide?.contains(event.target);
+	const using = interacting && slide && !("arrowsNeedFocus" in slide.dataset);
+	if (event.key.startsWith("Arrow") && slide && (using || onButton)
 			&& !event.ctrlKey && !event.altKey && !event.metaKey) {
 		event.preventDefault();
 		keepPaused(idleSeconds(slide));

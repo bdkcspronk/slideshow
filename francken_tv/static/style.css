@@ -1952,10 +1952,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-album { margin-top: 0.8vh; font-size: 2.8vh; opacity: 0.6; }
 /* The playing song's artist and album: one line each, sliding when too long (data-marquee); the title too (above). */
 .spotify-info > .spotify-artist, .spotify-info > .spotify-album { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* The timeline is clickable (data-seek): a taller invisible area around the thin bar. */
-.spotify-seek { margin-top: 2vh; padding: 2vh 0; cursor: pointer; transition: opacity 0.1s ease-out; }
-.spotify-seek:active, .spotify-seek.busy { opacity: 0.6; }   /* pressed, then waiting for the jump (player.js adds .busy) */
-.spotify-progress { margin-top: 0; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+/* The timeline is clickable and draggable (data-seek, player.js): a taller invisible area around the thin bar. */
+.spotify-seek { margin-top: 2vh; padding: 2vh 0; cursor: pointer; touch-action: none; transition: opacity 0.1s ease-out; }
+.spotify-seek.busy:not(.dragging), .spotify-volume-seek.busy:not(.dragging) { opacity: 0.6; }   /* waiting for the jump (player.js adds .busy) */
+.spotify-progress { margin-top: 0; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); }
 .spotify-times { display: flex; justify-content: space-between; margin-top: 1.2vh; font-size: 2.4vh; opacity: 0.75; font-variant-numeric: tabular-nums; }
 /* The bar and the elapsed time run on by themselves from --start to --total seconds (set by the
    template), so they keep moving between the server's updates; paused: they stand still. */
@@ -1966,7 +1966,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-bar {
 	height: 100%;
 	width: var(--percent);
-	background: #1db954;
+	background: #ffffff;
 	border-radius: 0.45vh;
 	animation: spotify-bar calc((var(--total) - var(--start)) * 1s) linear forwards;
 }
@@ -2007,9 +2007,47 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-control, .spotify-button, .spotify-playlist, .spotify-chip, .spotify-album-card { transition: transform 0.1s ease-out; }
 .spotify-song, .spotify-key { transition: background 0.1s ease-out; }
 .spotify-control.busy, .spotify-button.busy, .spotify-song.busy { opacity: 1; background: #1db954; border-color: #1db954; color: #121212; }
+/* Keyboard navigation (Tab, the arrows): :focus-visible only matches then, so mouse and touch look as before. A thick
+   white ring (green already means busy) and a slight lift, to spot the selected button from across the room. Song
+   rows sit in a scrolling list that would cut an outer ring off, so theirs is drawn inside and the row lights up. */
+.spotify-slide button:focus-visible { outline: 0.5vh solid #ffffff; outline-offset: 0.5vh; }
+.spotify-control:focus-visible:not(:active), .spotify-button:focus-visible:not(:active), .spotify-playlist:focus-visible:not(:active),
+.spotify-chip:focus-visible:not(:active), .spotify-album-card:focus-visible:not(:active) { transform: scale(1.05); }   /* a press still dips */
+.spotify-slide .spotify-song:focus-visible { outline-offset: -0.5vh; background: rgba(255, 255, 255, 0.18); }
+.spotify-slide .spotify-key:focus-visible { outline-offset: 0.2vh; background: rgba(255, 255, 255, 0.35); }
 .spotify-volume { display: flex; align-items: center; gap: 1vw; margin-left: auto; }
-.spotify-volume-track { width: 14vw; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
-.spotify-volume-level { display: block; height: 100%; background: #ffffff; transition: width 0.3s; }
+.spotify-speaker { width: 3.6vh; height: 3.6vh; flex: none; fill: #ffffff; }
+.spotify-speaker .wave { fill: none; stroke: #ffffff; stroke-width: 2; stroke-linecap: round; }
+.spotify-volume-seek:focus { outline: none; }   /* focused from the keyboard it looks pointed at instead (below) */
+.spotify-volume-seek { display: block; padding: 2vh 0; cursor: pointer; touch-action: none; transition: opacity 0.1s ease-out; }   /* clickable and draggable, like the timeline */
+.spotify-volume-track { display: block; width: 14vw; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); }
+.spotify-volume-level { display: block; height: 100%; border-radius: 0.45vh; background: #ffffff; transition: width 0.3s; }
+/* Both bars are plain white. Pointed at (or dragged), the bar turns Spotify green and a disc appears at the
+   current spot, saying it can be dragged. While dragging, the bar follows the finger (--drag, set by player.js)
+   instead of the music or the reported volume; letting go sends the spot. */
+.spotify-bar, .spotify-volume-level { position: relative; }
+.spotify-bar::after, .spotify-volume-level::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	right: 0;
+	width: 2.4vh;
+	height: 2.4vh;
+	border-radius: 50%;
+	background: #ffffff;
+	box-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.4);
+	translate: 50% -50%;
+	scale: 0.4;
+	opacity: 0;
+	transition: scale 0.15s ease-out, opacity 0.15s ease-out;   /* it answers the pointer: ease-out, short */
+}
+@media (hover: hover) {
+	.spotify-seek:hover .spotify-bar, .spotify-volume-seek:hover .spotify-volume-level { background: #1db954; }
+	.spotify-seek:hover .spotify-bar::after, .spotify-volume-seek:hover .spotify-volume-level::after { scale: 1; opacity: 1; }
+}
+.dragging .spotify-bar, .dragging .spotify-volume-level, .spotify-volume-seek:focus-visible .spotify-volume-level { background: #1db954; }
+.dragging .spotify-bar::after, .dragging .spotify-volume-level::after, .spotify-volume-seek:focus-visible .spotify-volume-level::after { scale: 1; opacity: 1; }
+.dragging .spotify-bar, .dragging .spotify-volume-level { width: var(--drag) !important; animation: none; transition: none; }   /* over the inline volume width */
 /* Up next, and the button to pick another playlist. */
 /* Up next, with the buttons (Lyrics, Search, Playlists) on a row of their own below it, so the next
    song's title keeps the whole width. */

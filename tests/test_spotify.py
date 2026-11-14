@@ -283,6 +283,18 @@ class SpotifyTest(unittest.TestCase):
 		self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/me/player/volume?volume_percent=88")   # 60% heard
 		self.assertAlmostEqual(self.provider.view()["volume"], 60, delta=1)
 
+	def test_volume_bar_dragged_to_a_spot(self):
+		self.connect()
+		self.provider.playing.device, self.provider.playing.volume = "Francken TV", 83
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request:
+			slide, message = self.provider.action("volume", ["0.6"], NOW)   # 60% along the bar: 60% as heard
+		self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/me/player/volume?volume_percent=88")
+		self.assertEqual((slide, message), (None, None))   # the bar is updated in place
+		self.provider.playing.device = "Web Player"   # another player: the bar is Spotify's own percentage
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request:
+			self.provider.action("volume", ["1.5"], NOW)
+		self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/me/player/volume?volume_percent=100")
+
 	def test_search_finds_albums_and_opens_their_songs(self):
 		self.connect()
 		album = {"name": "ABBA Gold", "uri": "spotify:album:gold", "artists": [{"name": "ABBA"}], "release_date": "2008-11-10",

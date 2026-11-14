@@ -8,7 +8,7 @@
 	continue it on the TV's own speaker.
 	The space bar pauses and resumes the music (data-space-action, see player.js).
 #}
-<div class="slide spotify-slide" data-state="{{ state }}" data-interactive data-provider="spotify" data-space-action="toggle">
+<div class="slide spotify-slide" data-state="{{ state }}" data-interactive data-provider="spotify" data-space-action="toggle" data-arrows-need-focus>
 	{% if cover %}<div class="spotify-backdrop" style="background-image: url('{{ cover }}')"></div>{% endif %}
 	<div class="spotify-content">
 		{% if cover %}<div class="spotify-cover" data-steady="{{ cover }}"><img class="squircle" src="{{ cover }}" alt=""></div>{% endif %}   {# the div carries the shadow and entrance (the clip on the img would cut the shadow off) #}
@@ -39,10 +39,10 @@
 					<svg viewBox="0 0 24 24"><path d="M4 5.5v13a1 1 0 0 0 1.5.9L16 12.9a1 1 0 0 0 0-1.8L5.5 4.6A1 1 0 0 0 4 5.5z"/><rect x="17.5" y="5" width="2.5" height="14" rx="1"/></svg>
 				</button>
 				{% if volume is not none %}
+				{# The bar is dragged or clicked (data-seek); from the keyboard, Tab to it and left/right step it (data-step-down/up, player.js). #}
 				<div class="spotify-volume">
-					<button class="spotify-control" data-action="volume_down" aria-label="Softer">&minus;</button>
-					<span class="spotify-volume-track"><span class="spotify-volume-level" data-live="volume" style="width: {{ volume }}%"></span></span>
-					<button class="spotify-control" data-action="volume_up" aria-label="Louder">+</button>
+					<svg class="spotify-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"/><path class="wave" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+					<span class="spotify-volume-seek" data-seek="volume" data-step-down="volume_down" data-step-up="volume_up" tabindex="0" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ volume }}"><span class="spotify-volume-track"><span class="spotify-volume-level" data-live="volume" style="width: {{ volume }}%"></span></span></span>
 				</div>
 				{% endif %}
 			</div>

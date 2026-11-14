@@ -708,7 +708,8 @@ class SpotifyProvider(Provider):
 		playlists, 'lyrics' the lyrics;
 		'play' plays a playlist (values = [its uri]), 'play_song' a song, 'queue' adds one (from the search, or
 		from a playlist's songs: "song uri|playlist uri|page"); 'back' returns;
-		'previous', 'skip', 'toggle' (pause/play), 'volume_up' and 'volume_down' control the music."""
+		'previous', 'skip', 'toggle' (pause/play), 'volume_up' and 'volume_down' control the music; 'seek' and 'volume'
+		take a spot on the timeline or volume bar (values = [0-1], clicked or dragged to)."""
 		if name == "playlists":
 			page = int(values[0]) if values and values[0].isdigit() else 0
 			try:
@@ -885,14 +886,19 @@ class SpotifyProvider(Provider):
 				return None, error
 			self.catch_up(now)
 			return self.now_playing(), None
-		if name in ("volume_up", "volume_down") and self.playing and self.playing.volume is not None:
+		if name in ("volume", "volume_up", "volume_down") and self.playing and self.playing.volume is not None:
+			if name == "volume":   # the volume bar dragged or clicked: values[0] is 0-1 along the bar as shown
+				try:
+					shown = round(100 * max(0.0, min(1.0, float(values[0]))))
+				except (IndexError, ValueError):
+					return None, None
 			step = VOLUME_STEP if name == "volume_up" else -VOLUME_STEP
 			with self.volume_lock:   # quick taps arrive together: one after another, each from the last one
 				if self.playing.device == self.speaker:   # steps that sound equally big, see heard_volume()
 					heard = round(heard_volume(self.playing.volume) / VOLUME_STEP) * VOLUME_STEP
-					volume = spotify_volume(max(0, min(100, heard + step)))
+					volume = spotify_volume(shown if name == "volume" else max(0, min(100, heard + step)))
 				else:   # another player (e.g. a web player) has its own volume curve
-					volume = max(0, min(100, self.playing.volume + step))
+					volume = shown if name == "volume" else max(0, min(100, self.playing.volume + step))
 				error = self.command("PUT", f"{VOLUME_URL}?volume_percent={volume}")
 				if error:
 					return None, error
