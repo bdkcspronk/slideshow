@@ -21,9 +21,9 @@
 	</div>
 	{% if pages > 1 %}
 	<div class="spotify-pages">
-		<button class="spotify-button" data-action="{{ page_action or 'playlists' }}" data-value="{{ page_prefix }}{{ page - 1 }}"{% if page == 0 %} disabled{% endif %}>&larr;</button>
+		<button class="spotify-button" data-action="{{ page_action or 'playlists' }}" data-focus-key="prev" data-value="{{ page_prefix }}{{ page - 1 }}"{% if page == 0 %} disabled{% endif %}>&larr;</button>
 		<span>Page {{ page + 1 }} of {{ pages }}</span>
-		<button class="spotify-button" data-action="{{ page_action or 'playlists' }}" data-value="{{ page_prefix }}{{ page + 1 }}"{% if page + 1 >= pages %} disabled{% endif %}>&rarr;</button>
+		<button class="spotify-button" data-action="{{ page_action or 'playlists' }}" data-focus-key="next" data-value="{{ page_prefix }}{{ page + 1 }}"{% if page + 1 >= pages %} disabled{% endif %}>&rarr;</button>
 	</div>
 	{% endif %}
 </div>

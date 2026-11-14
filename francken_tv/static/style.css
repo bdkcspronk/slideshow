@@ -369,6 +369,12 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	overflow: hidden;
 }
 .news-cards button:active .news-text { background: #efe7d3; }
+/* Keyboard selection: the clip cuts a button's own ring, so the ring goes on the card's shadow carrier (the li) and the card lightens. */
+.news-cards li:has(button:focus-visible) { box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35), 0 0 0 0.7vh var(--cream, #fdf8ec); }
+.news-cards button:focus-visible .news-text { background: #ffffff; }
+/* The outlet buttons and the article's back button sit on navy: a thick cream ring, easy to spot from across the room (the browser's thin one isn't). */
+.news-feeds button:focus-visible { outline: 0.5vh solid #fdf8ec; outline-offset: 0.3vh; }
+.article-back:focus-visible { outline: 0.5vh solid #fdf8ec; outline-offset: 0.4vh; }
 .news-cards button.busy { transform: none; }   /* waiting for the article: only dimmed, as shrinking would leave its shadow (on the li) behind */
 .news-picture {   /* across the top of the card, taking whatever height the text leaves */
 	display: block;
@@ -2700,6 +2706,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .timeguessr-year { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 1vh 1.5vw; }
 .timeguessr-year output { grid-row: span 2; font-size: 7vh; font-weight: bold; font-variant-numeric: tabular-nums; }
 .timeguessr-year input { width: 100%; height: 4vh; accent-color: var(--red); }
+.timeguessr-year input:focus-visible { outline: 0.5vh solid var(--red); outline-offset: 0.4vh; border-radius: 2vh; }   /* focused from the keyboard: a thick ring, seen from across the room */
 .timeguessr-nudges { display: flex; gap: 0.8vw; }
 .timeguessr-nudges button, .timeguessr-button {
 	padding: 1vh 1.4vw;
@@ -4346,6 +4353,8 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .pet-button-shadow { display: flex; border-radius: 2.4vh; box-shadow: 0 1.2vh 3vh rgba(0, 0, 0, 0.35); transition: transform 0.1s ease-out; }   /* the button's shadow (shapes only the blurred shadow); the button is inside, with continuous corners (the clip would cut the shadow off) */
 .pet-button-shadow:has(.pet-button:active) { transform: scale(0.94); }   /* pressed: the shadow dips with the button, or the button would shrink away from it */
 .pet-button-shadow:has(.pet-button.busy) { transform: scale(0.95); }   /* waiting for the answer: the same dip, on the carrier */
+.pet-button-shadow:has(.pet-button:focus-visible) { transform: scale(1.04); box-shadow: 0 0 0 0.6vh #fdf8ec, 0 1.2vh 3vh rgba(0, 0, 0, 0.35); }   /* keyboard selection: the clipped button can't show a ring, so the carrier gets it and lifts */
+.pet-button:focus-visible { background: #ffffff; }
 .pet-button[data-action].busy, .pet-button[data-key].busy { transform: none; }   /* only dimmed on the button itself (see above) */
 .pet-button { --r: 3.8vh; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 1.2vh; padding: 2.4vh 1vw; border: 0; background: #fdf8ec; color: #0d1f3c; font: inherit; font-size: 3.6vh; }   /* continuous corners (.squircle) */
 .pet-button svg { width: 6vh; height: 6vh; overflow: visible; }   /* the same box for every icon (the kroket is wide, the ball round) */
@@ -4445,6 +4454,10 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .pet-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4vh 1vw; }
 .pet-species-option { display: flex; flex-direction: column; align-items: center; gap: 0.6vh; padding: 1.2vh 0.5vw; border: 0.4vh solid transparent; border-radius: 1.8vh; background: rgba(253, 248, 236, 0.1); color: #fdf8ec; font: inherit; font-size: 2.6vh; transition: transform 0.1s ease-out; }
 .pet-species-option:active { transform: scale(0.96); }
+/* Keyboard selection on the pet's choices: a cream ring outside (the chosen one has its border inside) and a slight lift. */
+.pet-species-option:focus-visible, .pet-color:focus-visible, .pet-key:focus-visible, .pet-back:focus-visible { outline: 0.5vh solid #fdf8ec; outline-offset: 0.4vh; }
+.pet-species-option:focus-visible:not(:active), .pet-key:focus-visible:not(:active) { transform: scale(1.06); }
+.pet-key:focus-visible { background: rgba(253, 248, 236, 0.4); }
 .pet-species-option.chosen { border-color: #fdf8ec; background: rgba(253, 248, 236, 0.22); }
 .pet-mini { display: block; width: 11vh; }
 .pet-mini .pet-svg * { animation: none !important; }
@@ -4453,6 +4466,8 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .pet-color:active { transform: scale(0.94); }
 .pet-color.chosen { border-color: #fdf8ec; transform: scale(1.15); }
 .pet-color.chosen:active { transform: scale(1.08); }   /* the chosen one is bigger; pressed it shrinks from there */
+.pet-color:focus-visible:not(.chosen):not(:active) { transform: scale(1.1); }
+.pet-color.chosen:focus-visible:not(:active) { transform: scale(1.2); }
 .pet-next { justify-content: center; font-size: 3.6vh; }
 .pet-back { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; transition: transform 0.1s ease-out; }
 .pet-back:active { transform: scale(0.95); }

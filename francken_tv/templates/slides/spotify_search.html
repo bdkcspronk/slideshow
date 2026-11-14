@@ -57,9 +57,10 @@
 					<span class="spotify-song-length">{{ song.length }}</span>
 				</button>
 				{% if song.uri in queued %}
-				<span class="spotify-control queued" aria-label="In the queue">&#10003;</span>
+				{# Still a button (with no action), so keyboard focus stays on it through the redraw (data-focus-key) #}
+				<button class="spotify-control queued" data-focus-key="queue-{{ song.uri }}" aria-disabled="true" aria-label="In the queue">&#10003;</button>
 				{% else %}
-				<button class="spotify-control" data-action="queue" data-value="{{ song.uri }}" aria-label="Add to the queue">+</button>
+				<button class="spotify-control" data-action="queue" data-focus-key="queue-{{ song.uri }}" data-value="{{ song.uri }}" aria-label="Add to the queue">+</button>
 				{% endif %}
 			</li>
 			{% else %}

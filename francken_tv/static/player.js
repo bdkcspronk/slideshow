@@ -379,7 +379,8 @@ function redraw(layer, html, tapped = false) {
 	const before = new Set([...layer.querySelectorAll("[data-steady]")].map((element) => element.dataset.steady));
 	// Keyboard focus on a button survives the redraw: the same button (same action and value, or key) is focused in the new
 	// slide, so someone without a mouse can go on with the arrows instead of falling back to changing slides.
-	const focused = layer.contains(document.activeElement) ? document.activeElement.closest("button") : null;
+	// A bar you can Tab to (Spotify's volume and timeline, data-seek) is kept the same way, by its data-seek value.
+	const focused = layer.contains(document.activeElement) ? document.activeElement.closest("button, [data-seek]") : null;
 	const same = focused && ["action", "value", "key", "provider"].map((name) => focused.dataset[name]);
 	// An element with data-phase (the pet being chosen: a tap would restart its bob and snap it up to 1.5vh) carries on from where its
 	// loop was: the new copy gets that time as a negative delay in --phase (style.css). data-steady can't do this, it stops the animation.
@@ -393,9 +394,21 @@ function redraw(layer, html, tapped = false) {
 		if (typeof time === "number") element.style.setProperty("--phase", `${-time}ms`);
 	}
 	if (same) {
-		const match = [...layer.querySelectorAll("button")].find((button) =>
-			["action", "value", "key", "provider"].every((name, i) => button.dataset[name] === same[i]));
-		if (match && !match.disabled) match.focus({ preventScroll: true });   // no stand-in when it's gone: a random button would catch the next Enter
+		let match;
+		if (focused.matches("button")) {
+			const buttons = [...layer.querySelectorAll("button")];
+			// A paging button whose value changes with the page has a steady data-focus-key ("prev", "next"): that comes first.
+			match = (focused.dataset.focusKey && buttons.find((button) => button.dataset.focusKey === focused.dataset.focusKey))
+				|| buttons.find((button) => ["action", "value", "key", "provider"].every((name, i) => button.dataset[name] === same[i]));
+		} else {
+			match = [...layer.querySelectorAll("[data-seek]")].find((bar) => bar.dataset.seek === focused.dataset.seek);
+		}
+		if (match && !match.disabled) match.focus({ preventScroll: true });
+		else if (focused.matches("button")) {
+			// The page changed (a puzzle opened, the next photo, the article) and that button is gone: focus the slide's main control,
+			// so Enter goes on with the game. Never a stand-in like a back button: it would catch the next Enter and leave the slide.
+			layer.querySelector("[data-autofocus]:not([disabled]), button.primary:not([disabled])")?.focus({ preventScroll: true });
+		}
 	}
 	// After a tap, entrances that would wait for the show come in quickly instead (.redrawn in style.css).
 	if (tapped) layer.firstElementChild?.classList.add("redrawn");
@@ -497,6 +510,12 @@ document.addEventListener("focusin", (event) => {   // arrowing over the tabs sh
 	menuTabTimer = setTimeout(() => selectMenuTab(tab.dataset.value), 150);   // not for every tab passed on the way
 });
 
+// Tabbing round an interactive slide is using it: the slideshow mustn't move on while someone is looking for a button.
+document.addEventListener("focusin", (event) => {
+	const slide = interactiveSlide();
+	if (slide && !menuIsOpen() && slide.contains(event.target)) keepPaused(idleSeconds(slide));
+});
+
 document.addEventListener("keydown", async (event) => {
 	if (menuIsOpen()) return menuKey(event);
 	if (event.key === "Escape") {
@@ -541,17 +560,22 @@ document.addEventListener("keydown", async (event) => {
 		const names = { Enter: "ENTER", Backspace: "BACK", " ": "SPACE", Delete: "DELETE",
 			ArrowLeft: "LEFT", ArrowRight: "RIGHT", Home: "HOME", End: "END" };
 		const key = names[event.key] || event.key;
-		if (key.length === 1 || Object.values(names).includes(key)) {
+		// A button that has keyboard focus lets the arrows move between buttons (below) instead of the text cursor.
+		const arrowOnButton = event.key.startsWith("Arrow") && event.target.closest?.("button");
+		if (!arrowOnButton && (key.length === 1 || Object.values(names).includes(key))) {
+			// Typing a character: a button that kept focus lets go, so the next Enter sends the text and doesn't press it.
+			if (key.length === 1 || key === "SPACE") event.target.closest?.("button")?.blur();
 			event.preventDefault();
 			keepPaused(idleSeconds(slide));
 			typeKey(slide, key);
 			return;
 		}
-		if (event.key.startsWith("Arrow")) return;   // up and down don't change slides while typing either
+		if (event.key.startsWith("Arrow") && !arrowOnButton) return;   // up and down don't change slides while typing either
 	}
 	if (slide && slide.querySelector("[data-input-cell]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		const key = event.key === "Enter" ? "ENTER" : event.key === "Backspace" ? "BACK" : event.key.toUpperCase();
 		if (key === "ENTER" || key === "BACK" || /^[A-Z]$/.test(key)) {
+			if (/^[A-Z]$/.test(key)) event.target.closest?.("button")?.blur();   // typing a letter: the next Enter submits the word, not the focused key
 			event.preventDefault();
 			keepPaused(idleSeconds(slide));
 			typeKey(slide, key);
@@ -569,7 +593,10 @@ document.addEventListener("keydown", async (event) => {
 			.finally(() => bar.classList.remove("busy"));
 		return;
 	}
-	if (event.key.startsWith("Arrow") && event.target.closest?.("input, .leaflet-container")) return;   // they move the slider or map
+	if (event.key.startsWith("Arrow") && event.target.closest?.("input, .leaflet-container")) {   // they move the slider or map
+		if (slide?.contains(event.target)) keepPaused(idleSeconds(slide));   // that's using the slide: the slideshow mustn't move on
+		return;
+	}
 	// Up and down scroll a text that's longer than the screen (data-scroll, e.g. a news article).
 	const scroller = slide?.querySelector("[data-scroll]");
 	if (scroller && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
@@ -589,7 +616,12 @@ document.addEventListener("keydown", async (event) => {
 			&& !event.ctrlKey && !event.altKey && !event.metaKey) {
 		event.preventDefault();
 		keepPaused(idleSeconds(slide));
-		const target = onButton ? nearestButton(slide, event.target, event.key) : slide.querySelector("button:not([disabled])");
+		// With nothing focused: the slide's main control, else the first button that isn't a way out (a back button would
+		// catch the next Enter and leave the slide).
+		const first = () => slide.querySelector("[data-autofocus]:not([disabled]), button.primary:not([disabled])")
+			|| [...slide.querySelectorAll("button:not([disabled])")].find((button) =>
+				!button.matches(".puzzle-back, .article-back, [data-action='back']"));
+		const target = onButton ? nearestButton(slide, event.target, event.key) : first();
 		target?.focus();
 		return;
 	}
@@ -653,6 +685,7 @@ let menuGroups = {};          // group title -> which of its slides have somethi
 let menuTabTimer = null;
 let menuIdleTimer = null;
 let menuTakeoverTimer = null;
+let menuReturnFocus = null;   // what had focus in the slide when the menu opened: it gets it back when the menu closes
 let confirming = null;     // a button that needs a second press (start a puzzle over, shut down)
 let confirmTimer = null;
 
@@ -693,6 +726,7 @@ async function openMenu() {
 		console.error(error);
 		return;   // the menu isn't available right now
 	}
+	menuReturnFocus = document.activeElement;
 	showCount += 1;   // a slide that is still loading doesn't appear (and close the menu)
 	clearTimeout(nextTimer);
 	clearTimeout(idleTimer);
@@ -711,7 +745,12 @@ function closeMenu(resume = true) {
 	menu.innerHTML = "";   // also stops the previews
 	clearTimeout(menuIdleTimer);
 	clearInterval(menuTakeoverTimer);
-	if (resume) carryOn();
+	if (resume) {
+		carryOn();
+		// The menu's buttons are gone, so focus fell to the page: give it back to the slide's button, if that's still there.
+		if (menuReturnFocus?.isConnected && layers[front].contains(menuReturnFocus)) menuReturnFocus.focus({ preventScroll: true });
+	}
+	menuReturnFocus = null;
 }
 
 // The slideshow goes on from the slide on screen (after the menu, which stopped its timers).

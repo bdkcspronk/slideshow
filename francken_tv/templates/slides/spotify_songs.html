@@ -42,18 +42,19 @@
 				<span class="spotify-song-length">{{ song.length }}</span>
 			</button>
 			{% if song.uri in queued %}
-			<span class="spotify-control queued" aria-label="In the queue">&#10003;</span>
+			{# Still a button (with no action), so keyboard focus stays on it through the redraw (data-focus-key) #}
+			<button class="spotify-control queued" data-focus-key="queue-{{ song.uri }}" aria-disabled="true" aria-label="In the queue">&#10003;</button>
 			{% else %}
-			<button class="spotify-control" data-action="queue" data-value="{{ song.uri }}|{{ playlist.uri }}|{{ page }}" aria-label="Add to the queue">+</button>
+			<button class="spotify-control" data-action="queue" data-focus-key="queue-{{ song.uri }}" data-value="{{ song.uri }}|{{ playlist.uri }}|{{ page }}" aria-label="Add to the queue">+</button>
 			{% endif %}
 		</li>
 		{% endfor %}
 	</ol>
 	{% if pages > 1 %}
 	<div class="spotify-pages">
-		<button class="spotify-button" data-action="songs" data-value="{{ playlist.uri }}|{{ page - 1 }}"{% if page == 0 %} disabled{% endif %}>&larr;</button>
+		<button class="spotify-button" data-action="songs" data-focus-key="prev" data-value="{{ playlist.uri }}|{{ page - 1 }}"{% if page == 0 %} disabled{% endif %}>&larr;</button>
 		<span>Page {{ page + 1 }} of {{ pages }}</span>
-		<button class="spotify-button" data-action="songs" data-value="{{ playlist.uri }}|{{ page + 1 }}"{% if page + 1 >= pages %} disabled{% endif %}>&rarr;</button>
+		<button class="spotify-button" data-action="songs" data-focus-key="next" data-value="{{ playlist.uri }}|{{ page + 1 }}"{% if page + 1 >= pages %} disabled{% endif %}>&rarr;</button>
 	</div>
 	{% endif %}
 	{% endif %}

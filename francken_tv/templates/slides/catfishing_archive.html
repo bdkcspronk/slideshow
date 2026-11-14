@@ -11,9 +11,9 @@
 		<div class="catfishing-archive-totals"><b>{{ done }}</b> of {{ days }} days played{% if started %} &middot; <b>{{ started }}</b> started{% endif %}</div>
 	</header>
 	<div class="catfishing-month">
-		<button class="puzzle-back" data-action="archive" data-value="{{ previous }}"{% if not previous %} disabled{% endif %} aria-label="Previous month">&lsaquo;</button>
+		<button class="puzzle-back" data-action="archive" data-focus-key="prev" data-value="{{ previous }}"{% if not previous %} disabled{% endif %} aria-label="Previous month">&lsaquo;</button>
 		<h2>{{ month.strftime("%B %Y") }}</h2>
-		<button class="puzzle-back" data-action="archive" data-value="{{ next }}"{% if not next %} disabled{% endif %} aria-label="Next month">&rsaquo;</button>
+		<button class="puzzle-back" data-action="archive" data-focus-key="next" data-value="{{ next }}"{% if not next %} disabled{% endif %} aria-label="Next month">&rsaquo;</button>
 	</div>
 	{% if error %}<p class="catfishing-archive-error">{{ error }}</p>{% endif %}
 	<div class="catfishing-calendar">

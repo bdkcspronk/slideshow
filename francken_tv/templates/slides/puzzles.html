@@ -5,7 +5,7 @@
 <div class="slide puzzles-slide" data-interactive data-idle-seconds="240" data-provider="puzzles">
 	{% for card in cards %}
 	<div class="puzzle-shadow">   {# the card's shadow (the clip on the button would cut it off) #}
-	<button class="puzzle-card squircle squircle-edge puzzle-{{ card.name }} status-{{ card.state }}" data-action="open" data-value="{{ card.name }}">
+	<button class="puzzle-card squircle squircle-edge puzzle-{{ card.name }} status-{{ card.state }}"{% if loop.first %} data-autofocus{% endif %} data-action="open" data-value="{{ card.name }}">
 		{# A small picture of each game, in its own colours. #}
 		<span class="puzzle-icon" aria-hidden="true">
 			{% if card.name == "connections" %}
