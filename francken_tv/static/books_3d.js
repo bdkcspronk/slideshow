@@ -400,7 +400,7 @@ function makeBookcase(THREE, { W, H, D, books, caseSize, distance, height, textu
 }
 
 // A hardcover book standing upright, its front cover facing +z and the spine on the left (-x); W x H x D in total.
-// The boards have rounded edges and corners and the front one is embossed by its own picture (a bump map: the gold
+// The boards have square corners and bevelled edges, and the front one is embossed by its own picture (a bump map: the gold
 // title of a drawn cover stands out, a printed one a little); the pages are set back, their fore edge curved in, with a
 // headband at the top and bottom; cloth-bound books (drawn covers) have raised bands across the spine. 5 draw calls.
 function makeBook(THREE, { W, H, D, pagesMaterial, cover, spine, cloth, bands }) {
@@ -412,10 +412,10 @@ function makeBook(THREE, { W, H, D, pagesMaterial, cover, spine, cloth, bands })
 	const clothMaterial = new THREE.MeshStandardMaterial({ color: clothColour, roughness: 0.85 });
 	const coverMaterial = new THREE.MeshStandardMaterial({ map: cover, bumpMap: cover, bumpScale: 1.5, roughness: 0.45 });   // a little gloss: a moving highlight
 
-	// The boards: a rounded rectangle with bevelled edges. The picture covers the flat front only (u and v from 0 to 1
-	// over it); the edges are cloth.
+	// The boards: a rectangle with square corners (a book cover isn't rounded) and slightly bevelled edges. The picture
+	// covers the flat front only (u and v from 0 to 1 over it); the edges are cloth.
 	const boardW = W - r + 0.15;
-	const boardGeometry = bevelledBox(THREE, boardW, H, board, 0.2, 0.6);
+	const boardGeometry = bevelledBox(THREE, boardW, H, board, 0.2);
 	const box = new THREE.Box3().setFromBufferAttribute(boardGeometry.attributes.position);
 	const position = boardGeometry.attributes.position, uv = boardGeometry.attributes.uv;
 	for (let v = 0; v < uv.count; v++) {

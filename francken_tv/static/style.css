@@ -1797,8 +1797,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	width: var(--w);
 	height: var(--h);
 	box-sizing: border-box;
-	border-radius: 0 0.4vh 0.4vh 0;
-	overflow: hidden;
+	overflow: hidden;   /* square corners, like the 3D book: a cover isn't rounded */
 	background: hsl(var(--hue) 30% 30%);
 	visibility: hidden;
 }
