@@ -18,7 +18,10 @@ class MembershipProvider(Provider):
 		self.link = settings.get("link", "https://professorfrancken.nl/register")
 		self.months = set(settings.get("months", [8, 9, 10, 2]))   # August to October, and February
 
+	def in_menu(self, now: datetime) -> bool:
+		return now.month in self.months   # outside the sign-up months it's not in the menu either
+
 	def slides(self, now: datetime) -> list[Slide]:
-		if now.month not in self.months:
+		if not self.in_menu(now):
 			return []
 		return [Slide("membership.html", self.seconds, {"link": self.link})]

@@ -159,6 +159,12 @@ class GroupsTest(unittest.TestCase):
 			[("weather", True), ("rain", True)])
 		self.assertIsNone(menu.group_status(self.app, "Nothing"))
 
+	def test_a_slide_type_out_of_season_is_not_in_the_menu(self):
+		self.providers["fotocie"].in_menu = lambda now: now.month != NOW.month
+		self.assertNotIn("Committees", [group["title"] for group in menu.groups(self.app)])
+		self.app.clock = SimpleNamespace(now=lambda: datetime(2026, 2, 16, 12, 0))
+		self.assertIn("Committees", [group["title"] for group in menu.groups(self.app)])
+
 	def test_a_takeover_with_a_menu_slide_is_in_the_menu_while_it_has_one(self):
 		class Friday(Takeover):
 			name, title = "vrijmibo", "Vrijmibo"

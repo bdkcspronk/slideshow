@@ -69,6 +69,11 @@ class Provider:
 		it when making the slide has an effect, e.g. moving on to the next news feed."""
 		return self.shortcut_slide(now) is not None
 
+	def in_menu(self, now: datetime) -> bool:
+		"""Whether the slide type is in the menu (Esc) at all right now. False for slides that are only shown in
+		some seasons (membership), so they leave the menu then instead of being greyed out. Usually True."""
+		return True
+
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
 		"""For interactive slides: a data-action button was clicked, with the values of the
 		selected data-toggle elements. Return the redrawn slide and an optional message."""

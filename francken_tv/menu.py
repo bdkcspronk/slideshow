@@ -67,11 +67,14 @@ def has_slide(provider: Provider, app: App) -> bool:
 
 
 def channels(app: App) -> list[dict]:
-	"""Every slide type of the rotation, and the EXTRA ones after it, the MENU_ONLY ones, and the takeovers that have a menu slide right now
+	"""Every slide type of the rotation that is in season (Provider.in_menu), and the EXTRA ones after it, the MENU_ONLY ones, and the takeovers that have a menu slide right now
 	(the vrijmibo, on Fridays), as {"name", "label", "group"} (the group's number in GROUPS), sorted by group; within a
 	group in the order of the rotation."""
 	found = []
+	now = app.clock.now()
 	for provider in app.scheduler.providers:
+		if not provider.in_menu(now):   # out of season (membership)
+			continue
 		for name, label in [(provider.name, ""), *EXTRA.get(provider.name, [])]:
 			known = app.providers.get(name)
 			label = label or (known.title if known else "") or name.replace("_", " ").capitalize()
@@ -81,7 +84,6 @@ def channels(app: App) -> list[dict]:
 		known = app.providers.get(name)
 		if known is not None and name not in listed:
 			found.append({"name": name, "label": title(known), "group": group_of(name.replace("_", "-"))})
-	now = app.clock.now()
 	for takeover in getattr(app, "takeovers", {}).values():
 		if takeover.menu_slide(now) is not None:
 			found.append({"name": takeover.name, "label": takeover.title or takeover.name.capitalize(), "group": group_of(takeover.name)})
