@@ -31,6 +31,10 @@ class VoiceDownloadTest(unittest.TestCase):
 	def announcer(self, download_voice=True):
 		# Made with downloading off: on a PC with piper installed, the constructor would start a real download.
 		made = Announcer({"voice": "en_US-ryan-high", "download_voice": False}, self.voices, self.cache)
+		# The constructor already queued prepare_voice() on the background thread (with piper installed). Wait for it
+		# before switching downloading on: run late, it would start a real download (which Python waits for at exit,
+		# so the tests seemed to hang) or call the next test's mocked requests.get.
+		made.preparer.submit(lambda: None).result()
 		made.has_piper, made.player = True, "ffplay"   # whatever this PC has installed
 		made.download_voice = download_voice
 		return made
