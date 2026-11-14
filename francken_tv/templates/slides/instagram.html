@@ -21,13 +21,16 @@
 			</div>
 		</div>
 	</div>
-	{% if posts %}<canvas class="ig-3d" data-instagram-3d data-seconds="{{ seconds }}" data-album-seconds="{{ album_seconds }}" aria-hidden="true"></canvas>{% endif %}
+	{% if posts %}<canvas class="ig-3d" data-instagram-3d data-seconds="{{ seconds }}" data-album-seconds="{{ album_seconds }}" data-story-seconds="{{ story_seconds }}" aria-hidden="true"></canvas>{% endif %}
+	{# The newest story, played by the 3D phone at the end (static/instagram_3d.js); not shown without WebGL. #}
+	{% if story %}<div class="ig-story" hidden data-picture="{{ story.picture }}" data-ago="{{ story.ago }}">{% if story.video %}<video src="{{ story.video }}" muted playsinline preload="auto"></video>{% endif %}</div>{% endif %}
 	<div class="ig-phone">
 		<div class="ig-screen squircle">   {# the phone's bezel keeps its plain round corners #}
 			<div class="ig-feed{{ ' still' if not posts }}">
 				<div class="ig-topbar"><b>{{ username }}</b></div>
 				<div class="ig-profile">
-					{% if picture %}<img class="ig-avatar big" src="{{ picture }}" alt="">{% else %}<span class="ig-avatar big"></span>{% endif %}
+					{% set ring = " story" if story else "" %}   {# Instagram's ring: a live story #}
+					{% if picture %}<img class="ig-avatar big{{ ring }}" src="{{ picture }}" alt="">{% else %}<span class="ig-avatar big{{ ring }}"></span>{% endif %}
 					{% if followers %}
 					<div class="ig-counts">
 						<span><b>{{ post_count }}</b>posts</span>

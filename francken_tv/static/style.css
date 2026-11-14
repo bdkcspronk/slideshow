@@ -3624,7 +3624,8 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .ig-topbar { padding: 6vh 2vh 1.6vh; font-size: 2.9vh; }
 .ig-profile { display: flex; align-items: center; gap: 2.4vh; padding: 0 2vh; }
 .ig-avatar { flex: none; width: 4.4vh; height: 4.4vh; border-radius: 50%; object-fit: cover; background: #ddd; }
-.ig-avatar.big { width: 11vh; height: 11vh; padding: 0.4vh; background: var(--ig-gradient); box-sizing: border-box; border: 0.4vh solid #fff; outline: 0.35vh solid transparent; }
+.ig-avatar.big { width: 11vh; height: 11vh; box-sizing: border-box; }
+.ig-avatar.big.story { padding: 0.4vh; background: var(--ig-gradient); border: 0.4vh solid #fff; outline: 0.35vh solid transparent; }   /* the ring: a live story */
 .ig-counts { display: flex; gap: 3.6vh; font-size: 2vh; color: #444; }
 .ig-counts span { display: flex; flex-direction: column; align-items: center; }
 .ig-counts b { font-size: 2.7vh; color: #111; }

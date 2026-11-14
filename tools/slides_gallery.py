@@ -174,7 +174,7 @@ def prepare(now: datetime):
 	from francken_tv.config import CACHE_DIR, DEFAULT_CONFIG, load_config
 	from francken_tv.providers.activities import Activity
 	from francken_tv.providers.francken_vrij import Issue
-	from francken_tv.providers.instagram import Post
+	from francken_tv.providers.instagram import Post, Story
 	from francken_tv.providers.spotify import NowPlaying
 	from francken_tv.slides import media_url
 
@@ -216,6 +216,7 @@ def prepare(now: datetime):
 	instagram.posts = posts[:instagram.posts_shown]   # as many as the TV shows
 	instagram.profile = {"username": instagram.username or "francken", "name": "T.F.V. 'Professor Francken'",
 		"picture": posts[0].picture, "followers_count": 812, "media_count": 245}
+	instagram.story = Story("", "", now - timedelta(hours=3), picture=posts[5].picture)   # played at the end, in 3D
 
 	spotify = providers["spotify"]
 	spotify.credentials = lambda: {"refresh_token": "made up"}
@@ -315,7 +316,8 @@ class Assets:
 	"""Images as data: URIs, each stored once (the Francken Vrij uses each page 24 times); the slides
 	refer to them as @@asset-N@@, which the page swaps back in when it shows a slide."""
 
-	PATTERN = re.compile(r"""(?:(?:src|href|poster)=["']|url\(\s*['"]?|url\(&#39;)(?P<url>(?:/files/|/static/|https?://)[^"'\s)&]+(?:&amp;[^"'\s)&]+)*)""")
+	# Also data-picture (Instagram's story) and urls in a JSON attribute, quoted as &#34; (an Instagram album's pictures).
+	PATTERN = re.compile(r"""(?:(?:src|href|poster|data-picture)=["']|&#34;|url\(\s*['"]?|url\(&#39;)(?P<url>(?:/files/|/static/|https?://)[^"'\s)&]+(?:&amp;[^"'\s)&]+)*)""")
 	PICTURE = re.compile(r"\.(png|jpe?g|gif|webp|svg|mp4|wav)(\?|$)|upload\.wikimedia|covers\.openlibrary|imgs\.xkcd|/images?/|/media/", re.I)
 
 	def __init__(self, project: Path) -> None:
@@ -391,7 +393,7 @@ def page(project: Path, slides: list[dict], assets: list[str], tiles: dict, now:
 	style = inline_css((static / "style.css").read_text(encoding="utf-8"), static)
 	leaflet_css = inline_css((static / "vendor/leaflet/leaflet.css").read_text(encoding="utf-8"), static / "vendor/leaflet")
 	scripts = "\n".join((static / name).read_text(encoding="utf-8") for name in
-		["vendor/leaflet/leaflet.js", "vendor/qrcode/qrcode.js", "widgets.js", "books_3d.js", "bieruur_3d.js", "instagram_3d.js"])
+		["vendor/leaflet/leaflet.js", "vendor/qrcode/qrcode.js", "vendor/three/three.min.js", "widgets.js", "books_3d.js", "bieruur_3d.js", "instagram_3d.js"])
 	frame = FRAME.replace("/*STYLE*/", leaflet_css + "\n" + style).replace("/*SCRIPTS*/", scripts.replace("</script", "<\\/script"))
 	grotesk = base64.b64encode((static / "vendor/familjen-grotesk/familjen-grotesk-700.woff2").read_bytes()).decode()
 	data = {"slides": slides, "assets": assets, "tiles": tiles, "frame": frame,

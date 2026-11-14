@@ -9,6 +9,8 @@ The posts' pictures and videos are downloaded (data/cache/instagram): Instagram'
 A video plays muted on the phone; one bigger than MAX_DOWNLOAD (or that Instagram gives no file for, e.g.
 with licensed music) shows its cover. Of an album (CAROUSEL_ALBUM) the first ALBUM_PICTURES pictures are
 downloaded (a video in it as its cover): the 3D phone swipes through them while the post is lifted out.
+The newest live story (of the last 24 hours) is downloaded too: the profile picture gets Instagram's ring, and at the
+end the 3D phone taps it and plays the story. Instagram may refuse stories to this kind of app; then there are none.
 
 Without a connection (no token yet, or Instagram never answered) the slide is shown all the same, for the
 account in [instagram] username: "Follow us" with the QR code, and on the phone a profile with empty
@@ -39,6 +41,9 @@ POST_FIELDS = "id,media_type,media_url,thumbnail_url,permalink,timestamp,like_co
 ALBUM_PICTURES = 4                     # of an album, at most this many pictures (each one more texture on the TV PC)
 ALBUM_SECONDS = 3                      # the slide is this much longer for each album picture after the first (to look at it)
 ALBUM_FIELDS = ",children{media_type,media_url,thumbnail_url}"
+STORY_FIELDS = "id,media_type,media_url,thumbnail_url,timestamp"
+STORY_SECONDS = 7                      # the slide is this much longer with a story: tapping, opening, playing, closing
+STORY_LIFE = timedelta(hours=24)       # how long a story is live
 MAX_DOWNLOAD = 50 * 1024 * 1024        # a bigger video isn't downloaded: it shows its cover
 REFRESH_EVERY = timedelta(days=7)      # renew the token (valid 60 days) this often
 EXPIRY_WARNING = timedelta(days=14)    # warn on /status when the token is this close to expiring
@@ -87,6 +92,31 @@ def album_pictures(item: dict) -> list[str]:
 	return urls if len(urls) > 1 else []
 
 
+@dataclass
+class Story:
+	picture_url: str        # Instagram's link to the picture (a video's cover)
+	video_url: str          # a video's file, "" if it's a picture (or Instagram gives none)
+	time: datetime | None   # local time
+	picture: str = ""       # the downloaded copies, as /files/ urls
+	video: str = ""
+
+
+def parse_time(text: str | None) -> datetime | None:
+	try:
+		return datetime.fromisoformat(text.replace("+0000", "+00:00")).astimezone().replace(tzinfo=None)
+	except (AttributeError, ValueError):
+		return None
+
+
+def newest_story(data: dict) -> Story | None:
+	"""The newest story from /me/stories (a video shows its cover until it plays), None without one."""
+	stories = [Story(item.get("thumbnail_url" if item.get("media_type") == "VIDEO" else "media_url") or item.get("thumbnail_url") or "",
+		item.get("media_url", "") if item.get("media_type") == "VIDEO" else "", parse_time(item.get("timestamp")))
+		for item in data.get("data") or []]
+	stories = [story for story in stories if story.picture_url]
+	return max(stories, key=lambda story: story.time or datetime.min) if stories else None
+
+
 def count(number: int | None) -> str:
 	"""1234 -> '1,234'; 12345 -> '12.3K', as Instagram writes them."""
 	if number is None:
@@ -112,6 +142,8 @@ class InstagramProvider(Provider):
 		self.posts: list[Post] = []
 		self.captions = True   # Instagram may refuse captions to this kind of app; then we stop asking
 		self.albums = True     # the same for an album's pictures (its children)
+		self.stories = True    # and for the stories
+		self.story: Story | None = None
 
 	def credentials(self) -> dict:
 		try:
@@ -167,9 +199,14 @@ class InstagramProvider(Provider):
 		for post in posts:
 			if post.kind == "VIDEO" and not post.video_url:   # Instagram leaves it out for e.g. copyrighted music
 				log.warning("Instagram gave no file for the video %s: showing its cover", post.permalink)
+		story = self.fetch_story(token)
 		pictures = [profile.get("profile_picture_url") or ""] + [post.picture_url for post in posts]
 		albums = [url for post in posts for url in post.album_urls]
-		files = self.download([(url, ".jpg") for url in pictures] + [(post.video_url, ".mp4") for post in posts] + [(url, ".jpg") for url in albums])
+		story_files = [(story.picture_url, ".jpg"), (story.video_url, ".mp4")] if story else []   # in the same download: it deletes what it isn't given
+		files = self.download([(url, ".jpg") for url in pictures] + [(post.video_url, ".mp4") for post in posts] + [(url, ".jpg") for url in albums] + story_files)
+		if story:
+			story.picture, story.video = files[-2:]
+		self.story = story if story and story.picture else None
 		profile["picture"], *post_pictures = files[:len(pictures)]
 		videos, album_files = files[len(pictures):len(pictures) + len(posts)], iter(files[len(pictures) + len(posts):])
 		for post, picture, video in zip(posts, post_pictures, videos):
@@ -177,6 +214,22 @@ class InstagramProvider(Provider):
 			album = [next(album_files) for _ in post.album_urls]
 			post.album = [file for file in album if file] if len([file for file in album if file]) > 1 else []
 		self.profile, self.posts = profile, [post for post in posts if post.picture]   # a post without its picture is left out
+
+	def fetch_story(self, token: str) -> Story | None:
+		"""The newest live story, None without one (or when Instagram won't give them: then it's not asked again)."""
+		if not self.stories:
+			return None
+		try:
+			response = requests.get(f"{API}/me/stories", params={"fields": STORY_FIELDS, "access_token": token}, timeout=20)
+			if response.status_code in (400, 403):
+				self.stories = False
+				log.warning("Instagram gives no stories to this app (%s): the slide goes on without them: %s", response.status_code, response.text[:200])
+				return None
+			response.raise_for_status()
+			return newest_story(response.json())
+		except (requests.RequestException, ValueError) as error:   # the posts show all the same
+			log.warning("Could not fetch the Instagram stories: %s", error)
+			return None
 
 	def fetch_posts(self, token: str) -> list[Post]:
 		fields = POST_FIELDS + (",caption" if self.captions else "") + (ALBUM_FIELDS if self.albums else "")
@@ -236,7 +289,8 @@ class InstagramProvider(Provider):
 			return {"username": self.username, "name": "", "picture": "", "followers": "", "post_count": "",
 				"link": f"https://instagram.com/{self.username}", "scroll_seconds": 0, "posts": [], "tiles": 9, "seconds": self.seconds}
 		username = self.profile.get("username", "")
-		seconds = self.seconds + ALBUM_SECONDS * sum(max(len(post.album) - 1, 0) for post in self.posts)
+		story = self.story if self.story and (not self.story.time or now - self.story.time < STORY_LIFE) else None   # still live
+		seconds = self.seconds + ALBUM_SECONDS * sum(max(len(post.album) - 1, 0) for post in self.posts) + (STORY_SECONDS if story else 0)
 		return {
 			"username": username,
 			"name": self.profile.get("name") or username,
@@ -247,6 +301,8 @@ class InstagramProvider(Provider):
 			"scroll_seconds": max(seconds - 5, 5),   # the posts scroll by, after a moment and with a moment left
 			"seconds": seconds,   # longer with albums; the 3D phone's timeline (static/instagram_3d.js)
 			"album_seconds": ALBUM_SECONDS,
+			"story": {"picture": story.picture, "video": story.video, "ago": ago(story.time, now)} if story else None,
+			"story_seconds": STORY_SECONDS,
 			"posts": [{"picture": post.picture, "likes": count(post.likes), "comments": count(post.comments), "caption": post.caption,
 				"ago": ago(post.time, now), "kind": post.kind, "video": post.video, "album": post.album} for post in self.posts],
 		}

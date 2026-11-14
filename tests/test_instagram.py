@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest import mock
 
-from francken_tv.providers.instagram import InstagramProvider, count, parse_posts
+from francken_tv.providers.instagram import InstagramProvider, count, newest_story, parse_posts
 
 NOW = datetime(2026, 10, 26, 20, 0)
 MEDIA = {"data": [
@@ -50,6 +50,8 @@ def instagram(url, params=None, **kwargs):
 	if url.endswith("/me"):
 		return Response(data={"username": "tfvprofessorfrancken", "name": "T.F.V. 'Professor Francken'",
 			"profile_picture_url": "https://cdn.example/me.jpg", "followers_count": 812, "media_count": 140})
+	if url.endswith("/me/stories"):   # none: see StoryTest
+		return Response(data={"data": []})
 	if url.endswith("/me/media"):   # an album's pictures (children) only when asked for
 		asked = "children" in ((params or {}).get("fields") or "")
 		return Response(data={"data": [item if asked else {key: value for key, value in item.items() if key != "children"} for item in MEDIA["data"]]})
@@ -168,3 +170,48 @@ class InstagramTest(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+STORIES = {"data": [
+	{"id": "s1", "media_type": "IMAGE", "media_url": "https://cdn.example/s1.jpg", "timestamp": "2026-10-26T12:00:00+0000"},
+	{"id": "s2", "media_type": "VIDEO", "media_url": "https://cdn.example/s2.mp4", "thumbnail_url": "https://cdn.example/s2.jpg", "timestamp": "2026-10-26T15:00:00+0000"},
+]}
+
+
+class StoryTest(unittest.TestCase):
+	def setUp(self):
+		self.folder = Path(tempfile.mkdtemp())
+		credentials = self.folder / "instagram.json"
+		credentials.write_text(json.dumps({"access_token": "t", "renewed_at": NOW.isoformat()}))
+		self.provider = InstagramProvider({"posts": 6}, credentials, self.folder / "pictures", 20)
+		patcher = mock.patch("francken_tv.providers.instagram.media_url", side_effect=lambda path: f"/files/{path.name}")
+		patcher.start()
+		self.addCleanup(patcher.stop)
+
+	def refresh(self, stories):
+		def with_stories(url, params=None, **kwargs):
+			return stories if url.endswith("/me/stories") else instagram(url, params, **kwargs)
+		with mock.patch("francken_tv.providers.instagram.requests.get", side_effect=with_stories):
+			self.provider.refresh(NOW)
+		return self.provider.slides(NOW)[0]
+
+	def test_the_newest_story(self):
+		story = newest_story(STORIES)
+		self.assertEqual((story.picture_url, story.video_url), ("https://cdn.example/s2.jpg", "https://cdn.example/s2.mp4"))
+		self.assertIsNone(newest_story({"data": []}))
+
+	def test_a_story_is_played_and_makes_the_slide_longer(self):
+		slide = self.refresh(Response(data=STORIES))
+		story = slide.data["story"]
+		self.assertTrue(story["picture"].startswith("/files/") and story["video"].endswith(".mp4"))
+		self.assertEqual(slide.seconds, 20 + 9 + 7)   # 20, the album's 3 pictures after the first, and the story
+
+	def test_an_old_story_is_not_shown(self):
+		self.refresh(Response(data=STORIES))
+		self.assertIsNone(self.provider.slide_data(NOW + timedelta(days=1))["story"])
+
+	def test_without_stories_when_instagram_refuses_them(self):
+		slide = self.refresh(Response(400, {"error": {"message": "Unsupported request"}}))
+		self.assertIsNone(slide.data["story"])
+		self.assertFalse(self.provider.stories)   # not asked again
+		self.assertEqual(len(slide.data["posts"]), 3)   # the posts all the same

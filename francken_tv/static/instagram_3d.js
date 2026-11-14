@@ -76,6 +76,12 @@ async function drawInstagram3d(THREE, canvas, slide) {
 			album: (await Promise.all(JSON.parse(article.dataset.album || "[]").map(loadImage))).filter(Boolean),   // an album's pictures
 		};
 	}));
+	// The newest story (if there's one live): played at the end, after a tap on the profile picture.
+	const storyHtml = slide.querySelector(".ig-story");
+	let story = storyHtml && { picture: await loadImage(storyHtml.dataset.picture), video: storyHtml.querySelector("video"),
+		ago: storyHtml.dataset.ago ?? "", username: profile.username, avatar };
+	if (!story?.picture) story = null;
+	profile.story = Boolean(story);
 	if (!document.contains(canvas) || !posts.length) {
 		slide.classList.remove("ig-3d-on");
 		return renderer.dispose();
@@ -94,6 +100,7 @@ async function drawInstagram3d(THREE, canvas, slide) {
 	holder.style.top = `${phoneBox.top + phoneBox.height / 2 - slide.getBoundingClientRect().top}px`;
 	slide.append(holder);
 	posts.forEach((post) => post.video && holder.append(post.video));
+	if (story?.video) holder.append(story.video);
 
 	let quality = 1;
 	const resize = () => {
@@ -206,6 +213,37 @@ async function drawInstagram3d(THREE, canvas, slide) {
 	notch.absarc(-3.3, 0, 1.2, Math.PI / 2, Math.PI * 1.5, false);
 	flat(new THREE.ShapeGeometry(notch, 8), new THREE.MeshBasicMaterial({ color: 0x000000, ...inScreen }), 7, 0.15).position.y = sh / 2 - 2.4;
 
+	// The story: the profile picture is tapped (a shade over it, a moment), the story grows out of it to the whole
+	// screen (picture or video, with the bar, the name and how long ago on top), the bar fills while it plays, and it
+	// shrinks back into the picture, whose ring is grey from then on (seen), as on Instagram. Under the notch.
+	let stories = null;
+	if (story) {
+		const group = new THREE.Group();
+		group.position.z = 0.13;
+		phone.add(group);
+		const layer = (geometry, map, order, options = {}) => {
+			const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map, ...inScreen, ...options }));
+			mesh.renderOrder = order;
+			group.add(mesh);
+			return mesh;
+		};
+		const pictureCanvas = feedCanvas(sw, sh, px);
+		pictureCanvas.ctx.fillStyle = "#000000";
+		pictureCanvas.ctx.fillRect(0, 0, sw, sh);
+		drawCover(pictureCanvas.ctx, story.picture, 0, 0, sw, sh);
+		const parts = [layer(cardGeometry(THREE, sw, sh, 7.7), texture(new THREE.CanvasTexture(pictureCanvas.canvas)), 6.2)];
+		const video = story.video && layer(new THREE.PlaneGeometry(sw, sh), texture(new THREE.VideoTexture(story.video)), 6.3);
+		if (video) parts.push(video);
+		parts.push(layer(cardGeometry(THREE, sw, sh, 7.7), texture(new THREE.CanvasTexture(storyOverlayCanvas(story, sw, sh, px, font))), 6.4));
+		const bar = layer(new THREE.PlaneGeometry(1, STORY_BAR.h), null, 6.5, { color: 0xffffff });
+		bar.position.y = sh / 2 - STORY_BAR.y - STORY_BAR.h / 2;
+		parts.push(bar);
+		// On the profile picture (its middle, on the profile's card): the shade of the tap, and the grey ring of a seen story.
+		const shade = flat(new THREE.CircleGeometry(AVATAR.d / 2, 40), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0, ...inScreen }), 5.5, 0.11);
+		const seen = flat(new THREE.RingGeometry(AVATAR.d / 2 - 0.4, AVATAR.d / 2, 64), new THREE.MeshBasicMaterial({ color: 0xc7c7c7, ...inScreen }), 5.6, 0.11);
+		stories = { group, parts, video, bar, shade, seen, cropped: false, started: false };
+	}
+
 	// The timeline. The feed's scroll (how far it is moved up, vh): at first the bottom of the feed at the bottom of
 	// the screen; for each post (oldest first) the post in the middle of the screen as far as the feed allows; at the
 	// end the top. Each post: scroll to it, lift it out, hold, sink back.
@@ -216,7 +254,8 @@ async function drawInstagram3d(THREE, canvas, slide) {
 	const order = items.slice(1).reverse();   // the posts, oldest first
 	// An album hovers album-seconds longer for each picture after the first (the server made the slide that much longer
 	// too); the rest of the time is shared out equally over the posts' holds.
-	const fixed = order.length * (lift + sink) + (order.length - 1) * scroll + top + rest;
+	const storySeconds = story ? Number(canvas.dataset.storySeconds) || 7 : 0;   // the server made the slide that much longer
+	const fixed = order.length * (lift + sink) + (order.length - 1) * scroll + top + storySeconds + rest;
 	const extra = (item) => (Number(canvas.dataset.albumSeconds) || 3) * ((item.album?.pictures.length ?? 1) - 1);
 	const shared = (seconds - enter - fixed - order.reduce((sum, item) => sum + extra(item), 0)) / order.length;
 	let next = enter;
@@ -244,6 +283,45 @@ async function drawInstagram3d(THREE, canvas, slide) {
 		const last = steps.at(-1);
 		if (last && t > last.end) s = last.to * (1 - scrollEase(clamp((t - last.end) / top)));
 		return s;
+	};
+
+	// The story, after the scroll up to the profile: the tap (0.15 to 0.45 s in), opening (0.35 to 0.75 s), playing, and
+	// closing in the last STORY_CLOSE s.
+	const storyAt = (steps.at(-1)?.end ?? enter) + top;
+	const openEase = cubicBezier(0.2, 0.8, 0.3, 1), closeEase = cubicBezier(0.4, 0, 1, 1);
+	const poseStory = (t, s) => {
+		const { group, parts, video, bar, shade, seen } = stories;
+		const x = t - storyAt;
+		const avatarX = -sw / 2 + AVATAR.x + AVATAR.d / 2, avatarY = sh / 2 + s - AVATAR.y - AVATAR.d / 2;
+		shade.position.set(avatarX, avatarY, 0.11);
+		seen.position.set(avatarX, avatarY, 0.11);
+		shade.material.opacity = 0.3 * Math.sin(Math.PI * clamp((x - 0.15) / 0.3));
+		seen.visible = x > storySeconds - 0.1;
+		const open = openEase(clamp((x - 0.35) / 0.4)) * (1 - closeEase(clamp((x - storySeconds + STORY_CLOSE) / STORY_CLOSE)));
+		group.visible = open > 0.001;
+		const small = AVATAR.d / sw;
+		group.scale.setScalar(small + (1 - small) * open);
+		group.position.set(avatarX * (1 - open), avatarY * (1 - open), 0.13);
+		parts.forEach((part) => { part.material.opacity = clamp(open * 3); });
+		const played = clamp((x - 0.75) / (storySeconds - 0.75 - STORY_CLOSE));
+		const barWidth = sw - 2 * STORY_BAR.x;
+		bar.scale.x = Math.max(played * barWidth, 0.001);
+		bar.position.x = -sw / 2 + STORY_BAR.x + bar.scale.x / 2;
+		if (video) {
+			const element = video.material.map.image;
+			if (x > 0.35 && !stories.started) {   // from its start as it opens
+				stories.started = true;
+				element.currentTime = 0;
+				element.play().catch(() => {});
+			}
+			if (!stories.cropped && element.videoWidth) {   // filling the screen, as object-fit: cover
+				stories.cropped = true;
+				const map = video.material.map, wide = (element.videoWidth / element.videoHeight) / (sw / sh);
+				if (wide > 1) map.repeat.set(1 / wide, 1); else map.repeat.set(1, wide);
+				map.offset.set((1 - map.repeat.x) / 2, (1 - map.repeat.y) / 2);
+			}
+			video.visible = open > 0.999 && element.readyState >= 2;   // a rectangle: only once the story fills the screen
+		}
 	};
 
 	const anchor = onPage(phoneBox.left + phoneBox.width / 2, phoneBox.top + phoneBox.height / 2);
@@ -288,6 +366,7 @@ async function drawInstagram3d(THREE, canvas, slide) {
 				dots.material.uniforms.at.value = Math.round(at);
 			}
 		}
+		if (stories) poseStory(t, s);
 		dim.material.opacity = 0.35 * clamp(lifted);
 		shadow.material.opacity = 0.9 * clamp(lifted);
 		if (liftedItem) {
@@ -413,6 +492,35 @@ function cardGeometry(THREE, w, h, r) {
 // The posts as on the HTML phone (style.css, "Instagram"), in vh: a header, the picture (4:5), the likes and comments,
 // and the caption (at most 3 lines).
 const POST_HEADER = 7.2;
+const AVATAR = { x: 2, y: 11.1, d: 11 };   // vh: the profile picture on the profile's card (top left corner, size)
+const STORY_BAR = { x: 1.2, y: 4.2, h: 0.35 };   // vh: the story's bar, from the top of the screen (under the notch)
+const STORY_CLOSE = 0.4;   // s
+
+// What's on top of a story (see-through elsewhere): a shade at the top, the bar's track, the avatar, the name, how long ago.
+function storyOverlayCanvas({ avatar, username, ago }, w, h, px, font) {
+	const canvas = document.createElement("canvas");
+	canvas.width = Math.round(w * px);
+	canvas.height = Math.round(h * px);
+	const ctx = canvas.getContext("2d");
+	ctx.scale(px, px);
+	const shade = ctx.createLinearGradient(0, 0, 0, 14);
+	shade.addColorStop(0, "rgba(0, 0, 0, 0.45)");
+	shade.addColorStop(1, "rgba(0, 0, 0, 0)");
+	ctx.fillStyle = shade;
+	ctx.fillRect(0, 0, w, 14);
+	ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+	ctx.fillRect(STORY_BAR.x, STORY_BAR.y, w - 2 * STORY_BAR.x, STORY_BAR.h);
+	drawAvatar(ctx, avatar, 1.6, 5.6, 4.2);
+	ctx.textBaseline = "middle";
+	ctx.fillStyle = "#ffffff";
+	ctx.font = `bold 2.1px ${font}`;
+	ctx.fillText(username, 6.6, 7.7);
+	const nameWidth = ctx.measureText(username).width;
+	ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+	ctx.font = `1.8px ${font}`;
+	ctx.fillText(ago, 6.6 + nameWidth + 1.2, 7.7);
+	return canvas;
+}
 const ALBUM_DOTS_Y = 2.85, ALBUM_DOT_STEP = 1.2;   // vh: the album's dots, below the picture, from the middle
 // A plane with its texture coordinates, for the shaders below.
 const PLANE_VERTEX = `
@@ -490,25 +598,28 @@ function drawAvatar(ctx, image, x, y, d) {
 	ctx.restore();
 }
 
-function profileCanvas({ username, name, counts, avatar }, w, px, font) {
+function profileCanvas({ username, name, counts, avatar, story }, w, px, font) {
 	const h = 27.9;
 	const { canvas, ctx } = feedCanvas(w, h, px);
 	ctx.fillStyle = "#111111";
 	ctx.font = `bold 2.9px ${font}`;
 	ctx.fillText(username, 2, 6 + 1.75);
-	// The big avatar in Instagram's gradient ring.
-	const ay = 11.1, d = 11;
-	const ring = ctx.createLinearGradient(2, ay + d, 2 + d, ay);
-	[["#fcaf45", 0], ["#f77737", 0.25], ["#e1306c", 0.55], ["#c13584", 0.75], ["#833ab4", 1]].forEach(([c, at]) => ring.addColorStop(at, c));
-	ctx.fillStyle = ring;
-	ctx.beginPath();
-	ctx.arc(2 + d / 2, ay + d / 2, d / 2, 0, 2 * Math.PI);
-	ctx.fill();
-	ctx.fillStyle = "#ffffff";
-	ctx.beginPath();
-	ctx.arc(2 + d / 2, ay + d / 2, d / 2 - 0.4, 0, 2 * Math.PI);
-	ctx.fill();
-	drawAvatar(ctx, avatar, 2.8, ay + 0.8, d - 1.6);
+	// The big avatar, in Instagram's gradient ring when there's a story.
+	const ay = AVATAR.y, d = AVATAR.d;
+	if (!story) drawAvatar(ctx, avatar, AVATAR.x, ay, d);
+	else {
+		const ring = ctx.createLinearGradient(2, ay + d, 2 + d, ay);
+		[["#fcaf45", 0], ["#f77737", 0.25], ["#e1306c", 0.55], ["#c13584", 0.75], ["#833ab4", 1]].forEach(([c, at]) => ring.addColorStop(at, c));
+		ctx.fillStyle = ring;
+		ctx.beginPath();
+		ctx.arc(2 + d / 2, ay + d / 2, d / 2, 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.fillStyle = "#ffffff";
+		ctx.beginPath();
+		ctx.arc(2 + d / 2, ay + d / 2, d / 2 - 0.4, 0, 2 * Math.PI);
+		ctx.fill();
+		drawAvatar(ctx, avatar, 2.8, ay + 0.8, d - 1.6);
+	}
 	// The counts, each a number over a word, side by side.
 	ctx.textAlign = "center";
 	let x = 2 + d + 2.4;
