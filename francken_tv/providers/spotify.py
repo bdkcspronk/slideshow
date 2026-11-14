@@ -355,8 +355,12 @@ class SpotifyProvider(Provider):
 			return
 		before = self.playing
 		self.playing = parse_playing(response.json(), time.monotonic()) if response.status_code == 200 and response.content else None
-		if before and self.playing and before.id == self.playing.id and abs(self.playing.progress_ms - before.progress()) > JUMP_MS:
-			self.jumps += 1   # restarted (the ⏮ button) or moved within the song: the slide redraws (see view())
+		if before and self.playing and before.id == self.playing.id and (
+				self.playing.progress_ms > before.progress() + JUMP_MS          # further than it can have played: moved on
+				or self.playing.progress_ms < before.progress_ms - JUMP_MS):    # behind where it was: restarted (⏮) or moved back
+			# A position in between is a song that played slower than expected or stalled (buffering): not a jump. Counting
+			# it redrew the slide at every check while a song hung, replaying the slide's first seconds over and over.
+			self.jumps += 1   # the slide redraws (see view())
 		if self.playing and self.volume_set and time.monotonic() - self.volume_set[1] < VOLUME_SETTLE_SECONDS:
 			self.playing.volume = self.volume_set[0]   # Spotify takes a moment to report a new volume
 		if self.playing:

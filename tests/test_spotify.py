@@ -403,6 +403,22 @@ class SpotifyTest(unittest.TestCase):
 		self.assertNotEqual(self.provider.view()["state"], state)
 		self.assertEqual(self.provider.view()["elapsed"], "0:00")
 
+	def test_a_stalled_song_does_not_redraw_the_slide(self):
+		self.connect()   # TRACK at 1:01, playing
+		state = self.provider.view()["state"]
+		self.provider.playing.fetched_at -= 5   # five seconds later Spotify still says 1:01 (buffering, a hanging player)
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, TRACK)):
+			self.provider.refresh(NOW)
+		self.assertEqual(self.provider.view()["state"], state)
+		self.provider.playing.fetched_at -= 5   # and again: still no jump
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, TRACK)):
+			self.provider.refresh(NOW)
+		self.assertEqual(self.provider.view()["state"], state)
+		self.provider.playing.fetched_at -= 1   # moved on by a minute in a second: a jump after all
+		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(200, TRACK | {"progress_ms": 121_000})):
+			self.provider.refresh(NOW)
+		self.assertNotEqual(self.provider.view()["state"], state)
+
 	def idle_provider(self):
 		self.path.write_text(json.dumps({"client_id": "id", "client_secret": "secret", "refresh_token": "r"}))
 		self.provider = SpotifyProvider({"play_on_start": False}, self.path, 8)
