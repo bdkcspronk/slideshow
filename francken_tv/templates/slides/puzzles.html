@@ -4,7 +4,8 @@
 #}
 <div class="slide puzzles-slide" data-interactive data-idle-seconds="240" data-provider="puzzles">
 	{% for card in cards %}
-	<button class="puzzle-card puzzle-{{ card.name }} status-{{ card.state }}" data-action="open" data-value="{{ card.name }}">
+	<div class="puzzle-shadow">   {# the card's shadow (the clip on the button would cut it off) #}
+	<button class="puzzle-card squircle squircle-edge puzzle-{{ card.name }} status-{{ card.state }}" data-action="open" data-value="{{ card.name }}">
 		{# A small picture of each game, in its own colours. #}
 		<span class="puzzle-icon" aria-hidden="true">
 			{% if card.name == "connections" %}
@@ -21,5 +22,6 @@
 		<span class="puzzle-status">{% if card.state == "solved" %}&#10003; {% endif %}{{ card.status }}{% if card.best %}<small>{{ card.best }}</small>{% endif %}</span>
 		<span class="puzzle-play">{{ "View" if card.state in ["solved", "lost"] else "Play" }}</span>
 	</button>
+	</div>
 	{% endfor %}
 </div>

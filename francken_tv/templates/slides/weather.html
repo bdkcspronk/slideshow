@@ -11,13 +11,13 @@
 		<div class="weather-text">{{ weather.text }}</div>
 		<div class="weather-details">Feels like {{ weather.feels_like | round | int }}&deg; &middot; wind {{ weather.wind_kmh | round | int }} km/h {{ weather.wind_from }}</div>
 	</div>
-	<div class="weather-rain">
+	<div class="weather-rain squircle">
 		<h2>{{ rain_summary }}</h2>
 		{% if rain %}{% with size = "" %}{% include "slides/rain_chart.html" %}{% endwith %}{% endif %}
 	</div>
 	<div class="weather-days">
 		{% for day in days %}
-		<div style="--i: {{ loop.index0 }}" title="{{ day.text }}">
+		<div class="squircle" style="--i: {{ loop.index0 }}" title="{{ day.text }}">
 			<span>{{ "Today" if day.day == today else day.day.strftime("%A") }}</span>
 			<b>{{ day.icon }}</b>
 			<strong>{{ day.high | round | int }}&deg; <em>/ {{ day.low | round | int }}&deg;</em></strong>

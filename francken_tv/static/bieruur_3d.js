@@ -491,6 +491,8 @@ async function drawBieruur3d(THREE, canvas, slide) {
 		if (partyAt === null && phase() === "bieruur") partyAt = t + party.wait;   // bieruur! (just after 00:00:00)
 		if (burstAt === null && partyAt !== null && t >= partyAt) {
 			burstAt = t;
+			// The party is far heavier than the calm countdown the first 30 frames were judged on: judge the first 30 party frames too.
+			if (quality === 1) { measured = false; gaps.length = 0; previous = null; }
 			nextWave = burst(t) + 0.3;
 			pop = { at: t, size: party.pop };
 			pieces.forEach(launch);

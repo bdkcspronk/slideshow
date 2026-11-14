@@ -11,7 +11,7 @@
 <div class="slide spotify-slide" data-state="{{ state }}" data-interactive data-provider="spotify" data-space-action="toggle">
 	{% if cover %}<div class="spotify-backdrop" style="background-image: url('{{ cover }}')"></div>{% endif %}
 	<div class="spotify-content">
-		{% if cover %}<img class="spotify-cover" src="{{ cover }}" alt="" data-steady="{{ cover }}">{% endif %}
+		{% if cover %}<div class="spotify-cover" data-steady="{{ cover }}"><img class="squircle" src="{{ cover }}" alt=""></div>{% endif %}   {# the div carries the shadow and entrance (the clip on the img would cut the shadow off) #}
 		<div class="spotify-info">
 			<div class="spotify-label">
 				<span class="spotify-eq{{ ' paused' if not is_playing }}"><i></i><i></i><i></i><i></i></span>

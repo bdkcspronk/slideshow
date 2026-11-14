@@ -24,7 +24,7 @@
    instead of meeting them abruptly. One clip-path shape() for the whole outline (Firefox 148+, Chrome 135+),
    so it stays exact at any size and while moving. Without shape(): the border-radius, the same circle.
    The clip cuts off shadows, outlines and borders: put a shadow on a parent (see .activities-slide li). */
-.squircle {
+.squircle, .squircle-edge::before {   /* .squircle-edge: the inset fill of a bordered box (::before) has the same corners, its --r being the box's minus the border */
 	--r: 2.4vh;
 	border-radius: calc(var(--r) / 1.6);
 	clip-path: shape(from var(--r) 0,
@@ -80,7 +80,11 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 
 /* A tapped button, while its answer is on the way (player.js). */
-[data-action].busy, [data-key].busy { opacity: 0.55; transform: scale(0.95); transition: opacity 0.1s, transform 0.1s; }
+[data-action].busy, [data-key].busy { opacity: 0.55; transform: scale(0.95); transition: opacity 0.1s ease-out, transform 0.1s ease-out; }
+/* Big cards and rows shrink less while waiting (0.97 like their press), or they would jump 5% on a tap; these need the
+   same specificity as the shared rule, so they come after it and repeat [data-action]. */
+.spotify-song[data-action].busy { transform: scale(0.97); }
+.puzzle-card[data-action].busy, .poll-option[data-action].busy { transform: none; }   /* these are clipped inside a shadow carrier, which dips instead (.puzzle-shadow, .poll-shadow): scaling the card would leave its shadow behind */
 /* Redrawn with the same value: no entrance again (data-steady, redraw() in player.js). */
 [data-steady].steady { animation: none; }
 
@@ -141,7 +145,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .photo-frame { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
 .photo-pair .photo-row { justify-content: space-evenly; padding: 4vh 0; box-sizing: border-box; }   /* the same gap left, between and right */
 .photo-pair .photo-frame { flex: 0 1 auto; max-width: 46vw; }   /* as wide as its photo */
-.photo-pair .photo-frame img { width: auto; height: 100%; max-width: 100%; object-fit: cover; border-radius: 0.8vw; box-shadow: 0 2vh 5vh rgba(0, 0, 0, 0.45); }   /* full height, also small photos */
+.photo-print { display: flex; height: 100%; max-width: 100%; min-width: 0; border-radius: 0.8vw; box-shadow: 0 2vh 5vh rgba(0, 0, 0, 0.45); }   /* the print's shadow (shapes only the blurred shadow); the photo is the img inside, with continuous corners (the clip would cut the shadow off) */
+.photo-pair .photo-frame img { --r: 1.28vw; width: auto; height: 100%; max-width: 100%; object-fit: cover; }   /* full height, also small photos; continuous corners (.squircle) */
 .photo-caption {
 	position: absolute;
 	left: 3vw;
@@ -385,6 +390,11 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 /* Another outlet tapped (redraw() in player.js): the title and the outlets stay put, the new cards come in at once. */
 .news-slide .poster-title.steady span, .news-slide .poster-title.steady .poster-marked::before, .news-feeds.steady li { animation: none; }
 .news-cards.steady li { animation-duration: 0.6s; animation-delay: calc(var(--i) * 0.08s); }
+/* Back from an article ("All news"): somebody is using the screen, not watching the show. The title and the outlets stay
+   as they are and the cards come in like after an outlet switch (data-quick in news.html), instead of the whole
+   slow entrance again. */
+.news-quick .poster-title span, .news-quick .poster-title .poster-marked::before, .news-quick .news-feeds li { animation: none; }
+.news-quick .news-cards li { animation-duration: 0.6s; animation-delay: calc(var(--i) * 0.08s); }
 @keyframes news-wave {
 	from { opacity: 0; transform: translateY(6vh) scale(0.94) rotate(-1.5deg); }
 	60% { opacity: 1; }
@@ -401,7 +411,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	font-family: inherit;
 	font-size: 2.4vh;
 	font-weight: bold;
+	transition: transform 0.1s ease-out;   /* the press look: the touchscreen gives no other feedback */
 }
+.article-back:active:not(:disabled) { transform: scale(0.95); }
 .info-article h1 { font-size: 5vh; line-height: 1.2; }
 .article-body { flex: 1; min-height: 0; display: flex; gap: 3vw; align-items: flex-start; }
 .article-image { flex: none; width: 32vw; height: auto; max-height: 60vh; object-fit: cover; border-radius: 0.6vw; box-shadow: var(--shadow); }
@@ -573,9 +585,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	display: flex;
 	flex-direction: column;
 	padding: calc(30 * var(--px)) calc(40 * var(--px));
-	border-radius: calc(24 * var(--px));
+	--r: calc(38 * var(--px));   /* continuous corners; the faint white hairline is gone, as a translucent border can't follow the clip (an inset fill would show it double) */
 	background: rgba(8, 20, 35, 0.32);
-	border: calc(2 * var(--px)) solid rgba(255, 255, 255, 0.18);
 	text-shadow: none;
 	animation: practice-ticket 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.6s both;
 	--line: rgba(255, 255, 255, 0.3);
@@ -598,9 +609,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	align-items: center;
 	gap: calc(8 * var(--px));
 	padding: calc(26 * var(--px)) 0;
-	border-radius: calc(24 * var(--px));
+	--r: calc(38 * var(--px));   /* continuous corners; no hairline, as for .weather-rain */
 	background: rgba(8, 20, 35, 0.32);
-	border: calc(2 * var(--px)) solid rgba(255, 255, 255, 0.18);
 	text-shadow: none;
 	animation: weather-tile 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(1s + var(--i) * 0.12s) both;
 }
@@ -675,9 +685,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	display: flex;
 	flex-direction: column;
 	padding: calc(40 * var(--px)) calc(50 * var(--px)) calc(30 * var(--px));
-	border-radius: calc(24 * var(--px));
+	--r: calc(38 * var(--px));   /* continuous corners; no hairline, as for .weather-rain */
 	background: rgba(8, 20, 35, 0.32);
-	border: calc(2 * var(--px)) solid rgba(255, 255, 255, 0.18);
 	text-shadow: none;
 	animation: weather-tile 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.7s both;
 	--line: rgba(255, 255, 255, 0.3);
@@ -757,7 +766,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	justify-content: center;
 	width: var(--size);
 	height: var(--size);
-	border-radius: calc(var(--size) * 0.22);
+	--r: calc(var(--size) * 0.352);   /* continuous corners (.squircle): 1.6 x the old radius of 0.22 x its size */
 	background: var(--blue);   /* lines without their own colour (e.g. regional buses) */
 	color: #ffffff;
 	font-size: calc(var(--size) * 0.5);
@@ -778,21 +787,27 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	justify-content: center;
 	gap: calc(16 * var(--px));
 }
-.bus-ticket {
+.bus-ticket {   /* the ticket's shadow and entrance; the ticket itself is .bus-card inside it (the clip would cut the shadow off) */
 	--h: min(calc(104 * var(--px)), calc((820 * var(--px) - (var(--rows) - 1) * 16 * var(--px)) / var(--rows)));
 	position: relative;
 	height: var(--h);
+	display: flex;
+	border-radius: calc(18 * var(--px));   /* only shapes the (blurred) shadow */
+	color: var(--blue);
+	box-shadow: 0 calc(14 * var(--px)) calc(30 * var(--px)) rgba(0, 0, 0, 0.3);
+	font-size: calc(var(--h) * 0.36);
+	animation: practice-ticket 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) calc(1s + var(--i) * 0.14s) both;
+}
+.bus-card {   /* the paper ticket, with continuous corners */
+	--r: calc(29 * var(--px));
+	flex: 1;
+	min-width: 0;
 	display: grid;
 	grid-template-columns: auto 1fr auto calc(170 * var(--px));
 	align-items: center;
 	gap: calc(26 * var(--px));
 	padding: 0 calc(30 * var(--px)) 0 calc(var(--h) * 0.14);
-	border-radius: calc(18 * var(--px));
 	background: var(--paper);
-	color: var(--blue);
-	box-shadow: 0 calc(14 * var(--px)) calc(30 * var(--px)) rgba(0, 0, 0, 0.3);
-	font-size: calc(var(--h) * 0.36);
-	animation: practice-ticket 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) calc(1s + var(--i) * 0.14s) both;
 }
 .bus-destination { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bus-time { font-variant-numeric: tabular-nums; color: var(--blue-light); }
@@ -808,7 +823,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	font-size: 0.8em;
 }
 .bus-minutes b { font-size: 1.5em; font-variant-numeric: tabular-nums; }
-.bus-ticket.cancelled { background: #e9e4d8; }
+.bus-ticket.cancelled .bus-card { background: #e9e4d8; }
 .bus-ticket.cancelled .bus-destination, .bus-ticket.cancelled .bus-time { opacity: 0.5; text-decoration: line-through; }
 .bus-ticket.cancelled .bus-badge { opacity: 0.5; }
 .bus-minutes em {   /* the cancelled stamp */
@@ -836,6 +851,17 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	right: 0;
 	top: 50%;
 	height: calc(8 * var(--px));
+	overflow: hidden;
+}
+/* The dashes sit on a strip one dash period (120) wider than the lane and slide left by exactly that:
+   translate, not background-position: no repaint each frame, and the loop is seamless. */
+.bus-lane::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: calc(100% + 120 * var(--px));
 	background: repeating-linear-gradient(90deg, rgba(253, 248, 236, 0.5) 0 calc(60 * var(--px)), transparent 0 calc(120 * var(--px)));
 	animation: bus-lane 1.2s linear infinite;
 }
@@ -850,8 +876,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .bus-source { position: absolute; bottom: calc(132 * var(--px)); right: calc(90 * var(--px)); margin: 0; font-size: calc(22 * var(--px)); opacity: 0.45; }
 @keyframes bus-blink { 50% { opacity: 0.25; } }
 @keyframes bus-ink { from { color: var(--paper); } }
-@keyframes bus-pulse { 50% { opacity: 0.55; } }
-@keyframes bus-lane { to { background-position: calc(-120 * var(--px)) 0; } }
+@keyframes bus-lane { to { transform: translateX(calc(-120 * var(--px))); } }
 @keyframes bus-wheel { to { transform: rotate(360deg); } }
 @keyframes bus-drive {   /* across the screen in 6 of the 16 seconds, then out of sight */
 	from { transform: translateX(calc(-340 * var(--px))); }
@@ -1011,25 +1036,43 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 /* Option A is red, option B blue: the letter and the bar, this week and last week. */
 .poll-a { --option: var(--red); --option-text: var(--red-dark); }
 .poll-b { --option: var(--blue); --option-text: var(--blue); }
+.poll-shadow {   /* the option's shadow; the option itself is the button inside, with continuous corners (the clip would cut the shadow off) */
+	display: flex;
+	border-radius: 1.5vh;   /* only shapes the (blurred) shadow */
+	box-shadow: var(--shadow);
+	transition: transform 0.1s ease-out;
+}
+.poll-shadow:has(.poll-option:active) { transform: scale(0.98); }   /* pressed: the shadow dips with the option */
+.poll-shadow:has(.poll-option.busy) { transform: scale(0.97); }   /* waiting for the vote: dips like a press, on the carrier */
 .poll-option {
+	--r: 2.4vh;   /* continuous corners */
+	--edge: 0.3vh;   /* the outline: the background shows around the inset fill (a border would be cut at the corners) */
 	position: relative;
+	isolation: isolate;
+	flex: 1;
+	min-width: 0;
 	display: flex;
 	flex-wrap: wrap;   /* the bar goes on its own line below */
 	align-items: center;
 	gap: 1.4vh 2vw;
-	padding: 2vh 2vw;
-	border: 0.3vh solid var(--card-border);
-	border-radius: 1.5vh;
-	background: var(--card);
+	padding: calc(2vh + var(--edge)) calc(2vw + var(--edge));   /* the outline's width on top, so a thicker outline moves nothing */
+	border: 0;
+	background: var(--card-border);   /* the outline colour; the white is the ::before */
 	color: var(--blue);
 	font-family: inherit;
 	text-align: left;
-	box-shadow: var(--shadow);
-	transition: transform 0.1s;
 }
-.poll-option:active { transform: scale(0.98); }
-.poll-option.chosen { border-color: var(--option); border-width: 0.6vh; padding: 1.7vh calc(2vw - 0.3vh); }   /* the one just voted for on the TV; less padding, so nothing moves */
+.poll-option::before {   /* the white fill, inset by the outline's width, with its own continuous corners */
+	--r: calc(2.4vh - var(--edge));
+	content: "";
+	position: absolute;
+	inset: var(--edge);
+	z-index: -1;
+	background: var(--card);
+}
+.poll-option.chosen { --edge: 0.6vh; background: var(--option); }   /* the one just voted for on the TV: a thicker outline in its colour */
 .poll-option.busy { opacity: 0.6; }
+.poll-shadow:has(.poll-option:focus-visible) { box-shadow: var(--shadow), 0 0 0 0.6vh var(--red); }   /* keyboard selection: the ring is on the carrier, as the clipped button can't show an outline */
 .poll-letter {
 	flex: none;
 	display: flex;
@@ -1096,7 +1139,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .poll-last-percent { flex: none; font-weight: bold; color: var(--option-text); }
 .poll-last-bar.won .poll-last-text, .poll-last-bar.won .poll-last-percent { color: var(--option-text); font-weight: bold; }   /* the winner */
 .poll-qr { flex: none; display: flex; flex-direction: column; align-items: center; text-align: center; }
-.poll-qr-code { width: 30vh; height: 30vh; padding: 1.5vh; border-radius: 1.5vh; background: #ffffff; box-shadow: var(--shadow); }
+.poll-qr-shadow { border-radius: 1.5vh; box-shadow: var(--shadow); }   /* shapes only the (blurred) shadow */
+.poll-qr-code { --r: 2.4vh; width: 30vh; height: 30vh; padding: 1.5vh; background: #ffffff; }   /* continuous corners */
 .poll-qr-code svg { display: block; width: 100%; height: 100%; }
 .poll-qr p { margin: 2vh 0 0; font-size: 2.8vh; font-weight: bold; }
 
@@ -1137,35 +1181,47 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	align-items: center;
 	margin: 4vh 0 2vh;
 }
-.confidential-person {
+.confidential-person {   /* the card's shadow and entrance; the card itself is .confidential-card inside it (the clip would cut the shadow off) */
+	display: flex;
+	border-radius: 1.2vw;   /* only shapes the (blurred) shadow */
+	box-shadow: var(--shadow);
+	animation: confidential-rise 1s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.7s + var(--i) * 0.35s) both;
+}
+.confidential-card {   /* the card, with continuous corners; the thin outline is the background showing around the inset white ::before (a border would be cut at the corners) */
+	--r: 1.92vw;
+	--edge: 0.15vh;
+	position: relative;
+	isolation: isolate;
+	flex: 1;
+	min-width: 0;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 1.2vh;
-	padding: 2.5vh 1.5vw 3vh;
-	border: 0.15vh solid var(--card-border);
-	border-radius: 1.2vw;
-	background: var(--card);
-	box-shadow: var(--shadow);
+	padding: calc(2.5vh + var(--edge)) calc(1.5vw + var(--edge)) calc(3vh + var(--edge));
+	background: var(--card-border);
 	text-align: center;
-	animation: confidential-rise 1s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.7s + var(--i) * 0.35s) both;
 }
-.confidential-photo {
+.confidential-card::before { --r: calc(1.92vw - var(--edge)); content: ""; position: absolute; inset: var(--edge); z-index: -1; background: var(--card); }   /* the white fill */
+.confidential-photo {   /* continuous corners; the blue frame is its background around the inset ::before, and the picture is clipped to the inside of it */
+	--r: 2.56vh;
+	--edge: 0.6vh;
+	position: relative;
+	isolation: isolate;
 	width: 100%;
 	aspect-ratio: 4 / 3;
 	box-sizing: border-box;
-	border: 0.6vh solid var(--blue);
-	border-radius: 1.6vh;
-	overflow: hidden;   /* the photo's corners follow the frame */
-	background: var(--blue-faint);
+	padding: var(--edge);
+	background: var(--blue);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 }
-.confidential-photo img { width: 100%; height: 100%; object-fit: cover; }
+.confidential-photo::before { --r: calc(2.56vh - var(--edge)); content: ""; position: absolute; inset: var(--edge); z-index: -1; background: var(--blue-faint); }   /* the pale fill, seen behind the letter when there is no photo */
+.confidential-photo img { --r: calc(2.56vh - var(--edge)); width: 100%; height: 100%; object-fit: cover; }   /* the picture's own continuous corners, inside the frame */
 .confidential-photo span { font-size: 12vh; font-weight: bold; color: var(--blue-light); }   /* no photo: the first letter */
 .confidential-person strong { margin-top: 0.8vh; font-size: 4.4vh; }
-.confidential-email { font-size: 2.4vh; font-weight: bold; color: var(--red-dark); animation: confidential-in 0.8s ease-out calc(1.4s + var(--i) * 0.35s) both; }
+.confidential-email { font-size: 2.4vh; font-weight: bold; color: var(--red-dark); }   /* no entrance of its own: it is on the person's card, which already rises in */
 .confidential-website { margin: 0; text-align: right; font-size: 2.6vh; color: var(--muted); animation: confidential-in 0.8s ease-out 2.4s both; }
 .confidential-website b { color: var(--blue); }
 @keyframes confidential-in { from { opacity: 0; transform: translateY(1.5vh); } }
@@ -1232,7 +1288,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	animation: extern-photo-in 1.3s cubic-bezier(0.2, 0.8, 0.3, 1) 0.2s both;
 }
 @keyframes extern-pop {
-	from { opacity: 0; transform: translateY(8vh) scale(0.5) rotate(-6deg); }
+	from { opacity: 0; transform: translateY(8vh) scale(0.7) rotate(-6deg); }
 	60% { opacity: 1; }
 }
 @keyframes extern-in { from { opacity: 0; transform: translateY(2vh); } }
@@ -1423,9 +1479,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	column-gap: 1vw;
 	min-height: 0;
 	padding: 2.5vh 2vw 1vh 1vw;
-	border-radius: 2vh;
+	--r: 3.2vh;   /* continuous corners; the faint white outline is gone, as a translucent border can't follow the clip (an inset fill would show it double) */
 	background: rgba(5, 14, 30, 0.45);
-	border: 0.2vh solid rgba(255, 255, 255, 0.12);
 	animation: weather-tile 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.6s both;
 }
 .chart-names { display: flex; flex-direction: column; }
@@ -1518,6 +1573,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 /* Beer: foam at the end, bubbles drifting from the left towards the foam over and over. */
 .beer-foam { position: absolute; top: 0; right: 0; bottom: 0; background: #FCEFCA; }
+/* The bubbles' wrapper is the bar's size and is its own container, so a bubble can slide by the bar's width
+   (cqw) with transform: translate, not left: no relayout each frame, forever. It is a container of its own,
+   not the bar, because the bar's --run-offset cqw values are of the chart's plot. */
+.beer-bubbles { position: absolute; inset: 0; container-type: inline-size; pointer-events: none; }
 .beer-bubble {
 	position: absolute;
 	left: 0;
@@ -1528,11 +1587,11 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	animation: fizz var(--duration) linear var(--wait) infinite;
 }
 @keyframes fizz {
-	from { left: 0; opacity: 0; transform: translateY(0); }
+	from { opacity: 0; transform: translate(0, 0); }
 	10% { opacity: 0.95; }
-	50% { transform: translateY(-0.3vh); }
+	50% { transform: translate(calc((100cqw - var(--foam)) / 2), -0.3vh); }
 	90% { opacity: 0.8; }
-	to { left: calc(100% - var(--foam)); opacity: 0; transform: translateY(0.2vh); }   /* fades into the foam */
+	to { opacity: 0; transform: translate(calc(100cqw - var(--foam)), 0.2vh); }   /* fades into the foam */
 }
 /* The nyan cat rides the front of its rainbow while it grows, then keeps bobbing. Its bottom sits on the
    end of the rainbow: the poptart starts 7 of the art's 33 pixels in (the tail and back paw stick out
@@ -1648,18 +1707,24 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 /* Weekly leaderboard, on the navy poster: a cream card per person sliding in one after another (like the
    practice tickets), with a gold, silver or bronze place for the top three and their bar growing in. */
 .leaderboard-slide ol { position: relative; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.9vh; }
-.leaderboard-slide li {
+.leaderboard-slide li {   /* the card's shadow and entrance; the card itself is .leaderboard-card inside it (the clip would cut the shadow off) */
+	display: flex;
+	border-radius: 1.4vh;   /* only shapes the (blurred) shadow and the winner's ring */
+	color: var(--navy);
+	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
+	font-size: 2.7vh;
+	animation: practice-ticket 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) calc(0.9s + var(--i) * 0.14s) both;
+}
+.leaderboard-card {   /* the cream card, with continuous corners */
+	--r: 2.2vh;
+	flex: 1;
+	min-width: 0;
 	display: grid;
 	grid-template-columns: 4.6vh 16vw 1fr 13vw 6vw;   /* sized so a top 10 fits under the title */
 	align-items: center;
 	gap: 1.5vw;
 	padding: 0.7vh 1.5vw 0.7vh 0.7vh;
-	border-radius: 1.4vh;
 	background: var(--paper);
-	color: var(--navy);
-	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
-	font-size: 2.7vh;
-	animation: practice-ticket 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) calc(0.9s + var(--i) * 0.14s) both;
 }
 .leaderboard-place {
 	display: flex;
@@ -1795,7 +1860,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .book-text {
 	width: 100%;
 	margin-top: 5vh;   /* below the hovering books */
-	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(2.8s + var(--i) * 0.9s) both;
+	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(3.2s + var(--i) * 0.9s) both;   /* book i lands at 3 s + 0.9 s * i: the text follows it */
 }
 @keyframes book-text-in { from { opacity: 0; transform: translateY(2vh); } }
 .book-title {
@@ -1853,15 +1918,18 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	padding: 0 7vw;
 	box-sizing: border-box;
 }
-.spotify-cover {
+.spotify-cover {   /* the cover's shadow and entrance (data-steady is on it too); the picture is the img inside, with continuous corners (the clip would cut the shadow off) */
 	height: 62vh;
 	aspect-ratio: 1;
-	object-fit: cover;
-	border-radius: 1.5vh;
+	border-radius: 1.5vh;   /* only shapes the (blurred) shadow */
 	box-shadow: 0 3vh 8vh rgba(0, 0, 0, 0.55);
 	animation: spotify-cover-in 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s both;
 }
+.spotify-cover img, .spotify-lyrics-cover img { --r: 2.4vh; display: block; width: 100%; height: 100%; object-fit: cover; }   /* continuous corners (.squircle) */
+.spotify-lyrics-cover img { --r: 1.9vh; }
 @keyframes spotify-cover-in { from { opacity: 0; transform: translateY(3vh) scale(0.96); } }
+/* A new cover after a tap (skip, previous, a song picked; redraw() in player.js): no waiting, and quick. */
+.redrawn .spotify-cover { animation-delay: 0s; animation-duration: 0.3s; animation-timing-function: ease-out; }
 .spotify-info { flex: 1; min-width: 0; }
 .spotify-label { display: flex; align-items: center; gap: 1.2vw; font-size: 2.6vh; font-weight: bold; color: #1db954; letter-spacing: 0.2vh; text-transform: uppercase; }
 .spotify-title {   /* one line; a long title slides (data-marquee, widgets.js) */
@@ -1877,7 +1945,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 /* The playing song's artist and album: one line each, sliding when too long (data-marquee); the title too (above). */
 .spotify-info > .spotify-artist, .spotify-info > .spotify-album { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* The timeline is clickable (data-seek): a taller invisible area around the thin bar. */
-.spotify-seek { margin-top: 2vh; padding: 2vh 0; cursor: pointer; }
+.spotify-seek { margin-top: 2vh; padding: 2vh 0; cursor: pointer; transition: opacity 0.1s ease-out; }
+.spotify-seek:active, .spotify-seek.busy { opacity: 0.6; }   /* pressed, then waiting for the jump (player.js adds .busy) */
 .spotify-progress { margin-top: 0; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
 .spotify-times { display: flex; justify-content: space-between; margin-top: 1.2vh; font-size: 2.4vh; opacity: 0.75; font-variant-numeric: tabular-nums; }
 /* The bar and the elapsed time run on by themselves from --start to --total seconds (set by the
@@ -2018,7 +2087,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-song-length { font-size: 2vh; opacity: 0.6; font-variant-numeric: tabular-nums; }
 /* A playlist by someone else: its songs can't be listed, only played. */
 .spotify-locked { flex: 1; display: flex; align-items: center; gap: 4vw; padding: 0 4vw; }
-.spotify-locked img { height: 45vh; aspect-ratio: 1; object-fit: cover; border-radius: 1.5vh; }
+.spotify-locked img { --r: 2.4vh; height: 45vh; aspect-ratio: 1; object-fit: cover; }   /* continuous corners (.squircle) */
 .spotify-locked p { margin: 0 0 2vh; max-width: 50vw; font-size: 3.2vh; line-height: 1.4; opacity: 0.85; }
 .spotify-locked .spotify-buttons { margin: 4vh 0 0; }
 .spotify-locked .spotify-button { font-size: 3vh; padding: 1.8vh 2.6vw; }
@@ -2150,7 +2219,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
    current line in view). The text fades out at the top and bottom edge. */
 .spotify-lyrics-slide .spotify-content { gap: 5vw; padding: 0 6vw; }
 .spotify-lyrics-song { flex: 0 0 26vw; display: flex; flex-direction: column; align-items: flex-start; gap: 1.5vh; }
-.spotify-lyrics-cover { width: 22vw; aspect-ratio: 1; object-fit: cover; border-radius: 1.2vh; box-shadow: 0 2vh 5vh rgba(0, 0, 0, 0.5); }
+.spotify-lyrics-cover { width: 22vw; aspect-ratio: 1; border-radius: 1.2vh; box-shadow: 0 2vh 5vh rgba(0, 0, 0, 0.5); }
 .spotify-lyrics-song h1 { margin: 1vh 0 0; font-size: 4.2vh; line-height: 1.15; }
 .spotify-lyrics-song .spotify-artist { font-size: 3vh; }
 .spotify-lyrics-song .spotify-controls { margin-top: 1.5vh; }
@@ -2330,7 +2399,22 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	color: var(--blue);
 	position: relative;
 }
+.puzzle-shadow {   /* the card's shadow and grid cell; the card itself is the button inside, with continuous corners (the clip would cut the shadow off) */
+	display: flex;
+	border-radius: 1.2vw;   /* only shapes the (blurred) shadow */
+	box-shadow: var(--shadow);
+	transition: transform 0.1s;
+}
+.puzzle-shadow:has(.puzzle-card:active) { transform: scale(0.98); }   /* pressed: the whole thing dips, shadow too, or the card would shrink away from it */
+.puzzle-shadow:has(.puzzle-card:focus-visible) { transform: scale(1.02); }   /* keyboard selection lifts the card and its shadow together */
+.puzzle-shadow:has(.puzzle-card.busy) { transform: scale(0.97); }   /* waiting for the answer: dips like a press, on the carrier */
 .puzzle-card {
+	--r: 1.9vw;   /* continuous corners */
+	--edge: 0.15vh;   /* the thin outline, drawn by the background showing around the inset fill (a border would be cut at the corners) */
+	position: relative;
+	isolation: isolate;
+	flex: 1;
+	min-width: 0;
 	display: grid;
 	grid-template-columns: 28vh minmax(0, 1fr);
 	grid-template-rows: 1fr auto auto auto 1fr;   /* the text centred next to the picture */
@@ -2339,20 +2423,26 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	column-gap: 2.5vw;
 	row-gap: 1.5vh;
 	padding: 2vh 2vw;
-	border: 0.15vh solid var(--card-border);
-	border-radius: 1.2vw;
-	background: var(--card);
-	box-shadow: var(--shadow);
+	border: 0;
+	background: var(--card-border);   /* the outline colour; the card's white is the ::before */
 	color: inherit;
 	font-family: inherit;
 	text-align: left;
-	transition: background 0.2s, transform 0.1s;
+}
+.puzzle-card::before {   /* the white (or pressed) fill, inset by the outline's width, with its own continuous corners */
+	--r: calc(1.9vw - var(--edge));
+	content: "";
+	position: absolute;
+	inset: var(--edge);
+	z-index: -1;
+	background: var(--card);
+	transition: background 0.2s;
 }
 .puzzle-card .puzzle-icon { grid-row: 1 / -1; justify-self: center; }
 .puzzle-card .puzzle-title { grid-row: 2; align-self: end; }
 .puzzle-card .puzzle-status { grid-row: 3; }
 .puzzle-card .puzzle-play { grid-row: 4; }
-.puzzle-card:active { transform: scale(0.98); background: var(--blue-faint); }
+.puzzle-card:active::before { background: var(--blue-faint); }
 /* Keyboard navigation (Tab): :focus-visible only matches then, so mouse and touch look as before. A thick
    ring plus a lift and the Play button turning red make the selected card easy to spot from across the room. */
 .puzzles-slide button:focus-visible, .connections-slide button:focus-visible, .wordle-slide button:focus-visible,
@@ -2360,7 +2450,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	outline: 0.7vh solid var(--red);
 	outline-offset: 0.6vh;
 }
-.puzzle-card:focus-visible { background: var(--blue-faint); transform: scale(1.02); }
+.puzzle-card:focus-visible::before { background: var(--blue-faint); }   /* the outline can't show on a clipped button: the card tints and its carrier lifts instead */
 /* Pressing a puzzle button dips it while the finger is on it (the cards and Connections tiles already do),
    so a tap shows at once, before the server's answer is back. */
 .puzzle-back, .connections-controls button, .wordle-key, .timeguessr-nudges button, .timeguessr-button,
@@ -2462,7 +2552,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	border-radius: 1.2vh;
 	overflow: hidden;
 	background: #1b1b1b;
+	transition: transform 0.1s ease-out;   /* a slight press look: tapping it opens it full screen */
 }
+.timeguessr-photo:active:not(.selected) { transform: scale(0.985); }   /* not full screen: that is a fixed-size layer, it must not shrink */
 .timeguessr-photo .zoom-view { flex: 1; min-height: 0; overflow: hidden; display: flex; }
 .timeguessr-photo img { flex: 1; min-width: 0; width: 100%; object-fit: contain; transform-origin: center; user-select: none; }
 .timeguessr-photo figcaption { padding: 0.8vh 1vw; font-size: 1.7vh; color: #b9b9b9; }
@@ -2680,6 +2772,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	background: var(--card);
 	color: var(--blue);
 	font-family: inherit;
+	transition: transform 0.1s ease-out;   /* so the press (below) eases instead of snapping */
 }
 .catfishing-day b { font-size: 3vh; }
 .catfishing-day span { min-height: 2.2vh; font-size: 1.9vh; font-weight: bold; }
@@ -3307,11 +3400,13 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	position: absolute;
 	left: 0;
 	right: 0;
+	top: 0;
 	height: 18vh;
 	background: linear-gradient(transparent, rgba(0, 255, 65, 0.06), transparent);
 	animation: compucie-sweep 6s linear infinite;
 }
-@keyframes compucie-sweep { from { top: -18vh; } to { top: 100vh; } }
+/* translate, not top: no relayout each frame (vh, because % would be of the band's own height) */
+@keyframes compucie-sweep { from { transform: translateY(-18vh); } to { transform: translateY(100vh); } }
 
 /* Instagram (providers/instagram.py): Instagram's colours glowing on near-black; on the left "Follow us",
    our handle and a QR code to the account, on the right a phone with the profile and the latest posts,
@@ -3341,19 +3436,24 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .ig-handle { margin: 0; font-size: min(8vh, calc(72vw / var(--chars))); line-height: 1.05; white-space: nowrap; }   /* a long handle shrinks to one line */
 .ig-stats { margin: 0; font-size: 3vh; color: #c7c7cf; }
 .ig-stats b { color: #fafafa; }
-.ig-qr-card {
+.ig-qr-shadow {   /* the card's faint ring and shadow; the card itself is .ig-qr-card inside it (the clip would cut them off) */
+	display: flex;
+	margin-top: 1.5vh;
+	border-radius: 3vh;   /* only shapes the ring and the (blurred) shadow */
+	box-shadow: 0 0 0 0.6vh rgba(255, 255, 255, 0.08), 0 2vh 6vh rgba(0, 0, 0, 0.5);
+}
+.ig-qr-card {   /* continuous corners (.squircle) */
+	--r: 4.8vh;
+	flex: 1;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 1.4vh;
-	margin-top: 1.5vh;
 	padding: 2.2vh;
-	border-radius: 3vh;
 	background: #ffffff;
 	color: #1a1a1a;
 	font-size: 2.6vh;
 	font-weight: bold;
-	box-shadow: 0 0 0 0.6vh rgba(255, 255, 255, 0.08), 0 2vh 6vh rgba(0, 0, 0, 0.5);
 }
 .ig-qr { width: 28vh; height: 28vh; }
 .ig-qr svg { display: block; width: 100%; height: 100%; }
@@ -3373,7 +3473,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 }
 @keyframes ig-phone-in { from { opacity: 0; transform: translateY(8vh) rotate(3deg); } }
 .ig-phone::before { content: ""; position: absolute; z-index: 2; top: 2.6vh; left: 50%; width: 9vh; height: 2.4vh; margin-left: -4.5vh; border-radius: 99vh; background: #000; }
-.ig-screen { position: relative; height: 100%; overflow: hidden; border-radius: 4.8vh; background: #ffffff; color: #111111; container-type: size; }
+.ig-screen { --r: 7.7vh; position: relative; height: 100%; overflow: hidden; background: #ffffff; color: #111111; container-type: size; }
 .ig-feed { animation: ig-scroll var(--scroll) ease-in-out 2.5s both; }
 .ig-feed.still { animation: none; }   /* no posts: nothing to scroll */
 @keyframes ig-scroll { from { transform: translateY(calc(-100% + 100cqh)); } }   /* from the bottom to the top */
@@ -3390,10 +3490,22 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .ig-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3vh; margin-top: 0.3vh; }
 .ig-tiles i {
 	aspect-ratio: 4 / 5;
-	background: linear-gradient(110deg, #ececf0 30%, #f7f7fa 50%, #ececf0 70%) 0 0 / 300% 100%;
+	position: relative;
+	overflow: hidden;
+	background: #ececf0;
+}
+/* The shimmer is a 3-tile-wide strip sliding by transform, not a background-position: no repaint each frame. */
+.ig-tiles i::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 300%;
+	background: linear-gradient(110deg, #ececf0 30%, #f7f7fa 50%, #ececf0 70%);
 	animation: ig-shimmer 2.4s ease-in-out calc(var(--i) * 0.12s) infinite;
 }
-@keyframes ig-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@keyframes ig-shimmer { from { transform: translateX(-66.6667%); } to { transform: translateX(0); } }
 .ig-tiles-hint { margin: 2.6vh 2vh; color: #8e8e8e; font-size: 2vh; text-align: center; }
 .ig-post { padding-bottom: 1.6vh; }
 .ig-post header { display: flex; align-items: center; gap: 1.2vh; padding: 1.4vh 2vh; font-size: 2.1vh; }
@@ -3442,7 +3554,8 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	aspect-ratio: calc(2 * var(--aspect));
 	perspective: 240vh;
 	transform: translateX(-25%);
-	filter: drop-shadow(0 2.5vh 3vh rgba(0, 0, 0, 0.5));
+	/* No filter: drop-shadow here would blur half the screen again every frame while the leaves turn.
+	   The soft shadow is a plain box-shadow on the page stacks below, which don't change while it turns. */
 }
 .fv-book.opens { animation: fv-open var(--turn) ease-in-out var(--opens) forwards; }
 .fv-book.opens.closes { animation: fv-open var(--turn) ease-in-out var(--opens) forwards, fv-close var(--turn) ease-in-out var(--closes) forwards; }
@@ -3489,8 +3602,10 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .fv-face-back { transform: rotateY(180deg); }
 /* The page edges: a few sheets peeking out on the outer sides, on the right while it's closed, on both sides open. */
 .fv-stack { position: absolute; top: 0.3%; bottom: 0.3%; width: 50%; background: #e9e2d0; }
-.fv-stack-right { left: 50%; box-shadow: 0.25vh 0.2vh 0 #d9d0bb, 0.5vh 0.4vh 0 #ece5d4, 0.75vh 0.6vh 0 #d4cab3; }
-.fv-stack-left { left: 0; opacity: 0; box-shadow: -0.25vh 0.2vh 0 #d9d0bb, -0.5vh 0.4vh 0 #ece5d4, -0.75vh 0.6vh 0 #d4cab3; }
+/* The last shadow in each list is the book's soft shadow on the table: a static box-shadow under a stack
+   follows the book's footprint (right half closed, both open, left half after the back cover) as the stacks fade. */
+.fv-stack-right { left: 50%; box-shadow: 0.25vh 0.2vh 0 #d9d0bb, 0.5vh 0.4vh 0 #ece5d4, 0.75vh 0.6vh 0 #d4cab3, 0 2.5vh 3vh rgba(0, 0, 0, 0.5); }
+.fv-stack-left { left: 0; opacity: 0; box-shadow: -0.25vh 0.2vh 0 #d9d0bb, -0.5vh 0.4vh 0 #ece5d4, -0.75vh 0.6vh 0 #d4cab3, 0 2.5vh 3vh rgba(0, 0, 0, 0.5); }
 .fv-book.opens .fv-stack-left { animation: fv-fade-in 0.2s ease-out calc(var(--opens) + var(--turn) * 0.9) forwards; }   /* once the first page has landed on it */
 .fv-book.opens.closes .fv-stack-right { animation: fv-fade-out var(--turn) ease-in-out var(--closes) forwards; }
 @keyframes fv-fade-in { to { opacity: 1; } }
@@ -3563,20 +3678,19 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .socks-qr-card { width: 40vh; height: 40vh; }
 .socks-qr-card .member-tile { --r: 1.5vh; }   /* in proportion to the smaller code */
 .socks-label { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; }
+.socks-label-shadow { position: relative; z-index: 1; display: flex; border-radius: 2vh; box-shadow: 0 1.6vh 4vh rgba(0, 0, 0, 0.4); }   /* the label's shadow (shapes only the blurred shadow), in front of the sock; the label is the p inside, with continuous corners (the clip would cut the shadow off) */
 .socks-label p {
-	position: relative;
-	z-index: 1;
+	--r: 3.2vh;   /* continuous corners (.squircle) */
+	flex: 1;
 	margin: 0;
 	padding: 1.6vh 3vh;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 0.6vh;
-	border-radius: 2vh;
 	background: var(--paper);
 	color: var(--navy);
 	font-size: 2.4vh;
-	box-shadow: 0 1.6vh 4vh rgba(0, 0, 0, 0.4);
 }
 .socks-label p b { font-size: 5.4vh; line-height: 1; }
 .socks-hang { margin-top: -2vh; clip-path: inset(0 -50vw -50vh -50vw); }   /* starts behind the label's bottom edge; only cut off there */
@@ -3650,7 +3764,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .socials-peg::after { content: ""; position: absolute; left: -0.3vh; right: -0.3vh; top: 3vh; height: 0.7vh; border-radius: 0.3vh; background: #b9bec7; }   /* the spring */
 .socials-photo { padding: 2vh 2vh 1.6vh; border-radius: 0.6vh; background: var(--paper); color: var(--navy); box-shadow: 0 2.4vh 5vh rgba(0, 0, 0, 0.45); }
 .socials-qr { position: relative; aspect-ratio: 1; }
-.socials-tile { position: absolute; inset: 37%; padding: 2%; border-radius: 1.2vh; background: var(--paper); color: var(--navy); }
+.socials-tile { --r: 1.9vh; position: absolute; inset: 37%; padding: 2%; background: var(--paper); color: var(--navy); }
 .socials-tile svg { display: block; width: 100%; height: 100%; fill: var(--navy); }
 .socials-tile .socials-outline { fill: none; stroke: var(--navy); stroke-width: 2; }
 .socials-photo p { margin: 1.6vh 0 0; display: flex; flex-direction: column; align-items: center; gap: 0.6vh; font-size: 2.2vh; color: rgba(13, 31, 60, 0.65); }
@@ -3678,7 +3792,9 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .streep-line { margin: 0; max-width: 18ch; font-size: 4.4vh; line-height: 1.2; animation: member-up 0.8s ease-out 1.5s both; }
 .streep-pc { flex: none; display: flex; flex-direction: column; align-items: center; animation: streep-pc 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.6s both; }
 @keyframes streep-pc { from { transform: translateY(100vh); } }
-.streep-monitor { padding: 2vh; border-radius: 2vh; background: #10151f; box-shadow: 0 2.4vh 6vh rgba(0, 0, 0, 0.5), inset 0 0 0 0.3vh #2a3242; }
+.streep-monitor { display: flex; border-radius: 2vh; box-shadow: 0 2.4vh 6vh rgba(0, 0, 0, 0.5); }   /* the monitor's shadow; the bezel is inside, with continuous corners (the clip would cut the shadow off) */
+.streep-bezel { --r: 3.2vh; --edge: 0.3vh; position: relative; isolation: isolate; padding: calc(2vh + var(--edge)); background: #2a3242; }   /* the thin lighter ring is this background showing around the inset dark ::before (an inset shadow would be cut at the corners) */
+.streep-bezel::before { --r: calc(3.2vh - var(--edge)); content: ""; position: absolute; inset: var(--edge); z-index: -1; background: #10151f; }
 .streep-screen { display: block; height: 40vh; aspect-ratio: 760 / 520; border-radius: 0.6vh; overflow: hidden; }
 .streep-stand { width: 12vh; height: 7vh; background: linear-gradient(90deg, #1b2230, #2a3242, #1b2230); }
 .streep-stand::after { content: ""; display: block; width: 30vh; height: 1.6vh; margin: 7vh 0 0 -9vh; border-radius: 0.8vh; background: #2a3242; }
@@ -4056,7 +4172,9 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .mood-asleep .pc-eyes-closed { display: inline; }
 .mood-sad .pc-pupil { transform: translateY(3px); }
 .mood-sad { animation-duration: 3.6s; }
-.pet-svg { filter: saturate(calc(1 - var(--sick, 0) * 0.55)) brightness(calc(1 - var(--sick, 0) * 0.1)); }
+/* Only a sick pet gets the filter (.is-ill: sick above 0, asleep too, unlike .is-sick): a healthy one would otherwise
+   have its whole bobbing, blinking drawing run through a do-nothing filter every frame. */
+.is-ill .pet-svg { filter: saturate(calc(1 - var(--sick, 0) * 0.55)) brightness(calc(1 - var(--sick, 0) * 0.1)); }
 /* sick and drunk move the svg with its own properties (translate, rotate), so they stack with the face's bob on the creature */
 .is-sick .pet-svg { animation: pet-shiver 0.25s linear infinite; }
 @keyframes pet-shiver { 25% { translate: calc(var(--sick) * -0.4vh) 0; } 75% { translate: calc(var(--sick) * 0.4vh) 0; } }
@@ -4103,8 +4221,11 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pet-bar.low .pet-bar-track { box-shadow: 0 0 0 0.3vh #ff5c7a; animation: pet-low 1s ease-in-out infinite; }
 @keyframes pet-low { 50% { opacity: 0.45; } }
 .pet-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; margin-top: 1vh; }
-.pet-button { display: flex; flex-direction: column; align-items: center; gap: 1.2vh; padding: 2.4vh 1vw; border: 0; border-radius: 2.4vh; background: #fdf8ec; color: #0d1f3c; font: inherit; font-size: 3.6vh; box-shadow: 0 1.2vh 3vh rgba(0, 0, 0, 0.35); transition: transform 0.1s; }
-.pet-button:active { transform: scale(0.94); }
+.pet-button-shadow { display: flex; border-radius: 2.4vh; box-shadow: 0 1.2vh 3vh rgba(0, 0, 0, 0.35); transition: transform 0.1s ease-out; }   /* the button's shadow (shapes only the blurred shadow); the button is inside, with continuous corners (the clip would cut the shadow off) */
+.pet-button-shadow:has(.pet-button:active) { transform: scale(0.94); }   /* pressed: the shadow dips with the button, or the button would shrink away from it */
+.pet-button-shadow:has(.pet-button.busy) { transform: scale(0.95); }   /* waiting for the answer: the same dip, on the carrier */
+.pet-button[data-action].busy, .pet-button[data-key].busy { transform: none; }   /* only dimmed on the button itself (see above) */
+.pet-button { --r: 3.8vh; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 1.2vh; padding: 2.4vh 1vw; border: 0; background: #fdf8ec; color: #0d1f3c; font: inherit; font-size: 3.6vh; }   /* continuous corners (.squircle) */
 .pet-button svg { width: 6vh; height: 6vh; overflow: visible; }   /* the same box for every icon (the kroket is wide, the ball round) */
 .pet-button svg rect, .pet-button svg circle { fill: #c8102e; }
 .pet-button svg path { fill: none; stroke: #fdf8ec; stroke-width: 2; }
@@ -4169,10 +4290,11 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pet-ghost .pc-eyes-x, .pet-ghost .pc-mouth-okay { display: inline; }
 @keyframes pet-ghost { 50% { transform: translateY(-4vh) rotate(4deg); } }
 .pet-cause { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; text-align: center; font-size: 3.4vh; }
-.pet-dead-card { padding: 3vh 3vh; border-radius: 2.4vh; background: rgba(253, 248, 236, 0.1); font-size: 4vh; line-height: 1.2; }
+.pet-dead-card { --r: 3.8vh; padding: 3vh 3vh; background: rgba(253, 248, 236, 0.1); font-size: 4vh; line-height: 1.2; }
 .pet-dead-card p { margin: 0; }
 .pet-dead-small { margin-top: 1.5vh !important; font-size: 2.8vh; opacity: 0.75; }
-.pet-hatch { flex-direction: row; justify-content: center; gap: 2vw; font-size: 4.4vh; padding: 3vh; animation: pet-pulse 1.4s ease-in-out infinite alternate; }
+.pet-hatch { flex-direction: row; justify-content: center; gap: 2vw; font-size: 4.4vh; padding: 3vh; }
+.pet-button-shadow:has(.pet-hatch) { animation: pet-pulse 1.4s ease-in-out infinite alternate; }   /* the pulse is on the carrier, so the shadow breathes with the button */
 @keyframes pet-pulse { to { scale: 1.05; } }   /* the scale property, not transform: the press look (transform) still shows */
 .pet-hatch svg path { fill: #fdf8ec; stroke: #c8102e; stroke-width: 3; }
 
@@ -4199,15 +4321,19 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pet-pick { display: flex; flex-direction: column; gap: 1.4vh; }
 .pet-pick-label { margin: 0; font-size: 2.4vh; letter-spacing: 0.3vh; text-transform: uppercase; opacity: 0.7; }
 .pet-species { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4vh 1vw; }
-.pet-species-option { display: flex; flex-direction: column; align-items: center; gap: 0.6vh; padding: 1.2vh 0.5vw; border: 0.4vh solid transparent; border-radius: 1.8vh; background: rgba(253, 248, 236, 0.1); color: #fdf8ec; font: inherit; font-size: 2.6vh; }
+.pet-species-option { display: flex; flex-direction: column; align-items: center; gap: 0.6vh; padding: 1.2vh 0.5vw; border: 0.4vh solid transparent; border-radius: 1.8vh; background: rgba(253, 248, 236, 0.1); color: #fdf8ec; font: inherit; font-size: 2.6vh; transition: transform 0.1s ease-out; }
+.pet-species-option:active { transform: scale(0.96); }
 .pet-species-option.chosen { border-color: #fdf8ec; background: rgba(253, 248, 236, 0.22); }
 .pet-mini { display: block; width: 11vh; }
 .pet-mini .pet-svg * { animation: none !important; }
 .pet-colors { display: flex; flex-wrap: wrap; gap: 1.2vw; }
-.pet-color { width: 7vh; height: 7vh; border-radius: 50%; border: 0.5vh solid transparent; background: var(--swatch); box-shadow: 0 0.6vh 1.6vh rgba(0, 0, 0, 0.35); transition: transform 0.15s; }
+.pet-color { width: 7vh; height: 7vh; border-radius: 50%; border: 0.5vh solid transparent; background: var(--swatch); box-shadow: 0 0.6vh 1.6vh rgba(0, 0, 0, 0.35); transition: transform 0.1s ease-out; }
+.pet-color:active { transform: scale(0.94); }
 .pet-color.chosen { border-color: #fdf8ec; transform: scale(1.15); }
+.pet-color.chosen:active { transform: scale(1.08); }   /* the chosen one is bigger; pressed it shrinks from there */
 .pet-next { justify-content: center; font-size: 3.6vh; }
-.pet-back { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; }
+.pet-back { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; transition: transform 0.1s ease-out; }
+.pet-back:active { transform: scale(0.95); }
 .pet-egg-waiting path { stroke: var(--spots, #d9cdb0); stroke-width: 3; }
 
 /* The pet on a finished puzzle (templates/pet_cameo.html): it rises up from the bottom right corner, jumps for joy
@@ -4409,10 +4535,16 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .ms-thumb { --g: 30deg; --o: -16deg; --r: 0deg; }
 .ms-cap { position: absolute; bottom: 0; left: var(--x); width: calc(var(--s) * 1.25); height: var(--s); margin-left: calc(var(--s) * -0.62); fill: #000; transform: translateY(120%); animation: ms-throw var(--t) linear calc(var(--d) + 0.4s) forwards; }
 .ms-name { position: absolute; left: 0; right: 0; top: 34%; margin: 0; font-size: 32vh; line-height: 1; font-weight: 700; letter-spacing: 0.01em; opacity: 0;
-	/* warm metal, nearly flat: gold with only a slight darkening towards the bottom, and a faint glint that sweeps across once after it lands */
+	animation: ms-name 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) 5.4s both; }
+/* The name is two layers inside the scaling h1: a blurred copy as the shadow (blurred once: it never repaints, only
+   scales with the h1) and the gold text with the glint. Before, one drop-shadow filter on the h1 was redone every frame
+   of the scale-in and of the glint. */
+.ms-name-shadow { position: absolute; inset: 0; color: rgba(0, 0, 0, 0.5); filter: blur(1.5vh); translate: 0 1vh; }   /* blur(): the standard deviation, half of drop-shadow()'s 3vh radius */
+/* warm metal, nearly flat: gold with only a slight darkening towards the bottom, and a faint glint that sweeps across once after it lands */
+.ms-name-text { display: block; position: relative;
 	color: #cc8a26; background: linear-gradient(105deg, transparent 42%, rgba(255, 244, 214, 0.3) 50%, transparent 58%) 130% 0 / 250% 100% no-repeat, linear-gradient(180deg, #e0aa4a 0%, #cf9434 55%, #c48724 100%);
-	-webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 1vh 3vh rgba(0, 0, 0, 0.5));
-	animation: ms-name 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) 5.4s both, ms-glint 1.4s ease-in-out 6.4s both; }
+	-webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+	animation: ms-glint 1.4s ease-in-out 6.4s both; }
 .ms-cie { margin-left: -0.06em; }   /* "cie" closer to "MS" */
 .ms-tag { position: absolute; left: 5vw; right: 5vw; top: 72%; margin: 0; font-size: 5vh; color: #d9a04f; text-shadow: 0 0.4vh 1.5vh rgba(0, 0, 0, 0.4); opacity: 0; animation: ms-fade 1s ease-out 6.6s both; }
 @keyframes ms-arm {

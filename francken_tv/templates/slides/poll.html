@@ -10,12 +10,14 @@
 		<h1 class="{{ 'long' if question | length > 70 }}">{{ question }}</h1>
 		<div class="poll-options">
 			{% for option in options %}
-			<button class="poll-option poll-{{ option.key }}{{ ' chosen' if voted == option.key }}" data-action="vote" data-value="{{ option.key }}" style="--percent: {{ option.percent }}%">
+			<div class="poll-shadow">   {# the option's shadow (the clip on the button would cut it off) #}
+			<button class="poll-option squircle squircle-edge poll-{{ option.key }}{{ ' chosen' if voted == option.key }}" data-action="vote" data-value="{{ option.key }}" style="--percent: {{ option.percent }}%">
 				<span class="poll-letter">{{ option.letter }}</span>
 				<span class="poll-text">{{ option.text }}</span>
 				<span class="poll-percent"><span class="poll-count">{{ option.votes }} vote{{ '' if option.votes == 1 else 's' }} &middot;</span> {{ option.percent }}%</span>
 				<span class="poll-bar"><i></i></span>
 			</button>
+			</div>
 			{% endfor %}
 		</div>
 		<p class="poll-footer">
@@ -44,7 +46,9 @@
 	</div>
 	{% if form_url %}
 	<div class="poll-qr">
-		<div class="poll-qr-code" data-qr="{{ form_url }}"></div>
+		<div class="poll-qr-shadow">   {# the code's shadow (the clip would cut it off) #}
+			<div class="poll-qr-code squircle" data-qr="{{ form_url }}"></div>
+		</div>
 		<p>Scan to vote</p>
 	</div>
 	{% endif %}

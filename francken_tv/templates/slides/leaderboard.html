@@ -10,6 +10,7 @@
 	<ol>
 		{% for row in rows %}
 		<li class="place-{{ row.place }}" style="--i: {{ loop.index0 }}">
+			<div class="leaderboard-card squircle">   {# the card itself; the li carries its shadow (the clip would cut it off) #}
 			<span class="leaderboard-place">{{ row.place }}</span>
 			<span class="leaderboard-name">{{ row.name }}</span>
 			<div class="leaderboard-track">
@@ -17,6 +18,7 @@
 			</div>
 			<span class="leaderboard-time">{{ row.time }}</span>
 			<span class="leaderboard-days">{{ row.days }} {{ "day" if row.days == 1 else "days" }}</span>
+			</div>
 		</li>
 		{% endfor %}
 	</ol>

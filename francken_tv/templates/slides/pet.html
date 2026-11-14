@@ -42,7 +42,7 @@
 				{% endfor %}
 			</div>
 		</div>
-		<button class="pet-button pet-name-go pet-next" data-action="next">Next: give it a name &rarr;</button>
+		<div class="pet-button-shadow"><button class="pet-button squircle pet-name-go pet-next" data-action="next">Next: give it a name &rarr;</button></div>
 	</div>
 	{% elif state == "naming" %}
 	<div class="pet-left">
@@ -61,7 +61,7 @@
 		<p class="pet-dead-small">A name used before gets a number: Bob, Bob II, Bob III...</p>
 		<div class="pet-name-input">
 			<div class="pet-name-text" data-input-text></div>
-			<button class="pet-button pet-name-go" data-key="ENTER">Hatch</button>
+			<div class="pet-button-shadow"><button class="pet-button squircle pet-name-go" data-key="ENTER">Hatch</button></div>
 		</div>
 		<div class="pet-keyboard">
 			{% for row in keyboard %}
@@ -94,7 +94,7 @@
 			<p class="pet-cause">{{ name }} {{ cause }}.</p>
 			{% else %}
 			<div class="pet-bubble"><span data-live="said">{{ said }}</span></div>
-			<div class="pet-creature mood-{{ mood }} species-{{ species }}{% if mood != 'asleep' %}{% if traits.sick > 0 %} is-sick{% endif %}{% if traits.sick >= 0.5 %} very-sick{% endif %}{% if traits.drunk > 0 %} is-drunk{% endif %}{% if traits.drunk >= 0.5 %} very-drunk{% endif %}{% endif %}" data-live="creature" style="--dirt: {{ traits.dirt }}; --sick: {{ traits.sick }}; --drunk: {{ traits.drunk }}; --pet-body: {{ body }}; --pet-dark: {{ dark }}">
+			<div class="pet-creature mood-{{ mood }} species-{{ species }}{% if traits.sick > 0 %} is-ill{% endif %}{% if mood != 'asleep' %}{% if traits.sick > 0 %} is-sick{% endif %}{% if traits.sick >= 0.5 %} very-sick{% endif %}{% if traits.drunk > 0 %} is-drunk{% endif %}{% if traits.drunk >= 0.5 %} very-drunk{% endif %}{% endif %}" data-live="creature" style="--dirt: {{ traits.dirt }}; --sick: {{ traits.sick }}; --drunk: {{ traits.drunk }}; --pet-body: {{ body }}; --pet-dark: {{ dark }}">
 				{% include "pet_creature.svg" %}
 				<div class="pet-stink" aria-hidden="true"><i></i><i></i><i></i></div>
 				<div class="pet-zzz" aria-hidden="true"><i>z</i><i>z</i><i>Z</i></div>
@@ -113,14 +113,14 @@
 
 	<div class="pet-right">
 		{% if state == "dead" %}
-		<div class="pet-dead-card">
+		<div class="pet-dead-card squircle">
 			<p>Nobody looked after {{ name }}.</p>
 			<p class="pet-dead-small">With more people in the room, it needs more care.</p>
 		</div>
-		<button class="pet-button pet-hatch" data-action="bury">
+		<div class="pet-button-shadow"><button class="pet-button squircle pet-hatch" data-action="bury">
 			<svg viewBox="0 0 40 50" aria-hidden="true"><path d="M20 2 C6 2 2 26 2 32 a18 18 0 0 0 36 0 C38 26 34 2 20 2 Z"/></svg>
 			<span>A new pet</span>
-		</button>
+		</button></div>
 		{% else %}
 		<p class="pet-people">
 			{% if state == "asleep" %}
@@ -141,22 +141,22 @@
 			{% endfor %}
 		</div>
 		<div class="pet-buttons">
-			<button class="pet-button" data-action="feed">
+			<div class="pet-button-shadow"><button class="pet-button squircle" data-action="feed">
 				<svg viewBox="0 0 60 26" aria-hidden="true"><rect x="2" y="2" width="56" height="22" rx="11"/></svg>
 				<span>Feed</span>
-			</button>
-			<button class="pet-button" data-action="play">
+			</button></div>
+			<div class="pet-button-shadow"><button class="pet-button squircle" data-action="play">
 				<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17"/><path d="M3 20 h34 M20 3 a12 17 0 0 1 0 34 M20 3 a12 17 0 0 0 0 34"/></svg>
 				<span>Play</span>
-			</button>
-			<button class="pet-button" data-action="clean">
+			</button></div>
+			<div class="pet-button-shadow"><button class="pet-button squircle" data-action="clean">
 				<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="14" cy="24" r="10"/><circle cx="28" cy="14" r="7"/><circle cx="30" cy="31" r="5"/></svg>
 				<span>Clean</span>
-			</button>
-			<button class="pet-button pet-button-water" data-action="water">
+			</button></div>
+			<div class="pet-button-shadow"><button class="pet-button squircle pet-button-water" data-action="water">
 				<svg viewBox="0 0 40 40" aria-hidden="true"><path class="pet-glass" d="M8 4 h24 l-3 32 h-18 Z"/><path class="pet-glass-water" d="M10.5 16 h19 l-2 18 h-15 Z"/></svg>
 				<span>Water</span>
-			</button>
+			</button></div>
 		</div>
 		{% endif %}
 		<p class="pet-footer">

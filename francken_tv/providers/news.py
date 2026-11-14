@@ -215,7 +215,7 @@ class NewsProvider(Provider):
 			"link": headline.link, "image": headline.image} for headline in self.news[feed]]}
 
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
-		"""'article' (values = [its link]): the article to read; 'news' (values = [the feed]): back to its headlines."""
+		"""'article' (values = [its link]): the article to read; 'news' (values = [the feed]): that outlet's headlines; 'back' (the same, from an article): back to them."""
 		if name == "article" and values:
 			found = next(((feed, headline) for feed, headlines in self.news.items() for headline in headlines
 				if headline.link == values[0]), None)
@@ -226,6 +226,8 @@ class NewsProvider(Provider):
 			return Slide("news_article.html", self.seconds, {"feed": feed, "headline": headline, "ago": ago(headline.time, now),
 				"paragraphs": paragraphs, "whole": whole}), None
 		data = self.news_data(now, values[0] if values else "")
+		if data and name == "back":
+			data["quick"] = True   # back from an article ("All news"): somebody is using the screen, no slow entrance again (news.html)
 		return (Slide("news.html", self.seconds, data) if data else None), None
 
 	def article_text(self, headline: Headline) -> tuple[list[str], bool]:

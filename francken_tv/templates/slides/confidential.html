@@ -7,13 +7,15 @@
 	</header>
 	<div class="confidential-people" style="--count: {{ people | length }}">
 		{% for person in people %}
-		<div class="confidential-person" style="--i: {{ loop.index0 }}">
-			<div class="confidential-photo">
-				{% if person.photo %}<img src="{{ person.photo }}" alt="">{% else %}<span>{{ person.name[:1] }}</span>{% endif %}
+		<div class="confidential-person" style="--i: {{ loop.index0 }}">   {# the card's shadow and entrance (the clip on the card would cut the shadow off) #}
+			<div class="confidential-card squircle squircle-edge">
+			<div class="confidential-photo squircle squircle-edge">
+				{% if person.photo %}<img class="squircle" src="{{ person.photo }}" alt="">{% else %}<span>{{ person.name[:1] }}</span>{% endif %}
 			</div>
 			<strong>{{ person.name }}</strong>
 			{# a long address breaks only after a dot or before the @ #}
 			{% if person.email %}<span class="confidential-email">{% for part in person.email_parts %}{{ part }}<wbr>{% endfor %}</span>{% endif %}
+			</div>
 		</div>
 		{% endfor %}
 	</div>

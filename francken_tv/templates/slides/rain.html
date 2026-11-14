@@ -6,7 +6,7 @@
 	<div class="weather-pill rain-warning-pill">&#9888; Rain warning &middot; {{ place }}</div>
 	<h1 class="rain-warning-title"><span class="rain-umbrella">&#9748;</span> {{ summary }}</h1>
 	<p class="rain-warning-now">Now {{ weather.temperature | round | int }}&deg; and {{ weather.text | lower }}{% if example %} &middot; <b>an example: it stays dry for now</b>{% endif %}</p>
-	<div class="rain-warning-panel">
+	<div class="rain-warning-panel squircle">
 		{% with size = "" %}{% include "slides/rain_chart.html" %}{% endwith %}
 	</div>
 	<p class="rain-warning-source">Rain forecast from Buienradar</p>

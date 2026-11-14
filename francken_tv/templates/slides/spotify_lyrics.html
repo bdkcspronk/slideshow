@@ -9,7 +9,7 @@
 	{% if cover %}<div class="spotify-backdrop" style="background-image: url('{{ cover }}')"></div>{% endif %}
 	<div class="spotify-content">
 		<div class="spotify-lyrics-song">
-			{% if cover %}<img class="spotify-lyrics-cover" src="{{ cover }}" alt="">{% endif %}
+			{% if cover %}<div class="spotify-lyrics-cover" data-steady="{{ cover }}"><img class="squircle" src="{{ cover }}" alt=""></div>{% endif %}   {# the div carries the shadow (the clip on the img would cut it off) #}
 			<h1>{{ title }}</h1>
 			<div class="spotify-artist">{{ artist }}</div>
 			<div class="spotify-controls">

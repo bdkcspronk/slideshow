@@ -45,7 +45,7 @@ VEHICLES = ("motorcycle", "mobility")   # ride the front of the bars (templates/
 SHAPES = {"round corners", "square corners", "striped", "nyan cat", "rainbow", "beer", "board", "portugal", "frisian"}
 CHART_LEAD = timedelta(hours=1)        # the chart starts this long before the first arrival
 GROW_SECONDS = 4.0                     # the bars draw themselves across the chart in this time
-GROW_STARTS = 0.8                      # ...starting after the slide has faded in
+GROW_STARTS = 1.4                      # ...starting once the panel has risen in (0.6 s delay + 0.8 s), not while it still moves
 
 
 @dataclass
@@ -180,6 +180,7 @@ def bar_look(style: MarkerStyle, width: float, seed: str) -> dict:
 		look["stripe_width"] = f"{max(4, style.stripe_thickness * 1.5):.1f}px" if style.stripe_thickness else None
 	if style.shape == "beer":
 		look["foam"] = f"min(28%, {style.beer_foam_max_width:.0f}px)" if style.beer_foam_max_width else "28%"
+		look["foam_cq"] = look["foam"].replace("%", "cqw")   # the same, for the bubbles' wrapper (templates/bar.html)
 		rng = random.Random(seed)   # the same bubbles every time this bar is drawn
 		# Bubbles drift from the left towards the foam on the right, at roughly the same speed in
 		# every bar (so longer bars take longer). The negative wait starts each one somewhere along

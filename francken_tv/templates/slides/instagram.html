@@ -11,13 +11,15 @@
 		<div class="ig-pill">Follow us on Instagram</div>
 		<h1 class="ig-handle" style="--chars: {{ username | length + 1 }}">@{{ username }}</h1>
 		{% if followers %}<p class="ig-stats"><b>{{ post_count }}</b> posts &middot; <b>{{ followers }}</b> followers</p>{% endif %}
-		<div class="ig-qr-card">
-			<div class="ig-qr" data-qr="{{ link }}"></div>
-			<span>Scan to follow</span>
+		<div class="ig-qr-shadow">   {# the card's ring and shadow (the clip would cut them off) #}
+			<div class="ig-qr-card squircle">
+				<div class="ig-qr" data-qr="{{ link }}"></div>
+				<span>Scan to follow</span>
+			</div>
 		</div>
 	</div>
 	<div class="ig-phone">
-		<div class="ig-screen">
+		<div class="ig-screen squircle">   {# the phone's bezel keeps its plain round corners #}
 			<div class="ig-feed{{ ' still' if not posts }}">
 				<div class="ig-topbar"><b>{{ username }}</b></div>
 				<div class="ig-profile">

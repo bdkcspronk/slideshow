@@ -277,6 +277,7 @@ function setupLyrics(element) {
 	const playing = element.hasAttribute("data-playing");
 	const shownAt = performance.now();
 	let current = null;
+	let first = true;   // the first scroll after a redraw jumps: a tap must not make the lyrics sweep from the top
 	const follow = () => {
 		if (!document.contains(element)) return clearInterval(timer);   // the slide is gone
 		const seconds = start + (playing ? (performance.now() - shownAt) / 1000 : 0);
@@ -288,7 +289,8 @@ function setupLyrics(element) {
 			other.classList.toggle("current", i === index);
 			other.classList.toggle("past", i < index);
 		});
-		if (line) element.scrollTo({ top: line.offsetTop - element.clientHeight * 0.4, behavior: "smooth" });
+		if (line) element.scrollTo({ top: line.offsetTop - element.clientHeight * 0.4, behavior: first ? "auto" : "smooth" });
+		first = false;
 	};
 	const timer = setInterval(follow, 200);
 	follow();

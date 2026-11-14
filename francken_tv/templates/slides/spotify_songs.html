@@ -21,7 +21,7 @@
 	</div>
 	{% if not readable %}
 	<div class="spotify-locked">
-		{% if playlist.cover %}<img src="{{ playlist.cover }}" alt="">{% endif %}
+		{% if playlist.cover %}<img class="squircle" src="{{ playlist.cover }}" alt="">{% endif %}
 		<div>
 			<p>Spotify doesn't let the slideshow list the songs of playlists made by someone else.</p>
 			<p>You can still play it: once it plays, the slide shows what's next and you can skip songs.</p>

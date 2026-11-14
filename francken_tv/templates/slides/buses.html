@@ -22,7 +22,7 @@
 		<h1 class="bus-headline"><span>Next</span><span class="bus-marked">Buses</span></h1>
 		{% if next %}
 		<div class="bus-next">
-			<span class="bus-badge{{ ' long' if next.departure.line | length > 2 }}"{% if next.colors %} style="background: {{ next.colors[0] }}"{% endif %}>{{ next.departure.line }}</span>
+			<span class="bus-badge squircle{{ ' long' if next.departure.line | length > 2 }}"{% if next.colors %} style="background: {{ next.colors[0] }}"{% endif %}>{{ next.departure.line }}</span>
 			<div>
 				<span>to {{ next.departure.destination }}</span>
 				<b class="{{ 'last-call' if next.last_call }}">{% if next.last_call %}Last call{% else %}in {{ next.minutes }} min{% endif %}</b>
@@ -34,10 +34,12 @@
 	<ol class="bus-tickets">
 		{% for row in departures %}{% set departure = row.departure %}
 		<li class="bus-ticket{{ ' cancelled' if departure.cancelled }}" style="--i: {{ loop.index0 }}">
-			<span class="bus-badge{{ ' long' if departure.line | length > 2 }}"{% if row.colors %} style="background: {{ row.colors[0] }}"{% endif %}>{{ departure.line }}</span>
+			<div class="bus-card squircle">   {# the ticket itself; the li carries its shadow (the clip would cut it off) #}
+			<span class="bus-badge squircle{{ ' long' if departure.line | length > 2 }}"{% if row.colors %} style="background: {{ row.colors[0] }}"{% endif %}>{{ departure.line }}</span>
 			<span class="bus-destination">{{ departure.destination }}</span>
 			<span class="bus-time">{{ departure.expected.strftime("%H:%M") }}{% if departure.delay and not departure.cancelled %}<small>+{{ departure.delay }}</small>{% endif %}</span>
 			<span class="bus-minutes">{% if departure.cancelled %}<em>Cancelled</em>{% else %}<b>{{ row.minutes }}</b> min{% endif %}</span>
+			</div>
 		</li>
 		{% endfor %}
 	</ol>

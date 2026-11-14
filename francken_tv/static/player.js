@@ -184,7 +184,8 @@ document.addEventListener("click", async (event) => {
 	} else if (seek) {
 		const box = seek.getBoundingClientRect();
 		const fraction = Math.max(0, Math.min(1, (event.clientX - box.left) / box.width));
-		sendAction(slide, seek.dataset.seek, [fraction.toFixed(4)], seek.dataset.provider);
+		seek.classList.add("busy");   // shows the tap was seen, until the answer is there (style.css)
+		sendAction(slide, seek.dataset.seek, [fraction.toFixed(4)], seek.dataset.provider).finally(() => seek.classList.remove("busy"));
 	} else if (toggle) {
 		const max = parseInt(slide.dataset.maxSelected || "1000", 10);
 		if (toggle.classList.contains("selected") || selected().length < max) toggle.classList.toggle("selected");
@@ -306,12 +307,14 @@ function showInput(text, value, at) {
 // The same slide drawn again (after a tap, or a refresh that changed its state). An element with
 // data-steady (e.g. Spotify's cover) that has the same value as before doesn't play its entrance
 // again: pausing shouldn't make the cover disappear and fade back in (.steady in style.css).
-function redraw(layer, html) {
+function redraw(layer, html, tapped = false) {
 	const before = new Set([...layer.querySelectorAll("[data-steady]")].map((element) => element.dataset.steady));
 	layer.innerHTML = html;
 	for (const element of layer.querySelectorAll("[data-steady]")) {
 		if (before.has(element.dataset.steady)) element.classList.add("steady");
 	}
+	// After a tap, entrances that would wait for the show come in quickly instead (.redrawn in style.css).
+	if (tapped) layer.firstElementChild?.classList.add("redrawn");
 	setupWidgets(layer);
 }
 
@@ -325,7 +328,7 @@ async function sendAction(slide, action, values, provider = slide.dataset.provid
 		const fresh = new DOMParser().parseFromString(result.html, "text/html");
 		const effect = fresh.querySelector("[data-effect]");
 		if (effect && effects[effect.dataset.effect]) await effects[effect.dataset.effect](slide);
-		redraw(layers[front], result.html);
+		redraw(layers[front], result.html, true);
 		const resumeAfter = layers[front].querySelector("[data-resume-after]");
 		if (resumeAfter) keepPaused(parseFloat(resumeAfter.dataset.resumeAfter));   // e.g. game over
 	} else if (current && current.refresh) {
