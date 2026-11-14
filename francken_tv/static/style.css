@@ -52,7 +52,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 
 /* A tapped button, while its answer is on the way (player.js). */
-[data-action].busy { opacity: 0.55; transform: scale(0.95); transition: opacity 0.1s, transform 0.1s; }
+[data-action].busy, [data-key].busy { opacity: 0.55; transform: scale(0.95); transition: opacity 0.1s, transform 0.1s; }
+/* Redrawn with the same value: no entrance again (data-steady, redraw() in player.js). */
+[data-steady].steady { animation: none; }
 
 /* The blinking cursor of a free-text field (data-input-text, player.js), in the field's --caret
    colour: at the start when it's empty (before the placeholder, which each field puts in its
@@ -1916,6 +1918,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-control.big { width: 9vh; height: 9vh; background: #ffffff; color: #121212; }
 .spotify-control svg { width: 45%; height: 45%; fill: currentColor; }
 .spotify-control:active { transform: scale(0.94); }
+/* Every Spotify button dips while it's pressed, easing in and out of it instead of jumping. */
+.spotify-control, .spotify-button, .spotify-playlist, .spotify-chip, .spotify-album-card { transition: transform 0.1s ease-out; }
+.spotify-song, .spotify-key { transition: background 0.1s ease-out; }
 .spotify-control.busy, .spotify-button.busy, .spotify-song.busy { opacity: 1; background: #1db954; border-color: #1db954; color: #121212; }
 .spotify-volume { display: flex; align-items: center; gap: 1vw; margin-left: auto; }
 .spotify-volume-track { width: 14vw; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
@@ -1952,6 +1957,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-device { color: #ffffff; opacity: 0.8; letter-spacing: normal; text-transform: none; }
 .spotify-buttons .spotify-button { margin: 0; }
 .spotify-button.primary { background: #1db954; border-color: #1db954; color: #121212; }
+.spotify-button.primary.busy { opacity: 0.55; }   /* already green, so dim it instead (e.g. Search while it searches) */
 .spotify-button:disabled { opacity: 0.3; }
 /* Picking music: playlists, a playlist's songs, search. A header with Back, then the choices. */
 .spotify-pick-slide { display: flex; flex-direction: column; gap: 3vh; padding: 5vh 5vw; }
@@ -2062,6 +2068,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 .spotify-chip[aria-pressed="true"] { background: #ffffff; color: #121212; }
 .spotify-chip.busy { opacity: 0.55; }
+.spotify-chip:active, .spotify-album-card:active { transform: scale(0.97); }
 .spotify-albums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5vw; }
 .spotify-album-card {
 	display: flex;

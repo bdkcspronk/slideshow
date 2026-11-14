@@ -142,8 +142,7 @@ async function refresh() {
 		const oldState = layer.querySelector("[data-state]")?.dataset.state;
 		const newState = fresh.querySelector("[data-state]")?.dataset.state;
 		if (oldState === undefined || oldState !== newState) {
-			layer.innerHTML = slide.html;
-			setupWidgets(layer);
+			redraw(layer, slide.html);
 			return;
 		}
 		for (const element of fresh.querySelectorAll("[data-live]")) {
@@ -234,7 +233,7 @@ function typeKey(slide, key) {
 	const text = slide.querySelector("[data-input-text]");
 	if (text) {   // free text
 		const [value, at] = inputState(text);
-		if (key === "ENTER") sendAction(slide, slide.dataset.submitAction, [value]);
+		if (key === "ENTER") submit(slide, [value]);
 		else if (key === "BACK") { if (at > 0) showInput(text, value.slice(0, at - 1) + value.slice(at), at - 1); }
 		else if (key === "DELETE") showInput(text, value.slice(0, at) + value.slice(at + 1), at);
 		else if (key === "LEFT") showInput(text, value, Math.max(0, at - 1));
@@ -249,7 +248,7 @@ function typeKey(slide, key) {
 	}
 	const cells = [...slide.querySelectorAll("[data-input-cell]")];
 	if (key === "ENTER") {
-		sendAction(slide, slide.dataset.submitAction, [cells.map((cell) => cell.textContent.trim()).join("")]);
+		submit(slide, [cells.map((cell) => cell.textContent.trim()).join("")]);
 	} else if (key === "BACK") {
 		const last = cells.filter((cell) => cell.textContent.trim()).pop();
 		if (last) { last.textContent = ""; last.classList.remove("filled"); }
@@ -257,6 +256,14 @@ function typeKey(slide, key) {
 		const empty = cells.find((cell) => !cell.textContent.trim());
 		if (empty) { empty.textContent = key; empty.classList.add("filled"); }
 	}
+}
+
+// Enter: send what was typed. Its on-screen button shows .busy until the answer is there, like a
+// tapped data-action button (also when Enter was typed on a real keyboard).
+function submit(slide, values) {
+	const button = slide.querySelector('[data-key="ENTER"]');
+	button?.classList.add("busy");
+	return sendAction(slide, slide.dataset.submitAction, values).finally(() => button?.classList.remove("busy"));
 }
 
 // Free text and where its cursor is. The cursor is an empty .input-caret span inside the text, or,
@@ -296,6 +303,18 @@ function showInput(text, value, at) {
 	text.replaceChildren(value.slice(0, at), caret, value.slice(at));
 }
 
+// The same slide drawn again (after a tap, or a refresh that changed its state). An element with
+// data-steady (e.g. Spotify's cover) that has the same value as before doesn't play its entrance
+// again: pausing shouldn't make the cover disappear and fade back in (.steady in style.css).
+function redraw(layer, html) {
+	const before = new Set([...layer.querySelectorAll("[data-steady]")].map((element) => element.dataset.steady));
+	layer.innerHTML = html;
+	for (const element of layer.querySelectorAll("[data-steady]")) {
+		if (before.has(element.dataset.steady)) element.classList.add("steady");
+	}
+	setupWidgets(layer);
+}
+
 async function sendAction(slide, action, values, provider = slide.dataset.provider) {
 	const result = await getJson("/api/action", {
 		method: "POST",
@@ -306,8 +325,7 @@ async function sendAction(slide, action, values, provider = slide.dataset.provid
 		const fresh = new DOMParser().parseFromString(result.html, "text/html");
 		const effect = fresh.querySelector("[data-effect]");
 		if (effect && effects[effect.dataset.effect]) await effects[effect.dataset.effect](slide);
-		layers[front].innerHTML = result.html;
-		setupWidgets(layers[front]);
+		redraw(layers[front], result.html);
 		const resumeAfter = layers[front].querySelector("[data-resume-after]");
 		if (resumeAfter) keepPaused(parseFloat(resumeAfter.dataset.resumeAfter));   // e.g. game over
 	} else if (current && current.refresh) {
