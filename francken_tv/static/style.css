@@ -1738,7 +1738,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	box-shadow: 0 2vh 4vh rgba(0, 0, 0, 0.4);
 	animation: book-flat-arrive 1.8s cubic-bezier(0.22, 0.8, 0.3, 1) calc(0.4s + var(--i) * 0.3s) both;
 }
-/* A crimson glow behind each book: it lights up as the book lands (book i lands 3 s + 0.5 s * i after the start,
+/* A crimson glow behind each book: it lights up as the book lands (book i lands 3 s + 0.9 s * i after the start,
    books_3d.js) and then stays still. Its softness is the gradient: no blur filter and no pulse, which
    cost the TV PC frames. */
 .book-glow {   /* behind the book (outside its 3D scene, which would hide it): centred on where it hovers */
@@ -1751,9 +1751,11 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	margin-left: calc(var(--w) * -0.95);
 	border-radius: 50%;
 	background: radial-gradient(closest-side, rgba(225, 30, 60, 0.9), rgba(200, 16, 46, 0.35) 55%, transparent);
-	animation: book-glow-in 1s ease-out calc(2.6s + var(--i) * 0.5s) both;
+	animation: book-glow-in 1s ease-out calc(2.6s + var(--i) * 0.9s) both;
 }
 @keyframes book-glow-in { from { opacity: 0; transform: scale(0.5); } }
+.book-card.returning .book-glow { animation: book-glow-out 0.8s ease-in both; }   /* its book flies back into the bookcase */
+@keyframes book-glow-out { to { opacity: 0; transform: scale(0.5); } }
 .books-flat .book-glow { animation-delay: calc(0.6s + var(--i) * 0.3s); }
 @keyframes book-flat-arrive { 0% { transform: translateX(100vw); } 80%, 100% { transform: none; } }
 
@@ -1786,7 +1788,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .book-text {
 	width: 100%;
 	margin-top: 5vh;   /* below the hovering books */
-	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(2.8s + var(--i) * 0.5s) both;
+	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(2.8s + var(--i) * 0.9s) both;
 }
 @keyframes book-text-in { from { opacity: 0; transform: translateY(2vh); } }
 .book-title {

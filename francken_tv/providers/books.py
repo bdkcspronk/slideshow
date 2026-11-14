@@ -191,7 +191,7 @@ class BooksProvider(Provider):
 		self.next = (self.next + len(taken)) % len(self.books)
 		books = [(case[slot], slot) for slot in taken]
 		return [Slide("books.html", self.seconds, {
-			"books": books, "case": [book.on_shelf() for book in case], "case_size": CASE_SIZE})]
+			"books": books, "case": [book.on_shelf() for book in case], "case_size": CASE_SIZE, "seconds": self.seconds})]
 
 	def bookcase(self) -> tuple[list[Book], list[int]]:
 		"""The books in the bookcase, in order, and the places in it of the ones this slide takes out.

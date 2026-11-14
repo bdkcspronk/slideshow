@@ -8,7 +8,7 @@
 //
 // Kept within what the TV PC can do (docs/07-3d-limits.md): the bookcase doesn't move, so it is drawn only once, onto
 // .books-case (a plain picture from then on); its books are a single mesh with one texture holding every spine. Every
-// frame draws only the books taken out: 3 books are 15 draw calls, a few thousand triangles and 7 textures, no shadows. Antialiasing is on (the
+// frame draws only the books taken out: 3 books are 15 draw calls, a few thousand triangles (and one more for an invisible copy of the bookcase that hides them where they are behind it) and 7 textures, no shadows. Antialiasing is on (the
 // turning edges would flicker without it). If it still draws slowly (frames over 20 ms in the first seconds) it drops
 // to 75% resolution. Without WebGL the slide shows the covers flat and no bookcase (.books-flat, style.css).
 //
@@ -90,11 +90,28 @@ async function drawBooks3d(THREE, canvas, slide) {
 
 	// Drawn once: the bookcase without the books taken out, copied onto its own canvas, after which this canvas
 	// only draws the books that move.
+	let occluder = null;
 	if (caseCanvas) {
 		const caseScene = new THREE.Scene();
 		caseScene.fog = new THREE.Fog(BOOKS_3D.navy, distance + 60, distance + 700);   // a little hazy: it is the background
 		addLights(THREE, caseScene, 0.75);
-		caseScene.add(bookcase.wood, bookcase.shelfBooks(taken));
+		const shelfBooks = bookcase.shelfBooks(taken);
+		caseScene.add(bookcase.wood, shelfBooks);
+		// The same bookcase, invisible, in front of which the books that move are drawn: it only fills the depth buffer,
+		// so the shelves, the books next to them and the sides hide them where they are behind those (the picture of
+		// the bookcase can't). One draw call: every plank and book in one geometry, positions only.
+		caseScene.updateMatrixWorld();
+		const parts = [];
+		caseScene.traverse((o) => {
+			if (!o.isMesh) return;
+			const g = new THREE.BufferGeometry();
+			g.setAttribute("position", o.geometry.attributes.position.clone());
+			if (o.geometry.index) g.setIndex(o.geometry.index.clone());
+			parts.push(g.applyMatrix4(o.matrixWorld));
+		});
+		occluder = new THREE.Mesh(mergeGeometries(THREE, parts), new THREE.MeshBasicMaterial({ colorWrite: false }));
+		occluder.renderOrder = -1;   // first, so the books are tested against it
+		parts.forEach((g) => g.dispose());
 		renderer.render(caseScene, camera);
 		caseCanvas.width = canvas.width;
 		caseCanvas.height = canvas.height;
@@ -114,7 +131,10 @@ async function drawBooks3d(THREE, canvas, slide) {
 
 	// The books taken out.
 	const scene = new THREE.Scene();
-	addLights(THREE, scene, 1);
+	scene.fog = new THREE.Fog(BOOKS_3D.navy, distance + 60, distance + 700);   // as hazy as the bookcase while in it
+	const lights = addLights(THREE, scene, 1);
+	const full = Object.fromEntries(Object.entries(lights).map(([name, light]) => [name, light.intensity]));
+	if (occluder) scene.add(occluder);
 	const pages = texture(pagesCanvas(), false);
 	pages.wrapS = THREE.RepeatWrapping;
 	pages.repeat.set((D - 0.7) / 0.4, 1);   // a line every 0.4vh
@@ -128,7 +148,10 @@ async function drawBooks3d(THREE, canvas, slide) {
 		const cover = image?.naturalWidth ? image : null;   // one that didn't load gets a drawn cover
 		const hue = Number(card.style.getPropertyValue("--hue")) || 0;
 		const title = card.dataset.title || "", authors = card.dataset.authors || "";
-		const w = W * shelf.size, h = H * shelf.size, d = D * shelf.thickness;
+		// As thick as its place on the shelf (squeezed there if the shelf is full), less what the raised bands and the caps
+		// on its spine stick out, so it fits back between its neighbours.
+		const room = bookcase.slots[slot]?.thickness ?? D * shelf.thickness;
+		const w = W * shelf.size, h = H * shelf.size, d = room - 0.5;
 		const book = makeBook(THREE, {
 			W: w, H: h, D: d, pagesMaterial,
 			cover: texture(coverCanvas(w, h, cover, hue, title, authors)),
@@ -144,15 +167,23 @@ async function drawBooks3d(THREE, canvas, slide) {
 		end.y += h / 2 + 4;
 		end.turn = 18 - Math.atan2(end.x, distance) / deg;
 		const start = bookcase.slots[slot] || { x: end.x, y: -height, z: 0 };
-		return { book, i, start, end, depth: w };
+		return { book, card, i, start, end, depth: w };
 	});
 
 	// The same clock as the CSS animations of the glows and the text: from when the slide is shown (player.js removes
-	// .loading). Book i starts 0.6 s + 0.5 s per book in, slides out of the shelf (0.8 s), then flies to the front (1.6 s).
+	// .loading). Book i starts 0.6 s + STEP s per book in, slides out of the shelf (0.8 s), then flies to the front (1.6 s).
+	// At the end of the slide they go back the same way, the last one first, so they are in the bookcase when it ends.
+	// STEP is as short as it can be without two books going through each other in any frame (0.7 s isn't, 0.8 s is: a
+	// simulation of their paths over many bookcases), with a little to spare; the glows and texts (style.css) follow it.
+	const STEP = 0.9;
+	const seconds = Number(canvas.dataset.seconds) || 15;
 	const outEase = cubicBezier(0.45, 0, 0.3, 1), flyEase = cubicBezier(0.3, 0.1, 0.2, 1);
 	const pose = (t) => {
-		for (const { book, i, start, end, depth } of books) {
-			const s = t - 0.6 - i * 0.5;
+		let least = 1, most = 0;   // how far the books furthest from and nearest to the front are on their way there
+		for (const { book, card, i, start, end, depth } of books) {
+			const back = seconds - 0.4 - (books.length - 1 - i) * STEP - t;   // how long before it is back in its place
+			const s = Math.min(t - 0.6 - i * STEP, back);
+			card.classList.toggle("returning", back < 2.4);   // its glow fades as it leaves (style.css)
 			const out = outEase(Math.min(Math.max(s / 0.8, 0), 1));
 			const fly = flyEase(Math.min(Math.max((s - 0.8) / 1.6, 0), 1));
 			// Hovering: up and down, 5 s each way, each book out of step with the others; and a little sway, all
@@ -168,7 +199,15 @@ async function drawBooks3d(THREE, canvas, slide) {
 			// On the shelf its spine faces us (90 degrees); it turns its cover to us, a bit too far on the way.
 			const turn = 90 + (end.turn - 4 + sway * 9 - 90) * fly - Math.sin(fly * Math.PI) * 25;
 			book.rotation.set(0, turn * deg, Math.sin(fly * Math.PI) * -6 * deg);
+			least = Math.min(least, fly);
+			most = Math.max(most, fly);
 		}
+		// The light: in the bookcase as bright as the bookcase (lights at 0.75, like its picture); the crimson light from
+		// behind only once all books are at the front, as on the way their covers face it and would light up red.
+		const light = 0.75 + 0.25 * most;
+		lights.hemisphere.intensity = full.hemisphere * light;
+		lights.key.intensity = full.key * light;
+		lights.rim.intensity = full.rim * least * least;
 	};
 	pose(0);
 
@@ -209,13 +248,15 @@ async function drawBooks3d(THREE, canvas, slide) {
 
 // A white light from the front left, a crimson one from behind (the glows), and light from all around.
 function addLights(THREE, scene, strength) {
-	scene.add(new THREE.HemisphereLight(0xfff8f0, 0x40507a, 2.3 * strength));
+	const hemisphere = new THREE.HemisphereLight(0xfff8f0, 0x40507a, 2.3 * strength);
+	scene.add(hemisphere);
 	const key = new THREE.DirectionalLight(0xfff4e6, 2.2 * strength);
 	key.position.set(-5, 4, 8);
 	scene.add(key);
 	const rim = new THREE.DirectionalLight(0xff2a4a, 3 * strength);
 	rim.position.set(6, 1, -4);
 	scene.add(rim);
+	return { hemisphere, key, rim };
 }
 
 // The bookcase: a wooden case with `shelves` shelves, as wide as caseSize books of normal thickness (D) need, and the
@@ -279,7 +320,8 @@ function makeBookcase(THREE, { W, H, D, books, caseSize, distance, height, textu
 	plank(outerW + 2.5, 1.2, depth + 2, 0, top + 4.2, back + 1, { bevel: 0.5 });
 	plank(outerW + 1, 4, depth + 0.5, 0, top - outerH - 2, back + 0.25, { bevel: 0.8 });
 
-	// The places: each shelf holds perShelf books; thicker books than normal are squeezed a little if they don't fit.
+	// The places: each shelf holds perShelf books, set back a little from its rounded front edge (level with it, their
+	// bottoms would hang over the edge and seem to sink into the shelf); thicker books than normal are squeezed a little if they don't fit.
 	const slots = [];
 	for (let start = 0; start < books.length; start += perShelf) {
 		const row = books.slice(start, start + perShelf);
@@ -290,7 +332,7 @@ function makeBookcase(THREE, { W, H, D, books, caseSize, distance, height, textu
 		let x = -inside / 2 + 0.5;
 		for (const book of row) {
 			const t = D * book.thickness * squeeze;
-			slots.push({ x: x + t / 2, y: floor + H * book.size / 2, z: front - W * book.size / 2, thickness: t, book });
+			slots.push({ x: x + t / 2, y: floor + H * book.size / 2, z: front - 1.5 - W * book.size / 2, thickness: t, book });
 			x += t;
 		}
 		// A shelf that isn't full: a bookend holds the books up.
@@ -352,7 +394,7 @@ function makeBookcase(THREE, { W, H, D, books, caseSize, distance, height, textu
 	return {
 		wood,
 		shelfBooks,
-		slots: slots.map(({ x, y, z }) => ({ x, y, z })),
+		slots: slots.map(({ x, y, z, thickness }) => ({ x, y, z, thickness })),
 		dispose: () => { grain.dispose(); upright.dispose(); spines.dispose(); },
 	};
 }

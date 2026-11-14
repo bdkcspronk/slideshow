@@ -9,7 +9,7 @@
 	{# The books slide out of their place in the bookcase (data-slot) one just after the other, fly to the front, turn
 	   and land, each with its glow; their title, authors and price appear below. They are drawn in 3D on the canvas
 	   (static/books_3d.js), each where its .book-flat is; .book-flat is the cover it uses (and what is shown without WebGL). #}
-	<canvas class="books-3d" data-books-3d aria-hidden="true"></canvas>
+	<canvas class="books-3d" data-books-3d data-seconds="{{ seconds }}" aria-hidden="true"></canvas>
 	<div class="books-row">
 		{% for book, slot in books %}
 		<div class="book-card" style="--i: {{ loop.index0 }}; --hue: {{ book.hue }}" data-slot="{{ slot }}" data-title="{{ book.title }}" data-authors="{{ book.authors }}">
