@@ -128,7 +128,7 @@ def cache_downloads(folder: Path) -> None:
 			except Exception:
 				pass
 		response = send(session, request, **kwargs)
-		if response.ok:
+		if response.ok or response.status_code in (404, 410):   # "there is none" is an answer too (books without a cover)
 			try:
 				path.write_bytes(pickle.dumps(response))
 			except Exception:
