@@ -45,15 +45,6 @@ the browser console); without WebGL it shows the covers flat, without a bookcase
 would flicker without it; check on the TV that it doesn't fall back to 75%. Copy its approach for a new 3D slide: whatever stands
 still, draw once.
 
-## A slide in 3D: the activities
-
-The activities slide (`static/activities_3d.js`) is a split-flap display per activity. All flaps of a display are one
-`InstancedMesh` drawn by a small shader from one texture with every letter (each flap 5 quads: the black window, the two
-fixed halves and the falling flap's two sides), so with its housing and its shadow on the wall (a blurred picture, not
-a shadow map) a display costs 3 draw calls: at most about 30 for the slide, some 10,000 triangles, 2 textures. The white
-wall behind is the slide's CSS background. Where each display goes and how big it is comes from the cards in
-the HTML (hidden in 3D, shown without WebGL). Like the books it drops to 75% resolution when its first seconds are slow.
-
 ## The benchmark: measuring again (a new PC, a new browser, a new slideshow version)
 
 On the TV PC press Esc -> Fun -> "3D benchmark" and tap **Start** (or press Enter). It takes about 3 minutes; leave the PC alone

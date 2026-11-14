@@ -9,7 +9,7 @@ It shows:
 | Slide | Where it comes from | Code |
 |---|---|---|
 | Posters and announcements | images in `media/slides/` | `providers/images.py` |
-| Upcoming activities: a split-flap display per activity in 3D (Three.js), each swinging down into place and its flaps clattering to the date, title and details | professorfrancken.nl/association/activities | `providers/activities.py`, `static/activities_3d.js` |
+| Upcoming activities | professorfrancken.nl/association/activities | `providers/activities.py` |
 | Practice sessions in the next two weeks, as a poster with a ticket per session (only while there are some) | the upcoming activities | `providers/practice.py` |
 | A photo from one of the last 3 events | Nextcloud `images/albums/` | `providers/event_photos.py` |
 | Who was in the room today (animated chart) | the ESP32 sniffer | `providers/presence.py`, `activity_chart.py` |
