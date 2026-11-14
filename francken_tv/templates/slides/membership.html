@@ -35,9 +35,11 @@
 		</div>
 
 		<div class="member-signup">
-			<div class="member-qr-card">
+			<div class="member-qr-shadow">   {# the card's shadow, outside the card's clip #}
+			<div class="member-qr-card squircle">
 				<div class="member-qr" data-qr="{{ link }}" data-qr-level="H"></div>
-				<div class="member-tile">{% include "francken_portrait.svg" %}</div>
+				<div class="member-tile squircle">{% include "francken_portrait.svg" %}</div>
+			</div>
 			</div>
 			<p><b>Scan to sign up</b>{{ link | replace("https://", "") }}</p>
 		</div>

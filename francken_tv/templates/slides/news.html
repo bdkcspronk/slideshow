@@ -1,19 +1,20 @@
 {# News slide (providers/news.py): the latest headlines of one feed (the next feed each time the slide
    comes round), as large cards side by side, each with its picture, on the navy and crimson poster of the
    activities slide. Above them the feeds, this one marked; tapping one shows that outlet's headlines (NewsProvider.action()). The cards come in one after another (--i).
+   Switching outlet keeps the title and the outlets where they are; only the new cards come in, quickly (data-steady).
    Tapping one opens the article (NewsProvider.action(), news_article.html). #}
 <div class="slide news-slide" data-interactive data-provider="news" data-idle-seconds="120">
 	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
-	<h1 class="poster-title"><span>In the</span> <span class="poster-marked">news</span></h1>
-	<ul class="news-feeds">
+	<h1 class="poster-title" data-steady="news-title"><span>In the</span> <span class="poster-marked">news</span></h1>
+	<ul class="news-feeds" data-steady="news-feeds">
 		{% for name in feeds %}<li{% if name == feed %} class="current"{% endif %} style="--i: {{ loop.index0 }}"><button data-action="news" data-value="{{ name }}">{{ name }}</button></li>{% endfor %}
 	</ul>
-	<ol class="news-cards" style="--cards: {{ headlines | length }}">
+	<ol class="news-cards" data-steady="news-cards" style="--cards: {{ headlines | length }}">
 		{% for headline in headlines %}
 		<li style="--i: {{ loop.index0 }}">
-			<button data-action="article" data-value="{{ headline.link }}">
+			<button class="squircle" data-action="article" data-value="{{ headline.link }}">
 				{% if headline.image %}<span class="news-picture"><img src="{{ headline.image }}" alt=""></span>{% endif %}
-				<b>{{ headline.title }}</b><span>{{ headline.ago }}</span>
+				<span class="news-text"><b>{{ headline.title }}</b><span>{{ headline.ago }}</span></span>
 			</button>
 		</li>
 		{% endfor %}

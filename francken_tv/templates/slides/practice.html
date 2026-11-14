@@ -19,6 +19,7 @@
 	<ol class="practice-tickets">
 		{% for session in sessions %}
 		<li class="practice-ticket{{ ' today' if session.today }}" style="--i: {{ loop.index0 }}">
+			<div class="practice-card squircle">   {# the ticket itself; the li carries its shadow (the clip would cut it off) #}
 			<div class="practice-date">
 				<span>{{ "Today" if session.today else session.day.strftime("%a") }}</span>
 				<b>{{ session.day.day }}</b>
@@ -27,6 +28,7 @@
 			<div class="practice-info">
 				<b style="font-size: calc({{ session.size }} * var(--px))">{{ session.course }}</b>
 				<span>{% if session.time %}{{ session.time }} &middot; {% endif %}{{ session.room }}</span>
+			</div>
 			</div>
 		</li>
 		{% endfor %}

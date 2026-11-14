@@ -19,6 +19,34 @@
 	--line: #dfe5ec;          /* dividers, chart lines */
 }
 
+/* Continuous corners, as Apple's and Figma's (60% smoothing): --r is how far each corner reaches along the
+   edges; its middle is a circle arc of radius --r / 1.6, reached from the straight edges by gentle curves
+   instead of meeting them abruptly. One clip-path shape() for the whole outline (Firefox 148+, Chrome 135+),
+   so it stays exact at any size and while moving. Without shape(): the border-radius, the same circle.
+   The clip cuts off shadows, outlines and borders: put a shadow on a parent (see .activities-slide li). */
+.squircle {
+	--r: 2.4vh;
+	border-radius: calc(var(--r) / 1.6);
+	clip-path: shape(from var(--r) 0,
+		line to calc(100% - var(--r)) 0,
+		curve to calc(100% - 0.3413 * var(--r)) calc(0.0681 * var(--r)) with calc(100% - 0.65 * var(--r)) 0 / calc(100% - 0.475 * var(--r)) 0,
+		arc to calc(100% - 0.0681 * var(--r)) calc(0.3413 * var(--r)) of calc(0.625 * var(--r)) cw,
+		curve to 100% var(--r) with 100% calc(0.475 * var(--r)) / 100% calc(0.65 * var(--r)),
+		line to 100% calc(100% - var(--r)),
+		curve to calc(100% - 0.0681 * var(--r)) calc(100% - 0.3413 * var(--r)) with 100% calc(100% - 0.65 * var(--r)) / 100% calc(100% - 0.475 * var(--r)),
+		arc to calc(100% - 0.3413 * var(--r)) calc(100% - 0.0681 * var(--r)) of calc(0.625 * var(--r)) cw,
+		curve to calc(100% - var(--r)) 100% with calc(100% - 0.475 * var(--r)) 100% / calc(100% - 0.65 * var(--r)) 100%,
+		line to var(--r) 100%,
+		curve to calc(0.3413 * var(--r)) calc(100% - 0.0681 * var(--r)) with calc(0.65 * var(--r)) 100% / calc(0.475 * var(--r)) 100%,
+		arc to calc(0.0681 * var(--r)) calc(100% - 0.3413 * var(--r)) of calc(0.625 * var(--r)) cw,
+		curve to 0 calc(100% - var(--r)) with 0 calc(100% - 0.475 * var(--r)) / 0 calc(100% - 0.65 * var(--r)),
+		line to 0 var(--r),
+		curve to calc(0.0681 * var(--r)) calc(0.3413 * var(--r)) with 0 calc(0.65 * var(--r)) / 0 calc(0.475 * var(--r)),
+		arc to calc(0.3413 * var(--r)) calc(0.0681 * var(--r)) of calc(0.625 * var(--r)) cw,
+		curve to var(--r) 0 with calc(0.475 * var(--r)) 0 / calc(0.65 * var(--r)) 0,
+		close);
+}
+
 html, body {
 	margin: 0;
 	height: 100%;
@@ -195,16 +223,22 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);   /* two equal columns, even with long names */
 	grid-auto-flow: column;   /* in date order down the left column, then down the right */
 }
-.activities-slide li {   /* a cream card: the crimson date block, then the title and details */
+.activities-slide li {   /* the card's shadow; the card itself is .activity-card inside it */
 	display: flex;
-	align-items: stretch;
-	overflow: hidden;
-	border-radius: 1.4vh;
-	background: var(--paper);
+	border-radius: 1.4vh;   /* only shapes the (blurred) shadow; the card's continuous corners are a clip-path */
 	color: var(--navy);
 	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
 }
-.activities-slide li.today { background: var(--crimson); color: #ffffff; box-shadow: 0 1.2vh 3.5vh rgba(200, 16, 46, 0.45); }
+.activity-card {   /* a cream card with continuous corners: the crimson date block, then the title and details */
+	--r: 2.2vh;
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	align-items: stretch;
+	overflow: hidden;   /* no background of its own: a clip-path cuts each layer separately, so cream under the red (or a photo) would show as light pixels along the curve; the text part is cream */
+}
+.activities-slide li.today { color: #ffffff; box-shadow: 0 1.2vh 3.5vh rgba(200, 16, 46, 0.45); }
+.activities-slide li.today .activity-text { background: var(--crimson); }
 .activities-slide li.from-left { animation: slide-from-left 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.6s + var(--i) * 0.5s) both; }
 .activities-slide li.from-right { animation: slide-from-right 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) calc(0.6s + var(--i) * 0.5s) both; }
 @keyframes slide-from-left { from { transform: translateX(-60vw); opacity: 0; } }
@@ -226,8 +260,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .activity-date .weekday { font-size: 1.9vh; letter-spacing: 0.15vh; opacity: 0.9; }
 .activity-date .day { font-size: 5vh; margin: 0.3vh 0; }
 .activity-date .month { font-size: 1.9vh; letter-spacing: 0.15vh; opacity: 0.9; }
-.activity-text {   /* lets long titles shrink instead of widening the card */
+.activity-text {   /* lets long titles shrink instead of widening the card; the card's cream (see .activity-card) */
+	flex: 1;
 	min-width: 0;
+	background: var(--paper);
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -304,30 +340,33 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	grid-template-columns: repeat(var(--cards), minmax(0, 1fr));
 	gap: 2.2vw;
 }
-.news-cards li { min-height: 0; animation: news-wave 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(0.9s + var(--i) * 0.35s) both; }
+.news-cards li {   /* the card's shadow; the card itself is the button, with continuous corners (the clip would cut the shadow off) */
+	min-height: 0;
+	border-radius: 1.6vh;   /* only shapes the (blurred) shadow */
+	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
+	animation: news-wave 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(0.9s + var(--i) * 0.35s) both;
+}
 .news-cards button {
+	--r: 2.6vh;
 	width: 100%;
 	height: 100%;
 	display: flex;
 	flex-direction: column;
-	gap: 1.2vh;
-	padding: 0 1.6vw 2.4vh;
+	padding: 0;
 	border: none;
-	border-radius: 1.6vh;
-	background: var(--paper);
+	background: none;   /* no background of its own: a clip-path cuts each layer separately, so cream under the red (or a photo) would show as light pixels along the curve; .news-text is cream */
 	color: var(--navy);
-	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
 	font-family: inherit;
 	font-weight: inherit;
 	text-align: left;
 	overflow: hidden;
 }
-.news-cards button:active { background: #efe7d3; }
+.news-cards button:active .news-text { background: #efe7d3; }
+.news-cards button.busy { transform: none; }   /* waiting for the article: only dimmed, as shrinking would leave its shadow (on the li) behind */
 .news-picture {   /* across the top of the card, taking whatever height the text leaves */
 	display: block;
 	flex: 1;
 	min-height: 12vh;
-	margin: 0 -1.6vw 0.6vh;
 }
 .news-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .news-cards b {
@@ -338,9 +377,13 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	-webkit-line-clamp: 4;
 	overflow: hidden;
 }
-.news-cards button > b:first-child { margin-top: 2.4vh; }   /* no picture */
-.news-cards button > span:last-child { font-size: 2.2vh; font-weight: normal; color: var(--crimson); }
+.news-text { display: flex; flex-direction: column; gap: 1.2vh; padding: 1.8vh 1.6vw 2.4vh; background: var(--paper); }   /* the title and how long ago, on the card's cream */
+.news-cards button:not(:has(.news-picture)) .news-text { flex: 1; padding-top: 2.4vh; }   /* no picture: the text is the whole card */
+.news-text > span { font-size: 2.2vh; font-weight: normal; color: var(--crimson); }
 .news-hint { position: absolute; bottom: 2.5vh; right: 5vw; margin: 0; font-size: 1.9vh; opacity: 0.55; }
+/* Another outlet tapped (redraw() in player.js): the title and the outlets stay put, the new cards come in at once. */
+.news-slide .poster-title.steady span, .news-slide .poster-title.steady .poster-marked::before, .news-feeds.steady li { animation: none; }
+.news-cards.steady li { animation-duration: 0.6s; animation-delay: calc(var(--i) * 0.08s); }
 @keyframes news-wave {
 	from { opacity: 0; transform: translateY(6vh) scale(0.94) rotate(-1.5deg); }
 	60% { opacity: 1; }
@@ -1271,20 +1314,19 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	position: relative;
 	height: var(--h);
 	display: flex;
-	border-radius: calc(18 * var(--px));
-	background: var(--paper);
+	border-radius: calc(18 * var(--px));   /* only shapes the (blurred) shadow; the ticket is .practice-card inside */
 	color: var(--blue);
 	box-shadow: 0 calc(14 * var(--px)) calc(30 * var(--px)) rgba(0, 0, 0, 0.3);
 	animation: practice-ticket 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) calc(1s + var(--i) * 0.18s) both;
 }
+.practice-card { --r: calc(29 * var(--px)); flex: 1; min-width: 0; display: flex; }   /* continuous corners; no background of its own: a clip-path cuts each layer separately, so cream under the red (or a photo) would show as light pixels along the curve; .practice-info is cream */
 .practice-date {
 	flex: 0 0 calc(var(--date) * var(--px));
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	border-radius: calc(18 * var(--px)) 0 0 calc(18 * var(--px));
-	background: var(--red);
+	background: var(--red);   /* (its left corners are the card's) */
 	color: var(--paper);
 	line-height: 1;
 	text-transform: uppercase;
@@ -1301,6 +1343,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	gap: calc(var(--h) * 0.06);
 	padding: 0 calc(36 * var(--px));
 	border-left: calc(4 * var(--px)) dashed rgba(23, 50, 73, 0.25);   /* the perforation */
+	background: var(--paper);   /* the ticket's cream (see .practice-card) */
 }
 .practice-info b { line-height: 1.05; white-space: nowrap; }
 .practice-info span { font-size: calc(var(--h) * 0.2); color: var(--blue-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -3508,6 +3551,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	animation: member-up 0.8s ease-out calc(1.8s + var(--i) * 0.4s) both;
 }
 .member-reasons li svg { flex: none; width: 6vh; height: 6vh; fill: var(--crimson); overflow: visible; }
+	--r: 1.9vh;   /* continuous corners */
 @keyframes member-up { from { transform: translateY(3vh); opacity: 0; } }
 .member-handle { fill: none; stroke: var(--crimson); stroke-width: 5; }
 .member-steam path { fill: none; stroke: var(--paper); stroke-width: 3; stroke-linecap: round; opacity: 0; animation: member-steam 3s ease-out infinite; }
@@ -3516,7 +3560,8 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 @keyframes member-steam { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 0.6; } 100% { transform: translateY(-12px); opacity: 0; } }
 
 .member-signup { flex: none; display: flex; flex-direction: column; align-items: center; gap: 3vh; margin-right: 2vw; animation: member-up 0.8s ease-out 0.8s both; }
-.member-qr-card { position: relative; width: 52vh; height: 52vh; padding: 2.4vh; border-radius: 2.4vh; background: var(--paper); box-shadow: 0 2.4vh 6vh rgba(0, 0, 0, 0.45); }
+.member-qr-shadow { border-radius: 2.4vh; box-shadow: 0 2.4vh 6vh rgba(0, 0, 0, 0.45); }   /* shapes only the (blurred) shadow */
+.member-qr-card { --r: 3.8vh; position: relative; width: 52vh; height: 52vh; padding: 2.4vh; background: var(--paper); }   /* continuous corners */
 .member-qr { width: 100%; height: 100%; }
 .member-qr svg { display: block; width: 100%; height: 100%; }
 .member-qr rect { fill: var(--paper); }
@@ -3525,7 +3570,6 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 	position: absolute;
 	inset: 37%;
 	padding: 1%;
-	border-radius: 1.2vh;
 	background: var(--paper);
 	color: var(--navy);
 }
