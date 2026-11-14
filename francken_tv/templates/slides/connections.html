@@ -16,7 +16,7 @@
 		<div class="connections-board">
 			{% if message %}<div class="connections-message">{{ message }}</div>{% endif %}
 			{% for level, title, group in groups %}
-			<div class="connections-group connections-group-{{ level + 1 }}{{ ' appear' if level == new_group }}">
+			<div class="connections-group connections-group-{{ level + 1 }}{{ ' appear' if level == new_group }}{{ ' appear reveal' if revealed and level not in found }}" style="--i: {{ loop.index0 - found | length }}">
 				<strong>{{ title }}</strong>
 				<span>{{ group | join(", ") }}</span>
 			</div>

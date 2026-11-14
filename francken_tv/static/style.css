@@ -86,7 +86,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-song[data-action].busy { transform: scale(0.97); }
 .puzzle-card[data-action].busy, .poll-option[data-action].busy { transform: none; }   /* these are clipped inside a shadow carrier, which dips instead (.puzzle-shadow, .poll-shadow): scaling the card would leave its shadow behind */
 /* Redrawn with the same value: no entrance again (data-steady, redraw() in player.js). */
-[data-steady].steady { animation: none; }
+/* !important: a later rule with the same specificity that sets `animation` would otherwise win and the entrance would replay. */
+[data-steady].steady { animation: none !important; }
 
 /* The blinking cursor of a free-text field (data-input-text, player.js), in the field's --caret
    colour: at the start when it's empty (before the placeholder, which each field puts in its
@@ -649,7 +650,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	--rain-stroke: var(--blue-light);
 }
 .rain-plot { flex: 1; position: relative; border-bottom: 0.3vh solid var(--line); }
-.rain-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform-origin: bottom; animation: rain-grow 0.9s ease-out 0.5s both; }
+.rain-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform-origin: bottom; animation: rain-grow 0.9s ease-out 1.2s both; }   /* starts when the panel has landed (its entrance is 0.6 s delay + 0.8 s, mostly done by 1.2 s), not while it is still invisible */
 @keyframes rain-grow { from { transform: scaleY(0); } }
 .rain-area { fill: var(--rain-fill); }
 .rain-line { fill: none; stroke: var(--rain-stroke); stroke-width: 0.35vh; stroke-linejoin: round; }
@@ -674,6 +675,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	letter-spacing: calc(-3 * var(--px));
 	animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.25s both;
 }
+/* A long summary ("Moderate rain now, dry from 15:10") would wrap to two lines at 130px and run into the line and panel below,
+   which sit at fixed tops. Smaller type (set from the length in rain.html) keeps even two lines above them. */
+.rain-warning-title.long { font-size: calc(72 * var(--px)); letter-spacing: calc(-1.5 * var(--px)); }
 .rain-warning-now { position: absolute; left: calc(100 * var(--px)); top: calc(330 * var(--px)); margin: 0; font-size: calc(40 * var(--px)); opacity: 0.85; animation: practice-in 0.7s ease-out 0.6s both; }
 .rain-warning-now b { color: #ffd166; }
 .rain-warning-panel {
@@ -893,8 +897,11 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .timetable-list { flex: 1; min-height: 0; overflow: hidden; }
 .timetable-list .marquee-up-copy { display: flex; flex-direction: column; gap: 1.2vh; padding: 0.4vh 0.3vh 0; }   /* room for the shadows */
 .timetable-list.marquee-up .marquee-up-copy { padding-bottom: 0.8vh; }   /* room for the last one's shadow */
-.marquee-up .marquee-up-inner { animation: marquee-up var(--marquee-seconds) ease-in-out infinite alternate; }
-@keyframes marquee-up { 0%, 15% { transform: translateY(0); } 85%, 100% { transform: translateY(var(--marquee-distance)); } }
+/* Once, down to the bottom and then staying there (it used to go back and forth and could run out of slide before reaching the
+   bottom). Linear, so the text moves at one steady speed you can read along with; the waits at the top and bottom are what
+   the keyframes hold. */
+.marquee-up .marquee-up-inner { animation: marquee-up var(--marquee-seconds) linear both; }
+@keyframes marquee-up { 0%, 12% { transform: translateY(0); } 88%, 100% { transform: translateY(var(--marquee-distance)); } }
 .lecture {
 	--kind: var(--blue-light);
 	display: grid;
@@ -1683,7 +1690,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 @keyframes moto-idle { from { transform: translateY(0); } to { transform: translateY(-0.25vh); } }
 .motorcycle-dust, .motorcycle-exhaust { position: absolute; inset: 0; }
 .motorcycle-dust { animation: moto-dust var(--grow) linear var(--delay) both; }
-@keyframes moto-dust { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+/* display: none at the end (display can be animated in Firefox 129+): the faded-out dust is no longer drawn, and its five puff loops
+   stop running for the rest of the slide instead of animating at opacity 0. */
+@keyframes moto-dust { 0%, 85% { opacity: 1; display: block; } 100% { opacity: 0; display: none; } }
 .motorcycle-exhaust { animation: moto-exhaust 0.6s ease-in calc(var(--delay) + var(--grow)) both; }
 @keyframes moto-exhaust { from { opacity: 0; } to { opacity: 1; } }
 .motorcycle-dust i, .motorcycle-exhaust i { position: absolute; aspect-ratio: 1; border-radius: 50%; }
@@ -2026,7 +2035,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	font-weight: bold;
 	white-space: nowrap;
 }
-.spotify-button:active { transform: scale(0.97); }
+.spotify-button:active:not(:disabled) { transform: scale(0.97); }
 .spotify-buttons { display: flex; gap: 1vw; margin-left: auto; }
 .spotify-button.small { margin-left: 1vw; padding: 0.6vh 1.2vw; font-size: 2vh; letter-spacing: normal; text-transform: none; }
 .spotify-label-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -2853,6 +2862,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .connections-tile.moving { transition: transform 0.5s ease-in-out; z-index: 1; }
 .connections-group.appear { animation: group-appear 0.35s ease-out; }
 @keyframes group-appear { from { transform: scale(0.9); opacity: 0.4; } }
+/* After a loss the groups nobody found come in the same way, one after another (0.08 s apart, it answers a tap); the backwards fill keeps
+   each one hidden until its turn. */
+.connections-group.appear.reveal { animation-delay: calc(var(--i) * 0.08s); animation-fill-mode: backwards; }
 @keyframes shake {
 	20%, 60% { transform: translateX(-0.6vw); }
 	40%, 80% { transform: translateX(0.6vw); }
@@ -4040,6 +4052,10 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pet-shadow { position: absolute; left: 50%; bottom: 6vh; width: 36vh; height: 4.5vh; margin-left: -18vh; border-radius: 50%; background: rgba(0, 0, 0, 0.35); filter: blur(0.6vh); animation: pet-shadow 2.4s ease-in-out infinite; }
 @keyframes pet-bob { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-1.5vh) scale(0.98, 1.02); } }
 @keyframes pet-shadow { 50% { transform: scale(0.88); opacity: 0.8; } }
+/* While choosing, a tap redraws the slide and would restart the bob (snapping the creature up to 1.5vh); player.js hands the new copy
+   the old loop's time as a negative delay in --phase, so it carries on. The creature's second animation (the hop) keeps its own 3 s delay. */
+.pet-creature[data-phase] { animation-delay: var(--phase, 0s), 3s; }
+.pet-shadow[data-phase] { animation-delay: var(--phase, 0s); }
 
 /* the critter */
 .pc-body, .pc-skin { fill: var(--pet-body, #c8102e); }
@@ -4350,6 +4366,25 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 
 /* Over any slide (player.js, "Overlays"): e.g. the pet thanking for a streep. Never in the way of taps. */
 #overlay { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
+/* A short message over everything (showMessage in player.js): a shortcut or menu card with nothing to show, the menu's
+   "Restarting...". Like the puzzles' pop-ups: taps go through, in with ease-out, held, out with the ease-in. */
+#message {
+	position: fixed;
+	left: 50%;
+	bottom: 8vh;
+	z-index: 50;   /* above the menu (20) and the overlay (40) */
+	transform: translateX(-50%);
+	padding: 1.4vh 2vw;
+	border-radius: 0.8vh;
+	background: #121212;
+	color: #ffffff;
+	font-size: 3vh;
+	font-weight: bold;
+	white-space: nowrap;
+	pointer-events: none;
+	animation: connections-message 3s ease-in forwards;
+}
+#message[hidden] { display: none; }
 
 /* Sober (providers/pet.py: every beer streeped lowers it, water and time bring it back): its bar, the Water
    button, a glass pouring into its open mouth, and, below DRUNK_BELOW, swaying with rosy cheeks and droopy eyes. */
@@ -4507,9 +4542,13 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .sj-q1 { animation: sj-show 2s ease-in-out 0.3s both; }
 .sj-q2 { animation: sj-show 2s ease-in-out 2.8s both; }
 .sj-join { top: 77%; font-size: 12vh; animation: sj-join 0.9s ease-out 5.3s both; }
-.sj-logo { position: absolute; left: 50%; top: 7vh; height: 56vh; aspect-ratio: 1; margin-left: -28vh; filter: drop-shadow(0 1vh 2vh rgba(60, 90, 140, 0.25)); opacity: 0; animation: sj-pop 1s cubic-bezier(0.2, 0.9, 0.3, 1.25) 5.3s both; }
+.sj-logo { position: absolute; left: 50%; top: 7vh; height: 56vh; aspect-ratio: 1; margin-left: -28vh; opacity: 0; animation: sj-pop 1s cubic-bezier(0.2, 0.9, 0.3, 1.25) 5.3s both; }
 .sj-logo svg { display: block; width: 100%; height: 100%; }
 .sj-logo path { fill: #fff; }
+/* The logo's shadow is a blurred copy of it that never changes, not a drop-shadow filter on the popping logo (a filter on something
+   that is scaling and fading is redone every frame). blur(1vh) is the same spread as the old drop-shadow's 2vh. */
+.sj-logo-shadow { position: absolute; inset: 0; opacity: 0.25; filter: blur(1vh); translate: 0 1vh; }
+.sj-logo-shadow path { fill: rgb(60, 90, 140) !important; }   /* !important: the svg file's own style="fill:#fff" would win */
 @keyframes sj-show { 0% { opacity: 0; transform: translateY(-40%); } 20%, 80% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-60%); } }
 @keyframes sj-join { from { opacity: 0; transform: translateY(-30%); } to { opacity: 1; transform: translateY(-50%); } }
 @keyframes sj-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }

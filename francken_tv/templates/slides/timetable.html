@@ -9,7 +9,7 @@
 		{% for column, lectures in columns.items() %}
 		<section style="--i: {{ loop.index0 }}">
 			<h2>{{ column }}</h2>
-			<div class="timetable-list" data-marquee-up>
+			<div class="timetable-list" data-marquee-up data-seconds="{{ seconds }}">
 			{% for lecture in lectures %}
 			<div class="lecture kind-{{ lecture.group }}{{ ' current' if lecture.start <= now < lecture.end }}">
 				<span class="lecture-time">{{ lecture.start.strftime("%H:%M") }}<br>{{ lecture.end.strftime("%H:%M") }}</span>

@@ -6,14 +6,15 @@
 #}
 <div class="slide mscie-slide" style="--arm: {{ arm }}vh; --reach: {{ reach }}vh; --shoulder: {{ shoulder }}vh; --grip: {{ grip }}vh">
 	<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+		{# repeatDur="5s": the cords wiggle only until the caps are gone (4.9 s, MSCIE in providers/mscie.py); otherwise ~14 copies keep animating all slide long, out of sight #}
 		<symbol id="mscie-cap" viewBox="0 0 200 160">
 			<path d="M48 80 L100 103 L152 80 V118 Q100 138 48 118 Z"/>
 			<path d="M0 52 L100 8 L200 52 L100 96 Z"/>
 			<g>
-				<animateTransform attributeName="transform" type="rotate" values="-16 30 60;16 30 60;-16 30 60" dur="0.55s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/>
+				<animateTransform attributeName="transform" type="rotate" values="-16 30 60;16 30 60;-16 30 60" dur="0.55s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite" repeatDur="5s"/>
 				<path d="M30 60 V112" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
 				<g>
-					<animateTransform attributeName="transform" type="rotate" values="22 30 112;-22 30 112;22 30 112" dur="0.55s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/>
+					<animateTransform attributeName="transform" type="rotate" values="22 30 112;-22 30 112;22 30 112" dur="0.55s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite" repeatDur="5s"/>
 					<circle cx="30" cy="114" r="6"/>
 					<path d="M24 118 H36 L38 150 H22 Z"/>
 				</g>

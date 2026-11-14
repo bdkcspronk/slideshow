@@ -47,7 +47,9 @@ async function show(slide, { canRefresh = true } = {}) {
 	setupWidgets(back);
 	// Wait until the images are decoded, so slides never appear half-loaded.
 	const images = [...back.querySelectorAll("img")].filter((img) => !img.closest(".leaflet-container"));   // not map tiles
-	await Promise.all(images.map((img) => img.decode().catch(() => {})));
+	// A hanging image may not keep the old slide on screen for ever: after 5 s carry on (a still-missing image is skipped just below).
+	const gaveUp = new Promise((resolve) => setTimeout(resolve, 5000));
+	await Promise.race([Promise.all(images.map((img) => img.decode().catch(() => {}))), gaveUp]);
 	if (mine !== showCount) return;   // skipped again while loading: the newer change takes over
 	if (images.some((img) => img.naturalWidth === 0)) {
 		// A missing or broken image would show as a black screen: skip this slide instead.
@@ -93,14 +95,17 @@ async function next() {
 }
 
 // A shortcut key: the server draws that slide type now. An interactive one (puzzles, Spotify)
-// stays on screen like after a click, so people can use it.
+// stays on screen like after a click, so people can use it. Returns whether a slide was shown.
 async function jumpTo(key) {
 	try {
 		const response = await fetch(`/api/shortcut/${key}`);
-		if (response.status === 404) return;   // not a shortcut
+		if (response.status === 404) return false;   // not a shortcut
 		if (!response.ok) throw new Error(`shortcut ${key}: ${response.status}`);
 		const slide = await response.json();
-		if (slide.message) return;   // nothing to show for that key right now
+		if (slide.message) {   // nothing to show for that key right now: say so, or the tap seems to do nothing
+			showMessage(slide.message);
+			return false;
+		}
 		history.splice(historyIndex + 1);   // jumping drops the slides ahead after going back
 		history.push(slide);
 		if (history.length > 30) history.shift();
@@ -108,9 +113,22 @@ async function jumpTo(key) {
 		await show(slide);
 		const shown = interactiveSlide();
 		if (shown) keepPaused(idleSeconds(shown));
+		return true;
 	} catch (error) {
 		console.error(error);
+		return false;
 	}
+}
+
+// A short message over any slide ("Membership: nothing to show right now", "Restarting..."), like the puzzles'
+// pop-ups: in at once with ease-out (it answers a tap), held, out with ease-in (#message in style.css). A new
+// message replaces the old one and starts its animation again.
+function showMessage(text) {
+	const old = document.getElementById("message");
+	const message = old.cloneNode(false);   // a fresh element, so the animation plays from the start
+	message.textContent = text;
+	message.hidden = false;
+	old.replaceWith(message);
 }
 
 function previous() {
@@ -309,9 +327,16 @@ function showInput(text, value, at) {
 // again: pausing shouldn't make the cover disappear and fade back in (.steady in style.css).
 function redraw(layer, html, tapped = false) {
 	const before = new Set([...layer.querySelectorAll("[data-steady]")].map((element) => element.dataset.steady));
+	// An element with data-phase (the pet being chosen: a tap would restart its bob and snap it up to 1.5vh) carries on from where its
+	// loop was: the new copy gets that time as a negative delay in --phase (style.css). data-steady can't do this, it stops the animation.
+	const phases = new Map([...layer.querySelectorAll("[data-phase]")].map((element) => [element.dataset.phase, element.getAnimations()[0]?.currentTime]));
 	layer.innerHTML = html;
 	for (const element of layer.querySelectorAll("[data-steady]")) {
 		if (before.has(element.dataset.steady)) element.classList.add("steady");
+	}
+	for (const element of layer.querySelectorAll("[data-phase]")) {
+		const time = phases.get(element.dataset.phase);
+		if (typeof time === "number") element.style.setProperty("--phase", `${-time}ms`);
 	}
 	// After a tap, entrances that would wait for the show come in quickly instead (.redrawn in style.css).
 	if (tapped) layer.firstElementChild?.classList.add("redrawn");
@@ -595,8 +620,13 @@ function closeMenu(resume = true) {
 	menu.innerHTML = "";   // also stops the previews
 	clearTimeout(menuIdleTimer);
 	clearInterval(menuTakeoverTimer);
-	if (!resume) return;
+	if (resume) carryOn();
+}
+
+// The slideshow goes on from the slide on screen (after the menu, which stopped its timers).
+function carryOn() {
 	const slide = interactiveSlide();
+	clearTimeout(nextTimer);
 	if (interacting && slide) keepPaused(idleSeconds(slide));
 	else if (!paused && current) nextTimer = setTimeout(next, current.seconds * 1000);
 }
@@ -792,7 +822,7 @@ async function menuChoose(button) {
 	}
 	if (action === "jump") {
 		closeMenu(false);
-		jumpTo(value);
+		if (!(await jumpTo(value))) carryOn();   // nothing shown: the menu had stopped the timers, so start them again
 	} else if (action === "page") {
 		showMenuPage(value, menuPage);   // back to the overview: select the button of the page we came from
 	} else if (action === "toggle") {
@@ -820,6 +850,7 @@ async function sendMenu(button, command, value) {
 			body: JSON.stringify({ command, value }),
 		});
 		menuData = answer.menu;
+		if (answer.message) showMessage(answer.message);   // "Restarting...", "Reloaded 3 devices": the menu's answer
 		setPermanentPause(menuData.settings.permanent_pause);
 		if (menuIsOpen() && menuPage !== "overview") showMenuPage(menuPage, button.dataset.focus);
 		else if (menuIsOpen()) {   // the overview: only the sound controls, so the previews keep playing
@@ -850,7 +881,7 @@ function menuKey(event) {
 		moveMenuFocus(event.key);
 	} else if (menuPage === "overview" && /^[0-9]$/.test(event.key)) {
 		closeMenu(false);
-		jumpTo(event.key);
+		jumpTo(event.key).then((shown) => { if (!shown) carryOn(); });   // nothing shown: start the stopped timers again
 	} else if (!["Enter", " ", "Tab"].includes(event.key)) {
 		event.preventDefault();   // Enter and space press the selected button; other keys do nothing here
 	}

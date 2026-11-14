@@ -18,8 +18,8 @@
 			<p class="pet-age">{% if first %}Pick how it looks, then give it a name{% else %}{{ last }} is gone. Who's next?{% endif %}</p>
 		</header>
 		<div class="pet-stage">
-			<div class="pet-creature mood-happy species-{{ species }}" style="--pet-body: {{ body }}; --pet-dark: {{ dark }}">{% include "pet_creature.svg" %}</div>
-			<div class="pet-shadow"></div>
+			<div class="pet-creature mood-happy species-{{ species }}" data-phase="creature" style="--pet-body: {{ body }}; --pet-dark: {{ dark }}">{% include "pet_creature.svg" %}</div>
+			<div class="pet-shadow" data-phase="shadow"></div>
 		</div>
 	</div>
 	<div class="pet-right">

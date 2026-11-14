@@ -263,8 +263,10 @@ function setupMarqueeUp(element) {
 		element.classList.toggle("marquee-up", sliding);
 		if (!sliding || element.style.getPropertyValue("--marquee-distance") === `${-hidden}px`) return;   // nothing to do / already right
 		element.style.setProperty("--marquee-distance", `${-hidden}px`);
-		// 20 px a second while moving (slow, to read along); the waits at both ends are 15% of the time each.
-		element.style.setProperty("--marquee-seconds", `${hidden / 20 / 0.7}s`);
+		// The whole scroll takes 90% of the slide's time (data-seconds), so the bottom is reached with a few seconds
+		// left to read it (the first 12% and the last 12% of it are waits). Without a time: 20 px a second.
+		const seconds = parseFloat(element.dataset.seconds);
+		element.style.setProperty("--marquee-seconds", `${seconds > 0 ? seconds * 0.9 : hidden / 20 / 0.76}s`);
 	};
 	measure();
 	setTimeout(measure, 500);

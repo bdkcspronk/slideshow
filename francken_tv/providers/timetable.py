@@ -137,5 +137,5 @@ class TimetableProvider(Provider):
 			columns = {column: [lecture for lecture in lectures if lecture.start.date() == day and lecture.end > now] for column, lectures in self.timetable.items()}
 			if any(columns.values()):
 				label = "today" if day == now.date() else "tomorrow" if day == now.date() + timedelta(days=1) else f"{day:%A} {day.day} {day:%B}"
-				return {"name": self.timetable_name, "day": label, "columns": columns, "now": now}
+				return {"name": self.timetable_name, "day": label, "columns": columns, "now": now, "seconds": self.seconds}
 		return None
