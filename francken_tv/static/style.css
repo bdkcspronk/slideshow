@@ -163,6 +163,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
    glows lie over the navy (.navy-glows) and a title with a crimson
    highlighter behind a word (.poster-marked). */
 .activities-slide, .news-slide, .presence-slide, .leaderboard-slide, .books-slide, .graafmachine-slide, .francken-vrij-slide, .membership-slide, .fotocie-slide, .socks-slide, .socials-slide, .streep-slide, .fvs-slide, .pet-slide {
+	--px: calc(100vw / 1920);   /* the title drop and the cards' slide-in (practice-drop, practice-ticket, weather-tile) are measured in it; without it their transform is invalid and they only fade */
 	--navy: #0d1f3c;
 	--crimson: #c8102e;
 	--paper: #fdf8ec;
@@ -1044,7 +1045,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 /* The share of the votes, as a bar under the option (this week's and last week's). */
 .poll-bar { flex: 0 0 100%; height: 1.4vh; border-radius: 0.7vh; background: var(--blue-faint); overflow: hidden; }
-.poll-bar i { display: block; width: var(--percent); height: 100%; border-radius: inherit; background: var(--option); transition: width 0.6s ease; }
+/* The bar grows from the left when it appears, also after a vote (the redraw brings new bars, so a transition
+   would never run): scaleX, not width, so no relayout each frame. */
+.poll-bar i { display: block; width: var(--percent); height: 100%; border-radius: inherit; background: var(--option); transform-origin: left; animation: poll-grow 0.6s ease-out both; }
+@keyframes poll-grow { from { transform: scaleX(0); } }
 .poll-text { flex: 1; min-width: 0; font-size: 3.6vh; line-height: 1.2; }
 .poll-percent { flex: none; font-size: 4.4vh; font-weight: bold; color: var(--option-text); }
 .poll-count { font-size: 0.65em; font-weight: normal; color: var(--muted); }   /* "5 votes ·" before the percentage */
@@ -1391,8 +1395,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .bieruur-slide > .bieruur-3d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .bieruur-flaps .bieruur-countdown { visibility: hidden; height: 72vh; margin-top: 2vh; animation: none; }   /* the board: the time with colour flaps around it */
 
-/* The last two minutes: the countdown pulses. */
-[data-phase="final"] .bieruur-countdown { animation: pulse 1s ease-in-out infinite; }
+/* The last two minutes: the countdown pulses. Only the text one (no WebGL): on the 3D board it is hidden and the
+   flaps do the counting, and a pulsing hidden box would still be animated (and measured) for nothing. */
+.bieruur-slide:not(.bieruur-flaps) [data-phase="final"] .bieruur-countdown { animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse {
 	50% { transform: scale(1.06); }
 }
@@ -2704,8 +2709,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	gap: 1.2vh;
 }
 .connections-board { position: relative; display: flex; flex-direction: column; gap: 1.2vh; }
-/* "One away...", "Already guessed!", "Perfect!": pops up over the board like on the NYT page, then fades. */
-.connections-message {
+/* "One away...", "Already guessed!", "Perfect!": pops up over the board like on the NYT page, then fades.
+   Wordle ("Not in word list") and Catfishing ("Type a guess, or skip") show theirs the same way. */
+.wordle-grid, .catfishing-input { position: relative; }
+.connections-message, .puzzle-message {
 	position: absolute;
 	top: -1.5vh;
 	left: 50%;
@@ -3554,6 +3561,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .socks-price b { font-size: 20vh; letter-spacing: -0.8vh; }
 .socks-buy { flex: none; display: flex; flex-direction: column; align-items: center; gap: 3.5vh; margin-right: 2vw; animation: member-up 0.8s ease-out 0.8s both; }
 .socks-qr-card { width: 40vh; height: 40vh; }
+.socks-qr-card .member-tile { --r: 1.5vh; }   /* in proportion to the smaller code */
 .socks-label { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; }
 .socks-label p {
 	position: relative;
@@ -3740,7 +3748,8 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 }
 @keyframes fvs-dot { 50% { transform: scale(1.3); } to { background: var(--crimson); border-color: var(--crimson); } }
 .fvs-scan { display: flex; align-items: center; gap: 2vw; animation: member-up 0.8s ease-out 1.9s both; }
-.fvs-pitch .fvs-qr-card { flex: none; width: 25vh; height: 25vh; padding: 1.4vh; border-radius: 1.6vh; }
+.fvs-pitch .fvs-qr-card { --r: 2.6vh; flex: none; width: 25vh; height: 25vh; padding: 1.4vh; }   /* continuous corners (.squircle) */
+.fvs-qr-card .member-tile { --r: 0.9vh; }   /* the tile in a code half the size of the membership one */
 .fvs-scan p { margin: 0; display: flex; flex-direction: column; gap: 0.8vh; font-size: 2.2vh; white-space: nowrap; color: rgba(253, 248, 236, 0.75); }
 .fvs-scan p b { font-size: 4vh; color: var(--paper); }
 .fvs-scene { position: relative; flex: none; width: 84vh; height: 78vh; }
@@ -4164,7 +4173,7 @@ body.show-cursor #menu button:not([disabled]) { cursor: pointer; }
 .pet-dead-card p { margin: 0; }
 .pet-dead-small { margin-top: 1.5vh !important; font-size: 2.8vh; opacity: 0.75; }
 .pet-hatch { flex-direction: row; justify-content: center; gap: 2vw; font-size: 4.4vh; padding: 3vh; animation: pet-pulse 1.4s ease-in-out infinite alternate; }
-@keyframes pet-pulse { to { transform: scale(1.05); } }
+@keyframes pet-pulse { to { scale: 1.05; } }   /* the scale property, not transform: the press look (transform) still shows */
 .pet-hatch svg path { fill: #fdf8ec; stroke: #c8102e; stroke-width: 3; }
 
 /* naming a new pet: an egg wobbling now and then, and the name typed on a keyboard */

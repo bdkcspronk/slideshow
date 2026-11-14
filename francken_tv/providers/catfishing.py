@@ -294,7 +294,7 @@ class CatfishingProvider(Provider):
 		self.day_shown = now.date()
 		return [self.game_slide(game, now, typed)]
 
-	def game_slide(self, game: Game, now: datetime, typed: str = "") -> Slide:
+	def game_slide(self, game: Game, now: datetime, typed: str = "", message: str | None = None) -> Slide:
 		number = len(game.answers) + (0 if game.showing_answer else 1)
 		return Slide("catfishing.html", self.seconds, {
 			"game": game,
@@ -302,6 +302,7 @@ class CatfishingProvider(Provider):
 			"number": min(number, len(game.articles)),
 			"last": game.answers[-1] if game.answers else None,
 			"typed": typed,
+			"message": message,   # e.g. "Type a guess, or skip": pops up over the guess bar
 			"total_points": 2 * len(game.articles),
 			"results": [answer.result for answer in game.answers] + ["open"] * (len(game.articles) - len(game.answers)),
 			"summary": list(zip(game.articles, game.answers)) if game.done else [],
@@ -383,4 +384,4 @@ class CatfishingProvider(Provider):
 		if game.answers or game.day.isoformat() in self.history:
 			self.record(game)
 		self.check_highscore(game)
-		return self.game_slide(game, now, typed=result.get("typed", "")), result.get("message")
+		return self.game_slide(game, now, typed=result.get("typed", ""), message=result.get("message")), result.get("message")

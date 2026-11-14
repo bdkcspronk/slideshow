@@ -9,10 +9,11 @@
 		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
 		<h1>Wordle</h1>
 		<p class="wordle-subtitle">
-			{% if finished %}See you tomorrow for a new word!{% else %}Guess the word in six tries! Type or tap the letters{% endif %}
+			{% if lost %}The word was <strong>{{ solution }}</strong>. See you tomorrow!{% elif finished %}See you tomorrow for a new word!{% else %}Guess the word in six tries! Type or tap the letters{% endif %}
 			&middot; Daily puzzle from The New York Times
 		</p>
 		<div class="wordle-grid">
+			{% if message %}<div class="puzzle-message">{{ message }}</div>{% endif %}   {# "Not in word list", "Genius", ... #}
 			{% for row in rows %}
 			{% set row_index = loop.index0 %}
 			<div class="wordle-row{{ ' shake' if row.input and shake }}">

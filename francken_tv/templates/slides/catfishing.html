@@ -66,6 +66,7 @@
 			<ul>{% for category in article.categories %}<li>{{ category }}</li>{% endfor %}</ul>
 		</div>
 		<div class="catfishing-input">
+			{% if message %}<div class="puzzle-message">{{ message }}</div>{% endif %}   {# e.g. "Type a guess, or skip" #}
 			{% if game.did_you_mean %}
 			<div class="catfishing-did-you-mean">Did you mean <b>{{ game.did_you_mean }}</b>?</div>
 			<button data-action="did_you_mean" data-value="no">No</button>

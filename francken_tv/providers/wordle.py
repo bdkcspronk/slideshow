@@ -146,7 +146,8 @@ class WordleProvider(Provider):
 			return PuzzleStatus("playing", f"{count} of {MAX_GUESSES} guesses used")
 		return PuzzleStatus("new", "Not tried yet")
 
-	def slides(self, now: datetime, typed: str = "", shake: bool = False, new_row: int | None = None) -> list[Slide]:
+	def slides(self, now: datetime, typed: str = "", shake: bool = False, new_row: int | None = None,
+			message: str | None = None) -> list[Slide]:
 		game = self.todays_game(now)
 		if game is None:
 			return []
@@ -171,6 +172,9 @@ class WordleProvider(Provider):
 			"won": game.won,
 			"finished": finished,
 			"shake": shake,
+			"message": message,   # "Not in word list", "Genius", the word after a loss: pops up over the grid
+			"lost": game.lost,
+			"solution": game.solution if game.lost else None,
 			"yesterday": self.solutions.get(now.date() - timedelta(days=1)) if self.show_yesterday else None,
 		})]
 
@@ -181,5 +185,6 @@ class WordleProvider(Provider):
 			return None, None
 		result = game.guess(values[0] if values else "", self.valid_words) if name == "submit" else {}
 		save_state(self.state_path, game.day, {"guesses": game.guesses})
-		slides = self.slides(now, typed=result.get("typed", ""), shake=result.get("shake", False), new_row=result.get("new_row"))
+		slides = self.slides(now, typed=result.get("typed", ""), shake=result.get("shake", False), new_row=result.get("new_row"),
+			message=result.get("message"))
 		return (slides[0] if slides else None), result.get("message")
