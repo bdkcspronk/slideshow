@@ -356,6 +356,10 @@ const LYRIC_PALETTES = [
 	["#dc3545", "#ffffff", "#ffd23f"],
 ];
 
+// The screen runs ahead of the sound (Spotify's reported progress, the page loading, the speakers): the
+// lyrics are held back this many seconds. Raise it if the words still come before the singing.
+const LYRIC_LAG = 1.5;
+
 function setupLyricVideo(stage) {
 	const slide = stage.closest(".lyric-video");
 	const lines = [...stage.querySelectorAll("li[data-time]")].map((item) => ({
@@ -377,7 +381,7 @@ function setupLyricVideo(stage) {
 		return (lastStyle = style);
 	};
 
-	const show = (index) => {
+	const show = (index, into = 0) => {   // into: how far into the line the song already is (after a redraw: halfway)
 		const line = lines[index];
 		const next = lines[index + 1];
 		const seconds = Math.min(8, Math.max(1, (next ? next.time : line ? line.time + 4 : 4) - (line ? line.time : 0)));
@@ -389,22 +393,27 @@ function setupLyricVideo(stage) {
 			const words = line.text.split(" ");
 			const style = pickStyle(line.text, words.length);
 			element.className = `lv-line lv-style-${style.name}`;
-			// The words (or letters) come in over most of the line's time, in proportion to their length.
-			const spread = Math.min(seconds * 0.7, 0.35 * words.length + 0.4);
+			// The words (or letters) come in in proportion to their length (the characters of the line), spread
+			// over the time until the next line. Before a musical break (or the end) the line is sung faster than
+			// that time suggests, so it gets an estimate from its length instead.
+			const breakAfter = !next || !next.text;
+			const spread = breakAfter
+				? Math.min(seconds * 0.7, 0.35 * words.length + 0.4)
+				: Math.max(0.3, seconds - 0.3);
 			const letters = line.text.replace(/ /g, "").length || 1;
 			const longest = words.reduce((best, word) => (word.replace(/\W/g, "").length > best.replace(/\W/g, "").length ? word : best), "");
 			let before = 0;
 			words.forEach((word, w) => {
 				const span = document.createElement("span");
 				span.className = "lv-word" + (word === longest && words.length > 2 ? " lv-key" : "");
-				span.style.setProperty("--delay", `${(before / letters) * spread}s`);
+				span.style.setProperty("--delay", `${(before / letters) * spread - into}s`);   // negative: already shown
 				span.style.setProperty("--i", w);
 				if (style.by === "letter") {
 					[...word].forEach((char, c) => {
 						const letter = document.createElement("span");
 						letter.className = "lv-letter";
 						letter.textContent = char;
-						letter.style.setProperty("--delay", `${((before + c) / letters) * spread}s`);
+						letter.style.setProperty("--delay", `${((before + c) / letters) * spread - into}s`);
 						letter.style.setProperty("--c", c + w * 3);
 						span.append(letter);
 					});
@@ -432,12 +441,12 @@ function setupLyricVideo(stage) {
 
 	const follow = () => {
 		if (!document.contains(stage)) return clearInterval(timer);   // the slide is gone
-		const seconds = start + (playing ? (performance.now() - shownAt) / 1000 : 0);
+		const seconds = start + (playing ? (performance.now() - shownAt) / 1000 : 0) - LYRIC_LAG;
 		if (bar && total) bar.style.width = `${Math.min(100, (seconds / total) * 100)}%`;
-		const index = lines.findLastIndex((line) => line.time <= seconds + 0.1);   // a little early: the words take a moment to pop in
+		const index = lines.findLastIndex((line) => line.time <= seconds);
 		if (index === current) return;
 		current = index;
-		show(index);
+		show(index, Math.max(0, seconds - (lines[index] ? lines[index].time : 0)));
 	};
 	const timer = setInterval(follow, 100);
 	follow();
