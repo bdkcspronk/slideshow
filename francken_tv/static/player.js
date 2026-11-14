@@ -222,8 +222,6 @@ document.addEventListener("click", async (event) => {
 	}
 });
 
-const PUZZLE_PROVIDERS = ["puzzles", "connections", "wordle", "timeguessr", "catfishing"];
-
 // The enabled, visible button in the slide closest to `from` in the direction of an arrow key (null if none).
 function nearestButton(slide, from, key) {
 	const [dx, dy] = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key];
@@ -498,19 +496,6 @@ document.addEventListener("keydown", async (event) => {
 			return;
 		}
 	}
-	// Once you've Tabbed onto a button in a puzzle, the arrow keys move to the nearest button in that direction.
-	// Where there is none (the edge) they do what they always did: change slides.
-	if (event.key.startsWith("Arrow") && slide && PUZZLE_PROVIDERS.includes(slide.dataset.provider)
-			&& !event.ctrlKey && !event.altKey && !event.metaKey && event.target.closest?.("button")
-			&& slide.contains(event.target)) {
-		const target = nearestButton(slide, event.target, event.key);
-		if (target) {
-			event.preventDefault();
-			keepPaused(idleSeconds(slide));
-			target.focus();
-			return;
-		}
-	}
 	if (event.key.startsWith("Arrow") && event.target.closest?.("input, .leaflet-container")) return;   // they move the slider or map
 	// Up and down scroll a text that's longer than the screen (data-scroll, e.g. a news article).
 	const scroller = slide?.querySelector("[data-scroll]");
@@ -518,6 +503,18 @@ document.addEventListener("keydown", async (event) => {
 		event.preventDefault();
 		keepPaused(idleSeconds(slide));
 		scroller.scrollBy({ top: (event.key === "ArrowDown" ? 0.6 : -0.6) * scroller.clientHeight, behavior: "smooth" });
+		return;
+	}
+	// On a slide someone is using (a button has focus, or they tapped or typed), the arrow keys move to the nearest button in
+	// that direction and never change the slide: at the edge they stay put, and with nothing focused the first one gets focus.
+	// Often there's no mouse, so the arrows are how you get around. A slide nobody is using yet: they change slides, as always.
+	const onButton = event.target.closest?.("button") && slide?.contains(event.target);
+	if (event.key.startsWith("Arrow") && slide && (interacting || onButton)
+			&& !event.ctrlKey && !event.altKey && !event.metaKey) {
+		event.preventDefault();
+		keepPaused(idleSeconds(slide));
+		const target = onButton ? nearestButton(slide, event.target, event.key) : slide.querySelector("button:not([disabled])");
+		target?.focus();
 		return;
 	}
 	if (event.key === "ArrowRight" || event.key === "ArrowDown") {
