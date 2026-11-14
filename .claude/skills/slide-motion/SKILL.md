@@ -8,13 +8,15 @@ argument-hint: "[slide name or file] [review]"
 
 Rules for how things move on the Francken TV. They are adapted from Emil Kowalski's design-engineering
 skills (github.com/emilkowalski/skill: emil-design-eng, animate, choreograph, animation-performance).
-His rules are written for apps people work in. This slideshow differs in four ways, and every rule below
-follows from them:
+His rules are written for apps people work in. This is not an app: it is a slideshow. It differs in four
+ways, and every rule below follows from them:
 
-1. **It's watched from across the room.** Most slides are posters that play to people who aren't touching
-   anything. Here motion is the point, and it may be long, theatrical and springy.
-2. **It's also a touchscreen.** When someone walks up and taps, they are using an app, and Emil's rules for
-   apps apply: answer at once, keep it short, and never make them wait for an animation.
+1. **It's a slideshow, watched from across the room.** The slides are posters that play to people who
+   aren't touching anything. Here motion is the point, and it may be long, theatrical and springy. This is
+   where the effort goes.
+2. **Some slides can be tapped, but that comes second.** A few slides (puzzles, Spotify, news, the pet)
+   and the menu react to a tap. There Emil's rules for apps apply just enough that nothing feels broken:
+   answer at once, keep it short, never make people wait for an animation. Don't polish it like an app.
 3. **Every tap goes to the server.** `sendAction()` in `static/player.js` posts the action and swaps in the
    slide's new HTML. Without care, every tap replays every entrance animation on the slide.
 4. **The TV PC is weak.** Intel HD Graphics at 1920x1080 in Firefox kiosk, limited by pixels
@@ -36,8 +38,9 @@ Decide this for every animation before choosing a curve or a duration.
 | Curves | springy overshoot allowed and welcome | `ease-out`, or a small overshoot only for a celebration (a win, a high score) |
 | Repeats | once per showing | as often as people tap, so it has to stay pleasant the 50th time |
 
-A slide is often both. The news slide's cards wave in when the slide comes round (Show), but switching
-outlet is Use. The same element can need two timings: see "Redraws" below.
+Show is the default and gets the attention. An interactive slide is both: the news slide's cards wave in
+when the slide comes round (Show), but switching outlet is Use. The same element can need two timings: see
+"Redraws" below.
 
 ## Easing
 
@@ -73,6 +76,11 @@ entrance segment its own curve:
 except for small things that really pop (confetti, the pet's pop-ups).
 
 ## The Use rules
+
+Keep these minimal. They exist so a tap never seems broken: no reaction at all, a message that never
+appears, a slideshow that stalls, the screen emptying and rebuilding. They are not a reason for app polish:
+don't spend code on touch-target sizes, carrying scroll positions or bar values across a redraw, or new
+mechanisms in `player.js` for small refinements.
 
 ### Every button shows the press
 
@@ -257,8 +265,8 @@ Put `class="... squircle"` on the element and set `--r` per element.
 
 - Preview one slide: `./start.sh` and open `http://127.0.0.1:8080/preview/<name>`.
 - `python3 -m unittest` must pass (the TV PC refuses a commit that fails it).
-- For Use motion, tap through it at least three times in a row. The third tap is where replays and slow
-  starts become annoying.
+- On an interactive slide, tap through it a few times in a row: replays and slow starts show up by the
+  third tap.
 - Comments in `style.css` and the templates explain *why* in plain words, as the existing ones do (for
   example "translate, not margin: no relayout each frame"). Keep that up for every rule you add.
 
@@ -271,12 +279,17 @@ When asked to review a slide's motion, go through it in this order and report fi
 
 1. List everything that animates (`@keyframes`, `animation`, `transition`, `effects` in `player.js`, 3D loops).
 2. Classify each as Show or Use.
-3. Check the Use items: press look, busy state, ease-in on a response, entrances replayed after a redraw,
-   duration over 0.3 s (0.6 s for changed content), animated typing.
-4. Check the Show items: one entrance per container, order of importance, stagger, reading time, loop cost.
-5. Check performance: animated layout or paint properties, full-screen layers, 3D budget.
-5b. Check corners: plain `border-radius` on boxes (not circles) should be continuous corners (`.squircle`).
-6. Say what's fine as well, and why (ease-in on something falling is right). Say what you couldn't
+3. Check the Show items first: one entrance per container, order of importance, stagger, reading time,
+   loop cost.
+4. Check performance: animated layout or paint properties, full-screen layers, 3D budget.
+5. Check corners: plain `border-radius` on boxes (not circles) should be continuous corners (`.squircle`).
+6. Check the Use items only for what is broken: no reaction to a tap, a message that never shows, a stalled
+   slideshow, an entrance replayed after a redraw. Leave app polish out of the findings.
+7. Say what's fine as well, and why (ease-in on something falling is right). Say what you couldn't
    verify without the TV.
+
+Kept on purpose, so don't flag them: Connections' solve animation and Wordle's flip and win bounce take
+longer than the Use limits because they copy the NYT pages; a Spotify song that changes by itself keeps the
+slow cover entrance; the graafmachine starts driving before its title lands.
 
 Fix only what the person asked for. List the rest.
