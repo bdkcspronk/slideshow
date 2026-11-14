@@ -518,6 +518,17 @@ document.addEventListener("keydown", async (event) => {
 		keepPaused(idleSeconds(slide));
 		return;   // the browser presses it (a click, handled above)
 	}
+	// Space on a focused button (or bar, map, photo) presses it, like Enter above, and does nothing else: the browser presses a
+	// button when Space is let go, so pausing the slideshow or the music here too would be a second, unwanted action.
+	// Space with nothing focused keeps its meaning (below). Not on a slide with free text (Catfishing, Spotify search, the pet's
+	// name): there Space types a space, also while a button kept its focus (a guess like "new york" mustn't press Skip).
+	if (event.key === " " && slide && !slide.querySelector("[data-input-text]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
+		const control = event.target.closest?.("button, [tabindex='0']");
+		if (control && slide.contains(control)) {
+			keepPaused(idleSeconds(slide));
+			return;
+		}
+	}
 	// A button marked data-enter (e.g. Catfishing's "Next article") is pressed by Enter.
 	const enter = slide?.querySelector("[data-enter]");
 	if (enter && event.key === "Enter" && !event.ctrlKey && !event.altKey && !event.metaKey) {

@@ -37,10 +37,10 @@
 
 	{% else %}
 	<div class="timeguessr-round">
-		<figure class="timeguessr-photo" data-toggle data-zoom>
+		<figure class="timeguessr-photo" data-toggle data-zoom tabindex="0" role="button" aria-label="Enlarge the photo (Enter), Esc to go back">
 			<div class="zoom-view"><img src="{{ photo.image }}" alt="" draggable="false"></div>
 			{# Says the photo opens full screen; full screen, that tapping again goes back (style.css swaps the two). #}
-			<span class="timeguessr-photo-hint"><span class="when-small">&#128269; Tap to enlarge</span><span class="when-full">Tap again to go back &middot; scroll or + to zoom in</span></span>
+			<span class="timeguessr-photo-hint"><span class="when-small">&#128269; Tap or press Enter to enlarge</span><span class="when-full">Tap again to go back &middot; scroll or + to zoom in</span></span>
 			<div class="zoom-buttons">
 				<button data-zoom-by="1.5" aria-label="Zoom in">+</button>
 				<button data-zoom-by="0.667" aria-label="Zoom out">&minus;</button>
@@ -75,7 +75,7 @@
 			{% else %}
 			{# ---- A question: a pin on the map and a year ---- #}
 			<div class="timeguessr-map" data-map data-field="place" data-tiles="{{ tiles }}" data-attribution="{{ attribution }}">
-				<span class="timeguessr-map-hint">Tap where you think this is</span>
+				<span class="timeguessr-map-hint">Tap the map, or Tab to it: arrows move, + and &minus; zoom, Enter drops the pin</span>
 			</div>
 			<div class="timeguessr-year">
 				<output data-field-output="year">{{ start_year }}</output>

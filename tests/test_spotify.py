@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from dataclasses import replace
 from unittest import mock
 from urllib.parse import parse_qs, urlparse
 
@@ -294,6 +295,22 @@ class SpotifyTest(unittest.TestCase):
 		with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request:
 			self.provider.action("volume", ["1.5"], NOW)
 		self.assertEqual(request.call_args.args[1], "https://api.spotify.com/v1/me/player/volume?volume_percent=100")
+
+	def test_timeline_keys_jump_ten_seconds_within_the_song(self):
+		self.connect()
+		self.provider.playing = replace(self.provider.playing, is_playing=False, progress_ms=61_000)   # paused: progress stands still
+		for name, expected in (("seek_forward", 71_000), ("seek_back", 51_000)):
+			with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request, \
+					mock.patch.object(self.provider, "catch_up"):
+				slide, message = self.provider.action(name, [], NOW)
+			self.assertEqual(request.call_args.args[:2], ("PUT", f"https://api.spotify.com/v1/me/player/seek?position_ms={expected}"))
+			self.assertEqual((slide.template, message), ("spotify.html", None))
+		for progress, name, expected in ((3_000, "seek_back", 0), (245_000, "seek_forward", 250_000)):   # never past the ends
+			self.provider.playing = replace(self.provider.playing, progress_ms=progress)
+			with mock.patch("francken_tv.providers.spotify.requests.request", return_value=FakeResponse(204)) as request, \
+					mock.patch.object(self.provider, "catch_up"):
+				self.provider.action(name, [], NOW)
+			self.assertTrue(request.call_args.args[1].endswith(f"position_ms={expected}"))
 
 	def test_search_finds_albums_and_opens_their_songs(self):
 		self.connect()

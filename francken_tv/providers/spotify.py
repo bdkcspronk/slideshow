@@ -56,6 +56,7 @@ NEXT_URL = API + "/me/player/next"
 PREVIOUS_URL = API + "/me/player/previous"
 VOLUME_URL = API + "/me/player/volume"
 SEEK_URL = API + "/me/player/seek"
+SEEK_STEP_MS = 10_000        # the timeline's left and right keys jump 10 seconds
 VOLUME_STEP = 10             # in heard volume (see heard_volume)
 DB_PER_DECADE_HEARD = 0.6    # loudness heard ~ amplitude^0.6
 VOLUME_SETTLE_SECONDS = 4
@@ -880,12 +881,17 @@ class SpotifyProvider(Provider):
 			self.catch_up(now)
 			# The lyrics view's buttons send "lyrics" along, so it stays the lyrics view.
 			return (self.lyrics_slide() if values[:1] == ["lyrics"] else self.now_playing()), None
-		if name == "seek" and self.playing and self.playing.duration_ms:   # a click on the timeline: values[0] is 0-1
-			try:
-				fraction = max(0.0, min(1.0, float(values[0])))
-			except (IndexError, ValueError):
-				return None, None
-			error = self.command("PUT", f"{SEEK_URL}?position_ms={int(fraction * self.playing.duration_ms)}")
+		if name in ("seek", "seek_back", "seek_forward") and self.playing and self.playing.duration_ms:
+			if name == "seek":   # a click on the timeline: values[0] is 0-1
+				try:
+					fraction = max(0.0, min(1.0, float(values[0])))
+				except (IndexError, ValueError):
+					return None, None
+				position = int(fraction * self.playing.duration_ms)
+			else:   # the timeline focused with the keyboard: left and right jump from where the song is now, not past its ends
+				step = SEEK_STEP_MS if name == "seek_forward" else -SEEK_STEP_MS
+				position = max(0, min(self.playing.duration_ms, self.playing.progress() + step))
+			error = self.command("PUT", f"{SEEK_URL}?position_ms={position}")
 			if error:
 				return None, error
 			self.catch_up(now)

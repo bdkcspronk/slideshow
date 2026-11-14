@@ -2018,7 +2018,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-volume { display: flex; align-items: center; gap: 1vw; margin-left: auto; }
 .spotify-speaker { width: 3.6vh; height: 3.6vh; flex: none; fill: #ffffff; }
 .spotify-speaker .wave { fill: none; stroke: #ffffff; stroke-width: 2; stroke-linecap: round; }
-.spotify-volume-seek:focus { outline: none; }   /* focused from the keyboard it looks pointed at instead (below) */
+.spotify-volume-seek:focus, .spotify-seek:focus { outline: none; }   /* focused from the keyboard it looks pointed at instead (below) */
+.spotify-seek:focus-visible, .spotify-volume-seek:focus-visible { outline: 0.4vh solid #ffffff; outline-offset: -0.4vh; border-radius: 1vh; }   /* a white ring, readable from across the room */
 .spotify-volume-seek { display: block; padding: 2vh 0; cursor: pointer; touch-action: none; transition: opacity 0.1s ease-out; }   /* clickable and draggable, like the timeline */
 .spotify-volume-track { display: block; width: 14vw; height: 0.9vh; border-radius: 0.45vh; background: rgba(255, 255, 255, 0.25); }
 .spotify-volume-level { display: block; height: 100%; border-radius: 0.45vh; background: #ffffff; transition: width 0.3s; }
@@ -2045,8 +2046,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	.spotify-seek:hover .spotify-bar, .spotify-volume-seek:hover .spotify-volume-level { background: #1db954; }
 	.spotify-seek:hover .spotify-bar::after, .spotify-volume-seek:hover .spotify-volume-level::after { scale: 1; opacity: 1; }
 }
-.dragging .spotify-bar, .dragging .spotify-volume-level, .spotify-volume-seek:focus-visible .spotify-volume-level { background: #1db954; }
-.dragging .spotify-bar::after, .dragging .spotify-volume-level::after, .spotify-volume-seek:focus-visible .spotify-volume-level::after { scale: 1; opacity: 1; }
+.dragging .spotify-bar, .dragging .spotify-volume-level, .spotify-seek:focus-visible .spotify-bar, .spotify-volume-seek:focus-visible .spotify-volume-level { background: #1db954; }
+.dragging .spotify-bar::after, .dragging .spotify-volume-level::after, .spotify-seek:focus-visible .spotify-bar::after, .spotify-volume-seek:focus-visible .spotify-volume-level::after { scale: 1; opacity: 1; }
 .dragging .spotify-bar, .dragging .spotify-volume-level { width: var(--drag) !important; animation: none; transition: none; }   /* over the inline volume width */
 /* Up next, and the button to pick another playlist. */
 /* Up next, with the buttons (Lyrics, Search, Playlists) on a row of their own below it, so the next
@@ -2666,10 +2667,31 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	background: rgba(23, 50, 73, 0.88);
 	color: white;
 	font-size: 2.2vh;
-	white-space: nowrap;
+	width: max-content;   /* the hint now also names the keys: it may take two lines */
+	max-width: 90%;
+	text-align: center;
 	pointer-events: none;
 }
 .timeguessr-map[data-value] .timeguessr-map-hint { display: none; }
+/* Focused from the keyboard: a thick red ring (an outline isn't clipped by the map's overflow) and a crosshair at the middle,
+   where Enter or Space drops the pin (widgets.js). Seen from across the room. */
+.timeguessr-map:focus-visible { outline: 0.6vh solid #e8483c; outline-offset: 0.3vh; }
+.timeguessr-map:focus-visible::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 5vh;
+	height: 5vh;
+	transform: translate(-50%, -50%);
+	z-index: 1000;   /* above Leaflet's panes */
+	pointer-events: none;
+	background:
+		linear-gradient(#e8483c, #e8483c) center / 0.5vh 100% no-repeat,
+		linear-gradient(#e8483c, #e8483c) center / 100% 0.5vh no-repeat;
+	filter: drop-shadow(0 0 0.3vh white);   /* shows on dark and light map tiles */
+}
+.timeguessr-photo:focus-visible { outline: 0.6vh solid #ffffff; outline-offset: -0.6vh; }   /* inside: the photo clips its own overflow */
 /* Pins (widgets.js): your guess blue, the answer red. */
 .map-pin { border-radius: 50%; border: 0.45vh solid white; box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.45); box-sizing: border-box; }
 .map-pin-guess { background: var(--blue); }

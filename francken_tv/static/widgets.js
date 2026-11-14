@@ -171,7 +171,24 @@ function setupZoom(element) {
 		dragged = false;
 	}, true);
 	// Back to the whole photo when it leaves full screen.
-	new MutationObserver(() => { if (!full() && scale !== 1) zoom(0); }).observe(element, { attributes: true, attributeFilter: ["class"] });
+	// Full screen, the rest of the slide can't take focus (inert), or Tab would walk to buttons hidden behind the photo.
+	new MutationObserver(() => {
+		if (!full() && scale !== 1) zoom(0);
+		const slide = element.closest("[data-interactive]");
+		for (let node = element; node && node !== slide; node = node.parentElement) {
+			for (const other of node.parentElement?.children || []) {
+				if (other !== node) other.inert = full();
+			}
+		}
+	}).observe(element, { attributes: true, attributeFilter: ["class"] });
+	// Without a mouse: Tab to the photo, Enter or Space opens it full screen and again closes it (a click does the same).
+	element.addEventListener("keydown", (event) => {
+		if (event.target !== element || (event.key !== "Enter" && event.key !== " ")
+				|| event.ctrlKey || event.altKey || event.metaKey) return;
+		event.preventDefault();
+		event.stopPropagation();   // not the slideshow's pause or Enter as well
+		element.click();
+	});
 }
 
 function setupQr(element) {
@@ -199,12 +216,25 @@ function setupMap(element) {
 	}
 	map.fitBounds([[-50, -150], [70, 170]]);   // the whole world, without most of the ice
 	let pin = null;
-	map.on("click", (event) => {
-		if (pin) pin.setLatLng(event.latlng);
-		else pin = mapPin(event.latlng, "guess").addTo(map);
-		const at = event.latlng.wrap();   // the world repeats sideways: back to -180..180
+	// One place for a tap and for the keyboard, so both drop or move the pin the same way.
+	const placePin = (latlng) => {
+		if (pin) pin.setLatLng(latlng);
+		else pin = mapPin(latlng, "guess").addTo(map);
+		const at = latlng.wrap();   // the world repeats sideways: back to -180..180
 		element.dataset.value = `${at.lat.toFixed(6)},${at.lng.toFixed(6)}`;
 		fieldChanged(element);
+	};
+	map.on("click", (event) => placePin(event.latlng));
+	// Without a mouse: the focused map (Tab to it) pans with the arrows and zooms with + and - (Leaflet's own keys); Enter or
+	// Space drops the pin at the middle of the map, where the crosshair is (style.css). Stopped here so the slideshow's own
+	// Space (pause) and Enter don't also act on it.
+	element.addEventListener("keydown", (event) => {
+		if (event.target !== element || (event.key !== "Enter" && event.key !== " ")
+				|| event.ctrlKey || event.altKey || event.metaKey) return;
+		event.preventDefault();
+		event.stopPropagation();
+		if (typeof keepPaused === "function") keepPaused(idleSeconds(element.closest("[data-interactive]")));   // not on /preview (no player.js)
+		placePin(map.getCenter());
 	});
 }
 
