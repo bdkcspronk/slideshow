@@ -1,5 +1,6 @@
 {# The latest xkcd (providers/xkcd.py): the title, the comic as large as fits, and its hover text. #}
 <div class="slide xkcd-slide">
+	<div class="navy-glows bg-grid" aria-hidden="true"></div>
 	<header>
 		<h1>{{ comic.title }}</h1>
 		<span>xkcd #{{ comic.number }} &middot; {{ "today" if comic.day == today else comic.day.strftime("%A") ~ " " ~ comic.day.day ~ " " ~ comic.day.strftime("%B") }}</span>

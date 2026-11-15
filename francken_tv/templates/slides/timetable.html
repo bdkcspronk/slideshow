@@ -4,6 +4,7 @@
    long to fit scrolls by (data-marquee), and a column too full for the screen scrolls slowly
    upwards (data-marquee-up, widgets.js). #}
 <div class="slide info-slide info-timetable">
+	<div class="navy-glows bg-rings" aria-hidden="true"></div>
 	<h1>{{ name }} <span>{{ day }}</span></h1>
 	<div class="timetable-columns" style="--columns: {{ columns | length }}">
 		{% for column, lectures in columns.items() %}

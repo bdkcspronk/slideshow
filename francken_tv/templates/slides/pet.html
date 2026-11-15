@@ -9,7 +9,7 @@
 	See "The Francken pet" in style.css.
 #}
 <div class="slide pet-slide pet-{{ state }}" data-interactive data-provider="pet" data-idle-seconds="{{ 60 if state in ('naming', 'choosing') else 20 }}" data-state="{{ state }}"{% if state == "naming" %} data-submit-action="name"{% endif %}>
-	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="navy-glows bg-grid" aria-hidden="true"><i></i><i></i><i></i></div>
 
 	{% if state == "choosing" %}
 	<div class="pet-left">

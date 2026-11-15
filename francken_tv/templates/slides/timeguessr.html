@@ -8,6 +8,7 @@
 {% macro points(n) %}{{ "{:,}".format(n) }}{% endmacro %}
 <div class="slide timeguessr-slide" data-interactive data-idle-seconds="240" data-provider="timeguessr"
 	{% if game.done %}data-resume-after="15"{% endif %}>
+	<div class="navy-glows bg-fcc" aria-hidden="true"></div>
 	<header class="timeguessr-header">
 		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
 		<h1>TimeGuessr</h1>

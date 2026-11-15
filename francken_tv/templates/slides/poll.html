@@ -5,6 +5,7 @@
 	After a vote on the TV the bars show the new count and the slideshow goes on after a bit.
 #}
 <div class="slide poll-slide" data-interactive data-provider="poll" data-idle-seconds="60" {% if voted %}data-resume-after="8"{% endif %}>
+	<div class="navy-glows bg-waves" aria-hidden="true"></div>
 	<div class="poll-main">
 		<p class="poll-kicker">Dilemma of the week</p>
 		<h1 class="{{ 'long' if question | length > 70 }}">{{ question }}</h1>

@@ -5,7 +5,7 @@
    (--i): today's from above, the left column from the left, the right column from the right.
    The cards have continuous corners (.squircle in style.css). #}
 <div class="slide activities-slide">
-	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="navy-glows bg-fcc" aria-hidden="true"><i></i><i></i><i></i></div>
 	<h1 class="poster-title"><span>Upcoming</span> <span class="poster-marked">activities</span></h1>
 	{% macro card(activity, cls, i) %}
 		{% set now = activity.day <= today %}

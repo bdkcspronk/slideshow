@@ -4,7 +4,7 @@
    Switching outlet keeps the title and the outlets where they are; only the new cards come in, quickly (data-steady).
    Tapping one opens the article (NewsProvider.action(), news_article.html). #}
 <div class="slide news-slide{{ ' news-quick' if quick }}" data-interactive data-provider="news" data-idle-seconds="120">
-	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="navy-glows bg-dots" aria-hidden="true"><i></i><i></i><i></i></div>
 	<h1 class="poster-title" data-steady="news-title"><span>In the</span> <span class="poster-marked">news</span></h1>
 	<ul class="news-feeds" data-steady="news-feeds">
 		{% for name in feeds %}<li{% if name == feed %} class="current"{% endif %} style="--i: {{ loop.index0 }}"><button data-action="news" data-value="{{ name }}">{{ name }}</button></li>{% endfor %}

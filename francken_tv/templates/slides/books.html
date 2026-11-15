@@ -2,7 +2,7 @@
    and news slides): a bookcase with all the books for sale in the background; a few are taken out of it and
    hover in front with a crimson glow behind them, their title, authors and price below. #}
 <div class="slide books-slide">
-	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
+	<div class="navy-glows bg-rings" aria-hidden="true"><i></i><i></i><i></i></div>
 	{# The bookcase, drawn once in 3D (static/books_3d.js) from data-case: every book's title, colour and shape, in order. #}
 	<canvas class="books-case" data-books-case="{{ case | tojson | forceescape }}" data-case-size="{{ case_size }}" aria-hidden="true"></canvas>
 	<h1 class="poster-title"><span>Second-hand</span> <span class="poster-marked">books</span></h1>

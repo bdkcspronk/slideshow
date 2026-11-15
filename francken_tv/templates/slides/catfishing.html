@@ -7,6 +7,7 @@
 #}
 <div class="slide catfishing-slide" data-interactive data-idle-seconds="240" data-provider="catfishing" data-submit-action="submit"
 	{% if game.done %}data-resume-after="15"{% endif %}>
+	<div class="navy-glows bg-waves" aria-hidden="true"></div>
 	<header class="catfishing-header">
 		<button class="puzzle-back" data-action="back" data-provider="puzzles">&larr; All puzzles</button>
 		<h1>Catfishing{% if not today %} <span>{{ day_label }}</span>{% endif %}</h1>

@@ -2,6 +2,7 @@
    providers/news.py). The text scrolls by touch, mouse wheel or the up and down arrows (data-scroll).
    Below it the address of the article. #}
 <div class="slide info-slide info-article" data-interactive data-provider="news" data-idle-seconds="120">
+	<div class="navy-glows bg-dots" aria-hidden="true"></div>
 	<header class="article-header">
 		<button class="article-back" data-action="back" data-value="{{ feed }}">&larr; All news</button>
 		<span>{{ feed }}{% if ago %} &middot; {{ ago }}{% endif %}</span>

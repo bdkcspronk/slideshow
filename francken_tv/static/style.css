@@ -185,6 +185,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	font-family: "Familjen Grotesk", "DejaVu Sans", sans-serif;
 	font-weight: 700;
 }
+.navy-glows { position: absolute; inset: 0; pointer-events: none; }   /* out of the slide's flex or grid flow, so it never takes a cell or a gap */
 .navy-glows i {   /* big soft circles behind everything; still, so a slide with nothing else moving costs nothing to draw */
 	position: absolute;
 	width: 70vh;
@@ -195,6 +196,47 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .navy-glows i:nth-child(1) { left: -15vh; top: -20vh; }
 .navy-glows i:nth-child(2) { right: -20vh; top: 25vh; background: radial-gradient(circle, rgba(80, 140, 240, 0.38), transparent 65%); }
 .navy-glows i:nth-child(3) { left: 35vw; bottom: -40vh; }
+/* Six backgrounds for the navy posters, one per slide (class on its .navy-glows: bg-fcc, bg-dots, bg-grid, bg-waves, bg-rings, bg-hex).
+   Each replaces the diagonal stripes with a pattern of its own and puts the glows somewhere else; the slides that build
+   our logo (membership, fotocie; the quote is plain navy) and those with a lot of text or detail on the navy itself (the activity
+   chart, streep, the Francken Vrij sign-up) keep the stripes, as do photos and posters. The pattern is a layer behind the slide's content (z-index -1;
+   the slide isolates so that stays inside it), all of it still, like the glows. */
+.activities-slide, .news-slide, .leaderboard-slide, .books-slide, .graafmachine-slide, .francken-vrij-slide, .socks-slide, .socials-slide, .pet-slide, .puzzles-slide { isolation: isolate; }
+/* The slides that turned navy later (see "The slides that used to be white") have no glows, only the pattern: a bare .navy-glows div.
+   Some weren't positioned; the pattern needs them to be, to fill the slide and not the screen. */
+.info-slide, .commandments-slide, .poll-slide, .xkcd-slide, .confidential-slide, .timeguessr-slide, .catfishing-slide, .connections-slide, .wordle-slide { position: relative; isolation: isolate; }
+.navy-glows[class*="bg-"]::before { content: ""; position: absolute; inset: 0; z-index: -1; }
+/* FCC: the front view of a face-centred cubic lattice, all in faint cream: atoms at the corners and the middle of each
+   face, touching along the face's diagonals (radius a/(2*sqrt 2)), as in a hard-sphere model. No bond lines. */
+.bg-fcc::before { background: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M0 0H100M0 0V100%27 fill=%27none%27 stroke=%27%23fdf8ec%27 stroke-opacity=%27.07%27 stroke-width=%271.6%27/%3E%3Cg fill=%27%23fdf8ec%27 fill-opacity=%27.03%27 stroke=%27%23fdf8ec%27 stroke-opacity=%27.13%27 stroke-width=%271.8%27%3E%3Ccircle cx=%270%27 cy=%270%27 r=%2735.36%27/%3E%3Ccircle cx=%27100%27 cy=%270%27 r=%2735.36%27/%3E%3Ccircle cx=%270%27 cy=%27100%27 r=%2735.36%27/%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2735.36%27/%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2735.36%27/%3E%3C/g%3E%3C/svg%3E") 0 0 / 14vh 14vh, linear-gradient(160deg, #1d3c6e, #142c55 60%); }
+.bg-fcc i:nth-child(1) { left: auto; right: -10vh; top: -25vh; }
+.bg-fcc i:nth-child(2) { right: auto; left: -25vh; top: 40vh; }
+.bg-fcc i:nth-child(3) { left: 55vw; bottom: -45vh; opacity: 0.6; }
+/* Halftone: two sizes of dots in a staggered grid. */
+.bg-dots::before { background: radial-gradient(circle, rgba(253, 248, 236, 0.13) 0 0.55vh, transparent calc(0.55vh + 1px)) 0 0 / 4.4vh 4.4vh, radial-gradient(circle, rgba(253, 248, 236, 0.08) 0 0.3vh, transparent calc(0.3vh + 1px)) 2.2vh 2.2vh / 4.4vh 4.4vh, radial-gradient(circle, rgba(253, 248, 236, 0.1) 0 1.2px, transparent 1.6px) 1.7vh 1.7vh / 3.4vh 3.4vh, linear-gradient(160deg, #1d3c6e, #142c55 60%); }
+.bg-dots i:nth-child(1) { left: auto; right: -20vh; top: auto; bottom: -30vh; }
+.bg-dots i:nth-child(2) { right: auto; left: 20vw; top: -35vh; }
+.bg-dots i:nth-child(3) { left: -25vh; bottom: auto; top: 35vh; opacity: 0.55; }
+/* Graph paper: fine and coarse lines, like the practice sessions poster. */
+.bg-grid::before { background: linear-gradient(rgba(253, 248, 236, 0.12) 1px, transparent 1px) 0 0 / 16vh 16vh, linear-gradient(90deg, rgba(253, 248, 236, 0.12) 1px, transparent 1px) 0 0 / 16vh 16vh, linear-gradient(rgba(253, 248, 236, 0.05) 1px, transparent 1px) 0 0 / 3.2vh 3.2vh, linear-gradient(90deg, rgba(253, 248, 236, 0.05) 1px, transparent 1px) 0 0 / 3.2vh 3.2vh, linear-gradient(200deg, #1b3a6b, #12284f 70%); }
+.bg-grid i:nth-child(1) { left: auto; right: 5vw; top: -35vh; }
+.bg-grid i:nth-child(2) { right: auto; left: -30vh; top: auto; bottom: -25vh; }
+.bg-grid i:nth-child(3) { display: none; }
+/* Waves: rows of sine waves, every other row half a wavelength on, like a wave on a string drawn over and over. */
+.bg-waves::before { background: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 60%27%3E%3Cg fill=%27none%27 stroke=%27%23fdf8ec%27 stroke-opacity=%27.1%27 stroke-width=%271.6%27%3E%3Cpath d=%27M0 15C50 0 50 0 100 15S150 30 200 15%27/%3E%3Cpath d=%27M0 45C50 60 50 60 100 45S150 30 200 45%27/%3E%3C/g%3E%3C/svg%3E") 0 0 / 30vh 9vh, linear-gradient(20deg, #1f3d70, #142c55 65%); }
+.bg-waves i:nth-child(1) { left: -25vh; top: auto; bottom: -30vh; }
+.bg-waves i:nth-child(2) { right: -25vh; top: -25vh; }
+.bg-waves i:nth-child(3) { display: none; }
+/* Ripples: rings spreading from the top right corner. */
+.bg-rings::before { background: repeating-radial-gradient(circle at 92% 8%, transparent 0 9vh, rgba(253, 248, 236, 0.09) 9vh calc(9vh + 2px)), linear-gradient(200deg, #1d3c6e, #142c55 60%); }
+.bg-rings i:nth-child(1) { left: auto; right: -15vh; top: -25vh; }
+.bg-rings i:nth-child(2) { right: auto; left: -20vh; top: auto; bottom: -15vh; }
+.bg-rings i:nth-child(3) { display: none; }
+/* Honeycomb: hexagons in outline, glows at the top and low at both sides. */
+.bg-hex::before { background: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 56 96%27%3E%3Cpath d=%27M28 0L56 16V48L28 64L0 48V16Z M28 64V96%27 fill=%27none%27 stroke=%27%23fdf8ec%27 stroke-opacity=%27.11%27 stroke-width=%271.4%27/%3E%3C/svg%3E") 0 0 / 8vh 13.71vh, linear-gradient(160deg, #1d3c6e, #142c55 60%); }
+.bg-hex i:nth-child(1) { left: 30vw; top: -45vh; }
+.bg-hex i:nth-child(2) { right: auto; left: -25vh; top: auto; bottom: -30vh; }
+.bg-hex i:nth-child(3) { left: auto; right: -15vh; bottom: -30vh; }
 .poster-title { position: relative; margin: 1.8vh 0 3.5vh; font-size: 8vh; line-height: 1; letter-spacing: -0.1vh; }
 .poster-title span { display: inline-block; animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.25s both; }
 .poster-marked { position: relative; animation-delay: 0.4s !important; }
@@ -5029,6 +5071,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 		linear-gradient(160deg, #1d3c6e, #142c55 60%);
 	color: var(--paper);
 }
+.quote-slide { background: linear-gradient(160deg, #1d3c6e, #142c55 60%); }   /* plain navy, no stripes: only the logo building itself behind the quote */
 .article-back, .lecture, .poll-option, .poll-last, .poll-qr-code, .puzzle-back, .timeguessr-button,
 .timeguessr-nudges button, .timeguessr-score, .timeguessr-summary li, .catfishing-guess, .catfishing-buttons button,
 .catfishing-input button, .catfishing-day, .connections-controls button, .confidential-card {
