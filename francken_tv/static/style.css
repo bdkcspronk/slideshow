@@ -1056,15 +1056,16 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .poll-options { display: flex; flex-direction: column; gap: 2vh; }
 /* Option A is red, option B blue: the letter and the bar, this week and last week. */
 .poll-a { --option: var(--red); --option-text: var(--red-dark); }
-.poll-b { --option: var(--blue); --option-text: var(--blue); }
+.poll-b { --option: #3f8ad0; --option-text: #2f6fae; }   /* a bright blue: the dark navy vanished against the navy poster background (chosen outline, bars) */
 .poll-shadow {   /* the option's shadow; the option itself is the button inside, with continuous corners (the clip would cut the shadow off) */
 	display: flex;
 	border-radius: 1.5vh;   /* only shapes the (blurred) shadow */
 	box-shadow: var(--shadow);
 	transition: transform 0.1s ease-out;
 }
-.poll-shadow:has(.poll-option:active) { transform: scale(0.98); }   /* pressed: the shadow dips with the option */
-.poll-shadow:has(.poll-option.busy) { transform: scale(0.97); }   /* waiting for the vote: dips like a press, on the carrier */
+/* Only transform: the shrink doesn't change the layout, so the other option never moves. */
+.poll-shadow:has(.poll-option:active) { transform: scale(0.97); }   /* pressed: the shadow dips with the option */
+.poll-shadow:has(.poll-option.busy) { transform: scale(0.97); }   /* waiting for the vote: stays dipped, on the carrier */
 .poll-option {
 	--r: 2.4vh;   /* continuous corners */
 	--edge: 0.3vh;   /* the outline: the background shows around the inset fill (a border would be cut at the corners) */
@@ -1076,7 +1077,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	flex-wrap: wrap;   /* the bar goes on its own line below */
 	align-items: center;
 	gap: 1.4vh 2vw;
-	padding: calc(2vh + var(--edge)) calc(2vw + var(--edge));   /* the outline's width on top, so a thicker outline moves nothing */
+	padding: 2.3vh calc(2vw + 0.3vh);   /* fixed (the resting outline's width on top): the chosen, thicker outline grows inward over it and moves nothing */
 	border: 0;
 	background: var(--card-border);   /* the outline colour; the white is the ::before */
 	color: var(--blue);
@@ -1113,7 +1114,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
    would never run): scaleX, not width, so no relayout each frame. */
 .poll-bar i { display: block; width: var(--percent); height: 100%; border-radius: inherit; background: var(--option); transform-origin: left; animation: poll-grow 0.6s ease-out both; }
 @keyframes poll-grow { from { transform: scaleX(0); } }
-.poll-last.steady .poll-bar i { animation: none; }   /* a vote redraws the slide: last week's bars stay as they were */
+.poll-last.steady .poll-bar i, .poll-slide.redrawn .poll-bar i { animation: none; }   /* a vote redraws the slide: last week's bars stay as they were (.steady), and this week's just show the new share instead of shrinking to nothing and growing again (.redrawn) */
 .poll-text { flex: 1; min-width: 0; font-size: 3.6vh; line-height: 1.2; }
 .poll-percent { flex: none; font-size: 4.4vh; font-weight: bold; color: var(--option-text); }
 .poll-count { font-size: 0.65em; font-weight: normal; color: var(--muted); }   /* "5 votes ·" before the percentage */
