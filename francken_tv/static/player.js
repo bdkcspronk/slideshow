@@ -41,6 +41,7 @@ async function show(slide, { canRefresh = true } = {}) {
 	stopInteracting();
 	clearTimeout(nextTimer);
 	clearInterval(refreshTimer);
+	paused = false; clearTimeout(pauseTimer);   // a pause is for the slide that was paused: whatever shows next, the next space pauses again
 	if (slide.permanent_pause !== undefined) setPermanentPause(slide.permanent_pause);
 	const back = layers[1 - front];
 	back.classList.add("loading");   // its animations wait until it's shown (style.css), or they'd run ahead of the timer
