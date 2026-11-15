@@ -334,14 +334,17 @@ Keep this list current: after reviewing a slide, move it to "Reviewed" with the 
 check here so nothing is done twice. (Started 2026-11-15 from the git history, so the first group is a
 best guess.)
 
-**Reviewed:** bieruur, buses, catfishing, confidential, connections, francken_vrij_subscribe, instagram,
-leaderboard, mscie, news, news_article, pet, photo, poll, presence, puzzles, rain, sjaarscie, socials,
-socks, spotify, spotify_lyrics, spotify_songs, streep, timetable, weather, wordle (first group: best guess
-from git history).
+**Reviewed 2026-11-15, twice (a first pass from the git history, then a full review of the code today):**
+bieruur, buses, catfishing, confidential, connections, francken_vrij_subscribe, instagram, leaderboard,
+mscie, news, news_article, pet, photo, poll, presence, puzzles, rain, sjaarscie, socials, socks, spotify,
+spotify_lyrics, spotify_songs, streep, timetable, weather, wordle.
 
-**Reviewed 2026-11-15 (findings listed, fixes not applied yet):** activities, books, borrelcie,
+**Reviewed 2026-11-15 (fixes for the first nine applied):** activities, books, borrelcie,
 catfishing_archive, commandments, compucie, empty, ero, extern, fotocie, francken_vrij, graafmachine,
 image, lyric_video, membership, practice, quote, rain_chart, spotify_playlists, spotify_search,
 timeguessr, weather_sky, xkcd.
 
-**Not reviewed yet:** none.
+**Reviewed 2026-11-15 (not a slide, findings listed, no fixes yet):** the chart bar (templates/bar.html),
+the pet cameo (templates/pet_cameo.html) and the Esc menu (player.js, "The menu").
+
+**Not reviewed yet:** none. Everything above was read in code only, nothing was measured on the TV.
