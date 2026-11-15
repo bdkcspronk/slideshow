@@ -231,24 +231,114 @@ def group_title(group: Group, titles: dict[str, str]) -> str:
 	return " · ".join(titles.get(name, name) for name in group.slides) or "Empty group"
 
 
+PERIODS = {"hour": 3600, "3hours": 3 * 3600, "day": 86400}   # seconds
+
+
+def share_of_rounds(rule: Rule, round_seconds: float) -> float:
+	"""The part of the rounds a rule lets it come round in: every 5th round 1/5; once an hour, one round of that many seconds."""
+	if rule.every in PERIODS:
+		return min(1.0, round_seconds / PERIODS[rule.every])
+	return 1 / int(rule.every)
+
+
+def often_text(per_hour: float) -> str:
+	if per_hour <= 0:
+		return ""
+	if per_hour >= 54:
+		per_minute = per_hour / 60
+		return f"~{per_minute:.0f}/min" if per_minute >= 9.5 else f"~{per_minute:.1f}/min".replace(".0/", "/")
+	if per_hour >= 1.5:
+		return f"~once per {round(60 / per_hour)} min"
+	if per_hour >= 1 / 1.5:
+		return "~once an hour"
+	if per_hour * 24 >= 1.5:
+		return f"~once per {round(1 / per_hour)} hours"
+	return "~once a day"
+
+
+def round_text(seconds: float) -> str:
+	if seconds < 90:
+		return f"{round(seconds)} sec"
+	if seconds < 90 * 60:
+		return f"{round(seconds / 60)} min"
+	return f"{seconds / 3600:.1f} hours"
+
+
+def estimates(scheduler, settings, now: datetime) -> tuple[dict[str, str], float]:
+	"""-> (slide type or "group:number" -> about how often each of its slides comes round, e.g. "~once per 12 min";
+	how long one full rotation takes, in seconds).
+
+	From what each slide type shows right now (how many slides, how long) and its rule, its group and the speed: a round is
+	every slide type's slides times the part of the rounds it comes round in. Each of a slide type's slides is shown in that
+	part of the rounds, so once per round length divided by that part."""
+	hidden = settings.hidden
+	groups = [group for group in current_groups(scheduler, settings) if group.on]
+	providers = [p for p in getattr(scheduler, "providers", []) if p.name not in hidden]
+	daytime = getattr(scheduler, "daytime", (time(8, 0), time(18, 0)))
+	closed = set()   # slide types whose rule (or group's) doesn't let them come round now: other month, day or hours
+	for group in groups:
+		if not (group.rule.on_this_day(now) and group.rule.in_hours(now, daytime)):
+			closed.update(group.slides)
+	shown = {}
+	for provider in providers:
+		rule = rule_of(scheduler, settings, provider.name)
+		if provider.name in closed or not rule.on_this_day(now):
+			continue
+		try:   # outside its hours only what it shows then anyway (the rain warning)
+			slides = provider.slides(now) if rule.in_hours(now, daytime) else provider.outside_daytime_slides(now)
+		except Exception:
+			slides = []
+		if slides:
+			shown[provider.name] = (len(slides), sum(slide.seconds for slide in slides) / len(slides))
+	speed = getattr(scheduler, "speed", 1.0) or 1.0
+	# What each slide type's place in the round is worth: its own rule's part, times its group's part shared with the others.
+	members = {}
+	group_of = {}
+	for number, group in enumerate(groups):
+		names = [p.name for p in providers if p.name in group.slides and p.name in shown]
+		for name in names:
+			group_of[name] = (number, len(names))
+	round_seconds = sum(count * secs for count, secs in shown.values()) / speed or 1.0
+	share = {}
+	for _ in range(8):   # a round's length depends on what is in it, which depends on the round's length (once an hour)
+		share = {}
+		for name in shown:
+			share[name] = share_of_rounds(rule_of(scheduler, settings, name), round_seconds)
+			if name in group_of:
+				number, size = group_of[name]
+				share[name] *= share_of_rounds(groups[number].rule, round_seconds) / size
+		# Slide types sharing a group's place: that place is one slide type's slides per round, so the sum is what it adds
+		round_seconds = sum(share[name] * count * secs for name, (count, secs) in shown.items()) / speed or 1.0
+	result = {}
+	for name, (count, _secs) in shown.items():
+		result[name] = often_text(share[name] * 3600 / round_seconds)   # each of its slides
+	for number, group in enumerate(groups):
+		if any(name in shown for name in group.slides):   # the group's place in the round: one of its slide types each time
+			result[f"group:{number}"] = often_text(share_of_rounds(group.rule, round_seconds) * 3600 / round_seconds)
+	return result, round_seconds if shown else 0.0
+
+
 def menu_data(scheduler, settings, titles: dict[str, str]) -> dict:
 	"""Everything the Rotation pages of the menu show. `titles`: slide type -> its name in the menu, in rotation order."""
 	daytime = getattr(scheduler, "daytime", (time(8, 0), time(18, 0)))
 	groups = current_groups(scheduler, settings)
 	in_group = {name: number for number, group in enumerate(groups) for name in group.slides}
 	notes = {p.name: p.rotation_note for p in getattr(scheduler, "providers", []) if getattr(p, "rotation_note", "")}
+	often, round_seconds = estimates(scheduler, settings, datetime.now())
 	slides = []
 	for name, title in titles.items():
 		rule = rule_of(scheduler, settings, name)
 		on = name not in settings.hidden
 		slides.append({"name": name, "title": title, "on": on, "rule": rule.to_dict(), "summary": summary(rule, on, daytime),
-			"note": notes.get(name, ""), "group": in_group.get(name)})
+			"note": notes.get(name, ""), "group": in_group.get(name), "often": often.get(name, "") if on else ""})
 	return {
 		"slides": slides,
 		"groups": [{"title": group_title(group, titles), "slides": list(group.slides), "on": group.on, "rule": group.rule.to_dict(),
-			"summary": summary(group.rule, group.on, daytime), "color": colored["color"]}
-			for group, colored in zip(groups, with_colors([group.to_dict() for group in groups]))],
+			"summary": summary(group.rule, group.on, daytime), "color": colored["color"],
+			"often": often.get(f"group:{number}", "") if group.on else ""}
+			for number, (group, colored) in enumerate(zip(groups, with_colors([group.to_dict() for group in groups])))],
 		"frequencies": [{"value": value, "label": label} for value, label in FREQUENCIES],
+		"round": round_text(round_seconds) if round_seconds else "",   # one full rotation, right now
 		"months": MONTHS,
 		"days": DAYS,
 		"daytime": hours_text("daytime", daytime),

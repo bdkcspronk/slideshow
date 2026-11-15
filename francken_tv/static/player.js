@@ -983,11 +983,12 @@ const menuPages = {
 			<h1>Rotation settings of slides</h1>
 		</header>
 		<div class="menu-rotation">
+			${rotation.round ? `<p class="menu-note">One full rotation takes about ${escapeHtml(rotation.round)} right now. The times below are how often each slide of that type comes round.</p>` : ""}
 			<section>
 				<h2>Take turns</h2>
 				<p class="menu-note">The slides in a group share one place in the round: the next of them each round.</p>
 				<div class="menu-rotation-grid">
-					${rotation.groups.map((group, number) => row(`item-group-${number}`, `group:${number}`, group.title, group.summary, group.on, group.color)).join("")}
+					${rotation.groups.map((group, number) => row(`item-group-${number}`, `group:${number}`, group.title, [group.summary, group.often].filter(Boolean).join(" · "), group.on, group.color)).join("")}
 					<button class="menu-row menu-row-button menu-rotation-row menu-rotation-new squircle" data-focus="rotation-new-group"
 						data-menu="rotation_new_group"><span>+ New group</span></button>
 				</div>
@@ -996,7 +997,7 @@ const menuPages = {
 				<h2>Slides</h2>
 				<div class="menu-rotation-grid">
 					${rotation.slides.map((slide) => row(`item-slide-${slide.name}`, `slide:${slide.name}`, slide.title,
-						[slide.summary, slide.on && slide.group !== null ? "takes turns" : "", slide.on && slide.note ? "only when needed" : ""].filter(Boolean).join(" · "), slide.on,
+						[slide.summary, slide.often, slide.on && slide.group !== null ? "takes turns" : "", slide.on && slide.note ? "only when needed" : ""].filter(Boolean).join(" · "), slide.on,
 						slide.group === null ? "" : rotation.groups[slide.group].color)).join("")}
 				</div>
 			</section>
@@ -1040,6 +1041,7 @@ const menuPages = {
 					<h2>How often</h2>
 					<span class="menu-choices menu-wrap">${rotation.frequencies.map((frequency) =>
 						pick(`every-${frequency.value}`, `every:${frequency.value}`, frequency.label, rule.every === frequency.value)).join("")}</span>
+					${item.often ? `<p class="menu-note">${item.kind === "group" ? "Its place in the round comes up" : "Each of its slides comes round"} ${escapeHtml(item.often.replace("~", "about "))}, going by the slides and their duration right now</p>` : ""}
 					${item.kind === "group" ? '<p class="menu-note">How often the group\'s place comes round; each slide in it also keeps its own rule</p>' : ""}
 				</section>
 				${item.kind === "group" ? `
