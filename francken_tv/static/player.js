@@ -653,6 +653,7 @@ document.addEventListener("keydown", async (event) => {
 		sendAction(slide, slide.dataset.spaceAction, values).finally(() => button?.classList.remove("busy"));
 	} else if (event.key === " ") {
 		setPaused(!paused);
+		flashPauseIcon(paused);
 	} else if (/^[0-9]$/.test(event.key) && !event.ctrlKey && !event.altKey && !event.metaKey) {
 		jumpTo(event.key);
 	} else if (event.key === "m") {
@@ -671,6 +672,22 @@ function setPaused(on) {
 	} else if (current) {
 		nextTimer = setTimeout(next, current.seconds * 1000);
 	}
+}
+
+// Space: a big || (paused) or |> (going on) in the middle of the screen, fading out.
+let pauseIcon = null;
+function flashPauseIcon(isPaused) {
+	pauseIcon?.remove();
+	const icon = document.createElement("div");
+	icon.className = "pause-icon";
+	const label = !isPaused ? "" : permanentPause ? "Paused until you press space again" : `Paused for ${PAUSE_SECONDS / 60} minutes`;
+	icon.innerHTML = (isPaused
+		? '<svg viewBox="0 0 100 100"><rect x="26" y="20" width="18" height="60" rx="4"/><rect x="56" y="20" width="18" height="60" rx="4"/></svg>'
+		: '<svg viewBox="0 0 100 100"><path d="M30 18 L82 50 L30 82 Z" stroke-linejoin="round"/></svg>')
+		+ (label ? `<span>${label}</span>` : "");
+	document.body.appendChild(icon);
+	pauseIcon = icon;
+	icon.addEventListener("animationend", () => { icon.remove(); if (pauseIcon === icon) pauseIcon = null; });
 }
 
 // The setting changed (in the menu, or on another screen): a pause that's on now follows it.
