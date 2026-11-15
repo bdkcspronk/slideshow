@@ -283,6 +283,7 @@ class SpotifyProvider(Provider):
 		self.bieruur_volume = settings.get("bieruur_volume", 30)   # % of how loud it sounded, during the bieruur song
 		self.ducked_from: int | None = None   # the volume before the bieruur song turned it down
 		self.volume_lock = threading.Lock()
+		self.muted_from: int | None = None   # the volume before the speaker icon muted the song
 		self.jumps = 0   # how often the song jumped to another position (restart, seek): part of the slide's state
 		self.lyrics: dict[str, Lyrics | None] = {}   # by song id; None: LRCLIB doesn't have them
 		self.lyrics_lock = threading.Lock()   # the slide is redrawn every second: one lookup per song
@@ -896,6 +897,17 @@ class SpotifyProvider(Provider):
 				return None, error
 			self.catch_up(now)
 			return self.now_playing(), None
+		if name == "mute" and self.playing and self.playing.volume is not None:   # the speaker icon: mute / unmute
+			with self.volume_lock:
+				before = self.playing.volume
+				volume = (self.muted_from or spotify_volume(30)) if before == 0 else 0
+				error = self.command("PUT", f"{VOLUME_URL}?volume_percent={volume}")
+				if error:
+					return None, error
+				self.muted_from = before if before else self.muted_from
+				self.playing.volume = volume
+				self.volume_set = (volume, time.monotonic())
+			return None, None
 		if name in ("volume", "volume_up", "volume_down") and self.playing and self.playing.volume is not None:
 			if name == "volume":   # the volume bar dragged or clicked: values[0] is 0-1 along the bar as shown
 				try:

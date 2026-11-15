@@ -41,7 +41,7 @@
 				{% if volume is not none %}
 				{# The bar is dragged or clicked (data-seek); from the keyboard, Tab to it and left/right step it (data-step-down/up, player.js). #}
 				<div class="spotify-volume">
-					<svg class="spotify-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"/><path class="wave" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+					<button class="spotify-mute" data-live="speaker" data-level="{{ 0 if volume == 0 else 1 if volume < 34 else 2 if volume < 67 else 3 }}" data-action="mute" aria-label="Mute or unmute"><svg class="spotify-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"/><path class="wave w1" d="M15 10a3 3 0 0 1 0 4"/><path class="wave w2" d="M17.5 7.5a6.5 6.5 0 0 1 0 9"/><path class="wave w3" d="M20 5a10 10 0 0 1 0 14"/><path class="cross" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
 					<span class="spotify-volume-seek" data-seek="volume" data-step-down="volume_down" data-step-up="volume_up" tabindex="0" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ volume }}"><span class="spotify-volume-track"><span class="spotify-volume-level" data-live="volume" style="width: {{ volume }}%"></span></span></span>
 				</div>
 				{% endif %}

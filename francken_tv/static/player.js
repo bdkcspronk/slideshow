@@ -204,6 +204,8 @@ function dragTo(seek, event) {
 	const box = (seek.firstElementChild || seek).getBoundingClientRect();   // the bar itself, not the taller area around it
 	const fraction = Math.max(0, Math.min(1, (event.clientX - box.left) / box.width));
 	seek.style.setProperty("--drag", `${(fraction * 100).toFixed(2)}%`);
+	const mute = seek.dataset.seek === "volume" && seek.parentElement.querySelector(".spotify-mute");   // the speaker's waves follow
+	if (mute) mute.dataset.level = fraction < 0.005 ? 0 : fraction < 0.34 ? 1 : fraction < 0.67 ? 2 : 3;
 	return fraction;
 }
 
@@ -249,9 +251,9 @@ document.addEventListener("click", async (event) => {
 	// (event.detail 0): then it keeps its focus, so the arrows go on from there instead of changing slides.
 	if (event.detail > 0) event.target.closest("button")?.blur();
 	keepPaused(idleSeconds(slide));
+	idleClick = !event.target.closest("button, input, a, [data-toggle], [data-action], [data-key], [data-input-text], [data-input-cell], [data-seek], [data-zoom], [tabindex], .leaflet-container");
 	const toggle = event.target.closest("[data-toggle]");
 	const action = event.target.closest("[data-action]");
-	idleClick = !event.target.closest("button, input, a, [data-toggle], [data-action], [data-key], [data-input-text], [data-input-cell], [data-seek], [data-zoom], [tabindex], .leaflet-container");
 	const key = event.target.closest("[data-key]");
 	const input = event.target.closest("[data-input-text]");
 	const seek = event.target.closest("[data-seek]");   // a song's timeline: the click position, 0-1, as the value
@@ -491,9 +493,9 @@ function keepPaused(seconds) {
 
 function stopInteracting() {
 	interacting = false;
+	idleClick = false;
 	clearTimeout(idleTimer);
 	clearInterval(takeoverTimer);
-	idleClick = false;
 }
 
 async function checkTakeover() {   // bieruur interrupts even a paused puzzle
@@ -577,9 +579,9 @@ document.addEventListener("keydown", async (event) => {
 			// Typing a character: a button that kept focus lets go, so the next Enter sends the text and doesn't press it.
 			if (key.length === 1 || key === "SPACE") event.target.closest?.("button")?.blur();
 			event.preventDefault();
+			idleClick = false;
 			keepPaused(idleSeconds(slide));
 			typeKey(slide, key);
-			idleClick = false;
 			return;
 		}
 		if (event.key.startsWith("Arrow") && !arrowOnButton) return;   // up and down don't change slides while typing either

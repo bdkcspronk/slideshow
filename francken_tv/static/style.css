@@ -2028,20 +2028,26 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-control svg { width: 45%; height: 45%; fill: currentColor; }
 .spotify-control:active { transform: scale(0.94); }
 /* Every Spotify button dips while it's pressed, easing in and out of it instead of jumping. */
-.spotify-control, .spotify-button, .spotify-playlist, .spotify-chip, .spotify-album-card { transition: transform 0.1s ease-out; }
+.spotify-control, .spotify-button, .spotify-playlist, .spotify-chip, .spotify-album-card { transition: transform 0.1s ease-out, box-shadow 0.1s ease-out; }
 .spotify-song, .spotify-key { transition: background 0.1s ease-out; }
 .spotify-control.busy, .spotify-button.busy, .spotify-song.busy { opacity: 1; background: #1db954; border-color: #1db954; color: #121212; }
 /* Keyboard navigation (Tab, the arrows): :focus-visible only matches then, so mouse and touch look as before. A thick
    white ring (green already means busy) and a slight lift, to spot the selected button from across the room. Song
    rows sit in a scrolling list that would cut an outer ring off, so theirs is drawn inside and the row lights up. */
-.spotify-slide button:focus-visible { outline: 0.5vh solid #ffffff; outline-offset: 0.5vh; }
-.spotify-control:focus-visible:not(:active), .spotify-button:focus-visible:not(:active), .spotify-playlist:focus-visible:not(:active),
+.spotify-slide button:focus-visible { outline: 0.5vh solid #ffffff; outline-offset: 0.8vh; }
+.spotify-control:focus-visible:not(:active), .spotify-playlist:focus-visible:not(:active),
 .spotify-chip:focus-visible:not(:active), .spotify-album-card:focus-visible:not(:active) { transform: scale(1.05); }   /* a press still dips */
 .spotify-slide .spotify-song:focus-visible { outline-offset: -0.5vh; background: rgba(255, 255, 255, 0.18); }
 .spotify-slide .spotify-key:focus-visible { outline-offset: 0.2vh; background: rgba(255, 255, 255, 0.35); }
 .spotify-volume { display: flex; align-items: center; gap: 1vw; margin-left: auto; }
 .spotify-speaker { width: 3.6vh; height: 3.6vh; flex: none; fill: #ffffff; }
-.spotify-speaker .wave { fill: none; stroke: #ffffff; stroke-width: 2; stroke-linecap: round; }
+.spotify-speaker .wave, .spotify-speaker .cross { fill: none; stroke: #ffffff; stroke-width: 2; stroke-linecap: round; opacity: 0; transition: opacity 0.2s; }
+.spotify-mute { padding: 1vh; margin: -1vh; background: none; border: 0; border-radius: 1.5vh; cursor: pointer; display: flex; transition: scale 0.15s; }
+.spotify-mute:active { scale: 0.88; }
+.spotify-mute[data-level="0"] .cross, .spotify-mute:is([data-level="1"], [data-level="2"], [data-level="3"]) .w1,
+.spotify-mute:is([data-level="2"], [data-level="3"]) .w2, .spotify-mute[data-level="3"] .w3 { opacity: 1; }
+.spotify-mute:focus { outline: none; }
+.spotify-slide .spotify-mute:focus-visible { outline-offset: 0.3vh; }
 .spotify-volume-seek:focus, .spotify-seek:focus { outline: none; }   /* focused from the keyboard it looks pointed at instead (below) */
 .spotify-seek:focus-visible, .spotify-volume-seek:focus-visible { outline: 0.4vh solid #ffffff; outline-offset: -0.4vh; border-radius: 1vh; }   /* a white ring, readable from across the room */
 .spotify-volume-seek { display: block; padding: 2vh 0; cursor: pointer; touch-action: none; transition: opacity 0.1s ease-out; }   /* clickable and draggable, like the timeline */
@@ -2088,6 +2094,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-next-artist { font-size: 2.4vh; opacity: 0.75; }
 .spotify-button {
 	margin-left: auto;
+	will-change: transform;   /* its own layer, so the thin border isn't redrawn (as flashing lines) when a press scales it */
 	padding: 1.4vh 2vw;
 	border: 0.2vh solid #ffffff;
 	border-radius: 4vh;
