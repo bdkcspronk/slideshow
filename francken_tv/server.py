@@ -253,7 +253,7 @@ class Handler(BaseHTTPRequestHandler):
 				self.send_json(status)
 		elif path == "/api/takeover":
 			now = self.server.app.clock.now()
-			due = any(t.interrupts_paused and t.due(now) for t in self.server.app.takeovers.values())
+			due = any(t.interrupts_paused and t.interrupts(now) for t in self.server.app.takeovers.values())
 			self.send_json({"due": due})
 		elif path == "/api/overlay":
 			self.send_json(self.overlay())

@@ -99,6 +99,10 @@ class Takeover:
 		"""Whether slide() would take over right now (without side effects)."""
 		return False
 
+	def interrupts(self, now: datetime) -> bool:
+		"""Whether it should interrupt a paused interactive slide right now (due, and not yet moved away from)."""
+		return self.due(now)
+
 	def next_start(self, now: datetime) -> datetime | None:
 		"""When the next takeover starts, so the slide before it can be cut short. None = don't care."""
 		return None

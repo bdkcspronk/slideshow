@@ -173,9 +173,18 @@ class BieruurTest(unittest.TestCase):
 	def test_takeover_window_is_two_minutes_before_until_two_minutes_after(self):
 		takeover = BieruurTakeover(self.settings)
 		self.assertIsNone(takeover.slide(at(THURSDAY, "15:57:59")))
-		self.assertIsNotNone(takeover.slide(at(THURSDAY, "15:58:00")))
-		self.assertIsNotNone(takeover.slide(at(THURSDAY, "16:01:59")))
-		self.assertIsNone(takeover.slide(at(THURSDAY, "16:02:00")))
+		self.assertTrue(takeover.due(at(THURSDAY, "15:58:00")))
+		self.assertTrue(takeover.due(at(THURSDAY, "16:01:59")))
+		self.assertFalse(takeover.due(at(THURSDAY, "16:02:00")))
+		self.assertIsNotNone(BieruurTakeover(self.settings).slide(at(THURSDAY, "16:01:59")))
+
+	def test_moving_away_from_the_takeover_does_not_bring_it_back(self):
+		self.assertEqual(self.scheduler.next_slide(at(THURSDAY, "15:58:00")).template, "bieruur.html")
+		takeover = self.scheduler.takeovers[0]
+		self.assertFalse(takeover.interrupts(at(THURSDAY, "15:59:00")))   # a puzzle opened afterwards isn't interrupted
+		self.assertEqual(self.scheduler.next_slide(at(THURSDAY, "15:59:00")).template, "image.html")
+		self.assertEqual(self.scheduler.next_slide(at(THURSDAY, "16:01:00")).template, "image.html")
+		self.assertEqual(self.scheduler.next_slide(at(FRIDAY, "15:58:00")).template, "bieruur.html")   # the next day again
 
 	def test_takeover_slide_lasts_until_end_of_window_and_ticks(self):
 		slide = self.scheduler.next_slide(at(THURSDAY, "15:59:00"))

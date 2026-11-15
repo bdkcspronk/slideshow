@@ -101,15 +101,21 @@ class BieruurTakeover(Takeover):
 
 	def __init__(self, settings: BieruurSettings) -> None:
 		self.settings = settings
+		self.taken: datetime | None = None   # the start of the window in which it took over: once is enough
 
 	def due(self, now: datetime) -> bool:
 		window = self.settings.takeover_window(now)
 		return window is not None and window[0] <= now < window[1]
 
+	def interrupts(self, now: datetime) -> bool:
+		return self.due(now) and self.taken != self.settings.takeover_window(now)[0]
+
 	def slide(self, now: datetime) -> Slide | None:
-		if not self.due(now):
+		"""The countdown, once per window: whoever moves away from it (arrow keys, the menu) isn't pulled back."""
+		if not self.interrupts(now):
 			return None
 		window = self.settings.takeover_window(now)
+		self.taken = window[0]
 		seconds_left = (window[1] - now).total_seconds()
 		return countdown_slide(self.settings, self.settings.bieruur(now), seconds_left)
 
