@@ -70,7 +70,7 @@
 			{% if game.did_you_mean %}
 			<div class="catfishing-did-you-mean">Did you mean <b>{{ game.did_you_mean }}</b>?</div>
 			<button data-action="did_you_mean" data-value="no">No</button>
-			<button data-action="did_you_mean" data-value="yes" class="primary">Yes</button>
+			<button data-action="did_you_mean" data-value="yes" data-enter class="primary">Yes</button>
 			{% else %}
 			<div class="catfishing-guess" data-input-text>{{ typed }}</div>
 			<button data-action="skip">Skip</button>

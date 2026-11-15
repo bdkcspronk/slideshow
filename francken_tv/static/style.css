@@ -374,6 +374,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .news-cards button:focus-visible .news-text { background: #ffffff; }
 /* The outlet buttons and the article's back button sit on navy: a thick cream ring, easy to spot from across the room (the browser's thin one isn't). */
 .news-feeds button:focus-visible { outline: 0.5vh solid #fdf8ec; outline-offset: 0.3vh; }
+.news-feeds li:has(button:focus-visible) { opacity: 1; }   /* the ring of a dimmed outlet would be dimmed too */
 .article-back:focus-visible { outline: 0.5vh solid #fdf8ec; outline-offset: 0.4vh; }
 .news-cards button.busy { transform: none; }   /* waiting for the article: only dimmed, as shrinking would leave its shadow (on the li) behind */
 .news-picture {   /* across the top of the card, taking whatever height the text leaves */
@@ -684,7 +685,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 /* A long summary ("Moderate rain now, dry from 15:10") would wrap to two lines at 130px and run into the line and panel below,
    which sit at fixed tops. Smaller type (set from the length in rain.html) keeps even two lines above them. */
 .rain-warning-title.long { font-size: calc(72 * var(--px)); letter-spacing: calc(-1.5 * var(--px)); }
-.rain-warning-now { position: absolute; left: calc(100 * var(--px)); top: calc(330 * var(--px)); margin: 0; font-size: calc(40 * var(--px)); opacity: 0.85; animation: practice-in 0.7s ease-out 0.6s both; }
+.rain-warning-now { position: absolute; left: calc(100 * var(--px)); top: calc(330 * var(--px)); margin: 0; font-size: calc(40 * var(--px)); opacity: 0.85; animation: practice-in 0.7s ease-out 0.9s both; }
 .rain-warning-now b { color: #ffd166; }
 .rain-warning-panel {
 	position: absolute;
@@ -875,7 +876,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	background: repeating-linear-gradient(90deg, rgba(253, 248, 236, 0.5) 0 calc(60 * var(--px)), transparent 0 calc(120 * var(--px)));
 	animation: bus-lane 1.2s linear infinite;
 }
-.bus-driving { position: absolute; left: 0; bottom: calc(48 * var(--px)); width: calc(320 * var(--px)); animation: bus-drive 16s linear 1.5s infinite both; }
+.bus-driving { position: absolute; left: 0; bottom: calc(48 * var(--px)); width: calc(320 * var(--px)); animation: bus-drive 16s linear 3s infinite both; }
 .bus-body { fill: var(--red); }
 .bus-stripe { fill: var(--amber); }
 .bus-window { fill: #bcd7ec; }
@@ -899,7 +900,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .timetable-columns h2 { margin: 0 0 0.8vh; padding-bottom: 1vh; font-size: 3.4vh; color: var(--blue); border-bottom: 0.4vh solid var(--red); }
 /* A row per activity: the time on the left; the course (up to two lines), its kind and the rooms on
    the right (a long list of rooms scrolls, data-marquee). The kind and the left edge have the colour of
-   its group. A column too full for the screen slowly scrolls down and back up (data-marquee-up). */
+   its group. A column too full for the screen scrolls down once and stays at the bottom (data-marquee-up). */
 .timetable-list { flex: 1; min-height: 0; overflow: hidden; }
 .timetable-list .marquee-up-copy { display: flex; flex-direction: column; gap: 1.2vh; padding: 0.4vh 0.3vh 0; }   /* room for the shadows */
 .timetable-list.marquee-up .marquee-up-copy { padding-bottom: 0.8vh; }   /* room for the last one's shadow */
@@ -1112,6 +1113,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
    would never run): scaleX, not width, so no relayout each frame. */
 .poll-bar i { display: block; width: var(--percent); height: 100%; border-radius: inherit; background: var(--option); transform-origin: left; animation: poll-grow 0.6s ease-out both; }
 @keyframes poll-grow { from { transform: scaleX(0); } }
+.poll-last.steady .poll-bar i { animation: none; }   /* a vote redraws the slide: last week's bars stay as they were */
 .poll-text { flex: 1; min-width: 0; font-size: 3.6vh; line-height: 1.2; }
 .poll-percent { flex: none; font-size: 4.4vh; font-weight: bold; color: var(--option-text); }
 .poll-count { font-size: 0.65em; font-weight: normal; color: var(--muted); }   /* "5 votes ·" before the percentage */
@@ -1488,7 +1490,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	color: var(--red-dark);   /* red text on white */
 	animation: party-pop 0.9s cubic-bezier(0.2, 1.6, 0.4, 1) 0.5s backwards, party-bounce 1.3s ease-in-out 1.4s infinite;
 }
-@keyframes party-pop { from { transform: scale(0.2) rotate(-6deg); opacity: 0; } }
+@keyframes party-pop { from { transform: scale(0.8) rotate(-6deg); opacity: 0; } }
 @keyframes party-bounce { 50% { transform: translateY(-1.2vh) scale(1.04); } }
 
 /* Activity chart (activity_chart.py + templates/slides/presence.html), on the navy poster (see "The navy
@@ -2480,7 +2482,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	display: flex;
 	border-radius: 1.2vw;   /* only shapes the (blurred) shadow */
 	box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.35);
-	transition: transform 0.1s;
+	transition: transform 0.1s ease-out;
 	position: relative;   /* for the cross on a lost card */
 }
 .puzzle-shadow {   /* Show: the cards come up one after another, after the title. On translate, not transform, which
@@ -3479,7 +3481,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 }
 .menu-row small { display: block; margin-top: 0.4vh; font-size: 1.9vh; color: var(--menu-muted); }
 /* The clip of .squircle cuts off a box-shadow ring, so a focused row gets a lighter background instead. */
-.menu-toggle:focus, .menu-row-button:focus { background: #2c4d6e; }
+.menu-toggle:focus, .menu-row-button:focus { background: #3d6690; transform: scale(1.02); }   /* clearly lighter: the old step was hard to see from across the room */
 @media (hover: hover) { .menu-toggle:hover, .menu-row-button:hover { background: #2c4d6e; } }   /* hover only for a mouse */
 
 /* An on/off switch. */
@@ -4580,7 +4582,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .pet-ball path { fill: none; stroke: #fdf8ec; stroke-width: 2; }
 [data-anim="play"] .pet-ball { animation: pet-ball-x 2s linear both, pet-ball-y 0.5s cubic-bezier(0.3, 0, 0.7, 1) 4 alternate; }
 @keyframes pet-ball-x { 0% { opacity: 1; left: -5%; transform: rotate(0); } 95% { opacity: 1; } 100% { opacity: 0; left: 95%; transform: rotate(720deg); } }
-@keyframes pet-ball-y { from { bottom: 50vh; } to { bottom: 6vh; } }
+@keyframes pet-ball-y { from { translate: 0 -42vh; } to { translate: 0 2vh; } }   /* translate, not bottom: no relayout each frame (bottom is 8vh) */
 [data-anim="play"] .pet-creature { animation: pet-jump 0.5s cubic-bezier(0.3, 0, 0.7, 1) 4 alternate, pet-bob 2.4s ease-in-out 2s infinite; }
 @keyframes pet-jump { from { transform: translateY(0); } to { transform: translateY(-9vh) rotate(-6deg); } }
 .pet-bubbles { inset: 0; }
@@ -4860,7 +4862,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 }
 
 /* The Sjaarscie (providers/sjaarscie.py): baby blue above and pink below a smooth S-curve. In the middle of the screen the first question
-   comes at 0.3 s and goes at 2.3 s, the second comes at 2.8 s and goes at 4.8 s, then the Zwitsal baby and "Join the Sjaarscie!" (5.3 s) stay.
+   comes at 0.3 s and goes at 4.1 s, the second comes at 4.0 s and goes at 7.8 s, then the Zwitsal baby (8.2 s) and "Join the Sjaarscie!" (8.5 s) stay.
    All in Source Serif Pro Bold. */
 @font-face { font-family: "Source Serif Pro"; font-weight: 700; src: url("vendor/source-serif-pro/SourceSerifPro-Bold.otf") format("opentype"); }
 .sjaarscie-slide { position: relative; overflow: hidden; background: #a9d4f5; color: #fff; text-shadow: 0 0.5vh 2vh rgba(60, 90, 140, 0.45); font-family: "Source Serif Pro", serif; font-weight: 700; text-align: center; }
@@ -4870,7 +4872,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 .sj-q { opacity: 0; }
 /* each question stands still ~2.8 s (3.8 s film, 0.5 s in and out) so two lines can be read from across the room */
 .sj-q1 { animation: sj-show 3.8s ease-in-out 0.3s both; }
-.sj-q2 { animation: sj-show 3.8s ease-in-out 4s both; }   /* right after q1 is gone (4.1 s) */
+.sj-q2 { animation: sj-show 3.8s ease-in-out 4s both; }   /* starts as q1 is leaving (4.1 s): the two cross-fade */
 .sj-join { top: 77%; font-size: 12vh; animation: sj-join 0.9s ease-out 8.5s both; }   /* follows the baby by 0.3 s instead of landing on the same frame; then it all holds until 14 s */
 .sj-logo { position: absolute; left: 50%; top: 7vh; height: 56vh; aspect-ratio: 1; margin-left: -28vh; opacity: 0; animation: sj-pop 1s cubic-bezier(0.2, 0.9, 0.3, 1.25) 8.2s both; }   /* the baby leads, after q2 is gone (7.8 s) */
 .sj-logo svg { display: block; width: 100%; height: 100%; }
@@ -4882,7 +4884,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 .sj-logo-shadow path { fill: rgb(60, 90, 140) !important; }   /* !important: the svg file's own style="fill:#fff" would win */
 @keyframes sj-show { 0% { opacity: 0; transform: translateY(-40%); } 13%, 87% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-60%); } }
 @keyframes sj-join { from { opacity: 0; transform: translateY(-30%); } to { opacity: 1; transform: translateY(-50%); } }
-@keyframes sj-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes sj-pop { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
 
 /* The MScie (providers/mscie.py): black silhouettes first. Seven arms swing up from below the bottom of the screen, each holding a black graduation cap, and throw it
    up once; the caps tumble and fall out of sight while the arms swing back down, with no text. The hand cocks back a little, flicks at the throw while the fingers open from a grip, then it settles and stays still. All gone by about 4.9 s. Then the name lands at 5.4 s and the tagline
@@ -4939,6 +4941,6 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 	45% { transform: translateY(calc(var(--h) * -1)) rotate(var(--spin)); animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.4); }
 	100% { transform: translateY(120%) rotate(calc(var(--spin) * -1)); }
 }
-@keyframes ms-name { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes ms-name { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 @keyframes ms-fade { from { opacity: 0; transform: translateY(2vh); } to { opacity: 1; transform: none; } }
 @keyframes ms-glint { from { background-position: 130% 0, 0 0; } to { background-position: -30% 0, 0 0; } }

@@ -14,7 +14,7 @@
 			<span class="leaderboard-place">{{ row.place }}</span>
 			<span class="leaderboard-name">{{ row.name }}</span>
 			<div class="leaderboard-track">
-				{{ draw_bar(row, "width: %s%%; --delay: %.2fs; --grow: 1.4s;" | format(row.width, 1.5 + loop.index0 * 0.14)) }}
+				{{ draw_bar(row, "width: %s%%; --delay: %.2fs; --grow: 1.4s;" | format(row.width, 1.7 + loop.index0 * 0.14)) }}
 			</div>
 			<span class="leaderboard-time">{{ row.time }}</span>
 			<span class="leaderboard-days">{{ row.days }} {{ "day" if row.days == 1 else "days" }}</span>

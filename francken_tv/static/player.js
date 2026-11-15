@@ -44,6 +44,7 @@ async function show(slide, { canRefresh = true } = {}) {
 	const back = layers[1 - front];
 	back.classList.add("loading");   // its animations wait until it's shown (style.css), or they'd run ahead of the timer
 	back.innerHTML = slide.html;
+	for (const svg of back.querySelectorAll("svg")) svg.pauseAnimations?.();   // SVG (SMIL) animations wait for the show too, like the CSS ones
 	setupWidgets(back);
 	// Wait until the images are decoded, so slides never appear half-loaded.
 	const images = [...back.querySelectorAll("img")].filter((img) => !img.closest(".leaflet-container"));   // not map tiles
@@ -60,6 +61,7 @@ async function show(slide, { canRefresh = true } = {}) {
 	}
 	const old = layers[front];
 	back.classList.remove("loading");
+	for (const svg of back.querySelectorAll("svg")) { svg.setCurrentTime?.(0); svg.unpauseAnimations?.(); }
 	back.classList.add("visible");
 	old.classList.remove("visible");
 	startVideos(back, true);   // so they start with the slide, not while it is still loading
@@ -434,6 +436,9 @@ async function sendAction(slide, action, values, provider = slide.dataset.provid
 	} else if (current && current.refresh) {
 		refresh();   // nothing redrawn (e.g. the volume): show the change now, not at the next check
 	}
+	// The provider's answer in words ("Spotify can't be reached right now", "Added X to the library"): a tap that fails or
+	// changes nothing on the slide would seem to do nothing. A slide that already shows it itself (Spotify's queue) doesn't need it twice.
+	if (result.message && !layers[front].textContent.includes(result.message)) showMessage(result.message);
 }
 
 // Animations that play on the current slide before the redrawn one replaces it.
@@ -601,7 +606,7 @@ document.addEventListener("keydown", async (event) => {
 	}
 	// Up and down scroll a text that's longer than the screen (data-scroll, e.g. a news article).
 	const scroller = slide?.querySelector("[data-scroll]");
-	if (scroller && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+	if (scroller && (event.key === "ArrowDown" || event.key === "ArrowUp") && !(event.target.closest?.("button") && slide.dataset.arrowsNeedFocus !== undefined)) {   // Spotify lyrics: with a button focused the arrows move between the buttons (below); an article keeps scrolling
 		event.preventDefault();
 		keepPaused(idleSeconds(slide));
 		scroller.scrollBy({ top: (event.key === "ArrowDown" ? 0.6 : -0.6) * scroller.clientHeight, behavior: "smooth" });
@@ -720,13 +725,19 @@ function menuIsOpen() {
 	return !menu.hidden;
 }
 
+let menuOpening = false;   // the menu's data is on its way: a second Esc must not open it twice
+
 async function openMenu() {
+	if (menuOpening) return;
+	menuOpening = true;
 	try {
 		menuData = await getJson("/api/menu");
 		setPermanentPause(menuData.settings.permanent_pause);
 	} catch (error) {
 		console.error(error);
 		return;   // the menu isn't available right now
+	} finally {
+		menuOpening = false;
 	}
 	menuReturnFocus = document.activeElement;
 	showCount += 1;   // a slide that is still loading doesn't appear (and close the menu)
@@ -735,6 +746,7 @@ async function openMenu() {
 	clearInterval(menuTakeoverTimer);
 	menuTakeoverTimer = setInterval(checkTakeover, 5000);   // bieruur still starts on time
 	menu.hidden = false;
+	for (const layer of layers) layer.inert = true;   // Tab and Enter must not reach the slide behind the menu
 	menuGroups = {};
 	showMenuPage("overview");
 	if (menuTab !== "quick") selectMenuTab(menuTab);   // opens on the group it was on
@@ -744,6 +756,7 @@ async function openMenu() {
 function closeMenu(resume = true) {
 	if (!menuIsOpen()) return;
 	menu.hidden = true;
+	for (const layer of layers) layer.inert = false;
 	menu.innerHTML = "";   // also stops the previews
 	clearTimeout(menuIdleTimer);
 	clearInterval(menuTakeoverTimer);
@@ -950,7 +963,8 @@ async function menuChoose(button) {
 	}
 	const settings = menuData.settings;
 	if (action === "tab") {
-		await selectMenuTab(value);
+		clearTimeout(menuTabTimer);   // the focus that came with this tap would draw the same group again
+		if (value !== menuTab) await selectMenuTab(value);
 		menu.querySelector(".menu-tab-content [data-focus]:not([disabled])")?.focus();   // into its slides
 		return;
 	}
@@ -993,6 +1007,7 @@ async function sendMenu(button, command, value) {
 		}
 	} catch (error) {
 		console.error(error);
+		showMessage("That didn't work, try again");   // or the tap seems to do nothing
 	} finally {
 		button.classList.remove("busy");
 	}
@@ -1016,7 +1031,7 @@ function menuKey(event) {
 	} else if (menuPage === "overview" && /^[0-9]$/.test(event.key)) {
 		closeMenu(false);
 		jumpTo(event.key).then((shown) => { if (!shown) carryOn(); });   // nothing shown: start the stopped timers again
-	} else if (!["Enter", " ", "Tab"].includes(event.key)) {
+	} else if (!["Enter", " ", "Tab"].includes(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey && !/^F\d+$/.test(event.key)) {
 		event.preventDefault();   // Enter and space press the selected button; other keys do nothing here
 	}
 }
@@ -1035,6 +1050,7 @@ function moveMenuFocus(key) {
 		const middle = (element) => element.getBoundingClientRect().left + element.getBoundingClientRect().width / 2;
 		const nearest = cards.sort((a, b) => Math.abs(middle(a) - middle(from)) - Math.abs(middle(b) - middle(from)))[0];
 		if (nearest) return nearest.focus();
+		return;   // the group is still loading: stay on the tab
 	}
 	const [dx, dy] = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key];
 	const a = from.getBoundingClientRect();

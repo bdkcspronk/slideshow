@@ -25,7 +25,7 @@
 			{{ total }} vote{{ '' if total == 1 else 's' }} this week &middot; a new dilemma every Monday
 		</p>
 		{% if last_week %}
-		<div class="poll-last">
+		<div class="poll-last" data-steady="poll-last">
 			<span class="poll-last-label">Last week</span>
 			<span class="poll-last-question">{{ last_week.question }}</span>
 			{% if last_week.total %}

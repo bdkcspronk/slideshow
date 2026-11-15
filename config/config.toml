@@ -176,11 +176,11 @@ seconds = 17   # the leg has grown out after about 14 s
 
 [fotocie]
 # The Fotocie's promo: their logo with the animation of the Fotocie app's start screen (templates/slides/fotocie.html).
-seconds = 14   # the animation takes 2.6 s; the join text goes at 4.6 s, the second text is complete at 7.4 s and stays for the rest
+seconds = 14   # the animation takes 2.6 s; the join text goes at 2.9 s and leaves at 5.1 s, the second text is complete at 7.9 s and stays for the rest
 
 [sjaarscie]
 # The Sjaarscie's promo: the first-year questions, then "Join the Sjaarscie!" with the Zwitsal baby, on baby blue and pink (templates/slides/sjaarscie.html).
-seconds = 14   # the questions come at 0.3 s and 2.8 s, the baby and "Join the Sjaarscie!" at 5.3 s
+seconds = 14   # the questions come at 0.3 s and 4.0 s, the baby at 8.2 s and "Join the Sjaarscie!" at 8.5 s
 
 [mscie]
 # The MScie's promo: silhouettes of arms throw black graduation caps in the air once, then "MScie" and its tagline (templates/slides/mscie.html).

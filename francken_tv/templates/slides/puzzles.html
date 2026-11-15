@@ -9,7 +9,7 @@
 <div class="slide puzzles-slide" data-interactive data-idle-seconds="240" data-provider="puzzles">
 	<div class="navy-glows" aria-hidden="true"><i></i><i></i><i></i></div>
 	<h1 class="poster-title" data-steady="puzzles-title"><span>Daily</span> <span class="poster-marked">puzzles</span></h1>
-	<div class="puzzle-grid" data-steady="puzzles-grid" data-puzzle-demos="4.7">
+	<div class="puzzle-grid" data-steady="puzzles-grid" data-puzzle-demos="4.5">
 	{% for card in cards %}
 	<div class="puzzle-shadow{% if card.state in ['solved', 'lost'] %} done{% endif %}" style="--i: {{ loop.index0 }}">   {# the card's shadow (the clip on the button would cut it off) #}
 	<button class="puzzle-card squircle squircle-edge puzzle-{{ card.name }} status-{{ card.state }}"{% if loop.first %} data-autofocus{% endif %} data-action="open" data-value="{{ card.name }}">
