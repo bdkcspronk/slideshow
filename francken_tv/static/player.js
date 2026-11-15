@@ -21,6 +21,7 @@ let current = null;
 const history = [];      // recently shown slides, for the left arrow key
 let historyIndex = -1;
 let interacting = false;   // someone is playing an interactive slide
+let idleClick = false;     // the last click was on nothing you can use: the arrows change slides again
 let idleTimer = null;
 let takeoverTimer = null;
 const IDLE_SECONDS = 240;   // continue the slideshow after this long without clicks (data-idle-seconds on a slide overrides it)
@@ -250,6 +251,7 @@ document.addEventListener("click", async (event) => {
 	keepPaused(idleSeconds(slide));
 	const toggle = event.target.closest("[data-toggle]");
 	const action = event.target.closest("[data-action]");
+	idleClick = !event.target.closest("button, input, a, [data-toggle], [data-action], [data-key], [data-input-text], [data-input-cell], [data-seek], [data-zoom], [tabindex], .leaflet-container");
 	const key = event.target.closest("[data-key]");
 	const input = event.target.closest("[data-input-text]");
 	const seek = event.target.closest("[data-seek]");   // a song's timeline: the click position, 0-1, as the value
@@ -491,6 +493,7 @@ function stopInteracting() {
 	interacting = false;
 	clearTimeout(idleTimer);
 	clearInterval(takeoverTimer);
+	idleClick = false;
 }
 
 async function checkTakeover() {   // bieruur interrupts even a paused puzzle
@@ -563,7 +566,8 @@ document.addEventListener("keydown", async (event) => {
 		enter.click();
 		return;
 	}
-	if (slide && slide.querySelector("[data-input-text]") && !event.ctrlKey && !event.altKey && !event.metaKey) {
+	if (slide && slide.querySelector("[data-input-text]") && !event.ctrlKey && !event.altKey && !event.metaKey
+			&& !(idleClick && event.key.startsWith("Arrow"))) {   // after a click on nothing: the arrows change slides
 		const names = { Enter: "ENTER", Backspace: "BACK", " ": "SPACE", Delete: "DELETE",
 			ArrowLeft: "LEFT", ArrowRight: "RIGHT", Home: "HOME", End: "END" };
 		const key = names[event.key] || event.key;
@@ -575,6 +579,7 @@ document.addEventListener("keydown", async (event) => {
 			event.preventDefault();
 			keepPaused(idleSeconds(slide));
 			typeKey(slide, key);
+			idleClick = false;
 			return;
 		}
 		if (event.key.startsWith("Arrow") && !arrowOnButton) return;   // up and down don't change slides while typing either
@@ -618,7 +623,7 @@ document.addEventListener("keydown", async (event) => {
 	// A slide marked data-arrows-need-focus (Spotify) only does this once a button has focus: with nothing focused the
 	// arrows change slides, even after someone paused the music with the space bar or tapped a button.
 	const onButton = event.target.closest?.("button, [data-seek][tabindex]") && slide?.contains(event.target);
-	const using = interacting && slide && !("arrowsNeedFocus" in slide.dataset);
+	const using = interacting && !idleClick && slide && !("arrowsNeedFocus" in slide.dataset);
 	if (event.key.startsWith("Arrow") && slide && (using || onButton)
 			&& !event.ctrlKey && !event.altKey && !event.metaKey) {
 		event.preventDefault();
