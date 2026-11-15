@@ -11,6 +11,7 @@ from francken_tv.clock import Clock
 from francken_tv.config import DATA_DIR
 from francken_tv.providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurTakeover, countdown_data
 from francken_tv.providers.vrijmibo import VrijmiboTakeover
+from francken_tv.rotation import Group, Rule
 from francken_tv.scheduler import EMPTY_SLIDE, Scheduler
 from francken_tv.slides import Provider, Slide
 
@@ -100,6 +101,68 @@ class RotationTest(unittest.TestCase):
 
 	def test_nothing_to_show(self):
 		self.assertIs(Scheduler([], []).next_slide(at(THURSDAY, "10:00:00")), EMPTY_SLIDE)
+
+
+class RotationRulesTest(unittest.TestCase):
+	"""The menu's "Rotation settings of slides" (rotation.py): how often, which months and days, what time of day."""
+
+	def names(self, scheduler, when):
+		return [slide.data["name"] for slide in scheduler.build_round(when)]
+
+	def test_every_so_many_rounds(self):
+		scheduler = Scheduler([FixedProvider("a", 1), FixedProvider("b", 1)], [])
+		scheduler.set_rotation({"b": Rule(every="3")}, None)
+		rounds = [self.names(scheduler, at(THURSDAY, "10:00:00")) for _ in range(5)]
+		self.assertEqual(rounds, [["a0", "b0"], ["a0"], ["a0"], ["a0", "b0"], ["a0"]])
+
+	def test_once_an_hour_and_once_a_day(self):
+		scheduler = Scheduler([FixedProvider("a", 1), FixedProvider("b", 1), FixedProvider("c", 1)], [])
+		scheduler.set_rotation({"b": Rule(every="hour"), "c": Rule(every="day")}, None)
+		shown = lambda hhmm: self.names(scheduler, at(THURSDAY, hhmm + ":00"))
+		self.assertEqual([shown(t) for t in ("10:00", "10:30", "10:59", "11:00")],
+			[["a0", "b0", "c0"], ["a0"], ["a0"], ["a0", "b0"]])
+		self.assertEqual(self.names(scheduler, at(FRIDAY, "09:00:00")), ["a0", "b0", "c0"])   # a new day
+
+	def test_months_days_and_hours(self):
+		from datetime import time
+		scheduler = Scheduler([FixedProvider("a", 1), FixedProvider("xmas", 1), FixedProvider("week", 1), FixedProvider("night", 1)], [],
+			daytime=(time(8, 0), time(16, 0)))
+		scheduler.set_rotation({"xmas": Rule(months=(12,)), "week": Rule(days=(0, 1, 2, 3, 4)), "night": Rule(hours=(22, 2))}, None)
+		self.assertEqual(self.names(scheduler, at(THURSDAY, "10:00:00")), ["a0", "week0"])   # October, a Thursday, in the morning
+		self.assertEqual(self.names(scheduler, datetime(2026, 12, 19, 23, 0)), ["a0", "xmas0", "night0"])   # a Saturday night in December
+		self.assertEqual(self.names(scheduler, at(FRIDAY, "01:59:00")), ["a0", "week0", "night0"])   # over midnight
+		self.assertEqual(self.names(scheduler, at(FRIDAY, "02:00:00")), ["a0", "week0"])
+
+	def test_a_rule_replaces_daytime_only(self):
+		from datetime import time
+		scheduler = Scheduler([FixedProvider("a", 1), FixedProvider("news", 1)], [], daytime_only={"news"}, daytime=(time(8, 0), time(16, 0)))
+		self.assertEqual(self.names(scheduler, at(THURSDAY, "20:00:00")), ["a0"])
+		scheduler.set_rotation({"news": Rule(hours="any")}, None)
+		self.assertEqual(self.names(scheduler, at(THURSDAY, "20:00:00")), ["a0", "news0"])
+
+	def test_a_group_has_a_rule_of_its_own(self):
+		providers = [FixedProvider(name, 1) for name in ("a", "news", "weather")]
+		scheduler = Scheduler(providers, [], take_turns=["news", "weather"])
+		scheduler.set_rotation({}, [Group(("news", "weather"), rule=Rule(every="2"))])
+		rounds = [self.names(scheduler, at(THURSDAY, "10:00:00")) for _ in range(4)]
+		self.assertEqual(rounds, [["a0", "news0"], ["a0"], ["a0", "weather0"], ["a0"]])
+		scheduler.set_rotation({}, [Group(("news", "weather"), on=False)])
+		self.assertEqual(self.names(scheduler, at(THURSDAY, "10:00:00")), ["a0"])   # the group off: none of its slides
+
+	def test_groups_changed_in_the_menu(self):
+		providers = [FixedProvider(name, 1) for name in ("a", "b", "c")]
+		scheduler = Scheduler(providers, [], take_turns=["a", "b"])
+		self.assertEqual(self.names(scheduler, at(THURSDAY, "10:00:00")), ["a0", "c0"])
+		scheduler.set_rotation({}, [Group(("b", "c"))])
+		self.assertEqual([self.names(scheduler, at(THURSDAY, "10:00:00")) for _ in range(2)], [["a0", "b0"], ["a0", "c0"]])
+		scheduler.set_rotation({}, None)   # back to config.toml
+		self.assertEqual(scheduler.groups, scheduler.config_groups)
+
+	def test_a_member_that_is_not_due_lets_the_next_one_have_its_turn(self):
+		providers = [FixedProvider(name, 1) for name in ("news", "weather")]
+		scheduler = Scheduler(providers, [], take_turns=["news", "weather"])
+		scheduler.set_rotation({"news": Rule(every="day")}, None)
+		self.assertEqual([self.names(scheduler, at(THURSDAY, "10:00:00")) for _ in range(3)], [["news0"], ["weather0"], ["weather0"]])
 
 
 class BieruurTest(unittest.TestCase):

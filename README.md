@@ -103,7 +103,7 @@ laptop: then use `./start.sh`). Every step by hand, and what each account needs:
 
 In the terminal: **Ctrl+M** (or Enter) turns reading quotes aloud on/off, **Ctrl+R** restarts the
 slideshow (reads new code and `config.toml` again, e.g. after a `git pull`), **Ctrl+C** stops everything.
-`config/devices.json` is reloaded under Esc -> Settings.
+`config/devices.json` is read again by itself whenever it changes.
 Alt+F4 closes the full-screen browser.
 Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
 
@@ -126,11 +126,13 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
   show right now are greyed out). The first tab, **Quick**, is the slide types under `[shortcuts]` with their number
   keys (the number keys work in every tab). On Fridays the **Fun** group also has the vrijmibo GIF. The menu opens
   on the group it was last on. Below the tabs:
-  - **Settings**: mute all sound, read quotes aloud, greet people, volume, slide speed, which slide
-    types are shown, start one or all of today's puzzles over, reload `devices.json`. Volume and
-    mute are the TV PC's main sound output (Spotify too; needs `wpctl` or `pactl`, standard on
-    Ubuntu). The rest is saved in `data/settings.json`, which wins over `config.toml`; delete it to
-    go back to the config.
+  - **Settings**: the rotation settings of slides (which slide types come round, how often, in which
+    months, on which days and at what time, and which ones take turns in a group), slide speed, pause
+    until unpaused, mute all sound, read quotes aloud, greet people, volume, and start one or all of
+    today's puzzles over. Volume and mute are the TV PC's main sound output (Spotify too; needs `wpctl`
+    or `pactl`, standard on Ubuntu). The rotation is saved in `config/rotation.json`, which the TV
+    commits and pushes so every PC follows it; the rest in `data/settings.json`. Both win over
+    `config.toml`: "Reset to default" on the rotation page, or deleting `data/settings.json`, goes back.
   - **Power**: shut down or restart the TV PC (press twice). The commands are under `[power]` in
     `config/config.toml`.
 

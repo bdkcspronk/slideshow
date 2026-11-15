@@ -790,7 +790,10 @@ function menuActivity() {
 
 // focus: the data-focus of the element to select, e.g. the button that was just pressed.
 function showMenuPage(page, focus) {
+	if (page === "rotation-item" && !rotationItem(menuData)) page = "rotation";   // its group was deleted (or the slide type is gone)
 	const entering = page !== menuPage && !!menu.firstElementChild;   // a new page zooms in; a redraw after a change doesn't, and neither does the first page of a menu just opened (#menu fades in itself: both would double the fade)
+	// The same page drawn again after a change (a slide picked for a group): it stays scrolled where it was, not back at the top.
+	const scrolled = page === menuPage && focus ? menu.querySelector(".menu-settings, .menu-rotation")?.scrollTop : 0;
 	menuPage = page;
 	confirming = null;
 	const body = menuPages[page](menuData);
@@ -799,7 +802,9 @@ function showMenuPage(page, focus) {
 	const target = (focus && menu.querySelector(`[data-focus="${focus}"]:not([disabled])`))
 		|| menu.querySelector(".menu-tab-content [data-focus]:not([disabled])")   // the overview: the first slide of the group
 		|| menu.querySelector("[data-focus]:not([disabled]):not(.menu-back)");
-	target?.focus();
+	const scroller = menu.querySelector(".menu-settings, .menu-rotation");
+	if (scroller && scrolled) scroller.scrollTop = scrolled;
+	target?.focus({ preventScroll: !!scrolled });   // preventScroll: focusing mustn't jump it either (the arrows still scroll, moveMenuFocus)
 	menuActivity();
 }
 
@@ -877,6 +882,7 @@ const menuPages = {
 
 	settings: (data) => {
 		const settings = data.settings;
+		const off = data.rotation.slides.filter((slide) => !slide.on).length;
 		const toggle = (name, label, note = "") => `
 			<button class="menu-row menu-toggle squircle" role="switch" aria-checked="${settings[name]}" data-focus="${name}"
 				data-menu="toggle" data-value="${name}">
@@ -889,6 +895,20 @@ const menuPages = {
 		</header>
 		<div class="menu-settings">
 			<div class="menu-column">
+				<section>
+					<h2>Slideshow</h2>
+					<button class="menu-row menu-row-button squircle" data-focus="rotation" data-menu="page" data-value="rotation">
+						<span>Rotation settings of slides<small>Which slides come round, how often and when${off ? ` &middot; ${off} off` : ""}</small></span>
+						<span class="menu-row-arrow" aria-hidden="true">&rsaquo;</span>
+					</button>
+					<div class="menu-row squircle">
+						<span>Speed<small>2&times; = every slide is shown half as long</small></span>
+						<span class="menu-choices">${data.speeds.map((speed) => `
+							<button data-focus="speed-${speed}" data-menu="speed" data-value="${speed}" aria-pressed="${speed === settings.speed}">${speed}&times;</button>`).join("")}
+						</span>
+					</div>
+					${toggle("permanent_pause", "Pause until unpaused", "Space pauses the slideshow; when this is off it goes on by itself after 4 minutes")}
+				</section>
 				<section>
 					<h2>Sound</h2>
 					${toggle("muted", "Mute all sound", "Everything on the TV PC: Spotify, greetings, quotes and the bieruur song")}
@@ -903,6 +923,8 @@ const menuPages = {
 						</span>
 					</div>
 				</section>
+			</div>
+			<div class="menu-column">
 				<section>
 					<h2>Today's puzzles</h2>
 					${data.puzzles.map((puzzle) => `
@@ -913,30 +935,6 @@ const menuPages = {
 					</div>`).join("") || '<p class="menu-note">No puzzles today (yet).</p>'}
 					${data.puzzles.length > 1 ? `<button class="menu-small-button menu-wide" data-focus="reset-all" data-menu="reset" data-value=""
 						data-confirm="Sure? All of them?"${data.puzzles.every((puzzle) => puzzle.state === "new") ? " disabled" : ""}>Start all puzzles over</button>` : ""}
-				</section>
-			</div>
-			<div class="menu-column">
-				<section>
-					<h2>Slides</h2>
-					<div class="menu-row squircle">
-						<span>Speed</span>
-						<span class="menu-choices">${data.speeds.map((speed) => `
-							<button data-focus="speed-${speed}" data-menu="speed" data-value="${speed}" aria-pressed="${speed === settings.speed}">${speed}&times;</button>`).join("")}
-						</span>
-					</div>
-					<p class="menu-note">2&times; = every slide is shown half as long</p>
-					${toggle("permanent_pause", "Pause until unpaused", "Space pauses the slideshow; when this is off it goes on by itself after 4 minutes")}
-					<h3>Shown in the slideshow</h3>
-					<div class="menu-chips">${data.slide_types.map((type) => `
-						<button class="menu-chip" data-focus="type-${type.name}" data-menu="slide_type" data-value="${type.name}"
-							aria-pressed="${!settings.hidden.includes(type.name)}">${escapeHtml(type.title)}</button>`).join("")}
-					</div>
-				</section>
-				<section>
-					<h2>Other</h2>
-					<button class="menu-row menu-row-button squircle" data-focus="reload-devices" data-menu="reload_devices">
-						<span>Reload devices.json<small>After adding someone's phone, so the chart and greetings know them</small></span>
-					</button>
 				</section>
 			</div>
 		</div>`;
@@ -952,7 +950,178 @@ const menuPages = {
 			<button class="menu-power-button squircle" data-focus="restart" data-menu="power" data-value="restart" data-confirm="Press again to restart">${ICONS.restart}<span>Restart</span></button>
 		</div>
 		<p class="menu-hint">Shuts down or restarts the TV PC</p>`,
+
+	// Settings → "Rotation settings of slides": the groups that take turns, then every slide type, each with a line saying
+	// how often and when it comes round (francken_tv/rotation.py). A row opens its own page (below).
+	rotation: (data) => {
+		const rotation = data.rotation;
+		// color: the group's (rotation.py, COLORS), a stripe down the left of its row and of the rows of its slides.
+		const row = (focus, value, title, summary, on, color) => `
+			<button class="menu-row menu-row-button menu-rotation-row squircle${on ? "" : " off"}${color ? " grouped" : ""}" data-focus="${escapeHtml(focus)}"
+				data-menu="rotation_item" data-value="${escapeHtml(value)}"${color ? ` style="--group-color: ${escapeHtml(color)}"` : ""}><span>${escapeHtml(title)}<small>${escapeHtml(summary)}</small></span></button>`;
+		return `
+		<header class="menu-header">
+			<button class="menu-back" data-focus="back" data-menu="back">&larr; Back</button>
+			<h1>Rotation settings of slides</h1>
+		</header>
+		<div class="menu-rotation">
+			<section>
+				<h2>Take turns</h2>
+				<p class="menu-note">The slides in a group share one place in the round: the next of them each round.</p>
+				<div class="menu-rotation-grid">
+					${rotation.groups.map((group, number) => row(`item-group-${number}`, `group:${number}`, group.title, group.summary, group.on, group.color)).join("")}
+					<button class="menu-row menu-row-button menu-rotation-row menu-rotation-new squircle" data-focus="rotation-new-group"
+						data-menu="rotation_new_group"><span>+ New group</span></button>
+				</div>
+			</section>
+			<section>
+				<h2>Slides</h2>
+				<div class="menu-rotation-grid">
+					${rotation.slides.map((slide) => row(`item-slide-${slide.name}`, `slide:${slide.name}`, slide.title,
+						slide.group === null || !slide.on ? slide.summary : `${slide.summary} · takes turns`, slide.on,
+						slide.group === null ? "" : rotation.groups[slide.group].color)).join("")}
+				</div>
+			</section>
+			${rotation.changed ? `<button class="menu-small-button menu-wide" data-focus="rotation-reset" data-menu="rotation_reset"
+				data-confirm="Sure? All of it?">Reset to default</button>` : ""}
+		</div>`;
+	},
+
+	// One slide type or group: on or off, how often, which months and days, what time of day. A group also picks its slides.
+	"rotation-item": (data) => {
+		const rotation = data.rotation;
+		const item = rotationItem(data);
+		const rule = item.rule;
+		const pick = (focus, value, label, pressed) => `
+			<button data-focus="${escapeHtml(focus)}" data-menu="rule" data-value="${escapeHtml(value)}" aria-pressed="${pressed}">${escapeHtml(label)}</button>`;
+		const custom = Array.isArray(rule.hours);
+		const hour = (h) => `${String(h).padStart(2, "0")}:00`;
+		const stepper = (field, label) => `
+			<div class="menu-row squircle">
+				<span>${label}</span>
+				<span class="menu-stepper">
+					<button data-focus="${field}-down" data-menu="rule" data-value="${field}:-1" aria-label="Earlier">&minus;</button>
+					<output>${hour(rule.hours[field === "from" ? 0 : 1])}</output>
+					<button data-focus="${field}-up" data-menu="rule" data-value="${field}:1" aria-label="Later">+</button>
+				</span>
+			</div>`;
+		const group = item.kind === "slide" && item.group !== null ? rotation.groups[item.group] : null;
+		return `
+		<header class="menu-header">
+			<button class="menu-back" data-focus="back" data-menu="back">&larr; Back</button>
+			<h1>${item.kind === "group" ? `<span class="menu-group-dot" style="--group-color: ${escapeHtml(item.color)}"></span>` : ""}${escapeHtml(item.kind === "group" ? (item.slides.length ? "Group" : "New group") : item.title)}</h1>
+		</header>
+		<div class="menu-settings">
+			<div class="menu-column">
+				<section>
+					<button class="menu-row menu-toggle squircle" role="switch" aria-checked="${item.on}" data-focus="rule-on" data-menu="rule" data-value="on">
+						<span>In the slideshow${item.kind === "group" ? "<small>Off: none of its slides come round</small>" : ""}</span><span class="menu-switch"></span>
+					</button>
+				</section>
+				<section>
+					<h2>How often</h2>
+					<span class="menu-choices menu-wrap">${rotation.frequencies.map((frequency) =>
+						pick(`every-${frequency.value}`, `every:${frequency.value}`, frequency.label, rule.every === frequency.value)).join("")}</span>
+					${item.kind === "group" ? '<p class="menu-note">How often the group\'s place comes round; each slide in it also keeps its own rule</p>' : ""}
+				</section>
+				${item.kind === "group" ? `
+				<section>
+					<h2>Slides in this group</h2>
+					<span class="menu-choices menu-wrap">${rotation.slides.map((slide) =>
+						`<button data-focus="member-${escapeHtml(slide.name)}" data-menu="group_member" data-value="${escapeHtml(slide.name)}"
+							aria-pressed="${item.slides.includes(slide.name)}">${escapeHtml(slide.title)}</button>`).join("")}</span>
+					<p class="menu-note">A slide can be in one group; choosing it here takes it out of another</p>
+					<button class="menu-small-button menu-wide" data-focus="group-delete" data-menu="group_delete" data-confirm="Sure?">Delete this group</button>
+				</section>` : group ? `
+				<section>
+					<h2>Takes turns</h2>
+					<button class="menu-row menu-row-button squircle grouped" data-focus="open-group" data-menu="rotation_item" data-value="group:${item.group}"
+						style="--group-color: ${escapeHtml(group.color)}">
+						<span>${escapeHtml(group.title)}<small>One of these per round &middot; ${escapeHtml(group.summary)}</small></span>
+						<span class="menu-row-arrow" aria-hidden="true">&rsaquo;</span>
+					</button>
+				</section>` : ""}
+			</div>
+			<div class="menu-column">
+				<section>
+					<h2>Months</h2>
+					<span class="menu-choices menu-wrap menu-months">${rotation.months.map((month, index) =>
+						pick(`month-${index + 1}`, `month:${index + 1}`, month, rule.months.includes(index + 1))).join("")}</span>
+					<span class="menu-choices">${pick("months-all", "months:all", "All year", rule.months.length === 12)}</span>
+				</section>
+				<section>
+					<h2>Days</h2>
+					<span class="menu-choices menu-wrap">${rotation.days.map((day, index) => pick(`day-${index}`, `day:${index}`, day, rule.days.includes(index))).join("")}</span>
+					<span class="menu-choices">
+						${pick("days-weekdays", "days:weekdays", "Mon–Fri", rule.days.join() === "0,1,2,3,4")}
+						${pick("days-all", "days:all", "Every day", rule.days.length === 7)}
+					</span>
+				</section>
+				<section>
+					<h2>Time of day</h2>
+					<span class="menu-choices menu-wrap">
+						${pick("hours-any", "hours:any", "All day", rule.hours === "any")}
+						${pick("hours-daytime", "hours:daytime", rotation.daytime, rule.hours === "daytime")}
+						${pick("hours-nighttime", "hours:nighttime", rotation.nighttime, rule.hours === "nighttime")}
+						${pick("hours-custom", "hours:custom", "From… until…", custom)}
+					</span>
+					${custom ? stepper("from", "From") + stepper("until", "Until") : ""}
+					${item.kind === "slide" && item.name === "weather" ? '<p class="menu-note">Outside these hours it still warns for rain</p>' : ""}
+				</section>
+			</div>
+		</div>`;
+	},
 };
+
+// The slide type or group on the "rotation-item" page: {kind, name or index, title, on, rule, ...}; null if it has gone.
+let menuItem = null;   // {kind: "slide", key: name} or {kind: "group", key: number}
+function rotationItem(data) {
+	if (!menuItem) return null;
+	if (menuItem.kind === "slide") {
+		const slide = data.rotation.slides.find((candidate) => candidate.name === menuItem.key);
+		return slide ? { kind: "slide", ...slide } : null;
+	}
+	const group = data.rotation.groups[menuItem.key];
+	return group ? { kind: "group", index: menuItem.key, ...group } : null;
+}
+
+// A press on the rotation-item page -> what to send to the server (rotation.edit() in rotation.py), or null.
+function ruleChange(value) {
+	const item = rotationItem(menuData);
+	if (!item) return null;
+	const rule = item.rule;
+	const [field, argument] = value.split(":");
+	const range = (from, count) => Array.from({ length: count }, (_, i) => from + i);
+	let set;
+	if (field === "on") set = { on: !item.on };
+	else if (field === "every") set = { every: argument };
+	else if (field === "month" || field === "day") {
+		const list = field === "month" ? rule.months : rule.days;
+		const number = Number(argument);
+		const chosen = list.includes(number) ? list.filter((n) => n !== number) : [...list, number];
+		if (!chosen.length) {   // never at all: that's what the on/off switch is for
+			showMessage(field === "month" ? "At least one month" : "At least one day");
+			return null;
+		}
+		set = { [`${field}s`]: chosen };
+	} else if (field === "months") set = { months: range(1, 12) };
+	else if (field === "days") set = { days: argument === "weekdays" ? range(0, 5) : range(0, 7) };
+	else if (field === "hours") set = { hours: argument !== "custom" ? argument : Array.isArray(rule.hours) ? rule.hours : menuData.rotation.daytime_hours };
+	else if (field === "from" || field === "until") {
+		const hours = [...rule.hours];
+		const index = field === "from" ? 0 : 1;
+		hours[index] = (hours[index] + Number(argument) + 24) % 24;   // round the clock: 23:00 + 1 is 00:00
+		set = { hours };
+	}
+	return item.kind === "slide" ? { slide: item.name, set } : { group: item.index, set };
+}
+
+// Back one page (the Back buttons of the rotation pages, and Esc anywhere): to the button this page was opened with.
+function menuBack() {
+	if (menuPage === "rotation-item") showMenuPage("rotation", menuItem ? `item-${menuItem.kind}-${menuItem.key}` : null);
+	else if (menuPage === "rotation") showMenuPage("settings", "rotation");
+	else showMenuPage("overview", menuPage);
+}
 
 async function menuChoose(button) {
 	menuActivity();
@@ -986,17 +1155,39 @@ async function menuChoose(button) {
 		sendMenu(button, "settings", { volume: settings.volume + Number(value) });
 	} else if (action === "speed") {
 		sendMenu(button, "settings", { speed: Number(value) });
-	} else if (action === "slide_type") {
-		const hidden = settings.hidden.includes(value) ? settings.hidden.filter((name) => name !== value) : [...settings.hidden, value];
-		sendMenu(button, "settings", { hidden });
+	} else if (action === "back") {
+		menuBack();
+	} else if (action === "rotation_item") {
+		const [kind, key] = value.split(/:(.*)/);
+		menuItem = { kind, key: kind === "group" ? Number(key) : key };
+		showMenuPage("rotation-item");
+	} else if (action === "rule") {
+		const change = ruleChange(value);
+		if (change) sendMenu(button, "rotation", change);
+	} else if (action === "group_member") {
+		sendMenu(button, "rotation", { group: menuItem.key, toggle: value });
+	} else if (action === "rotation_new_group") {
+		if (await sendMenu(button, "rotation", { new_group: true }, false)) {   // straight on to its page, to choose its slides
+			menuItem = { kind: "group", key: menuData.rotation.groups.length - 1 };
+			showMenuPage("rotation-item");
+		}
+	} else if (action === "group_delete") {
+		const number = menuItem.key;
+		if (await sendMenu(button, "rotation", { delete_group: number }, false)) {
+			menuItem = null;
+			showMenuPage("rotation", "rotation-new-group");
+		}
+	} else if (action === "rotation_reset") {
+		sendMenu(button, "rotation", { reset: true });
 	} else if (action === "reset") {
 		sendMenu(button, "reset_puzzle", value || null);
-	} else if (action === "reload_devices" || action === "power") {
+	} else if (action === "power") {
 		sendMenu(button, action, value ?? null);
 	}
 }
 
-async function sendMenu(button, command, value) {
+// redraw = false: the caller goes to another page itself. Returns whether it worked.
+async function sendMenu(button, command, value, redraw = true) {
 	button.classList.add("busy");
 	try {
 		const answer = await getJson("/api/menu", {
@@ -1007,14 +1198,17 @@ async function sendMenu(button, command, value) {
 		menuData = answer.menu;
 		if (answer.message) showMessage(answer.message);   // "Restarting...", "Reloaded 3 devices": the menu's answer
 		setPermanentPause(menuData.settings.permanent_pause);
-		if (menuIsOpen() && menuPage !== "overview") showMenuPage(menuPage, button.dataset.focus);
-		else if (menuIsOpen()) {   // the overview: only the sound controls, so the previews keep playing
+		if (!redraw || !menuIsOpen()) return true;
+		if (menuPage !== "overview") showMenuPage(menuPage, button.dataset.focus);
+		else {   // the overview: only the sound controls, so the previews keep playing
 			menu.querySelector(".menu-sound")?.replaceWith(...htmlElements(soundControls(menuData.settings)));
 			menu.querySelector(`[data-focus="${button.dataset.focus}"]:not([disabled])`)?.focus();
 		}
+		return true;
 	} catch (error) {
 		console.error(error);
 		showMessage("That didn't work, try again");   // or the tap seems to do nothing
+		return false;
 	} finally {
 		button.classList.remove("busy");
 	}
@@ -1031,7 +1225,7 @@ function menuKey(event) {
 	if (event.key === "Escape") {
 		event.preventDefault();
 		if (menuPage === "overview") closeMenu();
-		else showMenuPage("overview", menuPage);
+		else menuBack();   // one page up: Rotation → Settings → the overview
 	} else if (event.key.startsWith("Arrow")) {
 		event.preventDefault();
 		moveMenuFocus(event.key);

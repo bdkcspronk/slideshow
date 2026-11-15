@@ -48,7 +48,7 @@ Put the `.mp3` in `media/bieruur/`. If the song's "drop" doesn't land on bieruur
 ## Who is who on the presence chart
 
 `config/devices.json` on the TV PC (not in git: personal data) maps phone MAC addresses to names,
-colours and greetings. Reload it with `Esc` → Settings.
+colours and greetings. The slideshow reads it again by itself as soon as the file changes.
 
 ## Change the bus stop, the timetable or the weather location
 

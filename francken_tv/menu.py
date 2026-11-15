@@ -13,6 +13,7 @@ import re
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
+from . import rotation
 from .settings import SPEEDS
 
 if TYPE_CHECKING:
@@ -147,7 +148,7 @@ def menu_data(app: App) -> dict:
 		"groups": groups(app),
 		"settings": asdict(app.settings),
 		"speeds": SPEEDS,
-		"slide_types": [{"name": p.name, "title": title(p)} for p in app.scheduler.providers],
+		"rotation": rotation.menu_data(app.scheduler, app.settings, {p.name: title(p) for p in app.scheduler.providers}),
 		"puzzles": puzzles.cards(now) if puzzles is not None else [],
 		"power": [action for action, command in app.power_commands.items() if command],
 	}
@@ -161,6 +162,10 @@ def command(app: App, name: str, value) -> str | None:
 			raise ValueError("settings needs an object")
 		app.change_settings(value)
 		return None
+	if name == "rotation":   # the Rotation pages: when and how often slides come round
+		changes, message = rotation.edit(app.scheduler, app.settings, value)
+		app.change_settings(changes)
+		return message
 	if name == "reset_puzzle":
 		puzzles = app.providers.get("puzzles")
 		if puzzles is None:
@@ -169,9 +174,6 @@ def command(app: App, name: str, value) -> str | None:
 		if not reset:
 			raise ValueError(f"unknown puzzle {value!r}")
 		return f"Started over: {', '.join(reset)}"
-	if name == "reload_devices":
-		count = len(app.devices.reload())
-		return f"Reloaded {count} devices"
 	if name == "power":
 		app.power(str(value))
 		return "Shutting down…" if value == "shutdown" else "Restarting…"

@@ -62,12 +62,15 @@ from .providers.presence import Greeter, LeaderboardProvider, PresenceChartProvi
 from .providers.quote import QuoteProvider
 from .providers.vrijmibo import VrijmiboTakeover
 from .providers.weather import WeatherProvider
+from .rotation import current_groups, rule_of
 from .scheduler import Scheduler, turn_groups
 from .settings import Settings, load_settings, save_settings
 from .system_volume import SystemVolume
 from .slides import Job, Provider, Takeover
 
 log = logging.getLogger(__name__)
+
+ROTATION_FILE = project_path("config/rotation.json")   # the menu's rotation settings, in git (settings.py, updater.py)
 
 
 @dataclass
@@ -84,6 +87,8 @@ class App:
 	shortcuts: dict[str, str] = field(default_factory=dict)   # key in the browser -> provider name
 	settings: Settings = field(default_factory=Settings)      # changed in the menu (Esc -> Settings)
 	settings_path: Path | None = None                         # where they're saved
+	rotation_path: Path | None = None                         # where the rotation is saved: config/rotation.json, in git
+	rotation_saved: Callable[[], None] | None = None          # rotation.json changed: share it (the updater commits and pushes it)
 	power_commands: dict[str, list[str]] = field(default_factory=dict)   # "shutdown"/"restart" -> command
 	system_volume: SystemVolume | None = None   # the volume and mute in the settings, also for Spotify
 	tiles: TileCache | None = None              # map tiles for maps in slides (/tiles/..., maptiles.py)
@@ -109,7 +114,8 @@ class App:
 				self.system_volume.set(self.settings.volume, self.settings.muted)
 			self.apply_settings()
 			if self.settings_path is not None:
-				save_settings(self.settings_path, self.settings)
+				if save_settings(self.settings_path, self.settings, self.rotation_path) and self.rotation_saved:
+					self.rotation_saved()
 
 	def apply_settings(self) -> None:
 		settings = self.settings
@@ -120,6 +126,8 @@ class App:
 			self.announcer.volume = settings.volume   # no main volume to change: at least the slideshow's own sounds
 		self.scheduler.speed = settings.speed
 		self.scheduler.hide(set(settings.hidden))
+		self.scheduler.set_rotation({name: rule_of(self.scheduler, settings, name) for name in settings.rules},
+			current_groups(self.scheduler, settings) if settings.groups is not None else None)
 
 	def read_sound(self) -> None:
 		"""Take the volume and mute from the TV PC's sound output: it remembers them itself (also over
@@ -141,9 +149,6 @@ class App:
 		except OSError as error:
 			raise ValueError(f"could not run {command[0]}: {error}") from error
 
-	def reload_devices(self) -> None:
-		count = len(self.devices.reload())   # the activity chart uses it the next time it's shown
-		log.info("Reloaded %d devices", count)
 
 
 def build_app(config: dict, clock: Clock) -> App:
@@ -269,8 +274,9 @@ def build_app(config: dict, clock: Clock) -> App:
 			if providers[name] not in enabled], jobs),
 		screen_size=(display.get("screen_width", 1920), display.get("screen_height", 1080)),
 		shortcuts=shortcuts,
-		settings=load_settings(DATA_DIR / "settings.json", defaults),
+		settings=load_settings(DATA_DIR / "settings.json", defaults, ROTATION_FILE),
 		settings_path=DATA_DIR / "settings.json",
+		rotation_path=ROTATION_FILE,
 		power_commands={"shutdown": power.get("shutdown", ["systemctl", "poweroff"]),
 			"restart": power.get("restart", ["systemctl", "reboot"])},
 		system_volume=SystemVolume(),

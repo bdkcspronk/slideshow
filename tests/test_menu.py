@@ -4,7 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
-from francken_tv import menu
+from francken_tv import menu, rotation
 from francken_tv.app import App
 from francken_tv.providers.puzzles import PuzzlesProvider
 from francken_tv.scheduler import Scheduler
@@ -75,6 +75,90 @@ class SchedulerSettingsTest(unittest.TestCase):
 		self.assertEqual(templates, {"image.html"})
 
 
+class RotationMenuTest(unittest.TestCase):
+	"""Settings → "Rotation settings of slides": what the pages show and the changes they send (rotation.py)."""
+
+	def setUp(self):
+		self.scheduler = Scheduler([Posters(), Chart()], [], daytime_only={"presence"}, take_turns=[["images", "presence"]])
+		self.settings = Settings()
+		self.titles = {"images": "Posters", "presence": "Today in the room"}
+
+	def apply(self, value):
+		changes, message = rotation.edit(self.scheduler, self.settings, value)
+		self.settings = self.settings.changed(changes)
+		return message
+
+	def data(self):
+		return rotation.menu_data(self.scheduler, self.settings, self.titles)
+
+	def test_the_defaults_come_from_the_config(self):
+		data = self.data()
+		self.assertEqual([(s["name"], s["summary"], s["group"]) for s in data["slides"]],
+			[("images", "Every round", 0), ("presence", "Every round · Daytime", 0)])
+		self.assertEqual(data["groups"][0]["title"], "Posters · Today in the room")
+		self.assertFalse(data["changed"])
+
+	def test_changing_a_slide(self):
+		self.apply({"slide": "presence", "set": {"every": "5", "months": [11, 12, 1, 2], "days": [5, 6], "hours": [20, 2]}})
+		self.assertEqual(self.data()["slides"][1]["summary"], "Every 5th round · Nov–Feb · Weekends · 20:00–02:00")
+		self.apply({"slide": "presence", "set": {"on": False}})
+		self.assertEqual((self.settings.hidden, self.data()["slides"][1]["summary"]), (["presence"], "Off"))
+		self.apply({"slide": "presence", "set": {"on": True}})
+		self.assertEqual(self.settings.hidden, [])
+		for wrong in [{"slide": "presence", "set": {"every": "7"}}, {"slide": "presence", "set": {"months": []}},
+				{"slide": "presence", "set": {"hours": [8, 25]}}, {"group": 4, "set": {"on": False}}, {"dance": True}]:
+			with self.assertRaises(ValueError):
+				self.apply(wrong)
+
+	def test_editing_the_groups(self):
+		self.apply({"new_group": True})
+		self.apply({"group": 1, "toggle": "presence"})   # moves it out of the first group
+		self.assertEqual([g["slides"] for g in self.data()["groups"]], [["images"], ["presence"]])
+		self.apply({"group": 1, "set": {"every": "hour"}})
+		self.apply({"group": 1, "set": {"on": False}})
+		self.assertEqual((self.data()["groups"][1]["summary"], self.settings.groups[1]["every"]), ("Off", "hour"))
+		self.assertEqual(self.apply({"delete_group": 0}), "Group deleted")
+		self.assertEqual(len(self.settings.groups), 1)
+		self.assertEqual(self.apply({"reset": True}), "Rotation reset to default")
+		self.assertEqual((self.settings.groups, self.settings.rules), (None, {}))
+
+	def test_nighttime_is_the_rest_of_the_day(self):
+		from datetime import time
+		rule = rotation.Rule(hours="nighttime")
+		daytime = (time(8, 0), time(18, 0))
+		self.assertEqual([rule.in_hours(NOW.replace(hour=h), daytime) for h in (7, 8, 17, 18, 23)], [True, False, False, True, True])
+		self.apply({"slide": "images", "set": {"hours": "nighttime"}})
+		self.assertEqual(self.data()["slides"][0]["summary"], "Every round · Nighttime")
+		self.assertEqual(rotation.hours_text("nighttime", daytime), "Nighttime (18:00–08:00)")
+
+	def test_every_group_has_a_colour_of_its_own_that_stays(self):
+		self.scheduler = Scheduler([Posters(), Chart()], [], take_turns=[["images"], ["presence"]])
+		first = [group["color"] for group in self.data()["groups"]]
+		self.assertEqual(first, rotation.COLORS[:2])   # the groups of config.toml: always the same ones
+		self.apply({"new_group": True})
+		colors = [group["color"] for group in self.data()["groups"]]
+		self.assertEqual(len(set(colors)), 3)          # the new one: any free one
+		self.apply({"delete_group": 0})
+		self.assertEqual([group["color"] for group in self.data()["groups"]], colors[1:])   # the others keep theirs
+
+	def test_rules_are_saved_and_followed(self):
+		with TemporaryDirectory() as folder:
+			path = Path(folder) / "settings.json"
+			self.apply({"slide": "images", "set": {"every": "2"}})
+			self.apply({"new_group": True})
+			save_settings(path, self.settings)
+			loaded = load_settings(path, Settings())
+			self.assertEqual((loaded.rules, loaded.groups), (self.settings.rules, self.settings.groups))
+		with self.assertRaises(ValueError):
+			Settings().changed({"groups": [{"slides": ["a"]}, {"slides": ["a", "b"]}]})   # one group per slide type
+		app = App(clock=None, announcer=SimpleNamespace(mute=lambda muted: None), devices=None, providers={}, takeovers={},
+			jobs=[], scheduler=self.scheduler, runner=None, screen_size=(1920, 1080), settings=self.settings)
+		app.apply_settings()
+		self.assertEqual(self.scheduler.rule("images").every, "2")
+		self.assertEqual(self.scheduler.rule("presence").hours, "daytime")   # no rule of its own: the default
+		self.assertEqual(len(self.scheduler.groups), 2)
+
+
 class MenuTest(unittest.TestCase):
 	def setUp(self):
 		self.folder = TemporaryDirectory()
@@ -108,8 +192,7 @@ class MenuTest(unittest.TestCase):
 	def test_settings_and_other_commands(self):
 		self.assertIsNone(menu.command(self.app, "settings", {"muted": True}))
 		self.assertEqual(self.changed, [{"muted": True}])
-		self.assertEqual(menu.command(self.app, "reload_devices", None), "Reloaded 2 devices")
-		for name, value in [("settings", "muted"), ("dance", None)]:
+		for name, value in [("settings", "muted"), ("dance", None), ("reload_devices", None)]:   # devices.json reloads by itself now
 			with self.assertRaises(ValueError):
 				menu.command(self.app, name, value)
 

@@ -9,6 +9,13 @@ and doesn't try that commit again. It never restarts during bieruur (the countdo
 Commits made on the TV PC itself (or pulled by hand) count too: when the commit on disk isn't the one
 that's running, the tests run and the slideshow restarts, the same way (not with uncommitted changes).
 
+The rotation settings changed in the menu (config/rotation.json, settings.py) are shared the other way: a minute after
+the last change (share_soon(): ten taps make one commit, not ten) the TV commits that one file and pushes it, so every
+PC running the slideshow follows it. That commit doesn't restart the slideshow here (it already runs with it). If GitHub
+got new commits in the meantime, the TV's rotation commits are replayed on top of them (a rebase; where both changed
+rotation.json, the TV's version wins) instead of the fast-forward, and pushed after. Pushing needs the TV PC to be
+allowed to push to the repository; until it is, /status says why it failed and the commits wait on the TV.
+
 Settings: [update] in config.toml.
 """
 
@@ -26,6 +33,10 @@ from .config import PROJECT_DIR
 log = logging.getLogger(__name__)
 
 TESTS_TIMEOUT_SECONDS = 600
+ROTATION = "config/rotation.json"   # the menu's rotation settings: committed and pushed by the TV
+SHARE_DELAY_SECONDS = 60            # after the last change in the menu
+# Who the TV's own commits are by, so they're recognisable in the history (and it works without a git identity set up).
+IDENTITY = ("-c", "user.name=Francken TV", "-c", "user.email=francken-tv@localhost")
 
 
 def run(*command: str, timeout: float = 120) -> subprocess.CompletedProcess:
@@ -44,6 +55,9 @@ class Updater:
 		self.bad: str | None = None   # a commit whose tests failed: not tried again
 		self.running: str | None = None   # the commit the slideshow started with
 		self.stopped = threading.Event()
+		self.lock = threading.Lock()   # one git command at a time: the checks and the sharing run in threads of their own
+		self.share_timer: threading.Timer | None = None
+		self.started = False
 		# For /status: the version that runs, and how the last check went.
 		self.version = ""
 		self.last_check: datetime | None = None
@@ -63,7 +77,9 @@ class Updater:
 		except Exception as error:
 			self.version = f"unknown ({error})"
 		log.info("Running %s; checking for updates every %d minutes", self.version, self.check_seconds // 60)
+		self.started = True
 		threading.Thread(target=self.loop, name="updater", daemon=True).start()
+		threading.Thread(target=self.share, name="share-rotation", daemon=True).start()   # a change from before a restart
 
 	def note(self, result: str) -> None:
 		self.last_check, self.last_result = self.now(), result
@@ -86,8 +102,55 @@ class Updater:
 			raise RuntimeError(f"git {' '.join(args)}: {(result.stderr or result.stdout).strip()}")
 		return result.stdout.strip()
 
+	def share_soon(self) -> None:
+		"""The rotation settings changed in the menu: commit and push them a minute after the last change."""
+		if not self.started:
+			return   # no automatic updates: commit config/rotation.json by hand
+		if self.share_timer is not None:
+			self.share_timer.cancel()
+		self.share_timer = threading.Timer(SHARE_DELAY_SECONDS, self.share)
+		self.share_timer.daemon = True
+		self.share_timer.start()
+
+	def share(self) -> bool:
+		"""Commit config/rotation.json if it changed, then push. Returns whether it committed."""
+		try:
+			with self.lock:
+				if not self.git("status", "--porcelain", "--", ROTATION):
+					return False
+				before = self.git("rev-parse", "HEAD")
+				self.git("add", "--", ROTATION)
+				self.git(*IDENTITY, "commit", "--quiet", "-m", "Rotation settings changed on the TV", "--", ROTATION)
+				after = self.git("rev-parse", "HEAD")
+				if self.running == before:
+					self.running = after   # it already runs with these settings: no restart for this commit
+				log.info("Committed the rotation settings (%s)", after[:7])
+				self.push()
+				return True
+		except RuntimeError as error:
+			self.note(f"sharing the rotation settings failed: {error}")
+			log.warning("Sharing the rotation settings failed: %s", error)
+			return False
+
+	def push(self) -> None:
+		try:
+			self.git("push", "--quiet")
+			self.note("pushed the rotation settings")
+		except RuntimeError as error:   # no internet, or this PC may not push: the commits wait here, tried again next check
+			self.note(f"not pushed yet: {error}")
+			log.warning("Could not push the rotation settings: %s", error)
+
+	def only_rotation(self) -> bool:
+		"""Whether the commits here that GitHub doesn't have only change config/rotation.json."""
+		files = set(self.git("log", "--format=", "--name-only", "@{u}..HEAD").split())
+		return files <= {ROTATION}
+
 	def check(self) -> bool:
 		"""Update if there's something new. Returns True when the slideshow is restarting."""
+		with self.lock:
+			return self.check_locked()
+
+	def check_locked(self) -> bool:
 		if self.busy(self.now()):
 			self.note("waiting: bieruur")
 			return False   # next time
@@ -100,8 +163,13 @@ class Updater:
 		if upstream == self.bad:
 			self.note(f"not updating to {upstream[:7]}: its tests failed")
 			return False
+		ahead = upstream != current and self.git("rev-list", "--count", "@{u}..HEAD") != "0"
+		rotation_ahead = ahead and self.only_rotation()   # the TV's own rotation commits, not pushed yet
 		if upstream == current or self.git("rev-list", "--count", "HEAD..@{u}") == "0":
-			self.note("up to date")
+			if rotation_ahead:
+				self.push()
+			else:
+				self.note("up to date")
 			return False   # up to date, or only local commits
 		changes = self.git("status", "--porcelain", "--untracked-files=no")
 		if changes:
@@ -109,8 +177,13 @@ class Updater:
 			log.warning("Not updating: the working copy has changes of its own (see 'git status')")
 			return False
 		try:
-			self.git("merge", "--ff-only", "--quiet", "@{u}")
+			if rotation_ahead:   # replay the rotation commits on top of GitHub's; where both changed the file, the TV's wins
+				self.git(*IDENTITY, "rebase", "--quiet", "-X", "theirs", "@{u}")   # rewriting commits needs an identity too
+			else:
+				self.git("merge", "--ff-only", "--quiet", "@{u}")
 		except RuntimeError as error:
+			if rotation_ahead:
+				self.run("git", "rebase", "--abort")
 			self.note(f"not updating: {error}")
 			log.warning("Not updating: %s", error)
 			return False
@@ -121,6 +194,8 @@ class Updater:
 			self.note(f"not updating to {upstream[:7]}: its tests failed (see the log)")
 			log.error("Not updating to %s: its tests fail\n%s", upstream[:7], tests.stderr[-2000:])
 			return False
+		if rotation_ahead:
+			self.push()   # the replayed rotation commits; if it fails, the next check after the restart tries again
 		self.note(f"updated to {upstream[:7]}, restarting")
 		log.info("Updated to %s: %s", upstream[:7], self.git("log", "-1", "--format=%s"))
 		self.restart()

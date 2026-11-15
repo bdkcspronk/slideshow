@@ -3560,6 +3560,34 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 	text-align: center;
 }
 
+/* Rotation settings of slides (Settings → its row): the groups and every slide type as rows, four to a line, each with a
+   line saying how often and when. Wider than Settings: some 36 slide types have to fit, scrolling for the rest (the arrow
+   keys scroll the focused row into view, moveMenuFocus() in player.js). */
+.menu-page-rotation, .menu-page-rotation-item {
+	align-items: stretch;
+	width: min(94vw, 167vh);
+	border-radius: 2vh;   /* shapes the shadow only; .menu-card-panel inside has the continuous corners */
+	box-shadow: 0 2vh 6vh rgba(0, 0, 0, 0.5);
+}
+.menu-rotation { display: flex; flex-direction: column; gap: 3vh; overflow-y: auto; padding: 0.6vh; }   /* padding: room for the focus grow */
+.menu-rotation section { display: flex; flex-direction: column; gap: 1vh; }
+.menu-rotation h2 { margin: 0 0 0.6vh; font-size: 2.2vh; letter-spacing: 0.15em; text-transform: uppercase; color: var(--menu-accent); }
+.menu-rotation-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1vh 0.8vw; }
+.menu-rotation-row { min-height: 7.4vh; font-size: 2.3vh; font-weight: bold; }
+.menu-rotation-row small { font-weight: normal; }
+.menu-rotation-row.off { color: var(--menu-muted); }   /* off: dimmed, the line says "Off" */
+.menu-rotation-new { justify-content: center; color: var(--menu-muted); }
+/* A row in a group (or the group's own): a stripe of the group's colour down its left edge, inside the clip of .squircle
+   (an inset box-shadow or a border would be cut off at the corners). position: relative only for the stripe. */
+.menu-row.grouped { position: relative; padding-left: calc(1.2vw + 0.7vh); }
+.menu-row.grouped::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 0.7vh; background: var(--group-color); }
+.menu-rotation-row.off.grouped::before { opacity: 0.4; }
+.menu-group-dot { display: inline-block; width: 0.6em; height: 0.6em; margin-right: 0.4em; border-radius: 50%; background: var(--group-color); vertical-align: 0.05em; }
+.menu-row-arrow { flex: none; font-size: 4vh; line-height: 1; color: var(--menu-muted); }
+/* The choices of a slide's page wrap onto more lines; the months in two rows of six. */
+.menu-choices.menu-wrap { flex-wrap: wrap; gap: 0.8vh 0.5vw; }
+.menu-months { display: grid; grid-template-columns: repeat(6, 1fr); }
+
 /* Power: two big buttons. */
 .menu-power { display: flex; justify-content: center; gap: 4vw; padding: 3vh 0 1vh; }
 .menu-power-button {

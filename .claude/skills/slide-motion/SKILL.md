@@ -347,4 +347,8 @@ timeguessr, weather_sky, xkcd.
 **Reviewed 2026-11-15 (not a slide, findings listed, no fixes yet):** the chart bar (templates/bar.html),
 the pet cameo (templates/pet_cameo.html) and the Esc menu (player.js, "The menu").
 
+**Reviewed 2026-11-15 (not a slide, nothing broken found):** the menu's Rotation pages (Settings → Rotation
+settings of slides, and a slide's or group's own page). Their redraw keeps the scroll position on purpose (the
+person asked for it: picking slides for a group jumped to the top), so don't flag that as app polish.
+
 **Not reviewed yet:** none. Everything above was read in code only, nothing was measured on the TV.

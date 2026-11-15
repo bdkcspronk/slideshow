@@ -64,6 +64,7 @@ def main() -> None:
 
 	updater = app.updater = Updater(config.get("update", {}), app.clock.now, busy, restart)
 	updater.start()   # push to GitHub, and the TV runs it within minutes ([update] in config.toml)
+	app.rotation_saved = updater.share_soon   # and the other way: the menu's rotation settings go to GitHub
 	restore_terminal = keyboard.listen(app, restart)
 	try:
 		server.serve_forever()

@@ -40,9 +40,12 @@ slideshow keeps going, so one broken slide never takes the TV down.
 
 Work through, in order:
 
-1. **Is its type in the rotation?** `rotation.order` in `config/config.toml`. Also `Esc` → Settings:
-   the choices made there are saved in `data/settings.json` and **win over config.toml**. Delete
-   that file to go back to the config.
+1. **Is its type in the rotation?** `rotation.order` in `config/config.toml`. Also `Esc` → Settings →
+   Rotation settings of slides: a slide type can be off there, or only come round every so many rounds,
+   in some months, on some days or at some hours. Those choices are saved in `config/rotation.json`
+   (the TV commits and pushes it a minute after the last change, so every PC follows it) and
+   **win over config.toml**. "Reset to default" at the bottom of that page goes back to the config.
+   The other choices under Settings are saved in `data/settings.json` and win too; delete it to go back.
 2. **Is it a slide that hides itself when there is nothing to show?** Practice sessions (none in the
    next two weeks), Spotify (nothing playing and show_when_idle off), daily puzzles (all done today),
    confidential and extern (their JSON file is missing), news/weather/buses/timetable (daytime
