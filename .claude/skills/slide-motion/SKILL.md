@@ -327,3 +327,21 @@ longer than the Use limits because they copy the NYT pages; a Spotify song that 
 slow cover entrance; the graafmachine starts driving before its title lands.
 
 Fix only what the person asked for. List the rest.
+
+## Review log
+
+Keep this list current: after reviewing a slide, move it to "Reviewed" with the date. Before reviewing,
+check here so nothing is done twice. (Started 2026-11-15 from the git history, so the first group is a
+best guess.)
+
+**Reviewed:** bieruur, buses, catfishing, confidential, connections, francken_vrij_subscribe, instagram,
+leaderboard, mscie, news, news_article, pet, photo, poll, presence, puzzles, rain, sjaarscie, socials,
+socks, spotify, spotify_lyrics, spotify_songs, streep, timetable, weather, wordle (first group: best guess
+from git history).
+
+**Reviewed 2026-11-15 (findings listed, fixes not applied yet):** activities, books, borrelcie,
+catfishing_archive, commandments, compucie, empty, ero, extern, fotocie, francken_vrij, graafmachine,
+image, lyric_video, membership, practice, quote, rain_chart, spotify_playlists, spotify_search,
+timeguessr, weather_sky, xkcd.
+
+**Not reviewed yet:** none.

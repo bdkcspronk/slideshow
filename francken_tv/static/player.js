@@ -407,7 +407,9 @@ function redraw(layer, html, tapped = false) {
 		else if (focused.matches("button")) {
 			// The page changed (a puzzle opened, the next photo, the article) and that button is gone: focus the slide's main control,
 			// so Enter goes on with the game. Never a stand-in like a back button: it would catch the next Enter and leave the slide.
-			layer.querySelector("[data-autofocus]:not([disabled]), button.primary:not([disabled])")?.focus({ preventScroll: true });
+			const main = layer.querySelector("[data-autofocus]:not([disabled]), button.primary:not([disabled])");
+			// A paging arrow that went disabled (the first or last month): the other arrow, so the keyboard isn't left without focus.
+			(main || (focused.dataset.focusKey && layer.querySelector("button[data-focus-key]:not([disabled])")))?.focus({ preventScroll: true });
 		}
 	}
 	// After a tap, entrances that would wait for the show come in quickly instead (.redrawn in style.css).
