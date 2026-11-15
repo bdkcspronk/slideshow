@@ -5040,7 +5040,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 	color: #173249;
 }
 .catfishing-day.empty { --faint: rgba(253, 248, 236, 0.55); }
-.quote-watermark { color: rgba(253, 248, 236, 0.09); }
+.quote-watermark { color: #fdf8ec; opacity: 0.08; --logo-fill: #1d3c6e; }   /* the whole logo fades as one (like the membership slide), so the balls' fill and outline stay in step with the crest */
 .xkcd-comic { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }   /* black line art on white becomes light on navy */
 /* Contrast on the navy: a primary button is crimson with a cream edge (navy on navy was 1.1:1), and the
    keyboard focus ring and the year slider are cream or light (crimson on navy is only 2:1). */
