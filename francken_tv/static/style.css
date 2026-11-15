@@ -1300,8 +1300,11 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .extern-question:nth-child(even) { color: #edebe1; }
 .extern-ask {
 	margin-top: calc(32 * var(--px));
-	font-size: calc(94 * var(--px));
-	letter-spacing: calc(4 * var(--px));
+	font-size: calc(74 * var(--px));   /* the name has to fit the 1306-wide column beside the photo; a longer one wraps */
+	line-height: calc(80 * var(--px));
+	letter-spacing: calc(3 * var(--px));
+	padding: 0 calc(20 * var(--px));
+	text-wrap: balance;
 	animation: extern-in 0.8s ease-out calc(0.6s + var(--q) * 0.5s) both;   /* after the last question (--q questions, set on .extern-text) */
 }
 .extern-contacts { margin-top: calc(33 * var(--px)); display: grid; grid-template-columns: auto auto auto; justify-content: start; column-gap: calc(26 * var(--px)); padding-left: calc(210 * var(--px)); text-align: left; }
