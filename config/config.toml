@@ -26,8 +26,9 @@ daytime_only = ["news", "weather", "buses", "timetable", "books"]
 daytime_from = "08:00"
 daytime_until = "18:00"
 # The info slides: these take turns, one of them per round (the next one that has something to show),
-# in the place of the first of them in the order above.
-take_turns = ["news", "weather", "buses", "timetable"]
+# in the place of the first of them in the order above. Each inner list is a group of its own: presence
+# (today in the room) and leaderboard (this week in the room) alternate, so not both in each round.
+take_turns = [["news", "weather", "buses", "timetable"], ["presence", "leaderboard"]]
 
 [update]
 # Every check_minutes the slideshow looks for new commits on GitHub. If there are, and this copy has

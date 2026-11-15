@@ -62,7 +62,7 @@ from .providers.presence import Greeter, LeaderboardProvider, PresenceChartProvi
 from .providers.quote import QuoteProvider
 from .providers.vrijmibo import VrijmiboTakeover
 from .providers.weather import WeatherProvider
-from .scheduler import Scheduler
+from .scheduler import Scheduler, turn_groups
 from .settings import Settings, load_settings, save_settings
 from .system_volume import SystemVolume
 from .slides import Job, Provider, Takeover
@@ -231,7 +231,7 @@ def build_app(config: dict, clock: Clock) -> App:
 	unknown = [name for name in rotation.get("daytime_only", []) if name not in providers]
 	if unknown:
 		raise SystemExit(f"Unknown slide types in rotation.daytime_only: {unknown}. Known: {list(providers)}")
-	unknown = [name for name in rotation.get("take_turns", []) if name not in providers]
+	unknown = [name for name in sorted(set().union(*turn_groups(rotation.get("take_turns")))) if name not in providers]
 	if unknown:
 		raise SystemExit(f"Unknown slide types in rotation.take_turns: {unknown}. Known: {list(providers)}")
 	enabled = [providers[name] for name in order]

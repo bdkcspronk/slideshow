@@ -9,7 +9,7 @@
    when it's going to rain).
 3. Slide types in `rotation.take_turns` (the info slides: news, weather, buses, timetable) share one
    place in the round: each round the next of them that has something to show, where the first of them
-   is in the order.
+   is in the order. take_turns can also be a list of such groups (e.g. presence and leaderboard).
 """
 
 from __future__ import annotations
@@ -30,13 +30,13 @@ EMPTY_SLIDE = Slide(template="empty.html", seconds=10)
 class Scheduler:
 	def __init__(self, providers: list[Provider], takeovers: list[Takeover], fill_with: str = "images",
 			daytime_only: set[str] | None = None, daytime: tuple[time, time] = (time(8, 0), time(16, 0)),
-			take_turns: list[str] | None = None) -> None:
+			take_turns: list | None = None) -> None:
 		self.providers = providers
 		self.fill_with = fill_with
 		self.daytime_only = daytime_only or set()   # e.g. the news and books slides: not in the evening and night
 		self.daytime = daytime                      # (from, until), e.g. 08:00 until bieruur
-		self.take_turns = set(take_turns or [])     # one of these per round, the next one each round
-		self.turn = 0
+		self.groups = turn_groups(take_turns)       # of each group one per round, the next one each round
+		self.turns = [0] * len(self.groups)
 		self.takeovers = takeovers
 		self.round: deque[Slide] = deque()
 		self.speed = 1.0                 # 2 = every slide is shown half as long (the menu's Settings)
@@ -73,21 +73,22 @@ class Scheduler:
 		special: list[Slide] = []
 		daytime = self.daytime[0] <= now.time() < self.daytime[1]
 		shown = [provider for provider in self.providers if provider.name not in self.hidden]
-		turns = [provider for provider in shown if provider.name in self.take_turns]
+		groups = [[provider for provider in shown if provider.name in group] for group in self.groups]
 		for provider in shown:
-			if provider in turns[1:]:
+			group = next((i for i, turns in enumerate(groups) if provider in turns), None)
+			if group is not None and provider is not groups[group][0]:
 				continue   # the slide types taking turns share the place of the first of them
-			slides = self.next_turn(turns, now, daytime) if provider in turns else self.slides_of(provider, now, daytime)
+			slides = self.slides_of(provider, now, daytime) if group is None else self.next_turn(group, groups[group], now, daytime)
 			(filler if provider.name == self.fill_with else special).extend(slides)
 		return spread(filler, special)
 
-	def next_turn(self, turns: list[Provider], now: datetime, daytime: bool) -> list[Slide]:
-		"""The slides of the next of `turns` that has something to show."""
+	def next_turn(self, group: int, turns: list[Provider], now: datetime, daytime: bool) -> list[Slide]:
+		"""The slides of the next of `turns` (group number `group`) that has something to show."""
 		for step in range(len(turns)):
-			index = (self.turn + step) % len(turns)
+			index = (self.turns[group] + step) % len(turns)
 			slides = self.slides_of(turns[index], now, daytime)
 			if slides:
-				self.turn = index + 1
+				self.turns[group] = index + 1
 				return slides
 		return []
 
@@ -109,6 +110,15 @@ class Scheduler:
 		if 0 < seconds_left < slide.seconds:
 			return replace(slide, seconds=max(1.0, seconds_left))
 		return slide
+
+
+def turn_groups(take_turns: list | None) -> list[set[str]]:
+	"""A flat list of names is one group; a list of lists is several."""
+	if not take_turns:
+		return []
+	if all(isinstance(item, str) for item in take_turns):
+		return [set(take_turns)]
+	return [set(group) for group in take_turns]
 
 
 def spread(filler: list[Slide], special: list[Slide]) -> list[Slide]:

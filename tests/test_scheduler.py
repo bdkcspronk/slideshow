@@ -87,6 +87,12 @@ class RotationTest(unittest.TestCase):
 		info[2].count = 0   # nothing to show at all
 		self.assertEqual(names(), ["a0", "b0"])
 
+	def test_several_groups_each_take_turns(self):
+		providers = [FixedProvider(name, 1) for name in ("news", "weather", "presence", "leaderboard")]
+		scheduler = Scheduler(providers, [], take_turns=[["news", "weather"], ["presence", "leaderboard"]])
+		names = lambda: [slide.data["name"] for slide in scheduler.build_round(at(THURSDAY, "10:00:00"))]
+		self.assertEqual([names() for _ in range(3)], [["news0", "presence0"], ["weather0", "leaderboard0"], ["news0", "presence0"]])
+
 	def test_broken_provider_is_skipped(self):
 		scheduler = Scheduler([BrokenProvider(), FixedProvider("a", 1)], [])
 		with self.assertLogs("francken_tv.scheduler", "ERROR"):
