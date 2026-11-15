@@ -54,6 +54,7 @@ def date_width(height: float) -> float:
 
 class PracticeSessionsProvider(Provider):
 	name = "practice"
+	rotation_note = "Only comes round when a practice session is coming up in the next two weeks"
 	title = "Practice sessions"
 	nothing_to_show = "No practice sessions in the next two weeks"
 

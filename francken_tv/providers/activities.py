@@ -80,6 +80,7 @@ def parse_activities(html: str) -> list[Activity]:
 
 class ActivitiesProvider(Provider):
 	name = "activities"
+	rotation_note = "Only comes round when there are activities to show"
 	title = "Activities"
 
 	def __init__(self, settings: dict, default_seconds: float) -> None:

@@ -42,6 +42,7 @@ class Provider:
 	title = ""                             # shown in the menu (Esc); the name if empty
 	nothing_to_show = "Nothing to show right now"   # in the menu and after a shortcut, when slides() is empty
 	refresh_seconds: float | None = None   # how often refresh() runs; None = never
+	rotation_note = ""                     # for slides that only join the rotation under a condition: said so on the Rotation pages
 
 	def refresh(self, now: datetime) -> None:
 		"""Fetch or render data in the background. May be slow; may raise."""

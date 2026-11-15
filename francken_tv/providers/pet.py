@@ -361,6 +361,8 @@ class PetProvider(Provider):
 		slide.update = lambda later: self.data(later, pending.pop() if pending else None)
 		return slide
 
+	rotation_note = "Only comes round when the pet needs something (a name, a grave, or a low bar); a happy pet stays out of the way"
+
 	def needs_attention(self, now: datetime) -> bool:
 		"""Whether it belongs in the slideshow: waiting for a name, dead (its grave, and a new one), or one of its
 		bars below SHOW_BELOW. A happy pet stays out of the way."""

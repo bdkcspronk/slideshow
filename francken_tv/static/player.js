@@ -978,7 +978,7 @@ const menuPages = {
 				<h2>Slides</h2>
 				<div class="menu-rotation-grid">
 					${rotation.slides.map((slide) => row(`item-slide-${slide.name}`, `slide:${slide.name}`, slide.title,
-						slide.group === null || !slide.on ? slide.summary : `${slide.summary} · takes turns`, slide.on,
+						[slide.summary, slide.on && slide.group !== null ? "takes turns" : "", slide.on && slide.note ? "only when needed" : ""].filter(Boolean).join(" · "), slide.on,
 						slide.group === null ? "" : rotation.groups[slide.group].color)).join("")}
 				</div>
 			</section>
@@ -1015,7 +1015,7 @@ const menuPages = {
 			<div class="menu-column">
 				<section>
 					<button class="menu-row menu-toggle squircle" role="switch" aria-checked="${item.on}" data-focus="rule-on" data-menu="rule" data-value="on">
-						<span>In the slideshow${item.kind === "group" ? "<small>Off: none of its slides come round</small>" : ""}</span><span class="menu-switch"></span>
+						<span>In the slideshow${item.kind === "group" ? "<small>Off: none of its slides come round</small>" : item.note ? `<small>${escapeHtml(item.note)}</small>` : ""}</span><span class="menu-switch"></span>
 					</button>
 				</section>
 				<section>

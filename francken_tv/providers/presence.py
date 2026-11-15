@@ -24,6 +24,7 @@ class PresenceChartProvider(Provider):
 	"""Today's activity chart, drawn by templates/slides/presence.html (see activity_chart.py)."""
 
 	name = "presence"
+	rotation_note = "Only comes round once somebody has been seen in the room today"
 	title = "Activity chart"
 	nothing_to_show = "Nobody seen yet today"
 
@@ -46,6 +47,7 @@ class LeaderboardProvider(Provider):
 	"""Who spent the most time in the room this week (since Monday)."""
 
 	name = "leaderboard"
+	rotation_note = "Only comes round once somebody has been seen in the room this week"
 	title = "Leaderboard"
 
 	def __init__(self, settings: dict, store: PresenceStore, devices: DeviceList, default_seconds: float) -> None:

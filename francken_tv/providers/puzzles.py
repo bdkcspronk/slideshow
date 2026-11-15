@@ -90,6 +90,7 @@ def save_state(path: Path | None, day: date, state: dict) -> None:
 
 class PuzzlesProvider(Provider):
 	name = "puzzles"
+	rotation_note = "Only comes round while a puzzle is left to play today; once all are solved or lost, it stays out"
 	title = "Daily puzzles"
 	nothing_to_show = "Today's puzzles couldn't be downloaded"
 

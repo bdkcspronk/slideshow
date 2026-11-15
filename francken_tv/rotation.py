@@ -236,12 +236,13 @@ def menu_data(scheduler, settings, titles: dict[str, str]) -> dict:
 	daytime = getattr(scheduler, "daytime", (time(8, 0), time(18, 0)))
 	groups = current_groups(scheduler, settings)
 	in_group = {name: number for number, group in enumerate(groups) for name in group.slides}
+	notes = {p.name: p.rotation_note for p in getattr(scheduler, "providers", []) if getattr(p, "rotation_note", "")}
 	slides = []
 	for name, title in titles.items():
 		rule = rule_of(scheduler, settings, name)
 		on = name not in settings.hidden
 		slides.append({"name": name, "title": title, "on": on, "rule": rule.to_dict(), "summary": summary(rule, on, daytime),
-			"group": in_group.get(name)})
+			"note": notes.get(name, ""), "group": in_group.get(name)})
 	return {
 		"slides": slides,
 		"groups": [{"title": group_title(group, titles), "slides": list(group.slides), "on": group.on, "rule": group.rule.to_dict(),

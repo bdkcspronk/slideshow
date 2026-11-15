@@ -32,6 +32,7 @@ class Comic:
 
 class XkcdProvider(Provider):
 	name = "xkcd"
+	rotation_note = "Not in every round: it stays out until the set number of minutes since its last showing have passed"
 	title = "xkcd"
 	nothing_to_show = "The latest xkcd couldn't be downloaded"
 

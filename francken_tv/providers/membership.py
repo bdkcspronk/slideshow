@@ -11,6 +11,7 @@ from ..slides import Provider, Slide
 
 class MembershipProvider(Provider):
 	name = "membership"
+	rotation_note = "Only comes round in the sign-up months"
 	title = "Become a member"
 
 	def __init__(self, settings: dict) -> None:

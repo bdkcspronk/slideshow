@@ -21,6 +21,7 @@ from .spotify import SpotifyProvider
 
 class LyricVideoProvider(Provider):
 	name = "lyric_video"
+	rotation_note = "Only comes round after bieruur, while a song with synced lyrics is playing and something is sung"
 	title = "Lyric video"
 	nothing_to_show = "No song with synced lyrics is playing"
 
