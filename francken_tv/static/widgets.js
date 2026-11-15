@@ -356,9 +356,8 @@ const LYRIC_PALETTES = [
 	["#dc3545", "#ffffff", "#ffd23f"],
 ];
 
-// The screen runs ahead of the sound (Spotify's reported progress, the page loading, the speakers): the
-// lyrics are held back this many seconds. Raise it if the words still come before the singing.
-const LYRIC_LAG = 1.5;
+// Exactly the timing of the Spotify lyrics slide (setupLyrics), which is right: a line starts 0.15 s early.
+const LYRIC_LAG = -0.15;
 
 function setupLyricVideo(stage) {
 	const slide = stage.closest(".lyric-video");
