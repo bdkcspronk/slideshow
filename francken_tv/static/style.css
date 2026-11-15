@@ -3399,7 +3399,9 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 /* The shadow carrier's inner card: the clip would cut off a shadow or an outline, so those stay on .menu-preview. */
 .menu-preview-card { --r: 2.2vh; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: var(--menu-raised); }
 /* The slides size themselves to the screen (vw/vh), so in a small frame they show as a small copy. */
-.menu-preview iframe { width: 100%; height: 100%; border: 0; pointer-events: none; }
+.menu-preview iframe { width: 100%; height: 100%; border: 0; pointer-events: none; background: var(--menu-raised); opacity: 0; transition: opacity 0.25s ease-out; }
+/* Hidden until loaded (player.js adds .loaded), so an iframe's blank white never flashes. */
+.menu-preview iframe.loaded { opacity: 1; }
 .menu-card-title { font-size: 3vh; font-weight: bold; }
 .menu-card:focus .menu-preview { outline-color: var(--menu-text); transform: scale(1.03); }
 /* Hover only where there is a real hover (a mouse): a finger leaves the card looking hovered after a tap. Focus stays for keys and remote. */

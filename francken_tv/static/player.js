@@ -846,7 +846,7 @@ function menuTabContent(data) {
 	const card = (focus, jump, preview, key, label, available, empty) => `
 		<button class="menu-card" data-focus="${escapeHtml(focus)}" data-menu="jump" data-value="${escapeHtml(jump)}"${available === false || available === null ? " disabled" : ""}>
 			<span class="menu-preview"><span class="menu-preview-card squircle">${available
-				? `<iframe src="/preview/${encodeURIComponent(preview)}" tabindex="-1"></iframe>`
+				? `<iframe src="/preview/${encodeURIComponent(preview)}" tabindex="-1" onload="this.classList.add('loaded')"></iframe>`
 				: `<span>${escapeHtml(empty)}</span>`}</span></span>
 			<span class="menu-card-title">${key ? `<kbd>${escapeHtml(key)}</kbd>` : ""}${escapeHtml(label)}</span>
 		</button>`;
