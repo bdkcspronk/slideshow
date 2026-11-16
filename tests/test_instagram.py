@@ -105,6 +105,7 @@ class InstagramTest(unittest.TestCase):
 		album = slide.data["posts"][2]["album"]
 		self.assertEqual((len(album), album[0]), (4, slide.data["posts"][2]["picture"]))   # at most 4, the cover first
 		self.assertEqual((slide.seconds, slide.data["seconds"]), (29, 29))   # 20, and 3 s for each album picture after the first
+		self.assertTrue(slide.real_time)   # the menu's Speed leaves it alone: the phone's timeline takes the time it needs
 
 	def test_parse_albums(self):
 		*_, album = parse_posts(MEDIA)

@@ -280,7 +280,9 @@ class InstagramProvider(Provider):
 		data = self.slide_data(now)
 		# Drawn with the newest data when it's shown: a round is put together in advance, maybe before the
 		# first posts came in (right after a restart), and should still show them.
-		return [Slide("instagram.html", data["seconds"], data, update=lambda when: self.slide_data(when) or data)] if data else []
+		# In real time, whatever the menu's Speed: the phone's timeline takes the time it needs, and the 3D phone tells the
+		# player when it is done (slideTakes() in static/player.js), so these seconds are only the plan.
+		return [Slide("instagram.html", data["seconds"], data, update=lambda when: self.slide_data(when) or data, real_time=True)] if data else []
 
 	def slide_data(self, now: datetime) -> dict | None:
 		if not self.profile or not self.posts:   # not connected: the account all the same, without its posts

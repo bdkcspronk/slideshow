@@ -68,7 +68,7 @@ class Scheduler:
 			if not self.round:
 				self.round.extend(self.build_round(now))
 			slide = self.round.popleft() if self.round else EMPTY_SLIDE
-			if self.speed != 1.0:
+			if self.speed != 1.0 and not slide.real_time:
 				# Shorter (or longer), and played that much faster (slower), so what happens on it still fills its time:
 				# the player runs the slide's animations at this rate (setRate() in static/player.js).
 				# What can't be played faster (a GIF) keeps the time it needs (min_seconds), and the rate follows the time it gets.
@@ -148,7 +148,7 @@ class Scheduler:
 			return slide
 		seconds_left = (min(starts) - now).total_seconds()
 		if 0 < seconds_left < slide.seconds:
-			return replace(slide, seconds=max(1.0, seconds_left))
+			return replace(slide, seconds=max(1.0, seconds_left), cut_short=True)
 		return slide
 
 

@@ -252,9 +252,10 @@ async function drawInstagram3d(THREE, canvas, slide) {
 	const lowest = Math.max(feedHeight - sh, 0);
 	const scrollTo = (item) => Math.min(Math.max(item.top + item.h / 2 - sh / 2, 0), lowest);
 	const order = items.slice(1).reverse();   // the posts, oldest first
-	// An album hovers album-seconds longer for each picture after the first (the server made the slide that much longer
-	// too); the rest of the time is shared out equally over the posts' holds.
-	const storySeconds = story ? Number(canvas.dataset.storySeconds) || 7 : 0;   // the server made the slide that much longer
+	// An album hovers album-seconds longer for each picture after the first (the server planned the slide that much longer
+	// too); the rest of the planned time is shared out equally over the posts' holds, but each hovers at least a second:
+	// with many posts the timeline is longer than planned, and the slide stays that long (`total`, below).
+	const storySeconds = story ? Number(canvas.dataset.storySeconds) || 7 : 0;   // the server planned the slide that much longer
 	const fixed = order.length * (lift + sink) + (order.length - 1) * scroll + top + storySeconds + rest;
 	const extra = (item) => (Number(canvas.dataset.albumSeconds) || 3) * ((item.album?.pictures.length ?? 1) - 1);
 	const shared = (seconds - enter - fixed - order.reduce((sum, item) => sum + extra(item), 0)) / order.length;
@@ -288,6 +289,7 @@ async function drawInstagram3d(THREE, canvas, slide) {
 	// The story, after the scroll up to the profile: the tap (0.15 to 0.45 s in), opening (0.35 to 0.75 s), playing, and
 	// closing in the last STORY_CLOSE s.
 	const storyAt = (steps.at(-1)?.end ?? enter) + top;
+	const total = storyAt + storySeconds + rest;   // the whole timeline: how long the slide stays (slideTakes(), below)
 	const openEase = cubicBezier(0.2, 0.8, 0.3, 1), closeEase = cubicBezier(0.4, 0, 1, 1);
 	const poseStory = (t, s) => {
 		const { group, parts, video, bar, shade, seen } = stories;
@@ -383,7 +385,6 @@ async function drawInstagram3d(THREE, canvas, slide) {
 
 	// One frame at a time while the slide is on the page; freed when it's gone (the browser has only a few WebGL contexts).
 	const layer = canvas.closest(".layer");
-	const rate = slideRate(canvas);
 	let started = null, measured = false;
 	const times = [];
 	const frame = (now) => {
@@ -397,9 +398,12 @@ async function drawInstagram3d(THREE, canvas, slide) {
 		requestAnimationFrame(frame);
 		if (layer?.classList.contains("loading")) return;   // not shown yet: the CSS animations wait too
 		// From when the slide was shown (player.js), not from this first frame: a frame that comes late (a slow PC, pictures
-		// still loading) would leave the timeline behind the CSS animations for the whole slide, more so at a higher Speed.
+		// still loading) would leave the timeline behind the CSS animations for the whole slide.
+		const first = started === null;
 		started ??= Math.min(Number(layer?.dataset.shownAt) || now, now);
-		const t = (now - started) / 1000 * rate;   // the slide's clock: faster or slower with the menu's Speed, like its CSS animations
+		const t = (now - started) / 1000;   // the slide's clock, in real time: the menu's Speed leaves this slide alone (Slide.real_time)
+		// The slide has its own timer: it stays until this timeline is done, not for the time the server planned.
+		if (first && typeof slideTakes === "function") slideTakes(canvas, total, total - t);   // not on /preview (no player.js)
 		pose(t);
 		renderer.render(scene, camera);
 		// Too slow for this PC? Measure from 0.5 to 3 s (the phone coming in, the first post lifting) and drop to 75% once.

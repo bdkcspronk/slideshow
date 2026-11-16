@@ -79,13 +79,25 @@ async function show(slide, { canRefresh = true } = {}) {
 	if (!paused) nextTimer = setTimeout(next, slide.seconds * 1000);
 }
 
+// A slide that times itself (the Instagram phone, instagram_3d.js): it stays for `seconds` in all, of which `left` from
+// now, whatever the server planned for it (slide.seconds): its timeline is never cut off. Not a slide that was cut short
+// for a takeover (bieruur starts on time), and not while the slideshow is standing still anyway (a pause, the menu).
+function slideTakes(element, seconds, left = seconds) {
+	if (element.closest(".layer") !== layers[front] || !current || current.cut_short) return;
+	current.seconds = seconds;   // for when it goes on after a pause or the menu
+	if (paused || interacting || !menu.hidden) return;
+	clearTimeout(nextTimer);
+	nextTimer = setTimeout(next, Math.max(left, 0.5) * 1000);
+}
+
 // The menu's Speed makes a slide shorter or longer (slide.seconds) and gives it a rate to match (2 = twice as fast), so
 // that what happens on it still happens once and fills its time, instead of being cut off or done long before the end.
 // Its CSS animations and transitions are played at that rate here, like a video's playback speed; what is timed in
 // JavaScript asks slideRate() (widgets.js). Animations that start later (a class added by a widget, a redraw by the
 // slide's own updates) are caught by looking again ten times a second, which costs next to nothing and only runs while
 // the speed isn't 1. Left alone: slides on a real clock or the music (data-real-time), and the marquees, which scroll
-// at reading speed. A tap ends it (keepPaused): what answers a tap always moves at its own pace.
+// at reading speed. A tap ends it (keepPaused): what answers a tap always moves at its own pace. The Instagram slide
+// isn't made shorter or longer at all (Slide.real_time): it plays at rate 1 and times itself (slideTakes()).
 let rateTimer = null;
 let applyRate = () => {};   // looks right now, for a widget that has just started animations (widgets.js)
 

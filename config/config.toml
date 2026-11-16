@@ -231,8 +231,8 @@ seconds = 15   # everything is done after about 6 s
 # Our latest Instagram posts on a phone, with a QR code to the account. Setup: docs/setup/instagram.md.
 username = "tfvprofessorfrancken"   # shown (with the QR code) while not connected; once connected, from Instagram
 credentials = "~/.config/slideshow/instagram.json"
-posts = 3          # the latest this many, each lifting out of the phone in turn (more: each one shorter)
-seconds = 20
+posts = 3          # the latest this many, each lifting out of the phone in turn (more: each one shorter, but at least a second)
+seconds = 20       # the plan; longer with albums and a story, and the slide stays until the phone is done, whatever the menu's Speed
 
 [confidential]
 # The confidential contact persons: who they are is in config/confidential.json (personal data, not in

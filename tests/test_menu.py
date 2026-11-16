@@ -81,6 +81,17 @@ class SchedulerSettingsTest(unittest.TestCase):
 		scheduler.speed = 0.5
 		self.assertEqual(scheduler.next_slide(NOW).seconds, 16)
 
+	def test_speed_leaves_a_slide_in_real_time_alone(self):
+		class Phone(Provider):
+			name = "instagram"
+			def slides(self, now):
+				return [Slide("instagram.html", 20, real_time=True)]   # it takes the time it needs
+		scheduler = Scheduler([Phone()], [])
+		for speed in (2.0, 0.5):
+			scheduler.speed = speed
+			slide = scheduler.next_slide(NOW)
+			self.assertEqual((slide.seconds, slide.rate), (20, 1.0))
+
 	def test_a_hidden_slide_type_leaves_the_round_at_once(self):
 		scheduler = Scheduler([Posters(), Chart()], [])
 		scheduler.next_slide(NOW)   # a round with the chart in it is planned
