@@ -127,7 +127,7 @@ def is_blank(path: Path) -> bool:
 def average_colour(path: Path) -> str:
 	"""A cover's average colour, a bit darker (70%): the cloth of its spine."""
 	with Image.open(path) as image:
-		r, g, b = image.convert("RGB").resize((1, 1), Image.Resampling.BOX).getpixel((0, 0))
+		r, g, b = image.convert("RGB").resize((1, 1), Image.BOX).getpixel((0, 0))
 	return f"rgb({round(r * 0.7)}, {round(g * 0.7)}, {round(b * 0.7)})"
 
 
