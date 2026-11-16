@@ -42,6 +42,20 @@
 
 const maps = new Set();
 
+// How fast the slide this element is on plays: 2 = twice as fast. The menu's Speed makes every slide that much shorter
+// (scheduler.py), so everything that happens on it is played that much faster and still fills the slide's time: the CSS
+// animations by player.js (setRate()), anything timed in JavaScript (typing, the 3D slides' timelines) by using this.
+// Always 1 on a slide that follows a real clock or the music (data-real-time), after a tap, and on /preview.
+// Animations a widget has just started (a class it added) get the slide's rate at once, not at player.js's next look.
+function ratedNow() {
+	if (typeof applyRate === "function") applyRate();   // not on /preview (no player.js)
+}
+
+function slideRate(element) {
+	if (element.closest("[data-real-time]")) return 1;
+	return Number(element.closest("[data-rate]")?.dataset.rate) || 1;
+}
+
 function setupWidgets(root) {
 	for (const map of maps) {   // maps of slides that are gone
 		if (!document.contains(map.getContainer())) {
@@ -540,7 +554,7 @@ function setupMatrix(canvas) {
 	// The rain moves in fixed ticks of 1/60 s (speeds, the trail's fade and the restart chance are all per
 	// tick), however often the screen refreshes: a 144 Hz monitor runs a tick every few frames, a slow PC
 	// runs a few per frame. So it looks the same on any screen.
-	const TICK = 1000 / 60;
+	const TICK = 1000 / 60 / slideRate(canvas);   // faster or slower with the slide (the menu's Speed)
 	let last = null, behind = 0;
 	const frame = (now) => {
 		if (!document.contains(canvas)) return;   // the slide is gone
@@ -600,20 +614,22 @@ function setupPuzzleDemos(element) {
 			void demo.offsetWidth;   // with one demo left: lets it start over instead of carrying on
 			demo.classList.add("play");
 		}
-		setTimeout(play, seconds * 1000);
+		ratedNow();
+		setTimeout(play, seconds * 1000 / slideRate(element));   // the turns keep step with the demos' animations (the menu's Speed)
 	};
 	// Once the first card has come in (four turns then fill the 20 s slide); back from a puzzle (.redrawn) nothing comes in, so soon.
-	setTimeout(play, element.closest(".redrawn") ? 300 : 1200);
+	setTimeout(play, element.closest(".redrawn") ? 300 : 1200 / slideRate(element));
 }
 
 function setupDecode(element) {
 	const text = element.dataset.decode;
-	const begin = performance.now() + Number(element.dataset.decodeWait || 0) * 1000;
+	const rate = slideRate(element);   // the wait and the letters, faster or slower with the slide (the menu's Speed)
+	const begin = performance.now() + Number(element.dataset.decodeWait || 0) * 1000 / rate;
 	const settleAt = (i) => 250 + i * 140;   // ms after the start, per letter
 	element.innerHTML = "&nbsp;";
 	const frame = (now) => {
 		if (!document.contains(element)) return;
-		const t = now - begin;
+		const t = (now - begin) * rate;
 		if (t >= 0) {
 			element.replaceChildren(...[...text].map((letter, i) => {
 				const span = document.createElement("span");
@@ -631,7 +647,14 @@ async function setupTerminal(element) {
 	const lines = [...element.children].map((child) => ({ command: child.dataset.command, answer: child.innerHTML }));
 	const prompt = element.dataset.prompt || "$";
 	element.replaceChildren();
-	const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+	// Typing faster or slower with the slide (the menu's Speed). Each wait ends at a moment counted on from the last one,
+	// not from when its timer happened to fire: timers are always a little late, and over a few hundred letters that
+	// added up (more so at 2×, where the waits are half as long), so the terminal fell behind the rest of the slide.
+	let due = performance.now();
+	const wait = (ms) => new Promise((resolve) => {
+		due = Math.max(due, performance.now() - 250) + ms / slideRate(element);   // after a long stall (a hidden tab): no rush to catch up
+		setTimeout(resolve, Math.max(due - performance.now(), 0));
+	});
 	const promptLine = () => {
 		const line = document.createElement("div");
 		const label = document.createElement("span");
@@ -641,6 +664,7 @@ async function setupTerminal(element) {
 		cursor.className = "terminal-cursor";
 		line.append(label, cursor);
 		element.append(line);
+		ratedNow();   // the cursor's blink
 		return cursor;
 	};
 	await wait(Number(element.dataset.terminalWait || 0) * 1000);
@@ -661,6 +685,7 @@ async function setupTerminal(element) {
 	}
 	promptLine();
 	element.closest(".slide")?.classList.add("typed");
+	ratedNow();
 }
 
 // Three.js (static/vendor/three), loaded the first time a 3D slide needs it.

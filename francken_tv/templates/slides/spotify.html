@@ -8,7 +8,7 @@
 	continue it on the TV's own speaker.
 	The space bar pauses and resumes the music (data-space-action, see player.js).
 #}
-<div class="slide spotify-slide" data-state="{{ state }}" data-interactive data-provider="spotify" data-space-action="toggle" data-arrows-need-focus>
+<div class="slide spotify-slide" data-real-time data-state="{{ state }}" data-interactive data-provider="spotify" data-space-action="toggle" data-arrows-need-focus>
 	{% if cover %}<div class="spotify-backdrop" style="background-image: url('{{ cover }}')"></div>{% endif %}
 	<div class="spotify-content">
 		{% if cover %}<div class="spotify-cover" data-steady="{{ cover }}"><img class="squircle" src="{{ cover }}" alt=""></div>{% endif %}   {# the div carries the shadow and entrance (the clip on the img would cut the shadow off) #}

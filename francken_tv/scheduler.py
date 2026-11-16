@@ -50,7 +50,7 @@ class Scheduler:
 		self.round_number = 0
 		self.takeovers = takeovers
 		self.round: deque[Slide] = deque()
-		self.speed = 1.0                 # 2 = every slide is shown half as long (the menu's Settings)
+		self.speed = 1.0                 # 2 = every slide is shown half as long and plays twice as fast (the menu's Settings)
 		self.hidden: set[str] = set()    # slide types left out of the rounds (the menu's Settings)
 		self.lock = threading.Lock()
 
@@ -69,7 +69,11 @@ class Scheduler:
 				self.round.extend(self.build_round(now))
 			slide = self.round.popleft() if self.round else EMPTY_SLIDE
 			if self.speed != 1.0:
-				slide = replace(slide, seconds=slide.seconds / self.speed)
+				# Shorter (or longer), and played that much faster (slower), so what happens on it still fills its time:
+				# the player runs the slide's animations at this rate (setRate() in static/player.js).
+				# What can't be played faster (a GIF) keeps the time it needs (min_seconds), and the rate follows the time it gets.
+				seconds = max(slide.seconds / self.speed, min(slide.min_seconds, slide.seconds))
+				slide = replace(slide, seconds=seconds, rate=slide.seconds / seconds)
 			return self.cut_short_before_takeover(slide, now)
 
 	def hide(self, names: set[str]) -> None:

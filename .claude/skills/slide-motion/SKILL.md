@@ -186,6 +186,13 @@ animate (Emil: "animation on keyboard action → remove it"). The press look on 
   Stagger steps of 0.1-0.35 s for Show, at most 0.08 s for Use.
 - **Hold long enough to read from across the room.** Text needs a few seconds standing still after it
   lands. A slide's total time is set in `config/config.toml`, so check that the sequence fits in it.
+- **The menu's Speed plays the whole slide faster or slower.** At 2× a slide is shown half as long and gets
+  `rate` 2: `setRate()` in `player.js` plays its CSS animations and transitions at that rate, so the sequence
+  still happens once and fills the slide. Write timings for speed 1 and leave the scaling to that. Anything
+  timed in JavaScript (a `setTimeout`, a clock from `performance.now()`, a 3D timeline) must multiply its
+  clock by `slideRate(element)` (`widgets.js`), or it falls out of step. A slide that follows a real clock or
+  the music gets `data-real-time` on its root and is never scaled (Spotify, the lyric video, the bieruur
+  countdown).
 - **Ambient loops are slow and cheap.** Bobbing, swaying and glowing loops run for the whole slide on the
   weak PC. Use `transform`/`opacity`, 2-6 s periods, `ease-in-out ... infinite alternate`.
 - **Interaction never waits on choreography.** On an interactive slide, buttons work from the moment they

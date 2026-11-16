@@ -46,6 +46,7 @@ async function show(slide, { canRefresh = true } = {}) {
 	const back = layers[1 - front];
 	back.classList.add("loading");   // its animations wait until it's shown (style.css), or they'd run ahead of the timer
 	back.innerHTML = slide.html;
+	setRate(back, slide.rate || 1);   // before the widgets are set up: they time themselves by it
 	for (const svg of back.querySelectorAll("svg")) svg.pauseAnimations?.();   // SVG (SMIL) animations wait for the show too, like the CSS ones
 	setupWidgets(back);
 	// Wait until the images are decoded, so slides never appear half-loaded.
@@ -63,7 +64,9 @@ async function show(slide, { canRefresh = true } = {}) {
 	}
 	const old = layers[front];
 	back.classList.remove("loading");
+	back.dataset.shownAt = performance.now();   // the slide's clock starts here: the 3D slides count from it, like the CSS animations
 	for (const svg of back.querySelectorAll("svg")) { svg.setCurrentTime?.(0); svg.unpauseAnimations?.(); }
+	paceSvgs(back);
 	back.classList.add("visible");
 	old.classList.remove("visible");
 	startVideos(back, true);   // so they start with the slide, not while it is still loading
@@ -74,6 +77,56 @@ async function show(slide, { canRefresh = true } = {}) {
 	current = slide;
 	if (slide.refresh && canRefresh) refreshTimer = setInterval(refresh, slide.refresh * 1000);
 	if (!paused) nextTimer = setTimeout(next, slide.seconds * 1000);
+}
+
+// The menu's Speed makes a slide shorter or longer (slide.seconds) and gives it a rate to match (2 = twice as fast), so
+// that what happens on it still happens once and fills its time, instead of being cut off or done long before the end.
+// Its CSS animations and transitions are played at that rate here, like a video's playback speed; what is timed in
+// JavaScript asks slideRate() (widgets.js). Animations that start later (a class added by a widget, a redraw by the
+// slide's own updates) are caught by looking again ten times a second, which costs next to nothing and only runs while
+// the speed isn't 1. Left alone: slides on a real clock or the music (data-real-time), and the marquees, which scroll
+// at reading speed. A tap ends it (keepPaused): what answers a tap always moves at its own pace.
+let rateTimer = null;
+let applyRate = () => {};   // looks right now, for a widget that has just started animations (widgets.js)
+
+function setRate(layer, rate) {
+	clearInterval(rateTimer);
+	layer.dataset.rate = rate;
+	applyRate = () => {};
+	if (rate === 1) return;
+	const apply = () => {
+		for (const animation of layer.getAnimations({ subtree: true })) {
+			if (animation.playbackRate === rate) continue;
+			if (animation.effect?.target === layer) continue;   // the fade between slides: the old slide fades out at normal speed too
+			if (animation.effect?.target?.closest("[data-real-time], [data-marquee]")) continue;
+			animation.playbackRate = rate;
+		}
+	};
+	apply();
+	applyRate = apply;
+	rateTimer = setInterval(apply, 100);
+}
+
+// SVG (SMIL) animations have no playback rate (the MScie caps' cords): at another speed they stay paused and their clock
+// is moved along by hand every frame instead, until the slide is gone or someone taps it.
+function paceSvgs(layer) {
+	const rate = Number(layer.dataset.rate) || 1;
+	const svgs = [...layer.querySelectorAll("svg")].filter((svg) => svg.querySelector("animate, animateTransform, animateMotion, set") && !svg.closest("[data-real-time]"));
+	if (rate === 1 || !svgs.length) return;
+	for (const svg of svgs) svg.pauseAnimations?.();
+	let started = null, time = 0;
+	const frame = (now) => {
+		if (!svgs.some((svg) => document.contains(svg))) return;
+		if (Number(layer.dataset.rate) !== rate) {   // a tap: on at normal speed from where it is
+			for (const svg of svgs) svg.unpauseAnimations?.();
+			return;
+		}
+		started ??= now;
+		time = (now - started) / 1000 * rate;
+		for (const svg of svgs) svg.setCurrentTime?.(time);
+		requestAnimationFrame(frame);
+	};
+	requestAnimationFrame(frame);
 }
 
 async function next() {
@@ -486,6 +539,10 @@ function keepPaused(seconds) {
 	if (!interacting) {
 		interacting = true;
 		clearTimeout(nextTimer);
+		// From here on at normal speed: what is running stays as fast as it was (no jump), what starts now isn't changed.
+		clearInterval(rateTimer);
+		applyRate = () => {};
+		layers[front].dataset.rate = 1;
 		takeoverTimer = setInterval(checkTakeover, 5000);
 	}
 	clearTimeout(idleTimer);

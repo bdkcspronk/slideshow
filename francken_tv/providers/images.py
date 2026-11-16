@@ -29,5 +29,6 @@ class ImagesProvider(Provider):
 			loop = animation_seconds(path)
 			# The blurred backdrop is a full-screen filter that repaints on every frame of a GIF, which the
 			# weak TV PC can't keep up with: only still images get one.
-			slides.append(Slide("image.html", max(self.seconds, loop), {"url": media_url(path), "backdrop": loop == 0}))
+			slides.append(Slide("image.html", max(self.seconds, loop), {"url": media_url(path), "backdrop": loop == 0},
+				min_seconds=loop))   # at a higher Speed a GIF still plays to its end once
 		return slides

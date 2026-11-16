@@ -32,6 +32,8 @@ class Slide:
 	update: Callable[[datetime], dict] | None = None   # recomputes `data` while the slide is shown...
 	refresh_seconds: float | None = None               # ...this often (e.g. a ticking countdown)
 	announce: str | None = None        # quote text to read aloud when the slide appears
+	min_seconds: float = 0             # never shown shorter than this, whatever the menu's Speed (a GIF's loop: it can't be played faster)
+	rate: float = 1.0                  # how fast it plays: 2 = everything on it happens twice as fast (the menu's Speed, scheduler.py)
 	sound: Path | None = None          # a sound file to play once when the slide comes up in the rotation
 
 

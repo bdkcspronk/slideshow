@@ -104,7 +104,7 @@ class SlideRenderer:
 		return self.templates.get_template(f"slides/{slide.template}").render(**data)
 
 	def as_json(self, slide: Slide) -> dict:
-		return {"html": self.render(slide), "seconds": slide.seconds, "refresh": slide.refresh_seconds}
+		return {"html": self.render(slide), "seconds": slide.seconds, "rate": slide.rate, "refresh": slide.refresh_seconds}
 
 	def next_slide(self) -> dict:
 		return self.start(self.app.scheduler.next_slide(self.app.clock.now()), rotation=True)

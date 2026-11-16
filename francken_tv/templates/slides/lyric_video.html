@@ -4,7 +4,7 @@
 	colours, counting on from data-start while data-playing is set. The server redraws the slide when
 	the song changes, pauses or jumps (data-state). Without synced lyrics: the song's title, big.
 #}
-<div class="slide lyric-video" data-state="{{ state }}">
+<div class="slide lyric-video" data-real-time data-state="{{ state }}">
 	<div class="lyric-video-backtext" aria-hidden="true"><span>{% for _ in range(6) %}{{ title }} &#9679; {% endfor %}</span></div>
 	{% if lines %}
 	<div class="lyric-video-stage" data-lyric-video data-start="{{ progress_seconds }}" data-total="{{ total_seconds }}"

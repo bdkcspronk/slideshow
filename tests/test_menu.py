@@ -65,7 +65,21 @@ class SchedulerSettingsTest(unittest.TestCase):
 	def test_speed_shortens_the_slides(self):
 		scheduler = Scheduler([Posters()], [])
 		scheduler.speed = 2.0
-		self.assertEqual(scheduler.next_slide(NOW).seconds, 4)
+		slide = scheduler.next_slide(NOW)
+		self.assertEqual((slide.seconds, slide.rate), (4, 2.0))   # half as long, played twice as fast
+
+	def test_speed_never_cuts_a_gif_short(self):
+		class Gif(Provider):
+			name = "images"
+			def slides(self, now):
+				return [Slide("image.html", 8, min_seconds=6)]   # a 6 s loop: it can't be played faster
+		scheduler = Scheduler([Gif()], [])
+		scheduler.speed = 2.0
+		slide = scheduler.next_slide(NOW)
+		self.assertEqual(slide.seconds, 6)
+		self.assertAlmostEqual(slide.rate, 8 / 6)
+		scheduler.speed = 0.5
+		self.assertEqual(scheduler.next_slide(NOW).seconds, 16)
 
 	def test_a_hidden_slide_type_leaves_the_round_at_once(self):
 		scheduler = Scheduler([Posters(), Chart()], [])

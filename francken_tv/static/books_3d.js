@@ -213,6 +213,7 @@ async function drawBooks3d(THREE, canvas, slide) {
 
 	// One frame at a time while the slide is on the page; freed when it's gone (the browser has only a few WebGL contexts).
 	const layer = canvas.closest(".layer");
+	const rate = slideRate(canvas);
 	let started = null, measured = false;
 	const times = [];
 	const frame = (now) => {
@@ -225,8 +226,10 @@ async function drawBooks3d(THREE, canvas, slide) {
 		}
 		requestAnimationFrame(frame);
 		if (layer?.classList.contains("loading")) return;   // not shown yet: the CSS animations wait too
-		started ??= now;
-		const t = (now - started) / 1000;
+		// From when the slide was shown (player.js), not from this first frame: a frame that comes late (a slow PC, pictures
+		// still loading) would leave the timeline behind the CSS animations for the whole slide, more so at a higher Speed.
+		started ??= Math.min(Number(layer?.dataset.shownAt) || now, now);
+		const t = (now - started) / 1000 * rate;   // the slide's clock: faster or slower with the menu's Speed, like its CSS animations
 		pose(t);
 		renderer.render(scene, camera);
 		// Too slow for this PC? Measure from 0.5 to 3 s (the books coming out) and drop to 75% resolution once.
