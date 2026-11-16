@@ -953,6 +953,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 @keyframes marquee-up { 0%, 12% { transform: translateY(0); } 88%, 100% { transform: translateY(var(--marquee-distance)); } }
 .lecture {
 	--kind: var(--blue-light);
+	--kind-text: oklch(41% 0.095 247);   /* the label: 7:1 or more on the white card for every kind (small print, read from across the room) */
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr);
 	grid-template-rows: auto auto auto;
@@ -965,16 +966,16 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	box-shadow: var(--shadow);
 	border-left: 0.6vh solid var(--kind);
 }
-.kind-tutorial { --kind: oklch(63.04% 0.1013 183.03); --kind-text: oklch(52.47% 0.0845 182.13); }   /* --kind-text: the label, dark enough for small print on the white card */
-.kind-practical { --kind: oklch(68.1% 0.1573 55.5); --kind-text: oklch(56.46% 0.1411 54.24); }
-.kind-exam { --kind: oklch(51.2% 0.131 307.5); }
-.kind-other { --kind: var(--faint); --kind-text: var(--muted); }
-.lecture-time { grid-row: span 3; align-self: center; font-size: 2vh; font-weight: bold; line-height: 1.3; color: var(--blue-light); font-variant-numeric: tabular-nums; }
+.kind-tutorial { --kind: oklch(56% 0.095 183); --kind-text: oklch(44% 0.075 182); }   /* --kind: the left edge, a shade lighter than its label */
+.kind-practical { --kind: oklch(62% 0.15 55); --kind-text: oklch(46% 0.12 54); }
+.kind-exam { --kind: oklch(51.2% 0.131 307.5); --kind-text: oklch(45% 0.14 307.5); }
+.kind-other { --kind: var(--muted); --kind-text: oklch(44% 0.035 250); }
+.lecture-time { grid-row: span 3; align-self: center; font-size: 2vh; font-weight: bold; line-height: 1.3; color: var(--blue); font-variant-numeric: tabular-nums; }
 .lecture b { font-size: 2.3vh; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }   /* up to two lines */
-.lecture-kind { font-size: 1.8vh; font-weight: bold; color: var(--kind-text, var(--kind)); }
-.lecture-details { font-size: 1.8vh; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lecture-kind { font-size: 1.8vh; font-weight: bold; color: var(--kind-text); }
+.lecture-details { font-size: 1.8vh; color: oklch(44% 0.035 250); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lecture.current { border-left-color: var(--red); outline: 0.3vh solid oklch(76.4% 0.142 14.5); }   /* the outline lies on the navy: light red (plain red is 2.4:1 there) */
-.no-lectures { margin: 0; font-size: 2.4vh; color: var(--faint); }
+.no-lectures { margin: 0; font-size: 2.4vh; color: var(--blue-light); }
 
 /* Our logo building itself (.logo-build around templates/francken_logo_balls.svg; the quote and membership slides):
    the coat of arms fades in, then the balls inflate layer by layer (the five at the back, the four in the middle,
