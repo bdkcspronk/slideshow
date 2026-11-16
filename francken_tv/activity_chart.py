@@ -36,7 +36,7 @@ from datetime import date, datetime, time, timedelta
 from .devices import Device
 from .presence_store import Sighting
 
-TEXT_COLOR = "#ECEFF1"
+TEXT_COLOR = "oklch(95% 0.004 236.5)"
 FALLBACK_SATURATION_RANGE = (0.65, 0.9)
 FALLBACK_BRIGHTNESS_RANGE = (0.85, 1.0)
 BUCKET = timedelta(minutes=5)          # sightings are grouped per 5 minutes
@@ -165,8 +165,9 @@ def prepare(sightings: list[Sighting], devices: dict[str, Device]) -> ChartData:
 
 
 def css_colour(colour: str | list) -> str:
-	"""A CSS background for a colour or a gradient list."""
-	return colour if isinstance(colour, str) else f"linear-gradient(90deg, {', '.join(colour)})"
+	"""A CSS background for a colour or a gradient list. The gradient blends in OKLCH, whatever notation its colours are in
+	(hex in devices.json too): even steps in lightness and no greyish middle between two bright colours."""
+	return colour if isinstance(colour, str) else f"linear-gradient(90deg in oklch, {', '.join(colour)})"
 
 
 def bar_look(style: MarkerStyle, width: float, seed: str) -> dict:
@@ -176,7 +177,7 @@ def bar_look(style: MarkerStyle, width: float, seed: str) -> dict:
 	if style.glow:
 		look["glow_colour"] = style.color[len(style.color) // 2] if isinstance(style.color, list) else style.color
 	if style.shape in ("striped", "board"):
-		look["stripes"] = "#0057B8" if style.shape == "board" else css_colour(style.stripe_color)
+		look["stripes"] = "oklch(47.37% 0.1693 257.17)" if style.shape == "board" else css_colour(style.stripe_color)
 		look["stripe_width"] = f"{max(4, style.stripe_thickness * 1.5):.1f}px" if style.stripe_thickness else None
 	if style.shape == "beer":
 		look["foam"] = f"min(28%, {style.beer_foam_max_width:.0f}px)" if style.beer_foam_max_width else "28%"

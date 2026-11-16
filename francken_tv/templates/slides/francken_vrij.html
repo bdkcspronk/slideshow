@@ -12,7 +12,7 @@
 {% set strips = 12 %}
 {% set rest = [-26, 10, 7, 4, 3, 2] %}   {# degrees, each strip turned relative to the one before: the page's curve #}
 {% set slant = [-18, 6, 5, 4, 3, 2, 2, 1, 1, 1, 1, 1] %}   {# degrees, each strip slanted relative to the one before: its arched edges #}
-{% macro shade(x) %}rgba(0, 0, 0, {{ (0.32 * (1 - x) ** 5) | round(3) }}){% endmacro %}
+{% macro shade(x) %}oklch(0% 0 0 / {{ (0.32 * (1 - x) ** 5) | round(3) }}){% endmacro %}
 {% macro strip(leaf, i) %}
 {# Strip i covers the page from i/strips to (i+1)/strips, counted from the spine; the back is mirrored. #}
 <div class="fv-strip" style="--r: {{ rest[i] if i < rest | length else 0 }}deg; --k: {{ slant[i] if i < slant | length else 0 }}deg">

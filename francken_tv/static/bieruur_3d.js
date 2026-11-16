@@ -650,7 +650,7 @@ function shadowTexture(THREE, w, h, blur) {
 	canvas.width = 256;
 	canvas.height = Math.max(8, Math.round((h + 2 * blur) * scale));
 	const ctx = canvas.getContext("2d");
-	ctx.shadowColor = "rgba(0, 0, 0, 0.42)";
+	ctx.shadowColor = "oklch(0% 0 0 / 0.42)";
 	ctx.shadowBlur = blur * scale * 0.9;
 	ctx.shadowOffsetX = 10000;   // only the shadow lands on the canvas, the rectangle itself is far to the left
 	ctx.fillRect(blur * scale - 10000, blur * scale, w * scale, h * scale);
@@ -684,9 +684,9 @@ function letterAtlas(THREE) {
 	canvas.width = w * columns;
 	canvas.height = h * rows;
 	const ctx = canvas.getContext("2d");
-	ctx.fillStyle = "#000000";
+	ctx.fillStyle = "oklch(0% 0 0)";
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	ctx.fillStyle = "#ffffff";
+	ctx.fillStyle = "oklch(100% 0 0)";
 	ctx.font = `400 ${Math.round(h * 1.02)}px "Bebas Neue", "DejaVu Sans Condensed", sans-serif`;
 	ctx.textAlign = "center";
 	ctx.textBaseline = "alphabetic";

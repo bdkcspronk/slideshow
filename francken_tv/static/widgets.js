@@ -227,7 +227,7 @@ function setupMap(element) {
 	if (pins) {
 		const guess = L.latLng(pins.guess);
 		const answer = L.latLng(pins.answer);
-		L.polyline([guess, answer], { color: "#173249", weight: 3, dashArray: "8 8", interactive: false }).addTo(map);   // Francken blue (--blue in style.css)
+		L.polyline([guess, answer], { color: "oklch(30.8% 0.053 246.4)", weight: 3, dashArray: "8 8", interactive: false }).addTo(map);   // Francken blue (--blue in style.css)
 		mapPin(guess, "guess").addTo(map);
 		mapPin(answer, "answer").addTo(map);
 		map.fitBounds(L.latLngBounds([guess, answer]), { padding: [60, 60], maxZoom: 13 });
@@ -360,14 +360,14 @@ const LYRIC_STYLES = [
 ];
 // [background, text, accent]: Francken's own colours among them.
 const LYRIC_PALETTES = [
-	["#173249", "#ffffff", "#ff5a6a"],
-	["#ffd23f", "#141414", "#e4002b"],
-	["#ff4f9a", "#ffffff", "#24124a"],
-	["#101010", "#f4f4f4", "#1ed760"],
-	["#f3ece0", "#173249", "#dc3545"],
-	["#5b2bff", "#ffffff", "#ffd23f"],
-	["#00c2a8", "#0b1d26", "#ffffff"],
-	["#dc3545", "#ffffff", "#ffd23f"],
+	["oklch(30.8% 0.053 246.4)", "oklch(100% 0 0)", "oklch(69.1% 0.2 18.5)"],
+	["oklch(87.9% 0.162 90.9)", "oklch(19.1% 0 0)", "oklch(57.9% 0.234 23.9)"],
+	["oklch(69.2% 0.22 358.6)", "oklch(100% 0 0)", "oklch(24.6% 0.098 292.5)"],
+	["oklch(17.3% 0 0)", "oklch(96.7% 0 0)", "oklch(76.97% 0.2124 148.67)"],
+	["oklch(94.5% 0.018 81.3)", "oklch(30.8% 0.053 246.4)", "oklch(59.2% 0.202 21.2)"],
+	["oklch(51.4% 0.279 280.6)", "oklch(100% 0 0)", "oklch(87.9% 0.162 90.9)"],
+	["oklch(72.9% 0.134 178.5)", "oklch(22% 0.03 232)", "oklch(100% 0 0)"],
+	["oklch(59.2% 0.202 21.2)", "oklch(100% 0 0)", "oklch(87.9% 0.162 90.9)"],
 ];
 
 // Exactly the timing of the Spotify lyrics slide (setupLyrics), which is right: a line starts 0.15 s early.
@@ -547,7 +547,7 @@ function setupMatrix(canvas) {
 		canvas.height = pixels(canvas.clientHeight);
 		size = Math.max(8, Math.round(canvas.height / 40));
 		drops = Array.from({ length: Math.ceil(canvas.width / size) }, () => ({ y: -Math.random() * 25, speed: speed(), word: null, i: 0, last: null }));
-		ctx.fillStyle = "#000";
+		ctx.fillStyle = "oklch(0% 0 0)";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 	};
 	resize();
@@ -565,7 +565,7 @@ function setupMatrix(canvas) {
 		requestAnimationFrame(frame);
 	};
 	const tick = () => {
-		ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+		ctx.fillStyle = "oklch(0% 0 0 / 0.05)";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 		ctx.font = `${size}px Consolas, "DejaVu Sans Mono", monospace`;
 		ctx.textAlign = "center";
@@ -580,13 +580,13 @@ function setupMatrix(canvas) {
 				if (drop.i >= drop.word.length) drop.word = null;
 			}
 			const draw = (text, y, colour) => {
-				ctx.fillStyle = "#000";
+				ctx.fillStyle = "oklch(0% 0 0)";
 				ctx.fillRect(x * size, (y - 1) * size, size, size * 1.15);
 				ctx.fillStyle = colour;
 				ctx.fillText(text, x * size + size / 2, y * size - size * 0.15);
 			};
-			if (drop.last) draw(drop.last, row - 1, "#00ff41");   // the previous head settles into green
-			draw(glyph, row, "#c8ffd4");                          // the new head, bright
+			if (drop.last) draw(drop.last, row - 1, "oklch(86.9% 0.278 144.5)");   // the previous head settles into green
+			draw(glyph, row, "oklch(95.1% 0.08 151.3)");                          // the new head, bright
 			drop.last = glyph;
 			if (drop.y * size > canvas.height && Math.random() > 0.975) {   // past the bottom: again from the top
 				Object.assign(drop, { y: 0, speed: speed(), i: 0, last: null,

@@ -73,9 +73,9 @@ MAX_NAME = 16
 # darker arms and feet). Picked on the slide before it's named.
 SPECIES = {"blob": "Blob", "cat": "Cat", "bunny": "Bunny", "bear": "Bear", "dino": "Dino", "octopus": "Octopus"}
 COLORS = {
-	"crimson": ("#c8102e", "#9c0c24"), "blue": ("#2f7de1", "#1f5bb0"), "green": ("#3fae5a", "#2b7f40"),
-	"yellow": ("#f2c230", "#c99a12"), "orange": ("#f07a2a", "#c2571a"), "purple": ("#8e5bd6", "#6a3fb0"),
-	"pink": ("#f27ab0", "#c9548a"),
+	"crimson": ("oklch(53% 0.207 22.3)", "oklch(44.23% 0.1715 21.67)"), "blue": ("oklch(59.5% 0.17 256.4)", "oklch(48.2% 0.149 258.1)"), "green": ("oklch(66.8% 0.158 148.4)", "oklch(53% 0.126 148.5)"),
+	"yellow": ("oklch(83.4% 0.1584 88.96)", "oklch(71.1% 0.142 86)"), "orange": ("oklch(70.3% 0.169 49.8)", "oklch(58.3% 0.153 45.4)"), "purple": ("oklch(58.5% 0.183 299.9)", "oklch(47.9% 0.172 296.9)"),
+	"pink": ("oklch(73.2% 0.158 353.4)", "oklch(61.1% 0.159 354)"),
 }
 KEYBOARD = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
 

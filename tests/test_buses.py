@@ -32,7 +32,7 @@ class BusesProviderTest(unittest.TestCase):
 	def test_buses_in_their_line_colours(self):
 		self.provider.departures.append(Departure("171", "Veendam", datetime(2026, 10, 18, 19, 40), datetime(2026, 10, 18, 19, 40)))
 		rows = self.provider.buses_data(SUNDAY_EVENING)["departures"]
-		self.assertEqual([row["colors"] for row in rows], [["#00be46", "#000000"], None])   # a regional line: the slide's blue
+		self.assertEqual([row["colors"] for row in rows], [["oklch(69.8% 0.207 147.1)", "oklch(0% 0 0)"], None])   # a regional line: the slide's blue
 
 	def test_only_buses_that_can_still_be_caught_and_a_last_call(self):
 		at = lambda minute, second=0: datetime(2026, 10, 18, 19, minute, second)

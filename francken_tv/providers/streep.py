@@ -15,9 +15,9 @@ from ..slides import Provider, Slide
 # The snacks on the screen, as in the streep system (name, the colour of its tile, its price in euro cents; the
 # prices are only used for the total of the tapped ones).
 PRODUCTS = [
-	("Kinder Bueno", "#6b4026", 99), ("Snickers", "#4a2c1d", 0), ("Twix", "#c79a1e", 66), ("KitKat", "#d0121b", 75),
-	("Mars", "#1a1a1a", 54), ("Doritos", "#e8701a", 83), ("Pringles", "#b30f28", 0), ("Tuc", "#e6b320", 0),
-	("Noodles", "#b8a21f", 68), ("Oreo Rolls", "#1d4fa0", 0), ("Spring roll", "#3a3a3a", 0), ("BIG chocolate", "#3a3a3a", 0),
+	("Kinder Bueno", "oklch(41.7% 0.072 50.9)", 99), ("Snickers", "oklch(32.7% 0.051 47)", 0), ("Twix", "oklch(70.93% 0.1378 86.27)", 66), ("KitKat", "oklch(54.44% 0.2149 27.15)", 75),
+	("Mars", "oklch(21.8% 0 0)", 54), ("Doritos", "oklch(67.6% 0.172 49.2)", 83), ("Pringles", "oklch(48.9% 0.19 22.5)", 0), ("Tuc", "oklch(79.16% 0.1553 86.84)", 0),
+	("Noodles", "oklch(71.06% 0.1394 98.77)", 68), ("Oreo Rolls", "oklch(44.2% 0.142 259.8)", 0), ("Spring roll", "oklch(34.8% 0 0)", 0), ("BIG chocolate", "oklch(34.8% 0 0)", 0),
 ]
 COLUMNS = 4
 GRID_X, GRID_Y = 95, 72          # the grid's top left

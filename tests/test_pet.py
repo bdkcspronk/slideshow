@@ -180,7 +180,7 @@ class PetTest(unittest.TestCase):
 	def test_pick_the_shape_and_colour(self):
 		self.provider.action("species", ["octopus"], START)
 		data = self.provider.action("color", ["green"], START)[0].data
-		self.assertEqual((data["species"], data["color"], data["body"]), ("octopus", "green", "#3fae5a"))
+		self.assertEqual((data["species"], data["color"], data["body"]), ("octopus", "green", "oklch(66.8% 0.158 148.4)"))
 		self.assertIsNone(self.provider.action("species", ["dragon"], START + timedelta(seconds=1))[0])   # not a species
 		data = self.provider.action("back", [], START)[0].data
 		self.assertEqual(data["state"], "choosing")

@@ -341,14 +341,14 @@ PAGE = """<title>Francken TV emulator</title>
    a clock that can be set, and every slide type as a channel button. */
 @font-face { font-family: "Familjen Grotesk"; font-weight: 700; src: url("data:font/woff2;base64,/*GROTESK*/") format("woff2"); }
 :root {
-	--room: #0e1319;
-	--bezel: #05080b;
-	--panel: #172029;
-	--line: #26323e;
-	--ink: #eef1f4;
-	--muted: #8d9aa8;
-	--crimson: #c8283a;
-	--gold: #ffc400;
+	--room: oklch(18.4% 0.015 253.2);
+	--bezel: oklch(13.2% 0.01 242.7);
+	--panel: oklch(23.9% 0.022 248.8);
+	--line: oklch(31.1% 0.027 248.7);
+	--ink: oklch(95.7% 0.005 247.9);
+	--muted: oklch(68% 0.025 250.2);
+	--crimson: oklch(54.5% 0.194 21.3);
+	--gold: oklch(85% 0.174 86.6);
 	--display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
 	--text: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 	--mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -364,8 +364,8 @@ header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content:
 h1 { font-family: var(--display); font-weight: 700; font-size: clamp(24px, 3.4vw, 34px); margin: 0; letter-spacing: -0.01em; }
 h1 span { color: var(--crimson); }
 .clock { color: var(--muted); margin: 0; font-size: 13px; font-variant-numeric: tabular-nums; }
-.tv { background: var(--bezel); border-radius: 14px; padding: clamp(6px, 1.2vw, 14px); box-shadow: 0 30px 60px -30px #000; }
-.screen { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; border-radius: 4px; background: #000; }
+.tv { background: var(--bezel); border-radius: 14px; padding: clamp(6px, 1.2vw, 14px); box-shadow: 0 30px 60px -30px oklch(0% 0 0); }
+.screen { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; border-radius: 4px; background: oklch(0% 0 0); }
 .screen iframe { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; }
 .starting { position: absolute; inset: 0; display: grid; place-content: center; gap: 10px; text-align: center; padding: 16px; }
 .starting strong { font-family: var(--display); font-size: clamp(18px, 3vw, 28px); }

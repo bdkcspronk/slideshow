@@ -228,7 +228,7 @@ async function drawInstagram3d(THREE, canvas, slide) {
 			return mesh;
 		};
 		const pictureCanvas = feedCanvas(sw, sh, px);
-		pictureCanvas.ctx.fillStyle = "#000000";
+		pictureCanvas.ctx.fillStyle = "oklch(0% 0 0)";
 		pictureCanvas.ctx.fillRect(0, 0, sw, sh);
 		drawCover(pictureCanvas.ctx, story.picture, 0, 0, sw, sh);
 		const parts = [layer(cardGeometry(THREE, sw, sh, 7.7), texture(new THREE.CanvasTexture(pictureCanvas.canvas)), 6.2)];
@@ -511,19 +511,19 @@ function storyOverlayCanvas({ avatar, username, ago }, w, h, px, font) {
 	const ctx = canvas.getContext("2d");
 	ctx.scale(px, px);
 	const shade = ctx.createLinearGradient(0, 0, 0, 14);
-	shade.addColorStop(0, "rgba(0, 0, 0, 0.45)");
-	shade.addColorStop(1, "rgba(0, 0, 0, 0)");
+	shade.addColorStop(0, "oklch(0% 0 0 / 0.45)");
+	shade.addColorStop(1, "oklch(0% 0 0 / 0)");
 	ctx.fillStyle = shade;
 	ctx.fillRect(0, 0, w, 14);
-	ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+	ctx.fillStyle = "oklch(100% 0 0 / 0.35)";
 	ctx.fillRect(STORY_BAR.x, STORY_BAR.y, w - 2 * STORY_BAR.x, STORY_BAR.h);
 	drawAvatar(ctx, avatar, 1.6, 5.6, 4.2);
 	ctx.textBaseline = "middle";
-	ctx.fillStyle = "#ffffff";
+	ctx.fillStyle = "oklch(100% 0 0)";
 	ctx.font = `bold 2.1px ${font}`;
 	ctx.fillText(username, 6.6, 7.7);
 	const nameWidth = ctx.measureText(username).width;
-	ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+	ctx.fillStyle = "oklch(100% 0 0 / 0.75)";
 	ctx.font = `1.8px ${font}`;
 	ctx.fillText(ago, 6.6 + nameWidth + 1.2, 7.7);
 	return canvas;
@@ -575,7 +575,7 @@ function feedCanvas(w, h, px) {
 	canvas.height = Math.round(h * px);
 	const ctx = canvas.getContext("2d");
 	ctx.scale(px, px);   // drawn in vh from here on
-	ctx.fillStyle = "#ffffff";
+	ctx.fillStyle = "oklch(100% 0 0)";
 	ctx.fillRect(0, 0, w, h);
 	ctx.textBaseline = "middle";
 	return { canvas, ctx };
@@ -584,7 +584,7 @@ function feedCanvas(w, h, px) {
 // An image filling a w x h box as object-fit: cover does; grey without one.
 function drawCover(ctx, image, x, y, w, h) {
 	if (!image) {
-		ctx.fillStyle = "#eeeeee";
+		ctx.fillStyle = "oklch(94.9% 0 0)";
 		return ctx.fillRect(x, y, w, h);
 	}
 	const scale = Math.max(w / image.naturalWidth, h / image.naturalHeight);
@@ -599,7 +599,7 @@ function drawAvatar(ctx, image, x, y, d) {
 	ctx.clip();
 	drawCover(ctx, image, x, y, d, d);
 	if (!image) {
-		ctx.fillStyle = "#dddddd";
+		ctx.fillStyle = "oklch(89.8% 0 0)";
 		ctx.fillRect(x, y, d, d);
 	}
 	ctx.restore();
@@ -608,7 +608,7 @@ function drawAvatar(ctx, image, x, y, d) {
 function profileCanvas({ username, name, counts, avatar, story }, w, px, font) {
 	const h = 27.9;
 	const { canvas, ctx } = feedCanvas(w, h, px);
-	ctx.fillStyle = "#111111";
+	ctx.fillStyle = "oklch(17.8% 0 0)";
 	ctx.font = `bold 2.9px ${font}`;
 	ctx.fillText(username, 2, 6 + 1.75);
 	// The big avatar, in Instagram's gradient ring when there's a story.
@@ -616,12 +616,12 @@ function profileCanvas({ username, name, counts, avatar, story }, w, px, font) {
 	if (!story) drawAvatar(ctx, avatar, AVATAR.x, ay, d);
 	else {
 		const ring = ctx.createLinearGradient(2, ay + d, 2 + d, ay);
-		[["#fcaf45", 0], ["#f77737", 0.25], ["#e1306c", 0.55], ["#c13584", 0.75], ["#833ab4", 1]].forEach(([c, at]) => ring.addColorStop(at, c));
+		[["oklch(81% 0.148 71.1)", 0], ["oklch(71% 0.174 44.5)", 0.25], ["oklch(60.5% 0.213 6.8)", 0.55], ["oklch(56.3% 0.191 350.4)", 0.75], ["oklch(50.4% 0.188 308.6)", 1]].forEach(([c, at]) => ring.addColorStop(at, c));
 		ctx.fillStyle = ring;
 		ctx.beginPath();
 		ctx.arc(2 + d / 2, ay + d / 2, d / 2, 0, 2 * Math.PI);
 		ctx.fill();
-		ctx.fillStyle = "#ffffff";
+		ctx.fillStyle = "oklch(100% 0 0)";
 		ctx.beginPath();
 		ctx.arc(2 + d / 2, ay + d / 2, d / 2 - 0.4, 0, 2 * Math.PI);
 		ctx.fill();
@@ -635,30 +635,30 @@ function profileCanvas({ username, name, counts, avatar, story }, w, px, font) {
 		const nw = ctx.measureText(number).width;
 		ctx.font = `2px ${font}`;
 		const cw = Math.max(nw, ctx.measureText(word).width);
-		ctx.fillStyle = "#111111";
+		ctx.fillStyle = "oklch(17.8% 0 0)";
 		ctx.font = `bold 2.7px ${font}`;
 		ctx.fillText(number, x + cw / 2, ay + d / 2 - 1.3);
-		ctx.fillStyle = "#444444";
+		ctx.fillStyle = "oklch(38.7% 0 0)";
 		ctx.font = `2px ${font}`;
 		ctx.fillText(word, x + cw / 2, ay + d / 2 + 1.4);
 		x += cw + 3.6;
 	}
 	if (!counts.length) {   // no counts (not shown by Instagram): a Follow button in their place
-		ctx.fillStyle = "#0095f6";
+		ctx.fillStyle = "oklch(65.46% 0.1771 248.22)";
 		ctx.beginPath();
 		ctx.roundRect(x, ay + d / 2 - 2.4, w - 2 - x, 4.8, 1.2);
 		ctx.fill();
-		ctx.fillStyle = "#ffffff";
+		ctx.fillStyle = "oklch(100% 0 0)";
 		ctx.font = `bold 2.2px ${font}`;
 		ctx.textAlign = "center";
 		ctx.fillText("Follow", x + (w - 2 - x) / 2, ay + d / 2);
 		ctx.textAlign = "left";
 	}
 	ctx.textAlign = "left";
-	ctx.fillStyle = "#111111";
+	ctx.fillStyle = "oklch(17.8% 0 0)";
 	ctx.font = `bold 2.2px ${font}`;
 	ctx.fillText(name, 2, ay + d + 1.4 + 1.3);
-	ctx.fillStyle = "#e5e5e5";
+	ctx.fillStyle = "oklch(92.2% 0 0)";
 	ctx.fillRect(0, h - 0.1, w, 0.1);
 	return canvas;
 }
@@ -677,10 +677,10 @@ function postCanvas(post, w, px, font) {
 
 	// The header: the avatar, the name, how long ago.
 	drawAvatar(ctx, post.avatar ?? null, 2, 1.4, 4.4);
-	ctx.fillStyle = "#111111";
+	ctx.fillStyle = "oklch(17.8% 0 0)";
 	ctx.font = `bold 2.1px ${font}`;
 	ctx.fillText(post.username, 7.6, 3.6);
-	ctx.fillStyle = "#8e8e8e";
+	ctx.fillStyle = "oklch(64.7% 0 0)";
 	ctx.font = `1.8px ${font}`;
 	ctx.textAlign = "right";
 	ctx.fillText(post.ago ?? "", w - 2, 3.6);
@@ -692,9 +692,9 @@ function postCanvas(post, w, px, font) {
 	if (mark) {
 		ctx.font = `2.7px ${font}`;
 		ctx.textAlign = "right";
-		ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+		ctx.shadowColor = "oklch(0% 0 0 / 0.6)";
 		ctx.shadowBlur = 0.6 * px;
-		ctx.fillStyle = "#ffffff";
+		ctx.fillStyle = "oklch(100% 0 0)";
 		ctx.fillText(mark, w - 1.4, POST_HEADER + 2.8);
 		ctx.shadowColor = "transparent";
 		ctx.textAlign = "left";
@@ -710,12 +710,12 @@ function postCanvas(post, w, px, font) {
 		ctx.lineJoin = "round";
 		const p = new Path2D(path);
 		if (filled) {
-			ctx.fillStyle = ctx.strokeStyle = "#ff3040";
+			ctx.fillStyle = ctx.strokeStyle = "oklch(64.84% 0.2376 23.79)";
 			ctx.fill(p);
-		} else ctx.strokeStyle = "#111111";
+		} else ctx.strokeStyle = "oklch(17.8% 0 0)";
 		ctx.stroke(p);
 		ctx.restore();
-		ctx.fillStyle = "#111111";
+		ctx.fillStyle = "oklch(17.8% 0 0)";
 		ctx.font = `bold 2.1px ${font}`;
 		ctx.fillText(number, x + 3.7, actionsY + 1.3 + 1.55);
 		x += 3.7 + ctx.measureText(number).width + 2.4;
@@ -724,14 +724,14 @@ function postCanvas(post, w, px, font) {
 	icon(BUBBLE, false, post.comments ?? "0");
 	// An album: a dot per picture in the middle of the row, the first one blue (the 3D carousel moves them).
 	if (post.album.length > 1) albumDots(post.album.length).forEach(([x, on]) => {
-		ctx.fillStyle = on(0) ? "#0095f6" : "#a8a8a8";
+		ctx.fillStyle = on(0) ? "oklch(65.46% 0.1771 248.22)" : "oklch(73.2% 0 0)";
 		ctx.beginPath();
 		ctx.arc(w / 2 + x, actionsY + ALBUM_DOTS_Y, 0.3, 0, 2 * Math.PI);
 		ctx.fill();
 	});
 
 	// The caption, with the name in bold in front of its first line.
-	ctx.fillStyle = "#111111";
+	ctx.fillStyle = "oklch(17.8% 0 0)";
 	lines.forEach((line, n) => {
 		const y = actionsY + 4.9 + 0.5 + (n + 0.5) * 2.7;
 		ctx.font = `2px ${font}`;

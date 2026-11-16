@@ -119,9 +119,9 @@ async function drawBooks3d(THREE, canvas, slide) {
 		ctx.drawImage(canvas, 0, 0);   // straight after drawing it, while the picture is still there
 		// Darker behind the titles and prices, so they stay easy to read.
 		const shade = ctx.createLinearGradient(0, 0, 0, caseCanvas.height);
-		shade.addColorStop(0.5, "rgba(13, 31, 60, 0)");
-		shade.addColorStop(0.72, "rgba(13, 31, 60, 0.7)");
-		shade.addColorStop(1, "rgba(13, 31, 60, 0.85)");
+		shade.addColorStop(0.5, "oklch(24.2% 0.061 259.5 / 0)");
+		shade.addColorStop(0.72, "oklch(24.2% 0.061 259.5 / 0.7)");
+		shade.addColorStop(1, "oklch(24.2% 0.061 259.5 / 0.85)");
 		ctx.fillStyle = shade;
 		ctx.fillRect(0, 0, caseCanvas.width, caseCanvas.height);
 		renderer.clear();
@@ -357,7 +357,7 @@ function makeBookcase(THREE, { W, H, D, books, caseSize, distance, height, textu
 	atlas.height = Math.ceil((books.length + 1) / columns) * tileH;
 	const ctx = atlas.getContext("2d");
 	books.forEach((book, n) => drawSpine(ctx, (n % columns) * tileW, Math.floor(n / columns) * tileH, tileW, tileH, book.cloth, book.title));
-	ctx.fillStyle = "#ffffff";
+	ctx.fillStyle = "oklch(100% 0 0)";
 	ctx.fillRect(atlas.width - 8, atlas.height - 8, 8, 8);
 	const spines = texture(atlas);
 	const white = [1 - 4 / atlas.width, 4 / atlas.height];
@@ -552,7 +552,7 @@ function coverCanvas(W, H, image, hue, title, authors) {
 		cloth.addColorStop(1, `hsl(${hue} 35% 22%)`);
 		ctx.fillStyle = cloth;
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = "#e8d29b";
+		ctx.fillStyle = "oklch(86.9% 0.075 88.7)";
 		ctx.fillRect(px(3.8), px(4), px(4), px(0.25));
 		const textWidth = px(W - 3.8 - 2.5);
 		// The authors at the bottom, then the title above them in what room is left: smaller for a long title or a
@@ -579,10 +579,10 @@ function coverCanvas(W, H, image, hue, title, authors) {
 		titleLines.forEach((line, n) => ctx.fillText(line, px(3.8), px(5 + n * fontSize * 1.25)));
 	}
 	const groove = ctx.createLinearGradient(0, 0, 2 * scale, 0);
-	groove.addColorStop(0, "rgba(0, 0, 0, 0.3)");
-	groove.addColorStop(0.45, "rgba(255, 255, 255, 0.15)");
-	groove.addColorStop(0.75, "rgba(0, 0, 0, 0.1)");
-	groove.addColorStop(1, "rgba(0, 0, 0, 0)");
+	groove.addColorStop(0, "oklch(0% 0 0 / 0.3)");
+	groove.addColorStop(0.45, "oklch(100% 0 0 / 0.15)");
+	groove.addColorStop(0.75, "oklch(0% 0 0 / 0.1)");
+	groove.addColorStop(1, "oklch(0% 0 0 / 0)");
 	ctx.fillStyle = groove;
 	ctx.fillRect(0, 0, 2 * scale, canvas.height);
 	return canvas;
@@ -605,9 +605,9 @@ function drawSpine(ctx, x, y, w, h, cloth, title) {
 	ctx.clip();
 	ctx.fillStyle = cloth;
 	ctx.fillRect(x, y, w, h);
-	ctx.fillStyle = "rgba(0, 0, 0, 0.25)";   // the cloth of the spine a bit darker than the cover
+	ctx.fillStyle = "oklch(0% 0 0 / 0.25)";   // the cloth of the spine a bit darker than the cover
 	ctx.fillRect(x, y, w, h);
-	ctx.fillStyle = "#e8d29b";
+	ctx.fillStyle = "oklch(86.9% 0.075 88.7)";
 	const band = Math.max(1, Math.round(h / 170));
 	for (const at of [0.035, 0.051, 1 - 0.055, 1 - 0.039]) ctx.fillRect(x, y + Math.round(at * h), w, band);
 	ctx.translate(x + w / 2, y + h * 0.086);
@@ -624,9 +624,9 @@ function pagesCanvas() {
 	canvas.width = 8;
 	canvas.height = 2;
 	const ctx = canvas.getContext("2d");
-	ctx.fillStyle = "#f7f2e8";
+	ctx.fillStyle = "oklch(96.2% 0.014 84.6)";
 	ctx.fillRect(0, 0, 6, 2);
-	ctx.fillStyle = "#cfc4b0";
+	ctx.fillStyle = "oklch(82.4% 0.03 82.6)";
 	ctx.fillRect(6, 0, 2, 2);
 	return canvas;
 }
@@ -636,13 +636,13 @@ function woodCanvas() {
 	const canvas = document.createElement("canvas");
 	canvas.width = canvas.height = 256;
 	const ctx = canvas.getContext("2d");
-	ctx.fillStyle = "#c8c8c8";
+	ctx.fillStyle = "oklch(83.3% 0 0)";
 	ctx.fillRect(0, 0, 256, 256);
 	let seed = 7;
 	const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 	for (let n = 0; n < 70; n++) {
 		const y = random() * 256, light = random() < 0.5;
-		ctx.strokeStyle = light ? `rgba(255, 255, 255, ${0.1 + random() * 0.15})` : `rgba(0, 0, 0, ${0.08 + random() * 0.15})`;
+		ctx.strokeStyle = light ? `oklch(100% 0 0 / ${0.1 + random() * 0.15})` : `oklch(0% 0 0 / ${0.08 + random() * 0.15})`;
 		ctx.lineWidth = 1 + random() * 3;
 		ctx.beginPath();
 		const wave = random() * 6, phase = random() * 6;

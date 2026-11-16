@@ -20,10 +20,10 @@ ALETTA_JACOBSHAL = ["10004120"]   # Groningen, Aletta Jacobshal: the side toward
 # From route_color/route_text_color in the national GTFS (gtfs.ovapi.nl/nl, routes.txt); the regional lines
 # (107, 109, 171, ...) have none there and keep the slide's blue.
 BUS_LINE_COLORS = {
-	"1": ["#00be46", "#000000"], "2": ["#8cdc32", "#000000"], "3": ["#1078be", "#ffffff"],
-	"4": ["#00bcf2", "#000000"], "5": ["#b400be", "#ffffff"], "6": ["#c85aff", "#ffffff"],
-	"9": ["#ff00ff", "#ffffff"], "11": ["#00be46", "#000000"], "15": ["#ff5f00", "#000000"],
-	"18": ["#99c200", "#000000"],
+	"1": ["oklch(69.8% 0.207 147.1)", "oklch(0% 0 0)"], "2": ["oklch(81.2% 0.208 132.2)", "oklch(0% 0 0)"], "3": ["oklch(55.5% 0.138 246.1)", "oklch(100% 0 0)"],
+	"4": ["oklch(74.22% 0.1441 227.59)", "oklch(0% 0 0)"], "5": ["oklch(54.7% 0.255 325.5)", "oklch(100% 0 0)"], "6": ["oklch(67.5% 0.243 312.4)", "oklch(100% 0 0)"],
+	"9": ["oklch(70.17% 0.3225 328.36)", "oklch(100% 0 0)"], "11": ["oklch(69.8% 0.207 147.1)", "oklch(0% 0 0)"], "15": ["oklch(68.7% 0.21 41.4)", "oklch(0% 0 0)"],
+	"18": ["oklch(75.7% 0.187 123.5)", "oklch(0% 0 0)"],
 }
 
 
