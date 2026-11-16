@@ -29,7 +29,7 @@ from pathlib import Path
 
 import requests
 
-from ..slides import Provider, Slide, media_url
+from ..slides import NotSetUp, Provider, Slide, media_url
 from .news import ago
 
 log = logging.getLogger(__name__)
@@ -189,7 +189,7 @@ class InstagramProvider(Provider):
 	def refresh(self, now: datetime) -> None:
 		credentials = self.credentials()
 		if not credentials.get("access_token"):
-			raise RuntimeError(f"no Instagram token in {self.credentials_path} (docs/setup/instagram.md)")
+			raise NotSetUp(f"no Instagram token in {self.credentials_path} (docs/setup/instagram.md)")
 		credentials = self.keep_token_fresh(credentials, now)
 		token = credentials["access_token"]
 		response = requests.get(f"{API}/me", params={"fields": PROFILE_FIELDS, "access_token": token}, timeout=20)

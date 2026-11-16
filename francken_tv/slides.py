@@ -24,6 +24,11 @@ class PartsFailed(RuntimeError):
 	failure is already logged, so the background runner logs this without a traceback."""
 
 
+class NotSetUp(RuntimeError):
+	"""refresh() can't work until someone puts an account's secret on this PC (docs/02-accounts-and-secrets.md):
+	not a bug, so the background runner logs it in one line, without a traceback."""
+
+
 @dataclass
 class Slide:
 	template: str                      # file in francken_tv/templates/slides/

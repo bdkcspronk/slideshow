@@ -10,6 +10,8 @@ from urllib.parse import quote, unquote
 
 import requests
 
+from .slides import NotSetUp
+
 DAV = {"d": "DAV:"}
 
 
@@ -25,7 +27,10 @@ class Entry:
 
 def load_credentials(path: Path) -> tuple[str, str]:
 	"""Accepts {"username": ..., "password": ...} or [{"username": ...}, {"password": ...}]."""
-	data = json.loads(path.read_text(encoding="utf-8"))
+	try:
+		data = json.loads(path.read_text(encoding="utf-8"))
+	except FileNotFoundError:
+		raise NotSetUp(f"no Nextcloud login in {path} (docs/02-accounts-and-secrets.md)") from None
 	if isinstance(data, list):
 		merged = {}
 		for item in data:

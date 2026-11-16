@@ -9,6 +9,7 @@ from PIL import Image
 from francken_tv.background import BackgroundRunner
 from francken_tv.clock import Clock
 from francken_tv.config import DATA_DIR
+from francken_tv.nextcloud import load_credentials
 from francken_tv.providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurTakeover, countdown_data
 from francken_tv.providers.vrijmibo import VrijmiboTakeover
 from francken_tv.rotation import Group, Rule
@@ -285,17 +286,22 @@ class BackgroundTest(unittest.TestCase):
 			name, refresh_seconds = "down", 60
 			def refresh(self, now):
 				raise requests.HTTPError("503 Server Error: Service Unavailable")
+		class NoSecret(Provider):   # e.g. a PC without the Nextcloud login
+			name, refresh_seconds = "no_secret", 60
+			def refresh(self, now):
+				load_credentials(Path("/nonexistent/nextcloud.credentials.json"))
 		class Bug(Provider):
 			name, refresh_seconds = "bug", 60
 			def refresh(self, now):
 				raise KeyError("oops")
-		runner = BackgroundRunner(Clock(), [Down(), Bug()], [])
+		runner = BackgroundRunner(Clock(), [Down(), NoSecret(), Bug()], [])
 		runner.stopped.wait = lambda seconds: runner.stopped.set()   # run the loop once
 		runner.online = lambda: True
 		with self.assertLogs("francken_tv.background") as logs:
 			runner.refresh_loop()
 		self.assertEqual([(record.levelname, record.exc_info is not None) for record in logs.records],
-			[("WARNING", False), ("ERROR", True)])   # a bug still gets its traceback
+			[("WARNING", False), ("WARNING", False), ("ERROR", True)])   # a bug still gets its traceback
+		self.assertIn("Skipping no_secret: no Nextcloud login in", logs.records[1].getMessage())
 		self.assertIn("503", runner.status["down"].last_error)   # and both show on /status
 
 

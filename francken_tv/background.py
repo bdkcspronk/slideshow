@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import requests
 
 from .clock import Clock
-from .slides import Job, PartsFailed, Provider
+from .slides import Job, NotSetUp, PartsFailed, Provider
 
 log = logging.getLogger(__name__)
 
@@ -119,7 +119,10 @@ class BackgroundRunner:
 				try:
 					provider.refresh(self.clock.now())
 				except Exception as error:
-					if isinstance(error, (requests.RequestException, PartsFailed)):
+					if isinstance(error, NotSetUp):
+						# A secret that isn't on this PC (a laptop, a fresh TV PC): the slide is skipped. One line.
+						log.warning("Skipping %s: %s", provider.name, error)
+					elif isinstance(error, (requests.RequestException, PartsFailed)):
 						# A website that's down or a network hiccup (each part already logged): one line.
 						log.warning("Refreshing %s failed: %s", provider.name, error)
 					else:
