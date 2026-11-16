@@ -350,7 +350,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	position: relative;
 }
 .info-slide h1 { margin: 0 0 4vh; font-size: 6.5vh; }
-.info-slide h1 span { color: var(--red); font-weight: normal; }
+.info-slide h1 span { color: var(--red-dark); font-weight: normal; }   /* the light red on the navy (plain red is 2.4:1) */
 .info-source { position: absolute; bottom: 2.5vh; right: 5vw; margin: 0; font-size: 1.9vh; color: var(--faint); }
 @keyframes info-in { from { opacity: 0; transform: translateY(2vh); } }
 
@@ -361,8 +361,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .news-feeds { display: flex; flex-wrap: wrap; gap: 1vw; margin: 0 0 2.4vh; padding: 0; list-style: none; }
 .news-feeds li {
 	border-radius: 0.6vh;
-	opacity: 0.45;
-	box-shadow: inset 0 0 0 0.2vh rgba(253, 248, 236, 0.5);
+	opacity: 0.7;   /* 0.45 left the names at 3.4:1 on the navy */
+	box-shadow: inset 0 0 0 0.2vh rgba(253, 248, 236, 0.7);
 	animation: practice-in 0.6s ease-out calc(0.5s + var(--i) * 0.1s) both;
 }
 .news-feeds button {   /* tapping an outlet shows its headlines */
@@ -436,7 +436,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .news-text { display: flex; flex-direction: column; gap: 1.2vh; padding: 1.8vh 1.6vw 2.4vh; background: var(--paper); }   /* the title and how long ago, on the card's cream */
 .news-cards button:not(:has(.news-picture)) .news-text { flex: 1; padding-top: 2.4vh; }   /* no picture: the text is the whole card */
 .news-text > span { font-size: 2.2vh; font-weight: normal; color: var(--crimson); }
-.news-hint { position: absolute; bottom: 2.5vh; right: 5vw; margin: 0; font-size: 1.9vh; opacity: 0.55; }
+.news-hint { position: absolute; bottom: 2.5vh; right: 5vw; margin: 0; font-size: 1.9vh; opacity: 0.75; }
 /* Another outlet tapped (redraw() in player.js): the title and the outlets stay put, the new cards come in at once. */
 .news-slide .poster-title.steady span, .news-slide .poster-title.steady .poster-marked::before, .news-feeds.steady li { animation: none; }
 .news-cards.steady li { animation-duration: 0.6s; animation-delay: calc(var(--i) * 0.08s); }
@@ -475,7 +475,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	max-width: 72vw;
 	overflow-y: auto;
 	scrollbar-width: thin;
-	scrollbar-color: var(--line) transparent;
+	scrollbar-color: rgba(253, 248, 236, 0.6) transparent;   /* the only sign that the text scrolls: brighter than the dividers */
 	padding-right: 2vw;
 	font-size: 2.9vh;
 	line-height: 1.55;
@@ -780,7 +780,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	text-transform: uppercase;
 	animation: practice-in 0.6s ease-out 0.1s both;
 }
-.bus-pill i { width: calc(16 * var(--px)); height: calc(16 * var(--px)); border-radius: 50%; background: var(--red); animation: bus-blink 1.4s ease-in-out infinite; }   /* live */
+.bus-pill i { width: calc(16 * var(--px)); height: calc(16 * var(--px)); border-radius: 50%; background: #ff8a96; animation: bus-blink 1.4s ease-in-out infinite; }   /* live */
 .bus-headline { margin: calc(26 * var(--px)) 0 0; font-size: calc(170 * var(--px)); line-height: 0.95; letter-spacing: calc(-3 * var(--px)); text-transform: uppercase; }
 .bus-headline span { display: block; width: fit-content; animation: practice-drop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.25s both; }
 .bus-marked { position: relative; color: var(--blue); }
@@ -926,7 +926,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .bus-light { fill: #ffe9a8; }
 .bus-wheel { fill: #1b1b1b; animation: bus-wheel 0.6s linear infinite; }
 .bus-hub { fill: #9aa4ad; }
-.bus-source { position: absolute; bottom: calc(132 * var(--px)); right: calc(90 * var(--px)); margin: 0; font-size: calc(22 * var(--px)); opacity: 0.45; }
+.bus-source { position: absolute; bottom: calc(132 * var(--px)); right: calc(90 * var(--px)); margin: 0; font-size: calc(22 * var(--px)); opacity: 0.7; }
 @keyframes bus-blink { 50% { opacity: 0.25; } }
 @keyframes bus-ink { from { color: var(--paper); } }
 @keyframes bus-lane { to { transform: translateX(calc(-120 * var(--px))); } }
@@ -939,7 +939,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 /* Timetable: a column per year of study. */
 .timetable-columns { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); gap: 2vw; }
 .timetable-columns section { display: flex; flex-direction: column; gap: 1.2vh; min-height: 0; animation: info-in 0.8s ease-out calc(0.4s + var(--i) * 0.2s) both; }
-.timetable-columns h2 { margin: 0 0 0.8vh; padding-bottom: 1vh; font-size: 3.4vh; color: var(--blue); border-bottom: 0.4vh solid var(--red); }
+.timetable-columns h2 { margin: 0 0 0.8vh; padding-bottom: 1vh; font-size: 3.4vh; color: var(--blue); border-bottom: 0.4vh solid var(--red-dark); }
 /* A row per activity: the time on the left; the course (up to two lines), its kind and the rooms on
    the right (a long list of rooms scrolls, data-marquee). The kind and the left edge have the colour of
    its group. A column too full for the screen scrolls down once and stays at the bottom (data-marquee-up). */
@@ -965,15 +965,15 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	box-shadow: var(--shadow);
 	border-left: 0.6vh solid var(--kind);
 }
-.kind-tutorial { --kind: #2a9d8f; }
-.kind-practical { --kind: #e07a1f; }
+.kind-tutorial { --kind: #2a9d8f; --kind-text: #1f7a6e; }   /* --kind-text: the label, dark enough for small print on the white card */
+.kind-practical { --kind: #e07a1f; --kind-text: #b35a00; }
 .kind-exam { --kind: #7b4fa0; }
-.kind-other { --kind: var(--faint); }
+.kind-other { --kind: var(--faint); --kind-text: var(--muted); }
 .lecture-time { grid-row: span 3; align-self: center; font-size: 2vh; font-weight: bold; line-height: 1.3; color: var(--blue-light); font-variant-numeric: tabular-nums; }
 .lecture b { font-size: 2.3vh; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }   /* up to two lines */
-.lecture-kind { font-size: 1.8vh; font-weight: bold; color: var(--kind); }
+.lecture-kind { font-size: 1.8vh; font-weight: bold; color: var(--kind-text, var(--kind)); }
 .lecture-details { font-size: 1.8vh; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lecture.current { border-left-color: var(--red); outline: 0.3vh solid var(--red); }
+.lecture.current { border-left-color: var(--red); outline: 0.3vh solid #ff8a96; }   /* the outline lies on the navy: light red (plain red is 2.4:1 there) */
 .no-lectures { margin: 0; font-size: 2.4vh; color: var(--faint); }
 
 /* Our logo building itself (.logo-build around templates/francken_logo_balls.svg; the quote and membership slides):
@@ -1043,8 +1043,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 		quote-cursor-blink 0.9s steps(1, end) calc(var(--start) + var(--i) * var(--letter)) 3;
 }
 @keyframes quote-letter { to { opacity: 1; } }
-@keyframes quote-cursor { from { box-shadow: 0.08em 0 0 var(--red); } }
-@keyframes quote-cursor-blink { 0% { box-shadow: 0.08em 0 0 var(--red); } 50% { box-shadow: none; } }
+@keyframes quote-cursor { from { box-shadow: 0.08em 0 0 var(--paper); } }   /* cream: a red cursor is 2.4:1 on the navy */
+@keyframes quote-cursor-blink { 0% { box-shadow: 0.08em 0 0 var(--paper); } 50% { box-shadow: none; } }
 .quote-slide footer { margin-top: 2vh; opacity: 0; animation: quote-author 1.2s ease var(--typed) forwards; }
 @keyframes quote-author { from { opacity: 0; transform: translateY(1vh); } to { opacity: 1; transform: none; } }
 
@@ -1066,7 +1066,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	font-size: 16vh;
 	font-weight: bold;
 	line-height: 1;
-	color: var(--red);
+	color: #ff6b81;   /* a light red: plain red is 2.4:1 on the navy */
 	animation: commandments-in 0.9s ease-out 0.4s both;
 }
 .commandments-text {
@@ -1136,7 +1136,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 .poll-option.chosen { --edge: 0.6vh; background: var(--option); }   /* the one just voted for on the TV: a thicker outline in its colour */
 .poll-option.busy { opacity: 0.6; }
-.poll-shadow:has(.poll-option:focus-visible) { box-shadow: var(--shadow), 0 0 0 0.6vh var(--red); }   /* keyboard selection: the ring is on the carrier, as the clipped button can't show an outline */
+.poll-shadow:has(.poll-option:focus-visible) { box-shadow: var(--shadow), 0 0 0 0.6vh #fdf8ec; }   /* keyboard selection (cream: red on navy is 2.4:1): the ring is on the carrier, as the clipped button can't show an outline */
 .poll-letter {
 	flex: none;
 	display: flex;
@@ -1195,7 +1195,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	width: 3.4vh;
 	height: 3.4vh;
 	border-radius: 50%;
-	background: var(--option);
+	background: var(--option-text);   /* the darker shade: small white print on the bright blue is 3.7:1 */
 	color: #ffffff;
 	font-size: 1.8vh;
 	font-weight: bold;
@@ -2548,7 +2548,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
    card's cross stays at full strength; its shadow lighter to match. The filter only on the small picture: both are
    drawn once, nothing moves. Focus still lifts and tints it. */
 .puzzle-shadow.done { box-shadow: 0 1.2vh 2.8vh rgba(0, 0, 0, 0.18); }
-.puzzle-shadow.done .puzzle-card { opacity: 0.5; }
+.puzzle-shadow.done .puzzle-card { opacity: 0.65; }   /* 0.5 left the status and Play under 3:1 */
 .puzzle-shadow.done .puzzle-icon { filter: grayscale(1); }
 .puzzle-shadow.done .puzzle-play { background: var(--muted); }
 .puzzle-shadow.done .puzzle-card:focus-visible { opacity: 1; }   /* selected with the keyboard: full strength, so it can be seen from across the room */
@@ -2831,7 +2831,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .timeguessr-progress { margin-left: auto; display: flex; align-items: center; gap: 0.6vw; font-size: 2.6vh; font-weight: bold; }
 .timeguessr-progress span:first-child { margin-right: 1vw; font-weight: normal; color: var(--muted); }
 .timeguessr-progress i { width: 2.2vh; height: 2.2vh; border-radius: 50%; background: var(--line); }
-.timeguessr-progress i.done { background: var(--red); }
+.timeguessr-progress i.done { background: #fdf8ec; }   /* cream: red on the navy is 2.4:1, hard to tell from an empty dot */
 .timeguessr-progress span:last-child { margin-left: 1vw; }
 
 .timeguessr-round { flex: 1; display: flex; gap: 2.5vw; min-height: 0; }
@@ -2920,7 +2920,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .timeguessr-map[data-value] .timeguessr-map-hint { display: none; }
 /* Focused from the keyboard: a thick red ring (an outline isn't clipped by the map's overflow) and a crosshair at the middle,
    where Enter or Space drops the pin (widgets.js). Seen from across the room. */
-.timeguessr-map:focus-visible { outline: 0.6vh solid #e8483c; outline-offset: 0.3vh; }
+.timeguessr-map:focus-visible { outline: 0.6vh solid #ff8a96; outline-offset: 0.3vh; }
 .timeguessr-map:focus-visible::after {
 	content: "";
 	position: absolute;
@@ -2939,7 +2939,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .timeguessr-photo:focus-visible { outline: 0.6vh solid #ffffff; outline-offset: -0.6vh; }   /* inside: the photo clips its own overflow */
 /* Pins (widgets.js): your guess blue, the answer red. */
 .map-pin { border-radius: 50%; border: 0.45vh solid white; box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.45); box-sizing: border-box; }
-.map-pin-guess { background: var(--blue); }
+.map-pin-guess { background: #173249; }   /* not var(--blue): that is cream on this slide, invisible on the map */
 .map-pin-answer { background: var(--red); }
 
 .timeguessr-year { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 1vh 1.5vw; }
@@ -3016,7 +3016,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .catfishing-progress i { width: 2.2vh; height: 2.2vh; border-radius: 50%; background: var(--line); }
 .catfishing-progress i.correct { background: var(--blue); }
 .catfishing-progress i.close { background: #e0b23a; }
-.catfishing-progress i.incorrect, .catfishing-progress i.skipped { background: var(--red); }
+.catfishing-progress i.incorrect, .catfishing-progress i.skipped { background: #ff8a96; }   /* light red: plain red on the navy is 2.4:1 */
 .catfishing-progress span { margin-left: 1vw; }
 .catfishing-question { flex: 1; display: flex; flex-direction: column; gap: 2.5vh; min-height: 0; }
 .catfishing-categories { flex: 1; min-height: 0; }
@@ -3048,7 +3048,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	overflow: hidden;
 	--caret: var(--red);
 }
-.catfishing-guess:empty::after { content: "Type your guess\2026"; color: var(--faint); }
+.catfishing-guess:empty::after { content: "Type your guess\2026"; color: var(--muted); }
 .catfishing-did-you-mean { flex: 1; font-size: 3.6vh; }
 .catfishing-buttons { display: flex; gap: 1vw; }
 .catfishing-buttons button, .catfishing-input button {
@@ -3111,10 +3111,10 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 .catfishing-day b { font-size: 3vh; }
 .catfishing-day span { min-height: 2.2vh; font-size: 1.9vh; font-weight: bold; }
-.catfishing-day.done { background: var(--blue); border-color: var(--blue); color: #ffffff; }
+.catfishing-day.done { background: var(--blue); border-color: #fdf8ec; color: #ffffff; }   /* a cream edge: the navy tile has none against the navy slide */
 .catfishing-day.playing { border: 0.35vh solid var(--red); }
 .catfishing-day.playing span { color: var(--red-dark); }
-.catfishing-day.today { outline: 0.35vh solid var(--red); outline-offset: 0.3vh; }
+.catfishing-day.today { outline: 0.35vh solid #fdf8ec; outline-offset: 0.3vh; }   /* on the navy around the tile: cream (red was 2.4:1) */
 .catfishing-day:active { transform: scale(0.96); }
 .catfishing-day.empty { background: transparent; border-color: transparent; color: var(--faint); }
 .catfishing-day.outside { visibility: hidden; }
@@ -3181,7 +3181,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	transition: background 0.1s, transform 0.1s;
 }
 .connections-tile:active { transform: scale(0.96); }
-.connections-tile.selected { background: #5a594e; color: #ffffff; }
+.connections-tile.selected { background: #5a594e; color: #ffffff; box-shadow: inset 0 0 0 0.4vh #fdf8ec; }   /* a cream edge: the dark tile alone fades into the navy */
 .connections-tile.shake { animation: shake 0.4s; }
 /* Solving a group: hop, slide into the top row, the bar appears (see "solve-group" in player.js). */
 .connections-tile.hop { animation: hop 0.35s ease-in-out both; }
@@ -3209,7 +3209,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	height: 1.6vh;
 	margin-left: 0.6vh;
 	border-radius: 50%;
-	background: #5a594e;
+	background: #fdf8ec;   /* cream: the NYT grey is 1.9:1 on the navy */
 }
 .connections-controls button {
 	padding: 1.2vh 1.6vw;
@@ -3234,6 +3234,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	margin-bottom: 1.2vh;
 	padding: 1.6vh 1vw;
 	border-radius: 0.8vh;
+	color: #121212;   /* dark on the pastel bars (the slide's cream text was 1.3:1 on the yellow) */
 	text-align: center;
 }
 .connections-group strong { font-size: 2.6vh; }
@@ -3331,7 +3332,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	color: var(--faint);
+	color: var(--muted);
 	font-size: 6vh;
 }
 .empty-slide small { font-size: 2.5vh; }
@@ -3342,7 +3343,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	--menu-panel: #0e283e;
 	--menu-raised: #1f4060;
 	--menu-text: #f4f6f9;
-	--menu-muted: #a9b8c6;
+	--menu-muted: #c3cfda;
 	--menu-accent: var(--red);
 	--menu-danger: var(--red);
 	position: fixed;
@@ -3519,7 +3520,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 }
 .menu-column { display: flex; flex-direction: column; gap: 3vh; }
 .menu-settings section { display: flex; flex-direction: column; gap: 1vh; }
-.menu-settings h2 { margin: 0 0 0.6vh; font-size: 2.2vh; letter-spacing: 0.15em; text-transform: uppercase; color: var(--menu-accent); }
+.menu-settings h2 { margin: 0 0 0.6vh; font-size: 2.2vh; letter-spacing: 0.15em; text-transform: uppercase; color: #ff8a96; }   /* light red: the accent itself is 3.3:1 as small text on the panel */
 .menu-settings h3 { margin: 1.4vh 0 0; font-size: 2.2vh; font-weight: normal; color: var(--menu-muted); }
 .menu-note { margin: 0; color: var(--menu-muted); font-size: 2.2vh; }
 .menu-row {
@@ -3536,7 +3537,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 }
 .menu-row small { display: block; margin-top: 0.4vh; font-size: 1.9vh; color: var(--menu-muted); }
 /* The clip of .squircle cuts off a box-shadow ring, so a focused row gets a lighter background instead. */
-.menu-toggle:focus, .menu-row-button:focus { background: #3d6690; transform: scale(1.02); }   /* clearly lighter: the old step was hard to see from across the room */
+.menu-toggle:focus, .menu-row-button:focus { --menu-muted: var(--menu-text); background: #3d6690; transform: scale(1.02); }   /* clearly lighter: the old step was hard to see from across the room; its small print goes white (the muted grey is under 4:1 on this blue) */
 @media (hover: hover) { .menu-toggle:hover, .menu-row-button:hover { background: #2c4d6e; } }   /* hover only for a mouse */
 
 /* An on/off switch. */
@@ -3547,6 +3548,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 	height: 3.4vh;
 	border-radius: 99vh;
 	background: #3a5672;
+	box-shadow: inset 0 0 0 0.3vh var(--menu-text);   /* a light edge: neither the off track nor the red on track stands out from the row by itself (1.4:1 and 2.4:1) */
 	transition: background 0.15s;
 }
 .menu-switch::after {
@@ -3575,7 +3577,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 	font-weight: bold;
 }
 .menu-stepper button { font-size: 3vh; padding: 0.2vh 1vw; }
-.menu-choices button[aria-pressed="true"], .menu-chip[aria-pressed="true"] { background: var(--menu-accent); color: #ffffff; }
+.menu-choices button[aria-pressed="true"], .menu-chip[aria-pressed="true"] { background: var(--menu-accent); color: #ffffff; box-shadow: inset 0 0 0 0.3vh var(--menu-text); }   /* a light edge too: red and the unchosen blue are nearly as dark */
 .menu-chip[aria-pressed="false"] { color: var(--menu-muted); text-decoration: line-through; }
 .menu-chips { display: flex; flex-wrap: wrap; gap: 0.8vh 0.6vw; }
 .menu-stepper button:focus, .menu-choices button:focus, .menu-chip:focus, .menu-small-button:focus { box-shadow: 0 0 0 0.4vh var(--menu-text); }
@@ -3616,7 +3618,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 }
 .menu-rotation { display: flex; flex-direction: column; gap: 3vh; overflow-y: auto; padding: 0.6vh; }   /* padding: room for the focus grow */
 .menu-rotation section { display: flex; flex-direction: column; gap: 1vh; }
-.menu-rotation h2 { margin: 0 0 0.6vh; font-size: 2.2vh; letter-spacing: 0.15em; text-transform: uppercase; color: var(--menu-accent); }
+.menu-rotation h2 { margin: 0 0 0.6vh; font-size: 2.2vh; letter-spacing: 0.15em; text-transform: uppercase; color: #ff8a96; }   /* light red: the accent itself is 3.3:1 as small text on the panel */
 .menu-rotation-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1vh 0.8vw; }
 .menu-rotation-row { min-height: 7.4vh; font-size: 2.3vh; font-weight: bold; }
 .menu-rotation-row small { font-weight: normal; }
@@ -4029,7 +4031,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .member-reasons .poster-title { margin: 0 0 4vh; font-size: 10vh; }
 .member-price { display: flex; align-items: baseline; gap: 1.6vw; margin: 0 0 4.5vh; line-height: 0.85; animation: member-up 0.8s ease-out 1.3s both; }
 .member-price b { font-size: 26vh; letter-spacing: -1vh; }
-.member-price span { font-size: 6vh; color: var(--crimson); }
+.member-price span { font-size: 6vh; color: #ff6b81; }   /* light red: crimson on the navy is 2:1 */
 .member-reasons ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2.8vh; }
 .member-reasons li {
 	display: flex;
@@ -4040,9 +4042,9 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 	font-size: 4.6vh;
 	animation: member-up 0.8s ease-out calc(1.8s + var(--i) * 0.4s) both;
 }
-.member-reasons li svg { flex: none; width: 6vh; height: 6vh; fill: var(--crimson); overflow: visible; }
+.member-reasons li svg { flex: none; width: 6vh; height: 6vh; fill: #ff6b81; overflow: visible; }
 @keyframes member-up { from { transform: translateY(3vh); opacity: 0; } }
-.member-handle { fill: none; stroke: var(--crimson); stroke-width: 5; }
+.member-handle { fill: none; stroke: #ff6b81; stroke-width: 5; }
 .member-steam path { fill: none; stroke: var(--paper); stroke-width: 3; stroke-linecap: round; opacity: 0; animation: member-steam 3s ease-out infinite; }
 .member-steam path:nth-child(2) { animation-delay: 1s; }
 .member-steam path:nth-child(3) { animation-delay: 2s; }
@@ -4080,7 +4082,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .socks-pitch .poster-title { margin: 0 0 2.5vh; font-size: 11vh; }
 .socks-line { margin: 0 0 3vh; max-width: 22ch; font-size: 4.6vh; line-height: 1.15; animation: member-up 0.8s ease-out 1.6s both; }
 .socks-price { display: flex; align-items: baseline; gap: 1.4vw; margin: 0; line-height: 0.85; animation: member-up 0.8s ease-out 2s both; }
-.socks-price span { font-size: 6vh; color: var(--crimson); }
+.socks-price span { font-size: 6vh; color: #ff6b81; }   /* light red: crimson on the navy is 2:1 */
 .socks-price b { font-size: 20vh; letter-spacing: -0.8vh; }
 .socks-buy { flex: none; display: flex; flex-direction: column; align-items: center; gap: 3.5vh; margin-right: 2vw; animation: member-up 0.8s ease-out 0.8s both; }
 .socks-qr-card { width: 40vh; height: 40vh; }
@@ -4272,7 +4274,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 	font-size: 3.2vh;
 	animation: fvs-dot 0.5s ease-out var(--on) forwards;
 }
-@keyframes fvs-dot { 50% { transform: scale(1.3); } to { background: var(--crimson); border-color: var(--crimson); } }
+@keyframes fvs-dot { 50% { transform: scale(1.3); } to { background: var(--crimson); border-color: var(--paper); } }   /* the edge stays cream: a crimson disc alone is 2:1 on the navy */
 .fvs-scan { display: flex; align-items: center; gap: 2vw; animation: member-up 0.8s ease-out 1.9s both; }
 .fvs-pitch .fvs-qr-card { --r: 2.6vh; flex: none; width: 25vh; height: 25vh; padding: 1.4vh; }   /* continuous corners (.squircle) */
 .fvs-qr-card .member-tile { --r: 0.9vh; }   /* the tile in a code half the size of the membership one */
@@ -4631,7 +4633,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .pet-bar-food { --bar: #f2a541; }
 .pet-bar-fun { --bar: #57c4e5; }
 .pet-bar-clean { --bar: #7bd389; }
-.pet-bar-health { --bar: #ff5c7a; }
+.pet-bar-health { --bar: #ff8a96; }   /* lighter: the fill was 2.5:1 on its track */
 .pet-bar.low .pet-bar-label { color: #ff5c7a; animation: pet-low 1s ease-in-out infinite; }
 .pet-bar.low .pet-bar-track { box-shadow: 0 0 0 0.3vh #ff5c7a; animation: pet-low 1s ease-in-out infinite; }
 @keyframes pet-low { 50% { opacity: 0.45; } }
@@ -4723,7 +4725,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .pet-naming .pet-right { gap: 2.6vh; }
 .pet-name-input { display: flex; gap: 1vw; align-items: stretch; }
 .pet-name-text { flex: 1; min-width: 0; padding: 1.6vh 1.4vw; border: 0.4vh solid #fdf8ec; border-radius: 1.4vh; background: rgba(253, 248, 236, 0.1); font-size: 4.6vh; white-space: pre; overflow: hidden; --caret: #ff8fa6; }
-.pet-name-text:empty::after { content: "Type a name"; opacity: 0.45; }
+.pet-name-text:empty::after { content: "Type a name"; opacity: 0.6; }
 .pet-name-go { flex-direction: row; padding: 1.6vh 2vw; background: #c8102e; color: #fdf8ec; }
 .pet-keyboard { display: flex; flex-direction: column; gap: 1vh; }
 .pet-keyboard-row { display: flex; justify-content: center; gap: 0.5vw; }
@@ -4748,7 +4750,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .pet-mini { display: block; width: 11vh; }
 .pet-mini .pet-svg * { animation: none !important; }
 .pet-colors { display: flex; flex-wrap: wrap; gap: 1.2vw; }
-.pet-color { width: 7vh; height: 7vh; border-radius: 50%; border: 0.5vh solid transparent; background: var(--swatch); box-shadow: 0 0.6vh 1.6vh rgba(0, 0, 0, 0.35); transition: transform 0.1s ease-out; }
+.pet-color { width: 7vh; height: 7vh; border-radius: 50%; border: 0.5vh solid transparent; background: var(--swatch); box-shadow: 0 0 0 0.3vh rgba(253, 248, 236, 0.5), 0 0.6vh 1.6vh rgba(0, 0, 0, 0.35);   /* a cream hairline: the crimson and purple swatches are 2:1 on the navy */ transition: transform 0.1s ease-out; }
 .pet-color:active { transform: scale(0.94); }
 .pet-color.chosen { border-color: #fdf8ec; transform: scale(1.15); }
 .pet-color.chosen:active { transform: scale(1.08); }   /* the chosen one is bigger; pressed it shrinks from there */
@@ -4802,7 +4804,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 
 /* Sober (providers/pet.py: every beer streeped lowers it, water and time bring it back): its bar, the Water
    button, a glass pouring into its open mouth, and, below DRUNK_BELOW, swaying with rosy cheeks and droopy eyes. */
-.pet-bar-sober { --bar: #a78bfa; }
+.pet-bar-sober { --bar: #c4b5fd; }
 .pet-buttons:has(.pet-button-water) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.2vw; }   /* four equal columns, whatever is in them */
 .pet-button .pet-glass, .pet-water .pet-glass { fill: rgba(200, 225, 255, 0.35); stroke: #0d1f3c; stroke-width: 2; }
 .pet-button svg .pet-glass { stroke: #c8102e; }
@@ -4842,7 +4844,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 .fc-phase-b .poster-marked::before { animation-delay: 6.5s; }
 .fc-phase-b .fc-join { animation-delay: 7.1s; }
 .fc-text .poster-title { margin: 0 0 5vh; font-size: 12vh; line-height: 1.05; }
-.fc-join { margin: 0; font-size: 9vh; color: var(--crimson); animation: member-up 0.8s ease-out 2.1s both; }   /* after the flash (fires at 1.95 s) instead of landing in it; lands by 2.9 s and stands 2.2 s before phase A leaves at 5.1 s */
+.fc-join { margin: 0; font-size: 9vh; color: #ff6b81; animation: member-up 0.8s ease-out 2.1s both; }   /* after the flash (fires at 1.95 s) instead of landing in it; lands by 2.9 s and stands 2.2 s before phase A leaves at 5.1 s */
 .fc-stage { flex: none; height: 84vh; aspect-ratio: 1; margin-right: 1vw; }
 .fc-stage path, .fc-stage circle.fc-bulb { fill: #fff; fill-rule: evenodd; }
 .fc-stage * { transform-box: view-box; }
@@ -5062,7 +5064,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 	--blue-light: rgba(253, 248, 236, 0.85);
 	--blue-faint: rgba(253, 248, 236, 0.12);
 	--muted: rgba(253, 248, 236, 0.72);
-	--faint: rgba(253, 248, 236, 0.55);
+	--faint: rgba(253, 248, 236, 0.65);   /* 0.55 was 4.3:1 at the light end of the navy */
 	--red-dark: #ff8a96;
 	--line: rgba(253, 248, 236, 0.28);
 	--shadow: 0 0.3vh 1.2vh rgba(0, 0, 0, 0.3);
@@ -5086,6 +5088,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 	color: #173249;
 }
 .catfishing-day.empty { --faint: rgba(253, 248, 236, 0.55); }
+.poll-last { --muted: #525f70; }   /* small grey print on the pale panel: a shade darker (was 4.4:1) */
 .quote-watermark { color: #fdf8ec; opacity: 0.08; --logo-fill: #1d3c6e; }   /* the whole logo fades as one (like the membership slide), so the balls' fill and outline stay in step with the crest */
 .xkcd-comic { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }   /* black line art on white becomes light on navy */
 /* Contrast on the navy: a primary button is crimson with a cream edge (navy on navy was 1.1:1), and the
@@ -5095,6 +5098,9 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 	border-color: #fdf8ec;
 	color: #ffffff;
 }
-.connections-slide button:focus-visible, .wordle-slide button:focus-visible, .timeguessr-slide button:focus-visible, .catfishing-slide button:focus-visible,
+.puzzles-slide button:focus-visible, .connections-slide button:focus-visible, .wordle-slide button:focus-visible, .timeguessr-slide button:focus-visible, .catfishing-slide button:focus-visible,
 .timeguessr-year input:focus-visible { outline-color: #fdf8ec; }
 .timeguessr-year input { accent-color: #fdf8ec; }
+/* Guess before there is a pin and a year: an outline in cream, not the crimson button at 35% (that sank into the navy,
+   its label at 2.7:1); it fills with crimson once it can be pressed. */
+.timeguessr-button.primary:disabled { opacity: 1; background: transparent; border-color: rgba(253, 248, 236, 0.6); color: rgba(253, 248, 236, 0.8); }
