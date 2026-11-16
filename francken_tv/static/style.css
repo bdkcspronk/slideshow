@@ -179,7 +179,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	flex-direction: column;
 	padding: 5vh 5vw;
 	background:
-		repeating-linear-gradient(135deg, oklch(100% 0 0 / 0.025) 0 2px, transparent 2px 28px),
+		repeating-linear-gradient(135deg in srgb, oklch(100% 0 0 / 0.025) 0 2px, transparent 2px 28px),
 		linear-gradient(160deg, oklch(36.1% 0.094 259.5), oklch(29.9% 0.08 260.4) 60%);   /* a little brighter than --navy, which text on cream uses */
 	color: var(--paper);
 	font-family: "Familjen Grotesk", "DejaVu Sans", sans-serif;
@@ -228,7 +228,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .bg-waves i:nth-child(2) { right: -25vh; top: -25vh; }
 .bg-waves i:nth-child(3) { display: none; }
 /* Ripples: rings spreading from the top right corner. */
-.bg-rings::before { background: repeating-radial-gradient(circle at 92% 8%, transparent 0 9vh, oklch(98% 0.017 88 / 0.09) 9vh calc(9vh + 2px)), linear-gradient(200deg, oklch(36.1% 0.094 259.5), oklch(29.9% 0.08 260.4) 60%); }
+.bg-rings::before { background: repeating-radial-gradient(circle at 92% 8% in srgb, transparent 0 9vh, oklch(98% 0.017 88 / 0.09) 9vh calc(9vh + 2px)), linear-gradient(200deg, oklch(36.1% 0.094 259.5), oklch(29.9% 0.08 260.4) 60%); }
 .bg-rings i:nth-child(1) { left: auto; right: -15vh; top: -25vh; }
 .bg-rings i:nth-child(2) { right: auto; left: -20vh; top: auto; bottom: -15vh; }
 .bg-rings i:nth-child(3) { display: none; }
@@ -525,7 +525,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	width: calc(520 * var(--px));
 	height: calc(520 * var(--px));
 	border-radius: 50%;
-	background: repeating-conic-gradient(oklch(94.1% 0.097 95.8 / 0.28) 0 6deg, transparent 6deg 18deg);
+	background: repeating-conic-gradient(in srgb, oklch(94.1% 0.097 95.8 / 0.28) 0 6deg, transparent 6deg 18deg);
 	mask-image: radial-gradient(closest-side, oklch(0% 0 0) 55%, transparent);
 	animation: weather-turn 60s linear infinite;
 }
@@ -915,7 +915,7 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	top: 0;
 	bottom: 0;
 	width: calc(100% + 120 * var(--px));
-	background: repeating-linear-gradient(90deg, oklch(98% 0.017 88 / 0.5) 0 calc(60 * var(--px)), transparent 0 calc(120 * var(--px)));
+	background: repeating-linear-gradient(90deg in srgb, oklch(98% 0.017 88 / 0.5) 0 calc(60 * var(--px)), transparent 0 calc(120 * var(--px)));
 	animation: bus-lane 1.2s linear infinite;
 }
 .bus-driving { position: absolute; left: 0; bottom: calc(48 * var(--px)); width: calc(320 * var(--px)); animation: bus-drive 16s linear 3s infinite both; }
@@ -1634,7 +1634,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 /* Stripes: the stripe colour (or gradient), cut into diagonal stripes by a mask. They span the person's
    whole run (--run-offset and --run-width, from bar.html; the whole bar when not set), and each bar shows
-   its piece of it, so the stripes and a stripe gradient go on across the gaps between their bars. */
+   its piece of it, so the stripes and a stripe gradient go on across the gaps between their bars.
+   "in srgb", here and in every repeating gradient: with oklch() colours a gradient blends in Oklab unless told
+   otherwise, and Firefox (159) then draws a repeating one with hard stops wrong (hairlines, uneven gaps). */
 .bar-stripes {
 	--s: var(--stripe, calc(42vh / var(--rows)));
 	position: absolute;
@@ -1642,8 +1644,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	bottom: 0;
 	left: calc(0px - var(--run-offset, 0px));
 	width: var(--run-width, 100%);
-	-webkit-mask: repeating-linear-gradient(-45deg, oklch(0% 0 0) 0 var(--s), transparent var(--s) calc(2 * var(--s)));
-	mask: repeating-linear-gradient(-45deg, oklch(0% 0 0) 0 var(--s), transparent var(--s) calc(2 * var(--s)));
+	-webkit-mask: repeating-linear-gradient(-45deg in srgb, oklch(0% 0 0) 0 var(--s), transparent var(--s) calc(2 * var(--s)));
+	mask: repeating-linear-gradient(-45deg in srgb, oklch(0% 0 0) 0 var(--s), transparent var(--s) calc(2 * var(--s)));
 }
 /* Beer: foam at the end, bubbles drifting from the left towards the foam over and over. */
 .beer-foam { position: absolute; top: 0; right: 0; bottom: 0; background: oklch(95.3% 0.05 91); }
@@ -3794,7 +3796,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 }
 .compucie-slide.typed .compucie-join { opacity: 1; }
 .compucie-join b { padding: 0.2vh 0.8vw; background: var(--green); color: oklch(0% 0 0); box-shadow: 0 0 2vh var(--green); }
-.compucie-scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(transparent 0 0.3vh, oklch(0% 0 0 / 0.18) 0.3vh 0.6vh); }
+.compucie-scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(in srgb, transparent 0 0.3vh, oklch(0% 0 0 / 0.18) 0.3vh 0.6vh); }
 .compucie-scan::after {
 	content: "";
 	position: absolute;
@@ -5070,7 +5072,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 	--line: oklch(98% 0.017 88 / 0.28);
 	--shadow: 0 0.3vh 1.2vh oklch(0% 0 0 / 0.3);
 	background:
-		repeating-linear-gradient(135deg, oklch(100% 0 0 / 0.025) 0 2px, transparent 2px 28px),
+		repeating-linear-gradient(135deg in srgb, oklch(100% 0 0 / 0.025) 0 2px, transparent 2px 28px),
 		linear-gradient(160deg, oklch(36.1% 0.094 259.5), oklch(29.9% 0.08 260.4) 60%);
 	color: var(--paper);
 }
