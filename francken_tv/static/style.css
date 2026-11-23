@@ -1857,9 +1857,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 }
 .books-3d { z-index: 2; }
 .books-slide .poster-title { z-index: 3; }   /* the title stays in front, also of the books flying past it */
-.book-card {
+.book-card {   /* no z-index: its glow goes behind the 3D books and its text in front of them */
 	position: relative;
-	z-index: 1;
 	width: 26vw;
 	display: flex;
 	flex-direction: column;
@@ -1936,6 +1935,8 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 
 /* Below the books: title, authors, price. */
 .book-text {
+	position: relative;
+	z-index: 3;   /* in front of the 3D books (.books-3d), also while they fly past or back into the bookcase */
 	width: 100%;
 	margin-top: 5vh;   /* below the hovering books */
 	animation: book-text-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) calc(3.2s + var(--i) * 0.9s) both;   /* book i lands at 3 s + 0.9 s * i: the text follows it */
