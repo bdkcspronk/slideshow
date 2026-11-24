@@ -60,11 +60,14 @@
 	{% else %}
 	{# ---- A question: the categories fill the screen, the guess goes in the bar at the bottom ---- #}
 	<div class="catfishing-question">
-		{# Longer lists get more columns and a smaller font, so up to ~45 categories fit. #}
+		{# Longer lists get more columns and a smaller font, so up to ~45 categories fit; any more scroll (touch, mouse wheel
+		   or the up and down arrows: data-scroll), with the question above them staying put. #}
 		{% set count = article.categories | length %}
 		<div class="catfishing-categories{{ ' short' if count <= 8 }}{{ ' many' if count > 16 }}{{ ' lots' if count > 28 }}">
 			<h2>Article {{ number }} of {{ game.articles | length }}: which Wikipedia article has these categories?</h2>
-			<ul>{% for category in article.categories %}<li>{{ category }}</li>{% endfor %}</ul>
+			<div class="catfishing-category-list" data-scroll>
+				<ul>{% for category in article.categories %}<li>{{ category }}</li>{% endfor %}</ul>
+			</div>
 		</div>
 		<div class="catfishing-input">
 			{% if message %}<div class="puzzle-message">{{ message }}</div>{% endif %}   {# e.g. "Type a guess, or skip" #}

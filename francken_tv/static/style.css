@@ -3023,8 +3023,18 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .catfishing-progress i.incorrect, .catfishing-progress i.skipped { background: oklch(76.4% 0.142 14.5); }   /* light red: plain red on the navy is 2.4:1 */
 .catfishing-progress span { margin-left: 1vw; }
 .catfishing-question { flex: 1; display: flex; flex-direction: column; gap: 2.5vh; min-height: 0; }
-.catfishing-categories { flex: 1; min-height: 0; }
+.catfishing-categories { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .catfishing-categories h2 { margin: 0 0 2vh; font-size: 2.8vh; color: var(--muted); font-weight: normal; }
+/* More categories than fit scroll here; the list inside keeps its own height, so its columns stay balanced and
+   don't spill out sideways. */
+.catfishing-category-list {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: oklch(98% 0.017 88 / 0.6) transparent;   /* the only sign that the list scrolls, as on a news article */
+	padding-right: 0.6vw;
+}
 .catfishing-categories ul { margin: 0; padding: 0; list-style: none; columns: 3; column-gap: 2vw; }
 .catfishing-categories li {
 	break-inside: avoid;
