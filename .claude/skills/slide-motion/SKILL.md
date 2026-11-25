@@ -358,6 +358,6 @@ the pet cameo (templates/pet_cameo.html) and the Esc menu (player.js, "The menu"
 settings of slides, and a slide's or group's own page). Their redraw keeps the scroll position on purpose (the
 person asked for it: picking slides for a group jumped to the top), so don't flag that as app polish.
 
-**Reviewed 2026-11-25 (findings listed, no fixes yet):** spotify_queue.
+**Reviewed 2026-11-25 (its one finding fixed):** spotify_queue.
 
 **Not reviewed yet:** none. Everything above was read in code only, nothing was measured on the TV.

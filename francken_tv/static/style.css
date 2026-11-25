@@ -2343,6 +2343,9 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 	animation: spotify-message 2.5s ease-in forwards;
 }
 .spotify-pick-slide[data-state="songs"] .spotify-message { bottom: 13vh; z-index: 1; }   /* above the page arrows */
+/* The general pop-up (showMessage in player.js: "Took ... out of the queue", "Playing ...") is near-black: on Spotify's dark
+   pages it had the page's own colour and read as a gap in the list, not a message. Here it looks like .spotify-message. */
+body:has(.layer.visible .spotify-slide) #message { background: oklch(100% 0 0); color: oklch(18.2% 0 0); box-shadow: 0 0.5vh 2vh oklch(0% 0 0 / 0.4); }
 @keyframes spotify-message {   /* in with ease-out (it answers a tap, so it moves at once), out with the ease-in from the animation */
 	0% { opacity: 0; transform: translate(-50%, 1vh); animation-timing-function: ease-out; }
 	8%, 80% { opacity: 1; transform: translate(-50%, 0); }
