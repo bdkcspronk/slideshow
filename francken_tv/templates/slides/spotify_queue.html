@@ -1,0 +1,42 @@
+{#
+	The queue (SpotifyProvider.action() in providers/spotify.py): what's playing, then the songs coming up, in
+	order, as Spotify will play them. Opened with "Queue" or by tapping "Up next" on the Spotify slide.
+	Tapping a song plays it now (the songs before it are skipped, as in Spotify's own queue); × takes one out.
+	Spotify has no way to remove a song from its queue, so a song taken out is hidden here and skipped the
+	moment it comes up. "+ Add songs" opens the search, whose + adds to the queue.
+	Checked every second: a new song or a change in the queue redraws the page (data-state).
+	The rows' data-focus-key is their place on the page, so after × the keyboard stays on the same spot (now the next song).
+#}
+<div class="slide spotify-slide spotify-pick-slide spotify-queue-slide" data-state="{{ state }}" data-interactive data-provider="spotify">
+	<div class="spotify-pick-header">
+		<button class="spotify-button" data-action="back">&larr; Back</button>
+		<h1>Queue</h1>
+		<button class="spotify-button primary" data-action="search">+ Add songs</button>
+	</div>
+	<div class="spotify-queue-now squircle">
+		{% if playing.cover %}<img src="{{ playing.cover }}" alt="">{% endif %}
+		<span class="spotify-song-text">
+			<span class="spotify-next-label"><span class="spotify-eq{{ ' paused' if not playing.is_playing }}"><i></i><i></i><i></i><i></i></span> Now playing</span>
+			<b>{{ playing.title }}</b>
+			<span>{{ playing.artist }}</span>
+		</span>
+	</div>
+	{% if songs %}
+	<h2 class="spotify-next-label">Up next</h2>
+	<ol class="spotify-songs spotify-queue">
+		{% for place, song in songs %}
+		<li>
+			<button class="spotify-song" data-action="queue_play" data-focus-key="play-{{ loop.index0 }}" data-value="{{ place }}|{{ song.uri }}">
+				<span class="spotify-song-number">{{ loop.index }}</span>
+				{% if song.cover %}<img src="{{ song.cover }}" alt="">{% else %}<span class="spotify-song-blank"></span>{% endif %}
+				<span class="spotify-song-text"><b>{{ song.title }}</b><span>{{ song.artist }}</span></span>
+				<span class="spotify-song-length">{{ song.length }}</span>
+			</button>
+			<button class="spotify-control" data-action="queue_remove" data-focus-key="remove-{{ loop.index0 }}" data-value="{{ place }}|{{ song.uri }}" aria-label="Take {{ song.title }} out of the queue">&times;</button>
+		</li>
+		{% endfor %}
+	</ol>
+	{% else %}
+	<p class="spotify-search-hint">Nothing coming up. Tap + Add songs to pick some.</p>
+	{% endif %}
+</div>

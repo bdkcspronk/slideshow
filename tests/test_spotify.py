@@ -8,7 +8,9 @@ from dataclasses import replace
 from unittest import mock
 from urllib.parse import parse_qs, urlparse
 
-from francken_tv.providers.spotify import SCOPES, SpotifyProvider, heard_volume, parse_embed_songs, parse_next, parse_playing, parse_playlist_songs, parse_playlists
+from collections import Counter
+
+from francken_tv.providers.spotify import NEXT_URL, SCOPES, SpotifyProvider, heard_volume, parse_embed_songs, parse_next, parse_playing, parse_playlist_songs, parse_playlists
 
 NOW = datetime(2026, 10, 14, 15, 0)
 TRACK = {
@@ -22,6 +24,15 @@ EPISODE = {
 	"item": {"type": "episode", "id": "ep1", "name": "Episode 1", "duration_ms": 1_800_000,
 		"show": {"name": "A Podcast"}, "images": [{"url": "https://i.scdn.co/show.jpg", "width": 300}]},
 }
+
+
+def song(name):
+	"""A song in the queue (from QUEUE_URL)."""
+	return TRACK["item"] | {"id": name, "name": name.title(), "uri": f"spotify:track:{name}"}
+
+
+def request_patch(**kwargs):
+	return mock.patch("francken_tv.providers.spotify.requests.request", **kwargs)
 
 
 class FakeResponse:
@@ -127,6 +138,54 @@ class SpotifyTest(unittest.TestCase):
 		[slide] = self.provider.slides(NOW)
 		self.assertEqual(slide.data["next"]["title"], "Queued Song")
 		self.assertNotEqual(slide.data["state"], before)   # ...but the slide redraws to show the new next song
+
+	def test_the_queue_page_and_taking_a_song_out(self):
+		self.connect()   # TRACK plays
+		with request_patch(return_value=FakeResponse(200, {"queue": [song("one"), song("two"), song("three")]})):
+			slide, _ = self.provider.action("show_queue", [], NOW)
+		self.assertEqual(slide.template, "spotify_queue.html")
+		self.assertEqual([(place, song["title"]) for place, song in slide.data["songs"]], [(0, "One"), (1, "Two"), (2, "Three")])
+		state = slide.data["state"]
+		slide, message = self.provider.action("queue_remove", ["0|spotify:track:one"], NOW)   # ×: nothing to ask Spotify
+		self.assertEqual(message, "Took One out of the queue")
+		self.assertEqual([place for place, _ in slide.data["songs"]], [1, 2])
+		self.assertNotEqual(slide.data["state"], state)   # the page redraws without it
+		self.assertEqual(self.provider.view()["next"]["title"], "Two")   # and the slide's "Up next" skips it too
+		self.assertEqual(self.provider.refresh_seconds, 5)
+		self.provider.playing.progress_ms = 247_000   # the song before it is about to end: checked every second
+		self.assertEqual(self.provider.refresh_seconds, 1)
+		with request_patch(side_effect=[FakeResponse(200, TRACK | {"progress_ms": 500, "item": song("one")}), FakeResponse(204),
+				FakeResponse(200, {"queue": [song("two"), song("three")]})]) as request:
+			self.provider.refresh(NOW)   # it came up: skipped
+		self.assertEqual(request.call_args_list[1].args[:2], ("POST", NEXT_URL))
+		self.assertEqual((self.provider.taken_out, self.provider.refresh_seconds), (Counter(), 5))   # forgotten once skipped
+
+	def test_a_song_taken_out_still_plays_when_picked(self):
+		self.connect()
+		self.provider.queue = [{"title": name.title(), "uri": f"spotify:track:{name}"} for name in ("one", "two")]
+		self.provider.action("queue_remove", ["1|spotify:track:two"], NOW)
+		with request_patch(return_value=FakeResponse(200, TRACK | {"progress_ms": 500, "item": song("two")})) as request:
+			self.provider.refresh(NOW)   # played from the search, say, not because the queue came to it
+		self.assertNotIn("POST", [call.args[0] for call in request.call_args_list])
+		with request_patch(return_value=FakeResponse(200, {"queue": [song("three")]})):
+			self.provider.refresh_next()
+		self.assertEqual(self.provider.taken_out, Counter())   # no longer coming up: forgotten
+
+	def test_play_a_song_from_the_queue_now(self):
+		self.connect()
+		self.provider.queue = [{"title": name.title(), "uri": f"spotify:track:{name}"} for name in ("one", "two", "three")]
+		self.provider.action("queue_remove", ["0|spotify:track:one"], NOW)
+		# Tapped "Two" (second in the queue on the page), but someone added a song on their phone meanwhile: three skips, not two.
+		coming = FakeResponse(200, {"queue": [song("one"), song("added"), song("two"), song("three")]})
+		with request_patch(side_effect=[coming, *[FakeResponse(204)] * 3]) as request, mock.patch.object(self.provider, "catch_up"):
+			slide, message = self.provider.action("queue_play", ["1|spotify:track:two"], NOW)
+		self.assertEqual([call.args[:2] for call in request.call_args_list[1:]], [("POST", NEXT_URL)] * 3)
+		self.assertEqual((slide.template, message), ("spotify_queue.html", "Playing Two"))
+		self.assertEqual([song["title"] for _, song in slide.data["songs"]], ["Three"])
+		self.assertEqual(self.provider.taken_out, Counter())   # "One" was skipped on the way
+		with request_patch(return_value=FakeResponse(200, {"queue": []})):
+			slide, message = self.provider.action("queue_play", ["0|spotify:track:three"], NOW)
+		self.assertEqual((slide.template, message), ("spotify_queue.html", "That song isn't in the queue anymore"))
 
 	def test_play_a_playlist(self):
 		self.connect()

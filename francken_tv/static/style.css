@@ -2132,9 +2132,25 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-bottom { display: flex; flex-direction: column; align-items: flex-start; gap: 2.5vh; margin-top: 3.5vh; }
 .spotify-bottom .spotify-next { width: 100%; }
 .spotify-bottom .spotify-buttons { margin-left: 0; }
-.spotify-next { flex: 1; min-width: 0; display: flex; align-items: center; gap: 1.5vw; }
+/* "Up next" is a button: tapping it shows the whole queue. */
+.spotify-next {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: 1.5vw;
+	padding: 0;
+	border: none;
+	background: none;
+	color: inherit;
+	font-family: inherit;
+	text-align: left;
+	transition: transform 0.1s ease-out;
+}
+.spotify-next:active { transform: scale(0.97); }
 .spotify-next img { height: 9vh; aspect-ratio: 1; object-fit: cover; border-radius: 0.8vh; }
-.spotify-next > div { min-width: 0; }
+.spotify-next > span { min-width: 0; }
+.spotify-next > span > span { display: block; }
 .spotify-next-label { font-size: 2vh; font-weight: bold; color: oklch(68.9% 0.187 148.9); letter-spacing: 0.2vh; text-transform: uppercase; }
 .spotify-next-title, .spotify-next-artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .spotify-next-title { margin-top: 0.4vh; font-size: 3vh; font-weight: bold; }
@@ -2295,6 +2311,16 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 .spotify-results .spotify-song img, .spotify-results .spotify-song-blank { height: 5vh; }
 .spotify-songs .spotify-control { width: 6vh; height: 6vh; flex: none; }   /* + : add to the queue */
 .spotify-search-hint { font-size: 2.6vh; opacity: 0.6; }
+/* The queue: what's playing on a green band, then what's coming up in two columns of seven, the song rows of a
+   playlist's page (tap: play it now; ×: take it out). */
+.spotify-queue-now { --r: 1.9vh; display: flex; align-items: center; gap: 1.6vw; padding: 1.4vh 1.4vw; background: oklch(68.9% 0.187 148.9 / 0.18); }   /* continuous corners (.squircle) */
+.spotify-queue-now img { height: 9vh; aspect-ratio: 1; object-fit: cover; border-radius: 0.8vh; }
+.spotify-queue-now .spotify-next-label { display: flex; align-items: center; gap: 0.8vw; }
+.spotify-queue-now .spotify-eq { height: 2vh; }
+.spotify-queue-now b { font-size: 3.4vh; }
+.spotify-queue-now .spotify-song-text > span:last-child { font-size: 2.4vh; }
+.spotify-queue-slide h2 { margin: 0 0 -1.5vh; }   /* close to its list */
+.spotify-queue { flex: none; grid-template-rows: repeat(7, 7.5vh); }
 .spotify-control.queued { display: flex; align-items: center; justify-content: center; background: oklch(68.9% 0.187 148.9); color: oklch(18.2% 0 0); font-weight: bold; }
 /* "Added ... to the queue": pops up at the bottom for a moment (like the Connections one). */
 .spotify-message {

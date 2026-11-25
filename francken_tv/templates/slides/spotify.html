@@ -2,8 +2,8 @@
 	What's playing on Spotify (providers/spotify.py). The bar and the clock move on by themselves
 	(CSS, see "Spotify" in style.css). The server is asked every second: a new song or pausing
 	(data-state changes) redraws the slide; the volume bar is updated in place. The buttons send
-	actions to SpotifyProvider.action(); "Lyrics", "Search" and "Playlists" open spotify_lyrics.html,
-	spotify_search.html and spotify_playlists.html.
+	actions to SpotifyProvider.action(); "Lyrics", "Queue" (or tapping "Up next"), "Search" and "Playlists"
+	open spotify_lyrics.html, spotify_queue.html, spotify_search.html and spotify_playlists.html.
 	Nothing playing: the last song, paused where it stopped, with its playlist in the label; the buttons
 	continue it on the TV's own speaker.
 	The space bar pauses and resumes the music (data-space-action, see player.js).
@@ -48,17 +48,19 @@
 			</div>
 			<div class="spotify-bottom">
 				{% if next %}
-				<div class="spotify-next">
+				{# Tapping it shows the whole queue (spotify_queue.html), as the Queue button does #}
+				<button class="spotify-next" data-action="show_queue">
 					{% if next.cover %}<img src="{{ next.cover }}" alt="">{% endif %}
-					<div>
-						<div class="spotify-next-label">Up next</div>
-						<div class="spotify-next-title" data-marquee>{{ next.title }}</div>
-						<div class="spotify-next-artist" data-marquee>{{ next.artist }}</div>
-					</div>
-				</div>
+					<span>
+						<span class="spotify-next-label">Up next</span>
+						<span class="spotify-next-title" data-marquee>{{ next.title }}</span>
+						<span class="spotify-next-artist" data-marquee>{{ next.artist }}</span>
+					</span>
+				</button>
 				{% endif %}
 				<div class="spotify-buttons">
 					<button class="spotify-button" data-action="lyrics">Lyrics</button>
+					<button class="spotify-button" data-action="show_queue">Queue</button>
 					<button class="spotify-button" data-action="search">Search</button>
 					<button class="spotify-button" data-action="playlists">Playlists</button>
 				</div>

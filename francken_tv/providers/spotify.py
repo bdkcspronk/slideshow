@@ -3,7 +3,8 @@
 "Playlists" shows the account's playlists (templates/slides/spotify_playlists.html), tapping one
 shows its songs (spotify_songs.html); "Search" finds songs, playlists, albums and people by typing,
 with All / Songs / Playlists / Albums / People chips like the desktop app (spotify_search.html).
-Tapping a person shows their public playlists (spotify_playlists.html).
+Tapping a person shows their public playlists (spotify_playlists.html). "Queue" (or tapping "Up next") shows
+the songs coming up (spotify_queue.html): tap one to play it now, × to take it out.
 Tapping a song plays it. "Lyrics" shows the song's lyrics, the line being sung lit up when LRCLIB
 has them synced (spotify_lyrics.html, lyrics.py). The buttons need Spotify Premium.
 
@@ -28,6 +29,7 @@ import re
 import secrets
 import threading
 import time
+from collections import Counter
 from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
@@ -69,6 +71,7 @@ SCOPES = ("user-read-currently-playing user-read-playback-state user-modify-play
 	"user-library-modify playlist-modify-public playlist-modify-private")
 NEW_LOGIN_MESSAGE = "Allow the buttons once: open 127.0.0.1:8080/spotify/login on this PC and click Agree"
 QUEUE_EVERY_SECONDS = 30      # the next song is also fetched whenever the song changes
+QUEUE_SHOWN = 14              # the Queue page: two columns of seven
 PLAYLISTS_EVERY_SECONDS = 600
 PLAYLISTS_PER_PAGE = 12       # as many as fit on the screen
 SONGS_PER_PAGE = 16
@@ -143,6 +146,11 @@ def parse_next(data: dict) -> dict | None:
 	else:
 		artist, images = ", ".join(a["name"] for a in item.get("artists", [])), item.get("album", {}).get("images", [])
 	return {"title": item.get("name", ""), "artist": artist, "cover": biggest_image(images), "uri": item.get("uri", "")}
+
+
+def parse_queue(data: dict) -> list[dict]:
+	"""All the songs coming up (from QUEUE_URL), in order, for the Queue page."""
+	return [song for song in map(parse_song, data.get("queue") or []) if song]
 
 
 def smallest_image(images: list[dict]) -> str | None:
@@ -256,9 +264,14 @@ class SpotifyProvider(Provider):
 		self.start_step = "resume" if settings.get("play_on_start", True) else None   # see start_music()
 		self.start_deadline = time.monotonic() + START_WAIT_SECONDS
 		self.seconds = settings.get("seconds", default_seconds)
-		self.refresh_seconds = settings.get("check_every_seconds", 5)
+		self.check_every = settings.get("check_every_seconds", 5)   # see refresh_seconds
 		self.playing: NowPlaying | None = None
 		self.next: dict | None = None             # the next song in the queue
+		self.queue: list[dict] = []               # all the songs coming up (parse_queue), as of the last queue check
+		# Songs taken out of the queue (× on the Queue page), by uri. Spotify has no way to remove a song from its queue,
+		# so these are hidden and skipped the moment they come up (skip_taken_out()).
+		self.taken_out: Counter[str] = Counter()
+		self.jumping = False                      # skipping ahead to a song in the queue: don't skip taken-out songs on the way
 		self.next_fetched = (None, 0.0)           # (song id, time.monotonic()) of the last queue check
 		self.playlists: list[dict] = []           # every playlist seen, to look up names
 		self.playlist_pages: dict[int, tuple[float, list[dict], int]] = {}   # page -> (fetched, playlists, total)
@@ -348,6 +361,16 @@ class SpotifyProvider(Provider):
 			response.raise_for_status()
 		return response
 
+	@property
+	def refresh_seconds(self) -> float:
+		"""How often refresh() runs: every check_every seconds, but every second when a song that was taken out of
+		the queue is about to come up, so it's skipped within a second instead of playing for a while."""
+		playing = self.playing
+		if (playing and playing.is_playing and self.queue and self.taken_out[self.queue[0]["uri"]]
+				and playing.duration_ms - playing.progress() < (self.check_every + 2) * 1000):
+			return 1
+		return self.check_every
+
 	def refresh(self, now: datetime) -> None:
 		if not self.connected:
 			self.playing = None
@@ -369,6 +392,7 @@ class SpotifyProvider(Provider):
 			self.last = replace(self.playing, is_playing=False, progress_ms=self.playing.progress(), volume=None)
 		elif not self.start_step:   # (on start the music is started first)
 			self.refresh_last_played()
+		self.skip_taken_out(before)
 		if self.playing is None:
 			self.next = None
 		elif self.next_fetched[0] != self.playing.id or time.monotonic() - self.next_fetched[1] > QUEUE_EVERY_SECONDS:
@@ -443,10 +467,55 @@ class SpotifyProvider(Provider):
 	def refresh_next(self) -> None:
 		try:
 			response = self.api("GET", QUEUE_URL)
-			self.next = parse_next(response.json()) if response.status_code == 200 and response.content else None
+			data = response.json() if response.status_code == 200 and response.content else {}
+			self.next, self.queue = parse_next(data), parse_queue(data)
+			# Taken out, but no longer coming up (another playlist started, or it was skipped): forgotten, so it plays normally later.
+			coming = Counter(song["uri"] for song in self.queue)
+			self.taken_out = Counter({uri: min(count, coming[uri]) for uri, count in self.taken_out.items() if coming[uri]})
 		except requests.RequestException as error:   # not worth failing the whole refresh for
 			log.warning("Could not get the Spotify queue: %s", error)
 		self.next_fetched = (self.playing.id if self.playing else None, time.monotonic())
+
+	def skip_taken_out(self, before: NowPlaying | None) -> None:
+		"""A song taken out of the queue that has just come up (the queue moved on to it) is skipped."""
+		playing = self.playing
+		if (self.jumping or not before or not playing or not playing.is_playing or before.id == playing.id
+				or not self.queue or self.queue[0]["uri"] != playing.uri or not self.taken_out[playing.uri]):
+			return   # (played some other way, e.g. picked in the search: that plays)
+		self.taken_out[playing.uri] -= 1
+		self.taken_out += Counter()   # (drops the zeros)
+		error = self.command("POST", NEXT_URL)
+		if error:
+			log.warning("Could not skip %s (taken out of the queue): %s", playing.title, error)
+		self.queue = self.queue[1:]
+		self.next_fetched = (None, 0.0)   # what's next changed
+
+	def queue_left(self) -> list[tuple[int, dict]]:
+		"""The songs coming up that weren't taken out, with their place in Spotify's queue."""
+		hidden: Counter[str] = Counter()
+		left = []
+		for index, song in enumerate(self.queue):
+			if hidden[song["uri"]] < self.taken_out[song["uri"]]:
+				hidden[song["uri"]] += 1
+			else:
+				left.append((index, song))
+		return left
+
+	def find_in_queue(self, value: str) -> int | None:
+		"""A song tapped on the Queue page ("place in the queue|uri"): its place in the queue now, which may have moved."""
+		place, _, uri = value.partition("|")
+		left = [index for index, song in self.queue_left() if song["uri"] == uri]
+		return int(place) if place.isdigit() and int(place) in left else (left[0] if left else None)
+
+	def up_next(self) -> dict | None:
+		"""The next song for the slide: the first in the queue that wasn't taken out."""
+		if not self.taken_out:
+			return self.next
+		left = self.queue_left()
+		if not left:
+			return None
+		song = left[0][1]
+		return self.next if self.next and self.next["uri"] == song["uri"] else song   # (self.next has a bigger cover)
 
 	def fetch_playlists(self, page: int = 0) -> tuple[list[dict], int]:
 		"""One page of the account's playlists, and how many there are."""
@@ -550,12 +619,13 @@ class SpotifyProvider(Provider):
 	def view(self) -> dict:
 		playing = self.playing or self.last
 		progress = playing.progress()
+		next_song = self.up_next()
 		return {
 			# A new song, pausing/resuming, a jump in the song or a new next song (e.g. one added to the queue)
 			# redraws the slide (see refresh() in player.js).
-			"state": f"{playing.id} {'playing' if playing.is_playing else 'paused'} {self.jumps} {(self.next or {}).get('uri', '')}",
+			"state": f"{playing.id} {'playing' if playing.is_playing else 'paused'} {self.jumps} {(next_song or {}).get('uri', '')}",
 			"title": playing.title, "artist": playing.artist, "album": playing.album,
-			"cover": playing.cover, "is_playing": playing.is_playing, "next": self.next,
+			"cover": playing.cover, "is_playing": playing.is_playing, "next": next_song,
 			"volume": None if playing.volume is None else self.shown_volume(playing),
 			"device": playing.device, "on_speaker": playing.device == self.speaker, "speaker": self.speaker,
 			**({} if self.playing else {"device": self.last_context[1] or self.speaker, "on_speaker": True}),   # the last song
@@ -583,6 +653,20 @@ class SpotifyProvider(Provider):
 			return None
 		# Checked every second, so a new song (or the music stopping) shows up while the slide is on screen.
 		return Slide("spotify.html", self.seconds, self.view(), update=lambda now: self.view(), refresh_seconds=1)
+
+	def queue_view(self) -> dict:
+		playing = self.playing or self.last
+		songs = self.queue_left()[:QUEUE_SHOWN]
+		# A new song, pausing or a change in the queue redraws the page.
+		state = " ".join(["queue", playing.id, "playing" if playing.is_playing else "paused", *(f"{index}:{song['uri']}" for index, song in songs)])
+		return {"state": state, "playing": playing, "songs": songs}
+
+	def queue_slide(self) -> Slide | None:
+		"""The Queue page: what's playing and what's coming up (checked every second, like the slide). What a tap did
+		("Took ... out of the queue") is the action's message: player.js pops it up."""
+		if not (self.playing or self.last):
+			return None
+		return Slide("spotify_queue.html", self.seconds, self.queue_view(), update=lambda now: self.queue_view(), refresh_seconds=1)
 
 	def song_lyrics(self, playing: NowPlaying) -> Lyrics | None | str:
 		"""The playing song's lyrics (looked up once per song), None if there are none, or "error"
@@ -711,7 +795,8 @@ class SpotifyProvider(Provider):
 	def action(self, name: str, values: list[str], now: datetime) -> tuple[Slide | None, str | None]:
 		"""'playlists' shows the playlists, 'songs' one playlist's songs, 'search' finds songs, playlists, albums
 		and people ('search_kind' picks a chip: all, songs, playlists, albums or people), 'person' someone's
-		playlists, 'lyrics' the lyrics;
+		playlists, 'lyrics' the lyrics, 'show_queue' the queue ('queue_play' plays one of its songs now,
+		'queue_remove' takes one out; values = ["place in the queue|uri"]);
 		'play' plays a playlist (values = [its uri]), 'play_song' a song, 'queue' adds one (from the search, or
 		from a playlist's songs: "song uri|playlist uri|page"); 'back' returns;
 		'previous', 'skip', 'toggle' (pause/play), 'volume_up' and 'volume_down' control the music; 'seek' and 'volume'
@@ -865,6 +950,36 @@ class SpotifyProvider(Provider):
 			return self.now_playing(), f"Playing on {self.speaker}"
 		if name == "lyrics":
 			return self.lyrics_slide(), None
+		if name == "show_queue":
+			self.refresh_next()   # as it is now, not up to QUEUE_EVERY_SECONDS ago
+			return self.queue_slide(), None
+		if name in ("queue_play", "queue_remove") and values:   # a song on the Queue page: "place in the queue|uri"
+			if name == "queue_play":
+				self.refresh_next()   # songs added elsewhere meanwhile move it: skip the right number of songs
+			index = self.find_in_queue(values[0])
+			if index is None:
+				message = "That song isn't in the queue anymore"
+				return self.queue_slide(), message
+			song = self.queue[index]
+			if name == "queue_remove":   # hidden, and skipped when it comes up (Spotify can't remove it)
+				self.taken_out[song["uri"]] += 1
+				message = f"Took {song['title']} out of the queue"
+				return self.queue_slide(), message
+			# Play it now: skip the songs before it, as tapping a song in Spotify's own queue does.
+			self.jumping = True
+			try:
+				for _ in range(index + 1):
+					error = self.command("POST", NEXT_URL)
+					if error:
+						return self.queue_slide(), error
+				self.taken_out -= Counter(passed["uri"] for passed in self.queue[:index])   # skipped already
+				self.queue = self.queue[index + 1:]
+				self.next_fetched = (None, 0.0)
+				self.catch_up(now)
+			finally:
+				self.jumping = False
+			message = f"Playing {song['title']}"
+			return self.queue_slide(), message
 		if name in ("previous", "skip", "toggle") and not self.playing and self.last:   # the last song: continue it
 			error = self.continue_last(from_start=name == "previous")
 			error = error or (self.command("POST", NEXT_URL) if name == "skip" else None)
