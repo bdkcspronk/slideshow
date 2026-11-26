@@ -41,7 +41,7 @@ class Slide:
 	rate: float = 1.0                  # how fast it plays: 2 = everything on it happens twice as fast (the menu's Speed, scheduler.py)
 	real_time: bool = False            # the menu's Speed leaves it alone: it takes the time it needs (the Instagram phone's timeline)
 	cut_short: bool = False            # shortened to let a takeover start on time (scheduler.py): it may not make itself longer
-	sound: Path | None = None          # a sound file to play once when the slide comes up in the rotation
+	sound: Path | None = None          # a sound file to play once when the slide comes up in the rotation, or right after the tap that drew it
 
 
 class Provider:

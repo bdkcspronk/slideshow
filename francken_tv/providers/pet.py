@@ -9,7 +9,8 @@ However many people there are, a need goes down at most MAX_DRAIN_PER_DAY a day:
 When a need is empty, its health goes down; when health is empty, it dies, and the slide shows its
 grave. The first time, and after it died, the slide asks for a name (typed on the screen's keyboard
 or a real one); the pet hatches once someone gives it one. Below half health it cries now and then
-on the speakers (PetCry, static/pet/cry.wav).
+on the speakers (PetCry, static/pet/cry.wav). A cat meows instead, with real cat recordings: also when it's fed,
+played with, cleaned, given water or hatched (sound(), static/pet/cat/, tools/make_pet_cat_sounds.py).
 
 The state is in data/pet.json, so it survives a restart. refresh() moves it on every minute in the
 background; while the slide is shown, the bars follow along (refresh_seconds, data-live).
@@ -58,6 +59,7 @@ FULL = 92                  # above this a need can't be filled more ("I'm full!"
 NEGLECT_HOURS = 2          # one empty need takes all health in this long (two empty needs: twice as fast)
 RECOVER_HOURS = 4          # with no empty need, health comes back in this long
 CRY_SOUND = PROJECT_DIR / "francken_tv/static/pet/cry.wav"
+CAT_SOUNDS = PROJECT_DIR / "francken_tv/static/pet/cat"   # attention.ogg (instead of the cry), and one per action and hatching
 CRY_BELOW = 50             # health below which it cries now and then
 SHOW_BELOW = 50            # only in the slideshow once a bar (a need or health) is below this
 STREEP_FOOD = 1            # every snack or drink streeped in the streep system feeds it this much (pet_streep.py)...
@@ -130,6 +132,14 @@ def new_egg() -> dict:
 	"""A pet still to be hatched: its look (a random one to start from) and where in picking it is ("choose": the
 	shape and colour, "name": typing its name)."""
 	return {"species": random.choice(list(SPECIES)), "color": random.choice(list(COLORS)), "step": "choose"}
+
+
+def sound(pet: dict, what: str) -> Path | None:
+	"""The sound for `what` ("attention" for a cry, an action, or "hatch"): a cat has real cat sounds for all of them,
+	the other species only the synthesised cry, for attention."""
+	if look(pet)["species"] == "cat":
+		return CAT_SOUNDS / f"{what}.ogg"
+	return CRY_SOUND if what == "attention" else None
 
 
 def look(thing: dict) -> dict:
@@ -320,6 +330,12 @@ class PetProvider(Provider):
 			self.next_cry = now + timedelta(minutes=self.cry_minutes * random.uniform(0.7, 1.3))
 			return True
 
+	def cry_sound(self) -> Path | None:
+		"""What its cry sounds like (a cat meows for attention)."""
+		with self.lock:
+			pet = self.load()["pet"]
+		return sound(pet, "attention") if pet else None
+
 	# ---- the slide ------------------------------------------------------------------------------
 
 	def data(self, now: datetime, anim: str | None = None) -> dict:
@@ -375,7 +391,7 @@ class PetProvider(Provider):
 			return []
 		slide = self.make_slide(now)
 		if slide.data["state"] == "awake":
-			slide.sound = CRY_SOUND   # one cry when it comes round again (not in the menu's preview)
+			slide.sound = self.cry_sound()   # one cry when it comes round again (not in the menu's preview)
 		return [slide]
 
 	def shortcut_slide(self, now: datetime) -> Slide | None:
@@ -427,7 +443,11 @@ class PetProvider(Provider):
 				return None, None
 			self.said = (said, now + SAY_SECONDS) if said else None
 			self.save()
-		return self.make_slide(now, anim), None
+			pet = self.state["pet"]   # just hatched: there was none before
+		slide = self.make_slide(now, anim)
+		if pet is not None and anim in (*ACTIONS, "hatch"):
+			slide.sound = sound(pet, anim)   # the server plays it right after the tap (a cat meows or purrs)
+		return slide, None
 
 
 	def overlay(self, now: datetime) -> dict | None:
@@ -505,10 +525,10 @@ class PetCry(Job):
 	name = "pet_cry"
 	check_every = timedelta(seconds=10)
 
-	def __init__(self, pet: PetProvider, announcer: Announcer, sound: Path = CRY_SOUND) -> None:
+	def __init__(self, pet: PetProvider, announcer: Announcer, sound: Path | None = None) -> None:
 		self.pet = pet
 		self.announcer = announcer
-		self.sound = sound
+		self.sound = sound   # None: the pet's own cry (PetProvider.cry_sound(): a cat meows)
 		self.last_check: datetime | None = None
 
 	def tick(self, now: datetime) -> None:
@@ -516,7 +536,9 @@ class PetCry(Job):
 			return
 		self.last_check = now
 		if self.pet.cry_due(now):
-			self.announcer.play_sound(self.sound)
+			cry = self.sound or self.pet.cry_sound()
+			if cry:
+				self.announcer.play_sound(cry)
 
 
 def people_in_room(store: PresenceStore, minutes: float) -> Callable[[datetime], int]:

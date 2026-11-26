@@ -371,6 +371,8 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_error(HTTPStatus.BAD_REQUEST, "this slide is not interactive")
 			return
 		answered = time.perf_counter()
+		if slide is not None and slide.sound:
+			self.server.app.announcer.play_sound(slide.sound)   # e.g. the pet cat meowing when it's fed
 		number = self.server.renderer.remember(slide) if slide is not None else None   # its updates now come from this slide
 		html = self.server.renderer.render(slide) if slide else None
 		rendered = time.perf_counter()

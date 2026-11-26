@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from francken_tv.providers.pet import MAX_DRAIN_PER_DAY, PetCry, PetProvider, advance, cheer_on_puzzles, clean_name, mood, new_pet, numbered_name, traits
+from francken_tv.providers.pet import CAT_SOUNDS, CRY_SOUND, MAX_DRAIN_PER_DAY, PetCry, PetProvider, advance, cheer_on_puzzles, clean_name, mood, new_pet, numbered_name, traits
 from francken_tv.providers.pet_streep import StreepFeed, listing
 from francken_tv.providers.puzzles import PuzzleStatus
 from francken_tv.slides import Provider, Slide
@@ -171,6 +171,25 @@ class PetTest(unittest.TestCase):
 		self.assertEqual(cries[0], START)   # right away
 		gaps = [(b - a).total_seconds() / 60 for a, b in zip(cries, cries[1:])]
 		self.assertTrue(gaps and all(13 <= gap <= 27 for gap in gaps), gaps)   # about every 20 minutes, not all the time
+
+	def test_a_cat_meows_and_purrs(self):
+		self.provider.action("species", ["cat"], START)
+		self.assertEqual(self.hatch().sound, CAT_SOUNDS / "hatch.ogg")
+		self.provider.state["pet"].update(food=10, fun=10, clean=10, sober=10)
+		for action in ("feed", "play", "clean", "water"):
+			slide, _ = self.provider.action(action, [], START + timedelta(seconds=10))
+			self.assertEqual(slide.sound, CAT_SOUNDS / f"{action}.ogg")
+			self.assertTrue(slide.sound.exists(), slide.sound)
+		self.provider.state["pet"]["food"] = 100
+		self.assertIsNone(self.provider.action("feed", [], START + timedelta(seconds=20))[0].sound)   # full: no yum
+		self.assertEqual(self.provider.cry_sound(), CAT_SOUNDS / "attention.ogg")   # not the synthesised cry
+		self.assertTrue(self.provider.cry_sound().exists())
+
+	def test_other_pets_only_cry(self):
+		self.provider.action("species", ["bunny"], START)
+		self.assertIsNone(self.hatch().sound)
+		self.assertIsNone(self.provider.action("feed", [], START + timedelta(seconds=10))[0].sound)
+		self.assertEqual(self.provider.cry_sound(), CRY_SOUND)
 
 	def test_no_cries_when_asleep(self):
 		self.hatch(now=START - timedelta(hours=1))
