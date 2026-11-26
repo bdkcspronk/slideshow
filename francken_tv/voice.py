@@ -2,7 +2,7 @@
 
 	pause, stop                     pause the music          play, resume, continue   play the music (Spotify)
 	pause the slides / slideshow    pause the slideshow      play the slides, ...     go on with the slides
-	next, next slide                the next slide           back, previous           the slide before
+	next slide                		the next slide           back, previous           the slide before
 	skip, next song                 the next song (Spotify)  previous song            the song before (Spotify)
 	mute, sound off                 all sound off            sound on                 all sound on
 	menu                            open the menu (Esc)      close, close the menu    close it
@@ -88,9 +88,9 @@ SLIDE_NAMES = {
 }
 GO = ["go to", "show me", "open"]
 COMMANDS = {
-	"pause": ["pause", "stop", "pause the music", "stop the music"],
+	"pause": ["pause", "stop", "pause the music", "stop the music", "pause music"],
 	"resume": ["play", "resume", "continue", "play the music", "play music"],
-	"next": ["next", "next slide"],
+	"next": ["next slide"],
 	"skip": ["skip", "skip the song", "skip this song", "next song"],
 	"previous_song": ["previous song", "the previous song", "last song", "the last song", "the song before", "song before"],
 	"previous": ["back", "previous", "go back"],
@@ -104,9 +104,23 @@ COMMANDS = {
 	"close": ["close", "close the menu"],
 	"help": ["help", "what can i say", "what can you do"],
 }
-SAID = {"pause": "Pause the music", "resume": "Play the music", "skip": "Skip the song", "previous_song": "The song before", "pause_slides": "Pause the slideshow", "resume_slides": "Play the slideshow", "next": "Next", "previous": "Back", "mute": "Sound off",
-	"unmute": "Sound on", "menu": "Menu", "close": "Close", "help": "Help"}   # what the screen shows was heard
 
+# what the screen shows was heard
+SAID = {
+    "pause": "Pause the music",
+        "resume": "Play the music",
+        "skip": "Skip the song",
+        "previous_song": "The song before",
+        "pause_slides": "Pause the slideshow",
+        "resume_slides": "Play the slideshow",
+        "next": "Next slide",
+        "previous": "Previous slide",
+        "mute": "Sound off",
+        "unmute": "Sound on",
+        "menu": "Menu",
+        "close": "Close",
+        "help": "Help"
+        }   
 
 @dataclass
 class Settings:
