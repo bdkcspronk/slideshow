@@ -17,7 +17,7 @@
 it, but often misses a Dutch "Hé" (the commands are English). For 8 seconds after a command the next one works
 without "Hey Katinka" ("next" ... "next" ... "pause"), and several at once work too ("Hey Katinka, next, next").
 
-The bottom right of the screen shows what it is doing. As soon as it hears "Katinka": a red microphone and
+The bottom centre of the screen shows what it is doing. As soon as it hears "Katinka": a red microphone and
 "Listening". Then how it ended, for a few seconds:
 
 | Shows | Means |

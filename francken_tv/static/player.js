@@ -1400,7 +1400,7 @@ setInterval(async () => {
 
 // ---- Voice commands ------------------------------------------------------------------------------
 // "Hey Katinka, go to the weather" (francken_tv/voice.py, [voice] in config.toml): the server hears it and
-// /api/voice hands it over, waiting until there is one. Each does what its key does. A capsule bottom right
+// /api/voice hands it over, waiting until there is one. Each does what its key does. A capsule bottom centre
 // shows it all: "listening" (the wake words were heard: a microphone until the command comes), then how it
 // ended: what it did (a tick and "Pause the music", "Go to Weather"), "didn't catch that", or, when nothing more was
 // said within the follow-up seconds, "didn't hear anything".

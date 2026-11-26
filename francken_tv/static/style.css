@@ -4846,21 +4846,22 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 #message[hidden] { display: none; }
 
 /* Voice commands: "Hey Katinka" heard, the slideshow listens for the command, then says what came of it (player.js,
-   "Voice commands"). A capsule at the bottom right, out of the way of the slide and of #message. It answers the voice
+   "Voice commands"). A big capsule at the bottom centre, well inside the screen: in a corner, 3vh from the edge, the TV
+   cut it off (TVs crop the edges of the picture), and it was too small to see from across the room. It answers the voice
    like a tap answers a finger: in at once with ease-out from a little smaller, out with ease-in. Only opacity and
    transform: no relayout. data-state picks the icon and its colour: listening (a red microphone, pulsing), done (a
    green tick and what it did), unclear (an amber question mark), nothing (the microphone gone grey). */
 #listening {
-	position: fixed; right: 3vh; bottom: 3vh; z-index: 50; pointer-events: none;
-	display: flex; align-items: center; gap: 1.2vh;
-	padding: 1.2vh 2.6vh 1.2vh 2vh; border-radius: 4vh;   /* a pill: semicircle ends */
-	background: oklch(18.2% 0 0); color: oklch(100% 0 0); font-size: 2.8vh; font-weight: bold;
+	position: fixed; left: 50%; bottom: 10vh; translate: -50% 0; z-index: 51; pointer-events: none;   /* translate: transform is the in/out */
+	display: flex; align-items: center; gap: 1.6vh; white-space: nowrap;
+	padding: 1.8vh 4vh 1.8vh 3vh; border-radius: 6vh;   /* a pill: semicircle ends */
+	background: oklch(18.2% 0 0); color: oklch(100% 0 0); font-size: 4.2vh; font-weight: bold;
 	box-shadow: 0 0.5vh 2vh oklch(0% 0 0 / 0.4);
 	opacity: 0; transform: scale(0.95);
 	transition: opacity 0.2s ease-in, transform 0.2s ease-in;
 }
 #listening.on { opacity: 1; transform: scale(1); transition-timing-function: ease-out; }
-#listening svg { width: 3.4vh; height: 3.4vh; fill: none; stroke: oklch(70.4% 0.191 22.2); stroke-width: 2; stroke-linecap: round; }
+#listening svg { width: 5vh; height: 5vh; fill: none; stroke: oklch(70.4% 0.191 22.2); stroke-width: 2; stroke-linecap: round; }
 #listening svg:not(.voice-mic), #listening:not([data-state="listening"], [data-state="nothing"]) .voice-mic { display: none; }
 #listening[data-state="done"] .voice-done { display: block; stroke: oklch(72.3% 0.219 149.6); stroke-width: 2.6; }
 #listening[data-state="unclear"] .voice-unclear { display: block; stroke: oklch(79.5% 0.184 86.0); stroke-width: 2.4; }
@@ -4869,6 +4870,7 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 @keyframes listening { from { scale: 1; } to { scale: 1.15; } }
 /* The answer: the capsule gives a small pop as its content changes, so the eye catches that it's done listening.
    `scale`, not `transform`: that one is the in/out transition. */
+body:has(#listening.on) #message { bottom: 22vh; }   /* a message at the same time (a shortcut with nothing to show): above it */
 #listening.answered { animation: voice-answer 0.25s ease-out; }
 @keyframes voice-answer { from { scale: 0.94; } to { scale: 1; } }
 

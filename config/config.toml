@@ -344,7 +344,7 @@ download_voice = true            # the voice model missing: download it by itsel
 # Voice commands: "Hey Katinka, pause", "Hey Katinka, go to the weather" (all of them: francken_tv/voice.py).
 # Needs a USB microphone, vosk (.venv/bin/pip install vosk) and the speech model (docs/setup/voice.md).
 # Offline: the sound never leaves the TV PC and nothing is kept.
-enabled = false
+enabled = true
 model = "media/voice-model/vosk-model-small-en-us-0.15"
 record = ["arecord", "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", "16000"]   # add "-D", "<device>" for another mic (arecord -L)
 wake = ["hey katinka", "he katinka", "katinka"]   # the model is English: a Dutch "Hé" is often missed or heard as "he"
