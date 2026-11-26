@@ -4698,7 +4698,7 @@ button.menu-row:active:not([disabled]), .menu-power-button:active:not([disabled]
 .pet-props > * { position: absolute; opacity: 0; pointer-events: none; }
 .pet-kroket { left: calc(50% - 5vh); bottom: 22vh; width: 10vh; }
 .pet-kroket rect { fill: oklch(58.7% 0.13 56.8); stroke: oklch(43.4% 0.1 54.2); stroke-width: 2; }
-.pet-kroket path { stroke: oklch(75.7% 0.115 68.6); stroke-width: 2; stroke-linecap: round; }
+.pet-kroket path { stroke: oklch(75.7% 0.115 68.6); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 [data-anim="feed"] .pet-kroket { animation: pet-kroket 1.3s cubic-bezier(0.5, 0, 0.8, 0.6) both; }
 @keyframes pet-kroket { 0% { opacity: 1; transform: translateY(-45vh) rotate(-30deg); } 75% { opacity: 1; transform: translateY(0) rotate(10deg) scale(1); } 100% { opacity: 0; transform: translateY(1vh) scale(0.2); } }
 [data-anim="feed"] .pc-mouth { animation: pet-hide 1.6s both; }
@@ -4845,9 +4845,11 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 }
 #message[hidden] { display: none; }
 
-/* Voice commands: "Hey Katinka" heard, the slideshow listens for the command (player.js, "Voice commands"). A capsule
-   at the bottom right, out of the way of the slide and of #message. It answers the voice like a tap answers a finger:
-   in at once with ease-out from a little smaller, out with ease-in. Only opacity and transform: no relayout. */
+/* Voice commands: "Hey Katinka" heard, the slideshow listens for the command, then says what came of it (player.js,
+   "Voice commands"). A capsule at the bottom right, out of the way of the slide and of #message. It answers the voice
+   like a tap answers a finger: in at once with ease-out from a little smaller, out with ease-in. Only opacity and
+   transform: no relayout. data-state picks the icon and its colour: listening (a red microphone, pulsing), done (a
+   green tick and what it did), unclear (an amber question mark), nothing (the microphone gone grey). */
 #listening {
 	position: fixed; right: 3vh; bottom: 3vh; z-index: 50; pointer-events: none;
 	display: flex; align-items: center; gap: 1.2vh;
@@ -4859,8 +4861,16 @@ body:has(.layer.visible .spotify-slide:not(.spotify-pick-slide):not(.spotify-lyr
 }
 #listening.on { opacity: 1; transform: scale(1); transition-timing-function: ease-out; }
 #listening svg { width: 3.4vh; height: 3.4vh; fill: none; stroke: oklch(70.4% 0.191 22.2); stroke-width: 2; stroke-linecap: round; }
-#listening.on svg { animation: listening 1.2s ease-in-out infinite alternate; }   /* a slow pulse while it listens */
+#listening svg:not(.voice-mic), #listening:not([data-state="listening"], [data-state="nothing"]) .voice-mic { display: none; }
+#listening[data-state="done"] .voice-done { display: block; stroke: oklch(72.3% 0.219 149.6); stroke-width: 2.6; }
+#listening[data-state="unclear"] .voice-unclear { display: block; stroke: oklch(79.5% 0.184 86.0); stroke-width: 2.4; }
+#listening[data-state="nothing"] .voice-mic { stroke: oklch(70.8% 0 0); }
+#listening.on[data-state="listening"] svg { animation: listening 1.2s ease-in-out infinite alternate; }   /* a slow pulse while it listens */
 @keyframes listening { from { scale: 1; } to { scale: 1.15; } }
+/* The answer: the capsule gives a small pop as its content changes, so the eye catches that it's done listening.
+   `scale`, not `transform`: that one is the in/out transition. */
+#listening.answered { animation: voice-answer 0.25s ease-out; }
+@keyframes voice-answer { from { scale: 0.94; } to { scale: 1; } }
 
 /* Sober (providers/pet.py: every beer streeped lowers it, water and time bring it back): its bar, the Water
    button, a glass pouring into its open mouth, and, below DRUNK_BELOW, swaying with rosy cheeks and droopy eyes. */

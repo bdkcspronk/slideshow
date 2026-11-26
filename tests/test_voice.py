@@ -142,7 +142,11 @@ class FakeRecognizer:
 
 	def AcceptWaveform(self, sound: bytes) -> bool:
 		self.text = sound.decode().strip()
-		return True
+		return not self.text.startswith("~")   # "~...": the sentence so far, not finished
+
+	def PartialResult(self) -> str:
+		import json
+		return json.dumps({"partial": self.text.removeprefix("~")})
 
 	def Result(self) -> str:
 		import json
@@ -160,6 +164,23 @@ class ListenerTest(unittest.TestCase):
 		sound = "".join(text.ljust(voice.CHUNK) for text in ["[unk]", "hey katinka mute", "next"]).encode()
 		listener.follow(io.BytesIO(sound), FakeRecognizer(), Understanding(settings, phrases(SLIDES)))
 		self.assertEqual([command["do"] for command in heard], ["mute", "next"])
+
+	def follow(self, *texts: str) -> list[str]:
+		heard = []
+		settings = Settings(enabled=True)
+		listener = Listener(settings, phrases(SLIDES), heard.append)
+		sound = "".join(text.ljust(voice.CHUNK) for text in texts).encode()
+		listener.follow(io.BytesIO(sound), FakeRecognizer(), Understanding(settings, phrases(SLIDES)))
+		return [command["do"] for command in heard]
+
+	def test_listening_always_gets_an_answer(self):
+		self.assertEqual(self.follow("~hey katinka", "hey katinka pause"), ["listening", "pause"])
+		self.assertEqual(self.follow("~hey katinka", "hey katinka [unk]"), ["listening", "unclear"])
+		self.assertEqual(self.follow("~katinka", "cat in a"), ["listening", "unclear"])   # the name was another word after all
+		self.assertEqual(self.follow("~hey katinka", "hey katinka"), ["listening", "listening"])   # the browser waits for the next
+
+	def test_talk_without_the_name_gets_no_answer(self):
+		self.assertEqual(self.follow("~nice weather", "[unk]"), [])
 
 	def test_without_the_model_it_says_why(self):
 		listener = Listener(Settings(enabled=True, model="media/no-such-model"), {}, lambda command: None)
@@ -183,6 +204,40 @@ class VoiceTest(unittest.TestCase):
 		sound.heard({"do": "next", "said": "Next"})
 		self.assertEqual(changes, [{"muted": True}, {"muted": False}])
 		self.assertEqual([c["do"] for c in sound.commands.after(0, wait=0)["commands"]], ["mute", "unmute", "next"])   # shown in the browser
+
+	def spotify(self, playing):
+		actions = []
+		spotify = SimpleNamespace(title="Spotify", connected=True, playing=playing, action=lambda name, values, now: actions.append(name) or (None, None))
+		app = SimpleNamespace(providers={"spotify": spotify}, clock=SimpleNamespace(now=lambda: None))
+		return voice.Voice(app, Settings(enabled=True)), actions
+
+	def test_pause_and_play_are_for_the_music(self):
+		sound, actions = self.spotify(SimpleNamespace(is_playing=True))
+		sound.heard({"do": "pause", "said": "Pause the music"})
+		sound.heard({"do": "resume", "said": "Play the music"})   # still playing as far as it knows: nothing to do
+		self.assertEqual(actions, ["toggle"])
+		said = [c["said"] for c in sound.commands.after(0, wait=0)["commands"]]
+		self.assertEqual(said, ["Pause the music", "The music is already playing"])
+
+	def test_play_with_nothing_played_yet_starts_the_music(self):
+		sound, actions = self.spotify(None)
+		sound.heard({"do": "resume", "said": "Play the music"})
+		sound.heard({"do": "pause", "said": "Pause the music"})
+		self.assertEqual(actions, ["toggle"])
+		self.assertEqual(sound.commands.after(0, wait=0)["commands"][1]["said"], "No music is playing")
+
+	def test_the_slideshow_has_its_own_pause(self):
+		understanding = Understanding(Settings(enabled=True), phrases(SLIDES))
+		hear = lambda text: [c["do"] for c in understanding.hear(result(text))]
+		self.assertEqual(hear("hey katinka pause the slideshow"), ["pause_slides"])
+		self.assertEqual(hear("hey katinka pause slides"), ["pause_slides"])
+		self.assertEqual(hear("hey katinka continue the slide show"), ["resume_slides"])
+		self.assertEqual(hear("hey katinka pause"), ["pause"])   # the music
+
+	def test_without_spotify_it_says_so(self):
+		sound = voice.Voice(SimpleNamespace(providers={}), Settings(enabled=True))
+		sound.heard({"do": "pause", "said": "Pause the music"})
+		self.assertEqual(sound.commands.after(0, wait=0)["commands"], [{"do": "failed", "said": "Spotify isn't connected"}])
 
 	def test_one_wake_phrase_in_the_config_is_a_list_of_one(self):
 		self.assertEqual(Settings.from_config({"wake": "hey katinka"}).wake, ["hey katinka"])

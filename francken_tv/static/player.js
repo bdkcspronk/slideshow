@@ -1400,36 +1400,62 @@ setInterval(async () => {
 
 // ---- Voice commands ------------------------------------------------------------------------------
 // "Hey Katinka, go to the weather" (francken_tv/voice.py, [voice] in config.toml): the server hears it and
-// /api/voice hands it over, waiting until there is one. Each does what its key does; what was heard shows
-// as a message. "listening": the wake words were heard, a microphone shows until the command comes.
+// /api/voice hands it over, waiting until there is one. Each does what its key does. A capsule bottom right
+// shows it all: "listening" (the wake words were heard: a microphone until the command comes), then how it
+// ended: what it did (a tick and "Pause the music", "Go to Weather"), "didn't catch that", or, when nothing more was
+// said within the follow-up seconds, "didn't hear anything".
 const listening = document.getElementById("listening");
+const listeningText = listening.querySelector(".voice-text");
+const VOICE_ANSWER_MS = 2500;   // how long the answer stays: long enough to read from across the room
 let listeningTimer = null;
 
-function showListening(on) {
+// state: "listening", "done", "unclear" or "nothing" (style.css picks the icon).
+function showVoice(state, text, seconds = 8) {
 	clearTimeout(listeningTimer);
-	listening.classList.toggle("on", on);
-	if (on) listeningTimer = setTimeout(() => showListening(false), 8000);   // follow_up_seconds: still listening for a next command
+	const answer = state !== "listening";
+	if (answer && listening.classList.contains("on")) {   // it was on screen: a small pop as it changes
+		listening.classList.remove("answered");
+		void listening.offsetWidth;   // so the animation starts again
+		listening.classList.add("answered");
+	}
+	listening.dataset.state = state;
+	listeningText.textContent = text;
+	listening.classList.add("on");
+	listeningTimer = answer
+		? setTimeout(() => listening.classList.remove("on"), VOICE_ANSWER_MS)
+		: setTimeout(() => showVoice("nothing", "Didn't hear anything"), seconds * 1000);
 }
 
 async function doVoiceCommand(command) {
-	if (command.do === "listening") return showListening(true);
-	showListening(false);
-	if (command.do === "unclear") return showMessage("Sorry, I didn't catch that");
+	if (command.do === "listening") return showVoice("listening", "Listening", command.seconds);
+	if (command.do === "unclear") return showVoice("unclear", "Sorry, I didn't catch that");
+	if (command.do === "failed") return showVoice("unclear", command.said);   // e.g. Spotify not reachable
 	const menuOpen = menuIsOpen();
-	if (command.do === "close") return menuOpen ? closeMenu() : undefined;
-	if (command.do === "menu") return menuOpen ? undefined : openMenu();
-	if (menuOpen && command.do !== "mute" && command.do !== "unmute") closeMenu(command.do !== "go");   // the others are about the slides
-	if (command.do !== "pause" && command.do !== "resume") showMessage(command.said);   // those show the big pause icon instead
-	if (command.do === "pause" || command.do === "resume") {
-		if (paused !== (command.do === "pause")) { setPaused(command.do === "pause"); flashPauseIcon(paused); }
-	} else if (command.do === "next") {
-		next();
-	} else if (command.do === "previous") {
-		previous();
-	} else if (command.do === "go") {
-		if (await jumpTo(`go-${command.slide}`) === null) showMessage(`${command.said.replace(/^Go to /, "")}: not shown right now`);
+	if (command.do === "close") {
+		if (menuOpen) closeMenu();
+		return showVoice(menuOpen ? "done" : "unclear", menuOpen ? command.said : "The menu isn't open");
 	}
-	// mute and unmute: done by the server already
+	if (command.do === "menu") {
+		if (!menuOpen) openMenu();
+		return showVoice("done", command.said);
+	}
+	const server = ["mute", "unmute", "pause", "resume"].includes(command.do);   // sound and the music: done by the server already
+	if (menuOpen && !server) closeMenu(command.do !== "go");   // the others are about the slides
+	if (command.do === "go") {
+		showVoice("done", command.said);   // at once: the slide takes a moment
+		if (await jumpTo(`go-${command.slide}`) === null) showVoice("unclear", `${command.said.replace(/^Go to /, "")}: not shown right now`);
+		return;
+	}
+	if (command.do === "pause_slides" || command.do === "resume_slides") {
+		const pause = command.do === "pause_slides";
+		if (paused === pause) return showVoice("done", `The slideshow is already ${pause ? "paused" : "playing"}`);
+		setPaused(pause);
+		flashPauseIcon(paused);
+		return showVoice("done", command.said);
+	}
+	showVoice("done", command.said);
+	if (command.do === "next") next();
+	else if (command.do === "previous") previous();
 }
 
 async function listenForVoice() {

@@ -4,18 +4,29 @@
 
 | Say | It does |
 |---|---|
-| "Hey Katinka, pause" (or "stop") | pause the slideshow, like space |
-| "Hey Katinka, play" ("resume", "continue") | go on again |
+| "Hey Katinka, pause" (or "stop", "pause the music") | pause the music on Spotify (not the slideshow) |
+| "Hey Katinka, play" ("resume", "continue", "play the music") | play it again; with nothing played yet, the account's last music on the TV PC's speaker |
+| "Hey Katinka, pause the slideshow" ("pause the slides", "stop the slideshow") | pause the slideshow, like space |
+| "Hey Katinka, play the slideshow" ("play the slides", "resume / continue / start the slideshow") | go on with the slides |
 | "Hey Katinka, next" ("skip") / "back" ("previous") | the next slide / the one before, like → and ← |
 | "Hey Katinka, mute" ("sound off") / "sound on" | all sound off / on, like `m` |
 | "Hey Katinka, menu" / "close" | open / close the menu, like Esc |
 | "Hey Katinka, go to the weather" ("show me ...", "open ...") | that slide now: posters, activities, news, weather, rain, buses, timetable, photos, presence, leaderboard, puzzles, connections, world (= Wordle), cat fishing, time guesser, spotify (or music), lyrics, books, quote, commandments, poll, pet, xkcd, digger, membership, socks, socials, instagram, countdown (or beer hour), ... (all of them: `SLIDE_NAMES` in `francken_tv/voice.py`) |
 
 "Katinka" alone works too: the speech model is English and knows "Katinka", and hears a Dutch "Kathinka" as
-it, but often misses a Dutch "Hé" (the commands are English). "Hey Katinka" on its own shows a microphone at the
-bottom right; then the command. For 8 seconds after a
-command the next one works without "Hey Katinka" ("next" ... "next" ... "pause"), and several at once work too
-("Hey Katinka, next, next"). What was heard shows at the bottom of the screen.
+it, but often misses a Dutch "Hé" (the commands are English). For 8 seconds after a command the next one works
+without "Hey Katinka" ("next" ... "next" ... "pause"), and several at once work too ("Hey Katinka, next, next").
+
+The bottom right of the screen shows what it is doing. As soon as it hears "Katinka": a red microphone and
+"Listening". Then how it ended, for a few seconds:
+
+| Shows | Means |
+|---|---|
+| a green tick and the command ("Pause the music", "Next", "Go to Weather") | done |
+| an amber ? and "Sorry, I didn't catch that" | it heard the name, but not a command it knows, or wasn't sure enough |
+| a grey microphone and "Didn't hear anything" | "Hey Katinka" alone, and no command within 8 seconds |
+| an amber ? and "Weather: not shown right now" | a slide that isn't on now (membership out of season) |
+| an amber ? and why ("Spotify isn't connected", "Spotify can't be reached right now") | pause or play didn't work |
 
 The speech recognition is [Vosk](https://alphacephei.com/vosk/), offline: the sound never leaves the TV PC,
 nothing is recorded or kept. It only listens for the phrases above, so other talk in the room is ignored.

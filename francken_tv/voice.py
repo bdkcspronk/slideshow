@@ -1,6 +1,7 @@
 """Voice commands: say "Hey Katinka, ..." (Katinka is the TV PC) near the TV PC's microphone.
 
-	pause, stop                     pause the slideshow      play, resume, continue   go on
+	pause, stop                     pause the music          play, resume, continue   play the music (Spotify)
+	pause the slides / slideshow    pause the slideshow      play the slides, ...     go on with the slides
 	next, skip                      the next slide           back, previous           the slide before
 	mute, sound off                 all sound off            sound on                 all sound on
 	menu                            open the menu (Esc)      close, close the menu    close it
@@ -15,8 +16,9 @@ It only listens for the phrases below, so anything else people say comes out as 
 model (media/voice-model/, not in git) is a download: see docs/setup/voice.md. The microphone is read with
 arecord ([voice] record in config.toml).
 
-Mute and sound on are done here; the rest goes to the browser through /api/voice (player.js, "Voice commands"),
-which does what the same key would do.
+Mute, sound on, pause and play (the music on Spotify, not the slideshow) are done here; the rest goes to the browser
+through /api/voice (player.js, "Voice commands"), which does what the same key would do. Every command goes there,
+to show what was heard; one that failed as {"do": "failed", "said": why}.
 """
 
 from __future__ import annotations
@@ -80,16 +82,20 @@ SLIDE_NAMES = {
 }
 GO = ["go to", "show me", "open"]
 COMMANDS = {
-	"pause": ["pause", "stop"],
-	"resume": ["play", "resume", "continue"],
+	"pause": ["pause", "stop", "pause the music", "stop the music"],
+	"resume": ["play", "resume", "continue", "play the music", "play music"],
 	"next": ["next", "skip", "next slide"],
 	"previous": ["back", "previous", "go back"],
+	# "slide show" too: in case the speech model only knows the two words
+	"pause_slides": [f"{verb} {the}{slides}" for verb in ("pause", "stop") for the in ("", "the ") for slides in ("slides", "slideshow", "slide show")],
+	"resume_slides": [f"{verb} {the}{slides}" for verb in ("play", "resume", "continue", "start") for the in ("", "the ")
+		for slides in ("slides", "slideshow", "slide show")],
 	"mute": ["mute", "sound off"],
 	"unmute": ["sound on"],
 	"menu": ["menu", "open the menu"],
 	"close": ["close", "close the menu"],
 }
-SAID = {"pause": "Pause", "resume": "Play", "next": "Next", "previous": "Back", "mute": "Sound off",
+SAID = {"pause": "Pause the music", "resume": "Play the music", "pause_slides": "Pause the slideshow", "resume_slides": "Play the slideshow", "next": "Next", "previous": "Back", "mute": "Sound off",
 	"unmute": "Sound on", "menu": "Menu", "close": "Close the menu"}   # what the screen shows was heard
 
 
@@ -293,17 +299,22 @@ class Listener:
 				break
 			self.problem = None
 			if recognizer.AcceptWaveform(sound):
+				self.understand(json.loads(recognizer.Result()), understanding, trace, woke)
 				woke = False
-				self.understand(json.loads(recognizer.Result()), understanding, trace)
 			elif not woke and any(wake in json.loads(recognizer.PartialResult()).get("partial", "") for wake in self.settings.wake):
 				woke = True
 				self.heard({"do": "listening"})   # before the sentence is finished: it feels quicker
-		self.understand(json.loads(recognizer.FinalResult()), understanding, trace)
+		self.understand(json.loads(recognizer.FinalResult()), understanding, trace, woke)
 
-	def understand(self, result: dict, understanding: Understanding, trace: Callable[[dict], None] | None) -> None:
+	def understand(self, result: dict, understanding: Understanding, trace: Callable[[dict], None] | None, woke: bool = False) -> None:
+		"""`woke`: the screen shows it's listening (the wake words were in the sentence so far). Then it always gets
+		an answer: if the sentence came to nothing (not sure enough, or the name turned out to be another word), "unclear"."""
 		if trace and result.get("text"):
 			trace(result)
-		for command in understanding.hear(result):
+		commands = understanding.hear(result)
+		if woke and not commands:
+			commands = [{"do": "unclear"}]
+		for command in commands:
 			self.heard(command)
 
 
@@ -324,7 +335,9 @@ class Voice:
 		return [problem] if problem else []
 
 	def heard(self, command: dict) -> None:
-		if command["do"] not in ("listening", "unclear"):
+		if command["do"] == "listening":
+			command = {**command, "seconds": self.settings.follow_up_seconds}   # the screen: "didn't hear anything" after that
+		elif command["do"] != "unclear":
 			log.info("Heard: %s", command["said"])
 		if command["do"] in ("mute", "unmute"):
 			try:
@@ -332,7 +345,28 @@ class Voice:
 				self.app.change_settings({"muted": command["do"] == "mute"})
 			except Exception:
 				log.exception("Voice command %s failed", command["do"])
+		if command["do"] in ("pause", "resume"):
+			command = self.music(command)
 		self.commands.put(command)
+
+	def music(self, command: dict) -> dict:
+		"""Pause or play the music on Spotify, as its ⏯ button does (providers/spotify.py: "toggle"; with nothing
+		played yet it starts the account's last music on our speaker). The command back, or "failed" and why."""
+		spotify = self.app.providers.get("spotify")
+		if spotify is None or not spotify.connected:
+			return {"do": "failed", "said": "Spotify isn't connected"}
+		pause = command["do"] == "pause"
+		playing = bool(spotify.playing and spotify.playing.is_playing)
+		if pause and not playing:
+			return {**command, "said": "The music is already paused" if spotify.playing else "No music is playing"}
+		if not pause and playing:
+			return {**command, "said": "The music is already playing"}
+		try:
+			_, error = spotify.action("toggle", [], self.app.clock.now())
+		except Exception:
+			log.exception("Voice command %s failed", command["do"])
+			error = "Spotify can't be reached right now"
+		return {"do": "failed", "said": error} if error else command
 
 
 def slide_labels(app: App) -> dict[str, str]:
