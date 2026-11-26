@@ -58,6 +58,10 @@ class SpotifyTest(unittest.TestCase):
 		prefetch = mock.patch.object(SpotifyProvider, "prefetch")
 		prefetch.start()
 		self.addCleanup(prefetch.stop)
+		# Likewise the work done in the background (the library, the queue after a skip, the lyrics): tested on its own below.
+		background = mock.patch.object(SpotifyProvider, "background")
+		background.start()
+		self.addCleanup(background.stop)
 
 	def tearDown(self):
 		self.folder.cleanup()
@@ -146,6 +150,7 @@ class SpotifyTest(unittest.TestCase):
 
 	def test_the_queue_page_and_taking_a_song_out(self):
 		self.connect()   # TRACK plays
+		self.provider.next_fetched = (None, 0.0)   # the queue we have is old: fetched before the page opens
 		with request_patch(return_value=FakeResponse(200, {"queue": [song("one"), song("two"), song("three")]})):
 			slide, _ = self.provider.action("show_queue", [], NOW)
 		self.assertEqual(slide.template, "spotify_queue.html")
@@ -391,7 +396,8 @@ class SpotifyTest(unittest.TestCase):
 	def test_timeline_keys_jump_ten_seconds_within_the_song(self):
 		self.connect()
 		self.provider.playing = replace(self.provider.playing, is_playing=False, progress_ms=61_000)   # paused: progress stands still
-		for name, expected in (("seek_forward", 71_000), ("seek_back", 51_000)):
+		# The second key goes on from where the first one jumped to (shown at once, before Spotify reports it).
+		for name, expected in (("seek_forward", 71_000), ("seek_forward", 81_000), ("seek_back", 71_000)):
 			with mock.patch("francken_tv.providers.spotify.HTTP.request", return_value=FakeResponse(204)) as request, \
 					mock.patch.object(self.provider, "catch_up"):
 				slide, message = self.provider.action(name, [], NOW)
@@ -657,6 +663,80 @@ class SpotifyTest(unittest.TestCase):
 			before = request.call_count
 			slide, _ = self.provider.action("search", ["Beatles"], NOW)   # e.g. back from an album
 		self.assertEqual((request.call_count, [song["title"] for song in slide.data["songs"]]), (before, ["Come Together"]))
+
+	def test_the_queue_page_opens_with_a_recent_queue_at_once(self):
+		self.connect()
+		with request_patch(return_value=FakeResponse(200, {"queue": [song("one")]})):
+			self.provider.refresh_next()   # just fetched (by the background refresh)
+		with request_patch() as request:
+			slide, _ = self.provider.action("show_queue", [], NOW)
+		request.assert_not_called()
+		self.assertEqual([song["title"] for _, song in slide.data["songs"]], ["One"])
+		self.provider.background.assert_called_with(self.provider.refresh_next)   # fetched again meanwhile
+
+	def test_pause_shows_at_once_and_an_old_report_does_not_undo_it(self):
+		self.connect()
+		with request_patch(return_value=FakeResponse(204)) as request:
+			slide, message = self.provider.action("toggle", [], NOW)
+		self.assertEqual(request.call_count, 1)   # only the pause: no waiting for Spotify to report it
+		self.assertEqual((slide.data["is_playing"], message), (False, None))
+		with request_patch(side_effect=[FakeResponse(200, TRACK)]):   # Spotify still says it plays
+			self.provider.refresh(NOW)
+		self.assertFalse(self.provider.playing.is_playing)
+		with request_patch(side_effect=[FakeResponse(200, TRACK | {"is_playing": False})]):
+			self.provider.refresh(NOW)
+		self.assertIsNone(self.provider.expected)   # reported: from here on Spotify is followed again
+		self.provider.expect(lambda reported: False)
+		self.provider.expected = (self.provider.expected[0], time.monotonic() - 1)   # too long ago: Spotify wins
+		with request_patch(side_effect=[FakeResponse(200, TRACK), FakeResponse(200, {"queue": []})]):
+			self.provider.refresh(NOW)
+		self.assertTrue(self.provider.playing.is_playing)
+
+	def test_after_a_skip_the_queue_moves_on_without_waiting_for_it(self):
+		self.connect()
+		self.provider.next_fetched = (None, 0.0)
+		with request_patch(return_value=FakeResponse(200, {"queue": [song("one"), song("two")]})):
+			self.provider.refresh_next()
+		with request_patch(side_effect=[FakeResponse(204), FakeResponse(200, TRACK | {"item": song("one"), "progress_ms": 0})]) as request, \
+				mock.patch("francken_tv.providers.spotify.time.sleep"):
+			slide, _ = self.provider.action("skip", [], NOW)
+		self.assertEqual(request.call_count, 2)   # the skip and one check: the queue isn't waited for
+		self.assertEqual((slide.data["title"], slide.data["next"]["title"], slide.data["next"]["cover"]), ("One", "Two", "https://i.scdn.co/big.jpg"))
+		self.provider.background.assert_called_with(self.provider.refresh_next)
+
+	def test_here_when_it_already_plays_here_answers_at_once(self):
+		self.connect()
+		self.provider.playing.device = "Francken TV"
+		with request_patch() as request:
+			slide, message = self.provider.action("here", [], NOW)
+		request.assert_not_called()
+		self.assertEqual((slide.template, message), ("spotify.html", "Playing on Francken TV"))
+
+	def test_a_followed_playlist_goes_straight_to_the_widget(self):
+		self.connect()
+		self.provider.playlists = [{"name": "Theirs", "uri": "spotify:playlist:t", "cover": None, "owner": "Kees", "owner_id": "kees"}]
+		self.provider.library_cache = (time.monotonic(), self.provider.playlists)
+		widget = FakeResponse(200)
+		widget.text = '<script id="__NEXT_DATA__" type="application/json">' + json.dumps({"props": {"pageProps": {"state": {"data": {"entity": {
+			"trackList": [{"uri": "spotify:track:1", "title": "Song", "subtitle": "Band", "duration": 61_000}]}}}}}}) + "</script>"
+		with request_patch() as request, mock.patch("francken_tv.providers.spotify.HTTP.get", return_value=widget):
+			slide, _ = self.provider.action("songs", ["spotify:playlist:t"], NOW)
+		request.assert_not_called()   # not first asked (and refused) by the Web API
+		self.assertEqual([song["title"] for song in slide.data["songs"]], ["Song"])
+
+	def test_the_library_is_kept_up_to_date_in_the_background(self):
+		self.connect()   # the background refresh starts fetching it
+		self.provider.background.assert_any_call(self.provider.load_library)
+		self.provider.library_cache = (time.monotonic() - 10_000, ["old"])
+		self.provider.library_loading = None
+		self.assertEqual(self.provider.library(), ["old"])   # a tap gets what we have...
+		self.provider.background.assert_called_with(self.provider.load_library)   # ...and it's fetched again meanwhile
+		def added_meanwhile():   # a playlist added while that fetch ran: its (older) answer isn't kept
+			self.provider.library_version += 1
+			return []
+		with mock.patch.object(self.provider, "download_library", side_effect=added_meanwhile):
+			self.provider.load_library()
+		self.assertEqual(self.provider.library_cache[1], ["old"])
 
 
 if __name__ == "__main__":

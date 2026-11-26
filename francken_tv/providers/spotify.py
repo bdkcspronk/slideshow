@@ -30,6 +30,7 @@ import secrets
 import threading
 import time
 from collections import Counter
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import datetime
@@ -69,8 +70,11 @@ DB_PER_DECADE_HEARD = 0.6    # loudness heard ~ amplitude^0.6
 VOLUME_SETTLE_SECONDS = 4
 START_WAIT_SECONDS = 180      # on start: how long to wait for our speaker to show up
 JUMP_MS = 3000                # a position this far from what we expect: the song was restarted or moved
-CATCH_UP_SECONDS = 3          # after skip/pause/play: how long to wait for Spotify to report it
-CATCH_UP_EVERY = 0.25
+# After skip/play: how long a tap waits for Spotify to report it (it does within 0.3-0.7 s). Some taps change nothing to see
+# (▶ on the playlist that already plays): then the slide comes back after this, and the background refresh catches anything later.
+CATCH_UP_SECONDS = 1.5
+SETTLE_SECONDS = 3            # after pause/play or a jump (shown at once): how long a report of how it was before is ignored
+CATCH_UP_EVERY = 0.1          # (each check itself takes ~100-150 ms on top of this)
 SCOPES = ("user-read-currently-playing user-read-playback-state user-modify-playback-state "
 	"playlist-read-private playlist-read-collaborative user-read-recently-played "
 	"user-library-modify playlist-modify-public playlist-modify-private")
@@ -155,8 +159,10 @@ def parse_next(data: dict) -> dict | None:
 
 
 def parse_queue(data: dict) -> list[dict]:
-	"""All the songs coming up (from QUEUE_URL), in order, for the Queue page."""
-	return [song for song in map(parse_song, data.get("queue") or []) if song]
+	"""All the songs coming up (from QUEUE_URL), in order, for the Queue page. big_cover: for "Up next" on the
+	slide when the queue moves on by itself after a skip (see catch_up())."""
+	items = [item for item in data.get("queue") or [] if parse_song(item)]
+	return [parse_song(item) | {"big_cover": (parse_next({"queue": [item]}) or {}).get("cover")} for item in items]
 
 
 def smallest_image(images: list[dict]) -> str | None:
@@ -299,6 +305,8 @@ class SpotifyProvider(Provider):
 		self.search_view: dict = {}         # what the search page shows, to redraw it after adding to the queue
 		self.songs_queued: tuple[str, set[str]] = ("", set())   # (playlist or album uri, its songs added to the queue)
 		self.library_cache: tuple[float, list[dict]] | None = None   # (fetched, all the account's playlists)
+		self.library_loading: Future | None = None   # library() fetched in the background (see warm_up())
+		self.library_version = 0            # changed by adding or removing a playlist: a fetch started before is out of date
 		self.account_id = ""                # the account's username: its own playlists can't be removed
 		self.person: dict = {}                    # the person whose playlists were shown last (a person_card)
 		self.person_lists: dict[str, dict] = {}   # their playlists, by uri
@@ -317,6 +325,10 @@ class SpotifyProvider(Provider):
 		self.jumps = 0   # how often the song jumped to another position (restart, seek): part of the slide's state
 		self.lyrics: dict[str, Lyrics | None] = {}   # by song id; None: LRCLIB doesn't have them
 		self.lyrics_lock = threading.Lock()   # the slide is redrawn every second: one lookup per song
+		self.lyrics_asked = ""              # the song whose lyrics were last looked up in the background
+		# After pause/play or a jump the slide shows the result at once; Spotify may still report the old state for a moment.
+		# (test, deadline): until the deadline, a report that fails the test is ignored (see refresh()).
+		self.expected: tuple[Callable[[NowPlaying], bool], float] | None = None
 
 	# ---- credentials and login ------------------------------------------------------------------
 
@@ -388,7 +400,12 @@ class SpotifyProvider(Provider):
 			return 1
 		return self.check_every
 
-	def refresh(self, now: datetime) -> None:
+	def background(self, work: Callable, *args) -> Future:
+		"""Work done in another thread, so a tap doesn't wait for it (switched off in the tests)."""
+		return self.prefetcher.submit(work, *args)
+
+	def refresh(self, now: datetime, queue: bool = True) -> None:
+		"""What's playing. queue=False: not the queue (catch_up() fetches it afterwards, in the background)."""
 		if not self.connected:
 			self.playing = None
 			return
@@ -396,7 +413,13 @@ class SpotifyProvider(Provider):
 		if response.status_code >= 400:
 			return
 		before = self.playing
-		self.playing = parse_playing(response.json(), time.monotonic()) if response.status_code == 200 and response.content else None
+		playing = parse_playing(response.json(), time.monotonic()) if response.status_code == 200 and response.content else None
+		if self.expected:
+			test, deadline = self.expected
+			if time.monotonic() < deadline and not (playing and test(playing)):
+				return   # Spotify still reports how it was before the tap: keep showing the result
+			self.expected = None
+		self.playing = playing
 		if before and self.playing and before.id == self.playing.id and (
 				self.playing.progress_ms > before.progress() + JUMP_MS          # further than it can have played: moved on
 				or self.playing.progress_ms < before.progress_ms - JUMP_MS):    # behind where it was: restarted (⏮) or moved back
@@ -412,10 +435,22 @@ class SpotifyProvider(Provider):
 		self.skip_taken_out(before)
 		if self.playing is None:
 			self.next = None
-		elif self.next_fetched[0] != self.playing.id or time.monotonic() - self.next_fetched[1] > QUEUE_EVERY_SECONDS:
+		elif queue and (self.next_fetched[0] != self.playing.id or time.monotonic() - self.next_fetched[1] > QUEUE_EVERY_SECONDS):
 			self.refresh_next()
 		if self.start_step:
 			self.start_music()
+		if queue:   # (the background refresh, not a tap)
+			self.warm_up()
+
+	def warm_up(self) -> None:
+		"""Fetch in the background what a tap would otherwise wait for: the library and the account (opening a playlist),
+		and the playing song's lyrics."""
+		if self.library_idle() and (not self.library_cache or time.monotonic() - self.library_cache[0] > PLAYLISTS_EVERY_SECONDS):
+			self.library_loading = self.background(self.load_library)
+		playing = self.playing
+		if playing and playing.id != self.lyrics_asked:
+			self.lyrics_asked = playing.id
+			self.background(self.song_lyrics, playing)
 
 	def start_music(self) -> None:
 		"""When the slideshow starts: if nothing plays, start the music on our own speaker. First resume
@@ -572,9 +607,35 @@ class SpotifyProvider(Provider):
 		return playlists, total
 
 	def library(self) -> list[dict]:
-		"""All the account's playlists (at most LIBRARY_MAX), to find the people who made them."""
-		if self.library_cache and time.monotonic() - self.library_cache[0] < PLAYLISTS_EVERY_SECONDS:
+		"""All the account's playlists (at most LIBRARY_MAX), to find the people who made them. The background refresh
+		keeps them up to date (warm_up()), so a tap only waits for them right after the slideshow starts."""
+		if self.library_cache:
+			if time.monotonic() - self.library_cache[0] > PLAYLISTS_EVERY_SECONDS and self.library_idle():
+				self.library_loading = self.background(self.load_library)
 			return self.library_cache[1]
+		loading = self.library_loading
+		if loading:
+			try:
+				loading.result()
+			except (PermissionError, requests.RequestException):
+				pass
+			if self.library_cache:
+				return self.library_cache[1]
+		return self.load_library()
+
+	def library_idle(self) -> bool:
+		return not self.library_loading or self.library_loading.done()
+
+	def load_library(self) -> list[dict]:
+		"""Fetch library() and the account's username (to tell its own playlists apart)."""
+		version = self.library_version
+		playlists = self.download_library()
+		self.account()
+		if version == self.library_version:   # no playlist added or removed meanwhile (else asked again next time)
+			self.library_cache = (time.monotonic(), playlists)
+		return playlists
+
+	def download_library(self) -> list[dict]:
 		playlists: list[dict] = []
 		offset = 0
 		while offset < LIBRARY_MAX:
@@ -586,7 +647,6 @@ class SpotifyProvider(Provider):
 			offset += len(data.get("items") or [])
 			if not data.get("items") or offset >= data.get("total", 0):
 				break
-		self.library_cache = (time.monotonic(), playlists)
 		known = {playlist["uri"] for playlist in self.playlists}
 		self.playlists += [playlist for playlist in playlists if playlist["uri"] not in known]
 		return playlists
@@ -658,7 +718,9 @@ class SpotifyProvider(Provider):
 			data = response.json()
 			return [song for song in map(parse_song, data.get("items") or []) if song], data.get("total", 0)
 		# Someone else's playlist (known from the search): Spotify refuses to list it to the app, so don't ask.
-		owner = (self.found.get(playlist_uri) or self.person_lists.get(playlist_uri) or {}).get("owner_id")
+		# (A playlist on the Playlists page may be someone else's too: followed by the account.)
+		known = next((p for p in self.playlists if p["uri"] == playlist_uri), None)
+		owner = (self.found.get(playlist_uri) or self.person_lists.get(playlist_uri) or known or {}).get("owner_id")
 		theirs = bool(owner) and owner != self.account()
 		response = None if theirs else self.api("GET", f"{API}/playlists/{playlist_id}/items",
 			params={"limit": SONGS_PER_PAGE, "offset": page * SONGS_PER_PAGE})
@@ -855,20 +917,41 @@ class SpotifyProvider(Provider):
 				self.playing.volume = volume
 			self.volume_set = (volume, time.monotonic())
 
+	def expect(self, test: Callable[[NowPlaying], bool]) -> None:
+		"""The slide already shows what a tap did: for SETTLE_SECONDS, reports of how it was before are ignored (refresh())."""
+		self.expected = (test, time.monotonic() + SETTLE_SECONDS)
+
 	def catch_up(self, now: datetime) -> None:
 		"""After a command: ask what's playing until Spotify reports a change (a new song, paused or
 		playing), at most CATCH_UP_SECONDS, so the slide shows the result as soon as it's there."""
 		before = self.playing
-		key = (before.id, before.is_playing, self.jumps) if before else None
-		for _ in range(round(CATCH_UP_SECONDS / CATCH_UP_EVERY)):
+		state = lambda playing: (playing.id, playing.is_playing, playing.device, self.jumps)
+		key = state(before) if before else None
+		deadline = time.monotonic() + CATCH_UP_SECONDS
+		for _ in range(round(CATCH_UP_SECONDS / CATCH_UP_EVERY)):   # (the deadline comes first: each check takes time too)
+			if time.monotonic() > deadline:
+				break
 			time.sleep(CATCH_UP_EVERY)
 			try:
-				self.refresh(now)
+				self.refresh(now, queue=False)   # the queue afterwards: the tap waits only for the song
 			except requests.RequestException:
 				break   # the background refresh catches up within a few seconds
-			if self.playing and (self.playing.id, self.playing.is_playing, self.jumps) != key:
+			if self.playing and state(self.playing) != key:
 				break
 		self.playing = self.playing or before   # Spotify may not report the new song yet
+		if self.playing and before and self.playing.id != before.id:
+			self.queue_moved_on()
+
+	def queue_moved_on(self) -> None:
+		"""A new song after a tap: "Up next" from the queue we have (it moved on by one after a skip), and the queue
+		as it is now fetched in the background (the slide redraws if that differs)."""
+		if self.queue and self.queue[0]["uri"] == self.playing.uri:
+			self.queue = self.queue[1:]
+			self.next = {key: self.queue[0][key] for key in ("title", "artist", "uri")} | {"cover": self.queue[0]["big_cover"]} if self.queue else None
+		else:   # (another playlist, or back a song): not known yet
+			self.next = None
+		self.next_fetched = (self.playing.id, time.monotonic())   # (not again by the background refresh meanwhile)
+		self.background(self.refresh_next)
 
 	def slides(self, now: datetime) -> list[Slide]:
 		if not self.connected:
@@ -943,6 +1026,7 @@ class SpotifyProvider(Provider):
 			if name == "save":   # its maker shows up under People right away
 				known = self.found.get(uri) or self.person_lists.get(uri) or {"name": "Playlist", "cover": None, "owner": "", "owner_id": ""}
 				library.append({key: known.get(key, "") for key in ("name", "cover", "owner", "owner_id")} | {"uri": uri})
+			self.library_version += 1
 			self.library_cache = (self.library_cache[0], library)
 			self.playlist_pages.clear()   # the Playlists pages change too
 			slide, _ = self.action("songs", [uri], now)
@@ -1025,6 +1109,8 @@ class SpotifyProvider(Provider):
 			return self.now_playing(), f"Playing {self.collection_name(values[0])}"
 		if name in ("previous", "skip", "toggle", "here") and not self.playing and not self.last:
 			name = "here"   # nothing known to have played yet: the account's last session, on our speaker
+		if name == "here" and self.playing and self.playing.is_playing and self.playing.device == self.speaker:
+			return self.now_playing(), f"Playing on {self.speaker}"   # already: moving it there changes nothing (nothing to wait for)
 		if name == "here":   # move the music to the TV PC's own speaker
 			try:
 				speaker = self.speaker_id()
@@ -1040,7 +1126,12 @@ class SpotifyProvider(Provider):
 		if name == "lyrics":
 			return self.lyrics_slide(), None
 		if name == "show_queue":
-			self.refresh_next()   # as it is now, not up to QUEUE_EVERY_SECONDS ago
+			# Songs added elsewhere since the last check (at most QUEUE_EVERY_SECONDS ago) show up a moment later: the page
+			# opens with the queue we have, and is redrawn when the fresh one (fetched in the background) differs.
+			if self.playing and self.next_fetched[0] == self.playing.id and time.monotonic() - self.next_fetched[1] < QUEUE_EVERY_SECONDS:
+				self.background(self.refresh_next)
+			else:
+				self.refresh_next()
 			return self.queue_slide(), None
 		if name in ("queue_play", "queue_remove") and values:   # a song on the Queue page: "place in the queue|uri"
 			if name == "queue_play":
@@ -1077,13 +1168,18 @@ class SpotifyProvider(Provider):
 			self.catch_up(now)
 			return (self.lyrics_slide() if values[:1] == ["lyrics"] else self.now_playing()), None
 		if name in ("previous", "skip", "toggle") and self.playing:
+			playing = self.playing
 			if name == "toggle":
-				error = self.command("PUT", PAUSE_URL if self.playing.is_playing else PLAY_URL, start=True)
+				error = self.command("PUT", PAUSE_URL if playing.is_playing else PLAY_URL, start=True)
 			else:
 				error = self.command("POST", PREVIOUS_URL if name == "previous" else NEXT_URL)
 			if error:
 				return None, error
-			self.catch_up(now)
+			if name == "toggle":   # the result is known: shown at once, not after Spotify reports it (~0.5 s later)
+				self.playing = replace(playing, is_playing=not playing.is_playing, progress_ms=playing.progress(), fetched_at=time.monotonic())
+				self.expect(lambda reported: reported.id == playing.id and reported.is_playing != playing.is_playing)
+			else:
+				self.catch_up(now)
 			# The lyrics view's buttons send "lyrics" along, so it stays the lyrics view.
 			return (self.lyrics_slide() if values[:1] == ["lyrics"] else self.now_playing()), None
 		if name in ("seek", "seek_back", "seek_forward") and self.playing and self.playing.duration_ms:
@@ -1099,7 +1195,10 @@ class SpotifyProvider(Provider):
 			error = self.command("PUT", f"{SEEK_URL}?position_ms={position}")
 			if error:
 				return None, error
-			self.catch_up(now)
+			# Shown at once (like pause): the song at the new spot, and a redraw (jumps) for the bar to start from there.
+			playing = self.playing = replace(self.playing, progress_ms=position, fetched_at=time.monotonic())
+			self.jumps += 1
+			self.expect(lambda reported: reported.id == playing.id and abs(reported.progress_ms - playing.progress()) < JUMP_MS)
 			return self.now_playing(), None
 		if name == "mute" and self.playing and self.playing.volume is not None:   # the speaker icon: mute / unmute
 			with self.volume_lock:
