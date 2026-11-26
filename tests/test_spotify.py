@@ -222,9 +222,29 @@ class SpotifyTest(unittest.TestCase):
 			slide, message = self.provider.action("skip", [], NOW)
 		self.assertEqual(request.call_args_list[0].args[:2], ("POST", "https://api.spotify.com/v1/me/player/next"))
 		self.assertEqual(slide.template, "spotify.html")   # the old song, until Spotify reports the new one
-		with mock.patch("francken_tv.providers.spotify.HTTP.request", return_value=FakeResponse(403)):
+		refused = FakeResponse(403, {"error": {"status": 403, "message": "Player command failed: Restriction violated", "reason": "UNKNOWN"}})
+		with mock.patch("francken_tv.providers.spotify.HTTP.request", return_value=refused):
 			slide, message = self.provider.action("toggle", [], NOW)
-		self.assertIn("Premium", message)
+		self.assertEqual(message, "Spotify won't do that right now")   # never "needs Premium": the account has it
+		with mock.patch("francken_tv.providers.spotify.HTTP.request", return_value=FakeResponse(403, {"error": {"message": "Device is offline"}})):
+			_, message = self.provider.action("skip", [], NOW)
+		self.assertEqual(message, "Spotify won't do that: Device is offline")
+		with mock.patch("francken_tv.providers.spotify.HTTP.request", return_value=FakeResponse(403, {"error": {"message": "Player command failed: Premium required"}})):
+			_, message = self.provider.action("skip", [], NOW)
+		self.assertEqual(message, "Spotify won't do that right now")
+		with mock.patch("francken_tv.providers.spotify.HTTP.request", side_effect=[FakeResponse(401), FakeResponse(204)]) as request, \
+				mock.patch.object(self.provider, "request_token"):
+			self.provider.access_token, self.provider.token_expires = "a", time.monotonic() + 60
+			_, message = self.provider.action("toggle", [], NOW)
+		self.assertEqual((request.call_count, message), (2, None))   # an expired token: tried again with a new one
+
+	def test_a_song_on_its_own_that_spotify_refuses_is_queued_and_skipped_to(self):
+		self.connect()
+		refused = FakeResponse(403, {"error": {"message": "Player command failed: Restriction violated"}})
+		with request_patch(side_effect=[refused, FakeResponse(204), FakeResponse(204)]) as request, mock.patch.object(self.provider, "catch_up"):
+			slide, message = self.provider.action("play_song", ["spotify:track:x"], NOW)
+		self.assertEqual([call.args[:2] for call in request.call_args_list[1:]], [("POST", "https://api.spotify.com/v1/me/player/queue"), ("POST", NEXT_URL)])
+		self.assertEqual((slide.template, message), ("spotify.html", None))
 
 	def test_playlist_songs_old_and_new_format(self):
 		songs = parse_playlist_songs({"items": [{"item": TRACK["item"] | {"uri": "spotify:track:abc"}}, {"track": EPISODE["item"] | {"uri": "spotify:episode:1"}}, {"item": None}]})

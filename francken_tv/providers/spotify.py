@@ -78,6 +78,9 @@ CATCH_UP_EVERY = 0.1          # (each check itself takes ~100-150 ms on top of t
 SCOPES = ("user-read-currently-playing user-read-playback-state user-modify-playback-state "
 	"playlist-read-private playlist-read-collaborative user-read-recently-played "
 	"user-library-modify playlist-modify-public playlist-modify-private")
+# Spotify refusing a command that can't be done now ("Restriction violated": e.g. ⏮ with nothing before, or a song on its own on
+# the Francken TV speaker). The account has Premium, so the refusal is never that.
+REFUSED_MESSAGE = "Spotify won't do that right now"
 NEW_LOGIN_MESSAGE = "Allow the buttons once: open 127.0.0.1:8080/spotify/login on this PC and click Agree"
 QUEUE_EVERY_SECONDS = 30      # the next song is also fetched whenever the song changes
 QUEUE_SHOWN = 14              # the Queue page: two columns of seven
@@ -244,6 +247,19 @@ def queue_message(song: dict | None, added: bool) -> str:
 	if added:
 		return f"Added {title} to the queue" if title else "Added to the queue"
 	return f"Took {title} out of the queue" if title else "Taken out of the queue"
+
+
+def refusal(response: requests.Response) -> str:
+	"""What to show when Spotify refuses a command (403): its own reason, in words people understand."""
+	try:
+		reason = ((response.json() or {}).get("error") or {}).get("message") or ""
+	except ValueError:
+		reason = ""
+	reason = reason.removeprefix("Player command failed: ").strip()
+	# (Spotify blames Premium for some refusals, but the account has it: that's never the reason, so never shown.)
+	if not reason or reason.casefold() == "restriction violated" or "premium" in reason.casefold():
+		return REFUSED_MESSAGE
+	return f"Spotify won't do that: {reason}"
 
 
 def heard_volume(spotify_percent: int) -> int:
@@ -881,6 +897,8 @@ class SpotifyProvider(Provider):
 			return NEW_LOGIN_MESSAGE
 		try:
 			response = self.api(method, url, **kwargs)
+			if response.status_code == 401:   # the token expired early (api() dropped it): once more with a new one
+				response = self.api(method, url, **kwargs)
 			if response.status_code == 404 and start and (speaker := self.speaker_id()):
 				response = self.api(method, url, params={**kwargs.pop("params", {}), "device_id": speaker}, **kwargs)
 		except requests.RequestException as error:
@@ -889,7 +907,10 @@ class SpotifyProvider(Provider):
 		if response.status_code == 404:
 			return f"No Spotify player is active, and the {self.speaker} speaker isn't running"
 		if response.status_code in (401, 403):
-			return NEW_LOGIN_MESSAGE if self.needs_new_login else "Spotify doesn't allow this: it needs Spotify Premium"
+			if self.needs_new_login:
+				return NEW_LOGIN_MESSAGE
+			log.warning("Spotify refused %s %s: %s %s", method, url, response.status_code, response.text[:200])
+			return refusal(response)
 		return None
 
 	def duck(self, quieter: bool) -> None:
@@ -1067,6 +1088,8 @@ class SpotifyProvider(Provider):
 			song, _, playlist = values[0].partition("|")
 			body = {"context_uri": playlist, "offset": {"uri": song}} if playlist else {"uris": [song]}
 			error = self.command("PUT", PLAY_URL, start=True, json=body)
+			if error == REFUSED_MESSAGE and not playlist:   # the Francken TV speaker won't play a song on its own: queued and skipped to
+				error = self.command("POST", QUEUE_ADD_URL, params={"uri": song}) or self.command("POST", NEXT_URL)
 			if error:
 				return None, error
 			self.catch_up(now)
