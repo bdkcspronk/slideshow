@@ -164,11 +164,12 @@ async function next() {
 }
 
 // A shortcut key: the server draws that slide type now. An interactive one (puzzles, Spotify)
-// stays on screen like after a click, so people can use it. Returns whether a slide was shown.
+// stays on screen like after a click, so people can use it. Returns whether a slide was shown:
+// null if there's no such shortcut or slide type (right now: membership out of season).
 async function jumpTo(key) {
 	try {
 		const response = await fetch(`/api/shortcut/${key}`);
-		if (response.status === 404) return false;   // not a shortcut
+		if (response.status === 404) return null;   // not a shortcut
 		if (!response.ok) throw new Error(`shortcut ${key}: ${response.status}`);
 		const slide = await response.json();
 		if (slide.message) {   // nothing to show for that key right now: say so, or the tap seems to do nothing
@@ -1396,5 +1397,55 @@ setInterval(async () => {
 		console.error(error);
 	}
 }, 5000);
+
+// ---- Voice commands ------------------------------------------------------------------------------
+// "Hey Katinka, go to the weather" (francken_tv/voice.py, [voice] in config.toml): the server hears it and
+// /api/voice hands it over, waiting until there is one. Each does what its key does; what was heard shows
+// as a message. "listening": the wake words were heard, a microphone shows until the command comes.
+const listening = document.getElementById("listening");
+let listeningTimer = null;
+
+function showListening(on) {
+	clearTimeout(listeningTimer);
+	listening.classList.toggle("on", on);
+	if (on) listeningTimer = setTimeout(() => showListening(false), 8000);   // follow_up_seconds: still listening for a next command
+}
+
+async function doVoiceCommand(command) {
+	if (command.do === "listening") return showListening(true);
+	showListening(false);
+	if (command.do === "unclear") return showMessage("Sorry, I didn't catch that");
+	const menuOpen = menuIsOpen();
+	if (command.do === "close") return menuOpen ? closeMenu() : undefined;
+	if (command.do === "menu") return menuOpen ? undefined : openMenu();
+	if (menuOpen && command.do !== "mute" && command.do !== "unmute") closeMenu(command.do !== "go");   // the others are about the slides
+	if (command.do !== "pause" && command.do !== "resume") showMessage(command.said);   // those show the big pause icon instead
+	if (command.do === "pause" || command.do === "resume") {
+		if (paused !== (command.do === "pause")) { setPaused(command.do === "pause"); flashPauseIcon(paused); }
+	} else if (command.do === "next") {
+		next();
+	} else if (command.do === "previous") {
+		previous();
+	} else if (command.do === "go") {
+		if (await jumpTo(`go-${command.slide}`) === null) showMessage(`${command.said.replace(/^Go to /, "")}: not shown right now`);
+	}
+	// mute and unmute: done by the server already
+}
+
+async function listenForVoice() {
+	let last = -1;   // -1: from now on (not the commands heard before this page loaded)
+	for (;;) {
+		try {
+			const answer = await getJson(`/api/voice?after=${last}`);
+			if (!answer.enabled) return;   // no voice commands ([voice] enabled = false)
+			last = answer.last;
+			for (const command of answer.commands) await doVoiceCommand(command);
+		} catch (error) {
+			console.error(error);
+			await new Promise((resolve) => setTimeout(resolve, 5000));   // the server restarting: try again
+		}
+	}
+}
+listenForVoice();
 
 next();

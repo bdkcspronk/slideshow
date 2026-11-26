@@ -258,6 +258,8 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_json({"due": due})
 		elif path == "/api/overlay":
 			self.send_json(self.overlay())
+		elif path == "/api/voice":
+			self.send_voice()
 		elif path.startswith("/api/slide/") and path.removeprefix("/api/slide/").isdigit():
 			again = renderer.again(int(path.removeprefix("/api/slide/")))
 			if again is None:
@@ -381,6 +383,19 @@ class Handler(BaseHTTPRequestHandler):
 			log.info("Slow tap: %s %s took %.0f ms (provider %.0f ms, render %.0f ms)", name, action,
 				(rendered - started) * 1000, (answered - started) * 1000, (rendered - answered) * 1000)
 		self.send_json({"html": html, "message": message, "id": number})
+
+	def send_voice(self) -> None:
+		"""/api/voice?after=n: the voice commands heard after number n (voice.py), waiting a while for one;
+		{"enabled": false} without voice commands."""
+		voice = self.server.app.voice
+		if voice is None:
+			self.send_json({"enabled": False})
+			return
+		try:
+			after = int(parse_qs(urlparse(self.path).query).get("after", ["-1"])[0])
+		except ValueError:
+			after = -1
+		self.send_json({"enabled": True, **voice.commands.after(after)})
 
 	def overlay(self) -> dict:
 		"""The first thing an overlay source has to show: {"html", "seconds"}, or {} for nothing."""

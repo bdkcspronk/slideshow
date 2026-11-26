@@ -14,7 +14,8 @@ You don't need to know the code, or to have met the people who built it. Pick yo
 | **Making a 3D slide** (Three.js) and wondering what the TV PC can draw | [7. 3D limits](07-3d-limits.md) |
 
 Step-by-step setup guides for the outside services are in [setup/](setup/):
-[Spotify](setup/spotify.md), [Instagram](setup/instagram.md), [the weekly dilemma](setup/weekly-dilemma.md).
+[Spotify](setup/spotify.md), [Instagram](setup/instagram.md), [the weekly dilemma](setup/weekly-dilemma.md),
+[voice commands](setup/voice.md) ("Hey Katinka, ...").
 
 The [main README](../README.md) lists every slide and how to run the slideshow on a laptop.
 

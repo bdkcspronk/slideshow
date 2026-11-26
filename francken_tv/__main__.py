@@ -44,6 +44,8 @@ def main() -> None:
 	host, port = server_settings.get("host", "127.0.0.1"), args.port or server_settings.get("port", 8080)
 	server = Server(app, host, port)
 	app.runner.start()
+	if app.voice:
+		app.voice.start()
 	signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))   # systemd stop: shut down cleanly below
 	log.info("Slideshow running on http://%s:%d (status: /status)", host, port)
 	restarting = threading.Event()
@@ -74,6 +76,8 @@ def main() -> None:
 		restore_terminal()
 		updater.stopped.set()
 		app.runner.stop()
+		if app.voice:
+			app.voice.listener.stop()
 		app.announcer.stop_music()
 		server.server_close()
 	if restarting.is_set():

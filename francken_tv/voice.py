@@ -1,0 +1,338 @@
+"""Voice commands: say "Hey Katinka, ..." (Katinka is the TV PC) near the TV PC's microphone.
+
+	pause, stop                     pause the slideshow      play, resume, continue   go on
+	next, skip                      the next slide           back, previous           the slide before
+	mute, sound off                 all sound off            sound on                 all sound on
+	menu                            open the menu (Esc)      close, close the menu    close it
+	go to <slide>, show me <slide>  that slide now, e.g. "go to the weather", "show me spotify"
+
+"Hey Katinka" on its own, or after a command, keeps listening for follow_up_seconds: then the next command
+works without "Hey Katinka" ("Hey Katinka" ... "next" ... "next" ... "pause"). Several in one go work too:
+"Hey Katinka, next, next".
+
+Speech recognition is Vosk (pip install vosk), offline: the sound never leaves the TV PC and nothing is kept.
+It only listens for the phrases below, so anything else people say comes out as "[unk]" and is ignored. The
+model (media/voice-model/, not in git) is a download: see docs/setup/voice.md. The microphone is read with
+arecord ([voice] record in config.toml).
+
+Mute and sound on are done here; the rest goes to the browser through /api/voice (player.js, "Voice commands"),
+which does what the same key would do.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import subprocess
+import threading
+import time
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Callable
+
+from .config import project_path
+
+if TYPE_CHECKING:
+	from .app import App
+
+log = logging.getLogger(__name__)
+
+RATE = 16000                 # samples per second: what the recorder sends and Vosk expects
+CHUNK = RATE // 4 * 2        # a quarter of a second of 16-bit sound
+RETRY_SECONDS = 30           # the microphone gone (unplugged): try again this often
+WAIT_SECONDS = 20            # /api/voice waits this long for a command before answering "nothing"
+
+# What to say for each slide type, after "go to" or "show me". Only words the speech model knows: Vosk drops
+# a word it doesn't know ("wordle", "catfishing", "compucie"), so those get a word that sounds the same, or
+# none. Check a new name with tools/voice_test.py --say "hey katinka go to ...".
+SLIDE_NAMES = {
+	"images": ["posters", "the posters"],
+	"activities": ["activities", "the activities"],
+	"practice": ["practice", "practice sessions"],
+	"news": ["news", "the news"],
+	"weather": ["weather", "the weather"],
+	"rain": ["rain", "the rain"],
+	"buses": ["buses", "the buses", "the bus"],
+	"timetable": ["timetable", "the timetable"],
+	"event_photos": ["photos", "the photos"],
+	"presence": ["presence", "who is here"],
+	"leaderboard": ["leaderboard", "the leaderboard"],
+	"puzzles": ["puzzles", "the puzzles"],
+	"connections": ["connections"],
+	"wordle": ["world"],                      # "wordle" isn't a word it knows: it hears "world"
+	"catfishing": ["cat fishing"],
+	"timeguessr": ["time guesser"],
+	"spotify": ["spotify", "music", "the music"],
+	"spotify-lyrics": ["lyrics", "the lyrics"],
+	"books": ["books", "the books"],
+	"quote": ["quote", "a quote"],
+	"commandments": ["commandments", "the commandment"],
+	"confidential": ["confidential", "confidential contacts"],
+	"ero": ["emergency", "emergency response"],
+	"poll": ["poll", "dilemma", "the dilemma"],
+	"pet": ["pet", "the pet"],
+	"xkcd": ["xkcd"],
+	"graafmachine": ["digger", "the digger", "excavator"],
+	"membership": ["membership"],
+	"socks": ["socks", "the socks"],
+	"socials": ["socials"],
+	"instagram": ["instagram"],
+	"bieruur_countdown": ["countdown", "beer hour", "the countdown"],
+}
+GO = ["go to", "show me", "open"]
+COMMANDS = {
+	"pause": ["pause", "stop"],
+	"resume": ["play", "resume", "continue"],
+	"next": ["next", "skip", "next slide"],
+	"previous": ["back", "previous", "go back"],
+	"mute": ["mute", "sound off"],
+	"unmute": ["sound on"],
+	"menu": ["menu", "open the menu"],
+	"close": ["close", "close the menu"],
+}
+SAID = {"pause": "Pause", "resume": "Play", "next": "Next", "previous": "Back", "mute": "Sound off",
+	"unmute": "Sound on", "menu": "Menu", "close": "Close the menu"}   # what the screen shows was heard
+
+
+@dataclass
+class Settings:
+	enabled: bool = False
+	model: str = "media/voice-model/vosk-model-small-en-us-0.15"
+	record: list[str] = field(default_factory=lambda: ["arecord", "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", str(RATE)])
+	wake: str = "hey katinka"
+	follow_up_seconds: float = 8
+	min_confidence: float = 0.75   # every word at least this sure; "hey kathy" sounds like the wake words but scores lower
+
+	@classmethod
+	def from_config(cls, config: dict) -> Settings:
+		known = {name for name in cls.__dataclass_fields__}
+		unknown = sorted(set(config) - known)
+		if unknown:
+			raise SystemExit(f"Unknown settings in [voice]: {unknown}. Known: {sorted(known)}")
+		return cls(**config)
+
+
+def phrases(slides: dict[str, str]) -> dict[str, dict]:
+	"""Everything that can be said after the wake words -> the command: {"do": ...} and for "go", "slide" and
+	"label". `slides`: slide type -> its name on screen, for the slide types there are."""
+	found = {}
+	for do, said in COMMANDS.items():
+		for phrase in said:
+			found[phrase] = {"do": do, "said": SAID[do]}
+	for slide, label in slides.items():
+		for name in SLIDE_NAMES.get(slide, []):
+			for go in GO:
+				found[f"{go} {name}"] = {"do": "go", "slide": slide, "said": f"Go to {label}"}
+	return found
+
+
+def grammar(wake: str, commands: dict[str, dict]) -> list[str]:
+	"""Vosk's list of what it may hear: the wake words with or without a command, a command on its own (a follow-up),
+	and "[unk]" for everything else."""
+	return [wake, *(f"{wake} {phrase}" for phrase in commands), *commands, "[unk]"]
+
+
+class Commands:
+	"""The commands heard, numbered, for the browser to fetch (/api/voice). Keeps the last few."""
+
+	def __init__(self) -> None:
+		self.items: list[tuple[int, dict]] = []
+		self.last = 0
+		self.changed = threading.Condition()
+
+	def put(self, command: dict) -> None:
+		with self.changed:
+			self.last += 1
+			self.items = [*self.items[-19:], (self.last, command)]
+			self.changed.notify_all()
+
+	def after(self, number: int, wait: float = WAIT_SECONDS) -> dict:
+		"""{"commands": [...], "last": n}: those after `number`, waiting up to `wait` seconds for one. A number
+		that isn't ours (-1, or from before a restart) gets no old commands, only the number to go on from."""
+		with self.changed:
+			if not 0 <= number <= self.last:
+				return {"commands": [], "last": self.last}
+			self.changed.wait_for(lambda: self.last > number, timeout=wait)
+			return {"commands": [command for n, command in self.items if n > number], "last": self.last}
+
+
+class Understanding:
+	"""From what Vosk heard to a command: needs the wake words, or a command within follow_up_seconds of the last one."""
+
+	def __init__(self, settings: Settings, commands: dict[str, dict], clock: Callable[[], float] = time.monotonic) -> None:
+		self.settings = settings
+		self.commands = commands
+		self.wake = settings.wake.split()
+		self.clock = clock
+		self.awake_until = 0.0
+
+	def hear(self, result: dict) -> list[dict]:
+		"""A Vosk result ({"text", "result": [{"word", "conf"}, ...]}) -> the commands in it (in the order said),
+		[{"do": "listening"}] for the wake words alone, [{"do": "unclear"}] for the wake words and something it
+		couldn't make out, or []."""
+		words = result.get("result") or []
+		said = [word["word"] for word in words] or result.get("text", "").split()
+		if any(word.get("conf", 1) < self.settings.min_confidence for word in words if word["word"] != "[unk]"):
+			log.debug("Not sure enough: %s", words)
+			return []
+		wake = self.wake_at(said)
+		if wake is not None:
+			said = said[wake + len(self.wake):]   # what was said before "Hey Katinka" wasn't for us
+		elif self.clock() > self.awake_until:
+			return []   # a command without the wake words: only right after another one
+		if wake is None and (not said or "[unk]" in said):
+			return []   # talk, while it was still listening for a next command
+		self.awake_until = self.clock() + self.settings.follow_up_seconds
+		if not said:
+			return [{"do": "listening"}]
+		commands = self.split(said)
+		if commands is None:
+			return [{"do": "unclear"}]
+		return commands
+
+	def wake_at(self, said: list[str]) -> int | None:
+		"""Where the (last) wake words start in what was said, or None."""
+		size = len(self.wake)
+		starts = [at for at in range(len(said) - size + 1) if said[at:at + size] == self.wake]
+		return starts[-1] if starts else None
+
+	def split(self, said: list[str]) -> list[dict] | None:
+		"""The commands one after another ("next next" is two), or None if anything else is in it."""
+		commands = []
+		at = 0
+		while at < len(said):
+			for end in range(len(said), at, -1):   # the longest phrase first: "go back", not "go"
+				command = self.commands.get(" ".join(said[at:end]))
+				if command is not None:
+					commands.append(dict(command))
+					at = end
+					break
+			else:
+				return None
+		return commands
+
+
+class Listener:
+	"""Reads the microphone in the background and hands each command to `heard` (Voice.heard)."""
+
+	def __init__(self, settings: Settings, commands: dict[str, dict], heard: Callable[[dict], None]) -> None:
+		self.settings = settings
+		self.commands = commands
+		self.heard = heard
+		self.problem: str | None = None   # for /health
+		self.process: subprocess.Popen | None = None
+		self.stopped = threading.Event()
+
+	def start(self) -> None:
+		threading.Thread(target=self.run, name="voice", daemon=True).start()
+
+	def stop(self) -> None:
+		self.stopped.set()
+		if self.process:
+			self.process.kill()
+
+	def load(self):
+		try:
+			import vosk
+		except ImportError:
+			self.problem = "vosk is not installed (.venv/bin/pip install vosk)"
+			return None
+		path = project_path(self.settings.model)
+		if not path.is_dir():
+			self.problem = f"the speech model {path} is missing (docs/setup/voice.md)"
+			return None
+		vosk.SetLogLevel(-1)
+		return vosk, vosk.Model(str(path))
+
+	def run(self) -> None:
+		loaded = self.load()
+		if loaded is None:
+			log.warning("No voice commands: %s", self.problem)
+			return
+		vosk, model = loaded
+		understanding = Understanding(self.settings, self.commands)
+		log.info("Listening for \"%s\" (%d commands)", self.settings.wake, len(self.commands))
+		while not self.stopped.is_set():
+			try:
+				self.listen(self.recognizer(vosk, model), understanding)
+			except OSError as error:
+				self.problem = f"can't record from the microphone: {error}"
+			if not self.stopped.is_set():
+				log.warning("Voice commands: %s; trying again in %d s", self.problem, RETRY_SECONDS)
+				self.stopped.wait(RETRY_SECONDS)
+
+	def recognizer(self, vosk, model, rate: int = RATE):
+		recognizer = vosk.KaldiRecognizer(model, rate, json.dumps(grammar(self.settings.wake, self.commands)))
+		recognizer.SetWords(True)   # each word with how sure it is
+		return recognizer
+
+	def listen(self, recognizer, understanding: Understanding) -> None:
+		"""Until the recorder stops (the microphone unplugged)."""
+		self.process = subprocess.Popen(self.settings.record, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		self.follow(self.process.stdout, recognizer, understanding)
+		error = self.process.stderr.read().decode(errors="replace").strip() if self.process.stderr else ""
+		self.process.wait()
+		self.problem = f"the recorder stopped ({error or f'exit code {self.process.returncode}'})"
+
+	def follow(self, sound_in, recognizer, understanding: Understanding, trace: Callable[[dict], None] | None = None) -> None:
+		"""Feed the sound from `sound_in` (16-bit mono) to Vosk until it ends, and hand on each command.
+		`trace` gets every sentence Vosk made of it (tools/voice_test.py shows them)."""
+		woke = False   # the wake words heard in this sentence already: the screen shows it's listening
+		while not self.stopped.is_set():
+			sound = sound_in.read(CHUNK)
+			if not sound:
+				break
+			self.problem = None
+			if recognizer.AcceptWaveform(sound):
+				woke = False
+				self.understand(json.loads(recognizer.Result()), understanding, trace)
+			elif not woke and self.settings.wake in json.loads(recognizer.PartialResult()).get("partial", ""):
+				woke = True
+				self.heard({"do": "listening"})   # before the sentence is finished: it feels quicker
+		self.understand(json.loads(recognizer.FinalResult()), understanding, trace)
+
+	def understand(self, result: dict, understanding: Understanding, trace: Callable[[dict], None] | None) -> None:
+		if trace and result.get("text"):
+			trace(result)
+		for command in understanding.hear(result):
+			self.heard(command)
+
+
+class Voice:
+	"""The voice commands of the slideshow: the listener, and the commands for the browser."""
+
+	def __init__(self, app: App, settings: Settings) -> None:
+		self.app = app
+		self.settings = settings
+		self.commands = Commands()
+		self.listener = Listener(settings, phrases(slide_labels(app)), self.heard)
+
+	def start(self) -> None:
+		self.listener.start()
+
+	def warnings(self) -> list[str]:
+		problem = self.listener.problem
+		return [problem] if problem else []
+
+	def heard(self, command: dict) -> None:
+		if command["do"] not in ("listening", "unclear"):
+			log.info("Heard: %s", command["said"])
+		if command["do"] in ("mute", "unmute"):
+			try:
+				self.app.read_sound()
+				self.app.change_settings({"muted": command["do"] == "mute"})
+			except Exception:
+				log.exception("Voice command %s failed", command["do"])
+		self.commands.put(command)
+
+
+def slide_labels(app: App) -> dict[str, str]:
+	"""Every slide type there is and the extra slides of the menu (wordle, rain) -> its name on screen. One out of season
+	(membership) gets the menu's "nothing to show right now"."""
+	from .menu import EXTRA
+	labels = {}
+	for name, provider in app.providers.items():
+		labels[name] = provider.title or name.replace("_", " ").capitalize()
+		for extra, label in EXTRA.get(name, []):
+			known = app.providers.get(extra)
+			labels[extra] = label or (known.title if known else "") or extra.capitalize()
+	return labels

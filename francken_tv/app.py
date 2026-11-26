@@ -67,6 +67,7 @@ from .scheduler import Scheduler, turn_groups
 from .settings import Settings, load_settings, save_settings
 from .system_volume import SystemVolume
 from .slides import Job, Provider, Takeover
+from .voice import Settings as VoiceSettings, Voice
 
 log = logging.getLogger(__name__)
 
@@ -95,6 +96,7 @@ class App:
 	google: GoogleTiles | None = None           # Google's map instead, with a key (/tiles/google/...)
 	overlays: list = field(default_factory=list)   # things with overlay(now) -> {"template", "data", "seconds"} or None: shown over any slide (/api/overlay)
 	updater: object | None = None               # updating from GitHub (updater.py, set in __main__.py), for /status
+	voice: Voice | None = None                  # voice commands ("Hey Katinka, ..."), if [voice] enabled = true
 	settings_lock: threading.Lock = field(default_factory=threading.Lock)   # the server handles requests in parallel
 	def toggle_quotes(self) -> None:
 		self.change_settings({"quotes_aloud": not self.settings.quotes_aloud})
@@ -285,6 +287,9 @@ def build_app(config: dict, clock: Clock) -> App:
 	)
 	if "pet" in order:
 		app.overlays.append(pet)   # thanks for what was streeped, over any slide
+	voice = VoiceSettings.from_config(config.get("voice", {}))
+	if voice.enabled:
+		app.voice = Voice(app, voice)   # started in __main__.py
 	app.read_sound()
 	app.apply_settings()
 	return app

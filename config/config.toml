@@ -340,6 +340,17 @@ volume = 100
 length_scale = 1.2               # speaking speed: higher is slower
 download_voice = true            # the voice model missing: download it by itself (nothing is spoken until it is there)
 
+[voice]
+# Voice commands: "Hey Katinka, pause", "Hey Katinka, go to the weather" (all of them: francken_tv/voice.py).
+# Needs a USB microphone, vosk (.venv/bin/pip install vosk) and the speech model (docs/setup/voice.md).
+# Offline: the sound never leaves the TV PC and nothing is kept.
+enabled = false
+model = "media/voice-model/vosk-model-small-en-us-0.15"
+record = ["arecord", "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", "16000"]   # add "-D", "<device>" for another mic (arecord -L)
+wake = "hey katinka"
+follow_up_seconds = 8        # after a command (or "Hey Katinka" alone), the next one works without "Hey Katinka" this long
+min_confidence = 0.75        # higher: fewer commands by mistake, but more ignored
+
 [sniffer]
 port = "/dev/ttyUSB0"
 baud = 115200

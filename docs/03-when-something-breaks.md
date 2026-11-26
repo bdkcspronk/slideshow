@@ -108,6 +108,11 @@ The chart is fed by the small ESP32 board with a USB cable.
    address changed) and how to copy it by hand.
 3. "piper not found" in the log: `.venv/bin/pip install piper-tts`.
 
+### Voice commands ("Hey Katinka") don't work
+
+See [voice commands](setup/voice.md#when-it-doesnt-work): `/health` says what's missing, and
+`tools/voice_test.py` shows what the microphone hears.
+
 ### "Temporary failure in name resolution" in the log
 
 The PC's IPv6 DNS is unreliable: `deploy/fix_dns.sh` (`--undo` to reverse it). The slideshow

@@ -41,6 +41,7 @@ in the project folder `~/slideshow/` (the cloned repository, with these files ad
 | `media/slides/` | the posters | large files |
 | `media/vrijmibo.gif`, `media/bieruur/*.mp3` | the vrijmibo GIF and bieruur songs | large files |
 | `media/francken-vrij/` | the PDF of the latest Francken Vrij | large files |
+| `media/voice-model/` | the speech model for voice commands | large files; download it again ([voice commands](setup/voice.md)) |
 | `media/voices/` | the text-to-speech voice | large files; the slideshow downloads it again by itself ([6. The TV PC](06-tv-pc.md#the-text-to-speech-voice)) |
 | `config/devices.json` | phone MAC addresses → names | personal data |
 | `config/confidential.json`, `media/confidential/` | the confidential contact persons | personal data |
