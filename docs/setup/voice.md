@@ -8,9 +8,11 @@
 | "Hey Katinka, play" ("resume", "continue", "play the music") | play it again; with nothing played yet, the account's last music on the TV PC's speaker |
 | "Hey Katinka, pause the slideshow" ("pause the slides", "stop the slideshow") | pause the slideshow, like space |
 | "Hey Katinka, play the slideshow" ("play the slides", "resume / continue / start the slideshow") | go on with the slides |
-| "Hey Katinka, next" ("skip") / "back" ("previous") | the next slide / the one before, like → and ← |
+| "Hey Katinka, skip" ("next song", "skip the song") | the next song on Spotify |
+| "Hey Katinka, next" ("next slide") / "back" ("previous") | the next slide / the one before, like → and ← |
 | "Hey Katinka, mute" ("sound off") / "sound on" | all sound off / on, like `m` |
 | "Hey Katinka, menu" / "close" | open / close the menu, like Esc |
+| "Hey Katinka, help" ("what can I say", "what can you do") | a card with examples of what to say; for 20 seconds one works without "Hey Katinka" ("close" closes it) |
 | "Hey Katinka, go to the weather" ("show me ...", "open ...") | that slide now: posters, activities, news, weather, rain, buses, timetable, photos, presence, leaderboard, puzzles, connections, world (= Wordle), cat fishing, time guesser, spotify (or music), lyrics, books, quote, commandments, poll, pet, xkcd, digger, membership, socks, socials, instagram, countdown (or beer hour), ... (all of them: `SLIDE_NAMES` in `francken_tv/voice.py`) |
 
 "Katinka" alone works too: the speech model is English and knows "Katinka", and hears a Dutch "Kathinka" as

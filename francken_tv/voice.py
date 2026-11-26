@@ -2,10 +2,12 @@
 
 	pause, stop                     pause the music          play, resume, continue   play the music (Spotify)
 	pause the slides / slideshow    pause the slideshow      play the slides, ...     go on with the slides
-	next, skip                      the next slide           back, previous           the slide before
+	next, next slide                the next slide           back, previous           the slide before
+	skip, next song                 the next song (Spotify)
 	mute, sound off                 all sound off            sound on                 all sound on
 	menu                            open the menu (Esc)      close, close the menu    close it
 	go to <slide>, show me <slide>  that slide now, e.g. "go to the weather", "show me spotify"
+	help, what can I say            a panel of examples; it then listens HELP_SECONDS without "Hey Katinka"
 
 "Hey Katinka" on its own, or after a command, keeps listening for follow_up_seconds: then the next command
 works without "Hey Katinka" ("Hey Katinka" ... "next" ... "next" ... "pause"). Several in one go work too:
@@ -16,7 +18,7 @@ It only listens for the phrases below, so anything else people say comes out as 
 model (media/voice-model/, not in git) is a download: see docs/setup/voice.md. The microphone is read with
 arecord ([voice] record in config.toml).
 
-Mute, sound on, pause and play (the music on Spotify, not the slideshow) are done here; the rest goes to the browser
+Mute, sound on, pause, play and skip (the music on Spotify, not the slideshow) are done here; the rest goes to the browser
 through /api/voice (player.js, "Voice commands"), which does what the same key would do. Every command goes there,
 to show what was heard; one that failed as {"do": "failed", "said": why}.
 """
@@ -42,6 +44,10 @@ RATE = 16000                 # samples per second: what the recorder sends and V
 CHUNK = RATE // 4 * 2        # a quarter of a second of 16-bit sound
 RETRY_SECONDS = 30           # the microphone gone (unplugged): try again this often
 WAIT_SECONDS = 20            # /api/voice waits this long for a command before answering "nothing"
+HELP_SECONDS = 20            # after "help": the examples stay this long, and one works without "Hey Katinka"
+# The slides "help" gives as examples of "go to ...": the first four of these there are, and what to say.
+HELP_SLIDES = {"weather": "the weather", "buses": "the buses", "spotify": "the music", "puzzles": "the puzzles",
+	"news": "the news", "activities": "the activities", "event_photos": "the photos", "leaderboard": "the leaderboard"}
 
 # What to say for each slide type, after "go to" or "show me". Only words the speech model knows: Vosk drops
 # a word it doesn't know ("wordle", "catfishing", "compucie"), so those get a word that sounds the same, or
@@ -84,7 +90,8 @@ GO = ["go to", "show me", "open"]
 COMMANDS = {
 	"pause": ["pause", "stop", "pause the music", "stop the music"],
 	"resume": ["play", "resume", "continue", "play the music", "play music"],
-	"next": ["next", "skip", "next slide"],
+	"next": ["next", "next slide"],
+	"skip": ["skip", "skip the song", "skip this song", "next song"],
 	"previous": ["back", "previous", "go back"],
 	# "slide show" too: in case the speech model only knows the two words
 	"pause_slides": [f"{verb} {the}{slides}" for verb in ("pause", "stop") for the in ("", "the ") for slides in ("slides", "slideshow", "slide show")],
@@ -94,9 +101,10 @@ COMMANDS = {
 	"unmute": ["sound on"],
 	"menu": ["menu", "open the menu"],
 	"close": ["close", "close the menu"],
+	"help": ["help", "what can i say", "what can you do"],
 }
-SAID = {"pause": "Pause the music", "resume": "Play the music", "pause_slides": "Pause the slideshow", "resume_slides": "Play the slideshow", "next": "Next", "previous": "Back", "mute": "Sound off",
-	"unmute": "Sound on", "menu": "Menu", "close": "Close the menu"}   # what the screen shows was heard
+SAID = {"pause": "Pause the music", "resume": "Play the music", "skip": "Skip the song", "pause_slides": "Pause the slideshow", "resume_slides": "Play the slideshow", "next": "Next", "previous": "Back", "mute": "Sound off",
+	"unmute": "Sound on", "menu": "Menu", "close": "Close", "help": "Help"}   # what the screen shows was heard
 
 
 @dataclass
@@ -202,6 +210,8 @@ class Understanding:
 		commands = self.split(said)
 		if commands is None:
 			return [{"do": "unclear"}]
+		if commands[-1]["do"] == "help":   # time to read the examples and say one
+			self.awake_until = self.clock() + max(HELP_SECONDS, self.settings.follow_up_seconds)
 		return commands
 
 	def wake_at(self, said: list[str]) -> tuple[int, int] | None:
@@ -325,7 +335,9 @@ class Voice:
 		self.app = app
 		self.settings = settings
 		self.commands = Commands()
-		self.listener = Listener(settings, phrases(slide_labels(app)), self.heard)
+		labels = slide_labels(app)
+		self.listener = Listener(settings, phrases(labels), self.heard)
+		self.help_slides = [said for slide, said in HELP_SLIDES.items() if slide in labels][:4]   # "go to ..." examples
 
 	def start(self) -> None:
 		self.listener.start()
@@ -337,6 +349,8 @@ class Voice:
 	def heard(self, command: dict) -> None:
 		if command["do"] == "listening":
 			command = {**command, "seconds": self.settings.follow_up_seconds}   # the screen: "didn't hear anything" after that
+		elif command["do"] == "help":
+			command = {**command, "seconds": max(HELP_SECONDS, self.settings.follow_up_seconds), "slides": self.help_slides}
 		elif command["do"] != "unclear":
 			log.info("Heard: %s", command["said"])
 		if command["do"] in ("mute", "unmute"):
@@ -345,24 +359,28 @@ class Voice:
 				self.app.change_settings({"muted": command["do"] == "mute"})
 			except Exception:
 				log.exception("Voice command %s failed", command["do"])
-		if command["do"] in ("pause", "resume"):
+		if command["do"] in ("pause", "resume", "skip"):
 			command = self.music(command)
 		self.commands.put(command)
 
 	def music(self, command: dict) -> dict:
 		"""Pause or play the music on Spotify, as its ⏯ button does (providers/spotify.py: "toggle"; with nothing
-		played yet it starts the account's last music on our speaker). The command back, or "failed" and why."""
+		played yet it starts the account's last music on our speaker), or skip the song (⏭). The command back,
+		or "failed" and why."""
 		spotify = self.app.providers.get("spotify")
 		if spotify is None or not spotify.connected:
 			return {"do": "failed", "said": "Spotify isn't connected"}
 		pause = command["do"] == "pause"
 		playing = bool(spotify.playing and spotify.playing.is_playing)
-		if pause and not playing:
+		if command["do"] == "skip":
+			if not spotify.playing:
+				return {**command, "said": "No music is playing"}
+		elif pause and not playing:
 			return {**command, "said": "The music is already paused" if spotify.playing else "No music is playing"}
-		if not pause and playing:
+		elif not pause and playing:
 			return {**command, "said": "The music is already playing"}
 		try:
-			_, error = spotify.action("toggle", [], self.app.clock.now())
+			_, error = spotify.action("skip" if command["do"] == "skip" else "toggle", [], self.app.clock.now())
 		except Exception:
 			log.exception("Voice command %s failed", command["do"])
 			error = "Spotify can't be reached right now"

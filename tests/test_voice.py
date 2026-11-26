@@ -219,12 +219,33 @@ class VoiceTest(unittest.TestCase):
 		said = [c["said"] for c in sound.commands.after(0, wait=0)["commands"]]
 		self.assertEqual(said, ["Pause the music", "The music is already playing"])
 
+	def test_skip_is_the_song_and_next_the_slide(self):
+		sound, actions = self.spotify(SimpleNamespace(is_playing=True))
+		understanding = Understanding(Settings(enabled=True), phrases(SLIDES))
+		heard = understanding.hear(result("katinka skip next next song"))
+		self.assertEqual([c["do"] for c in heard], ["skip", "next", "skip"])
+		sound.heard(heard[0])
+		self.assertEqual(actions, ["skip"])
+
 	def test_play_with_nothing_played_yet_starts_the_music(self):
 		sound, actions = self.spotify(None)
 		sound.heard({"do": "resume", "said": "Play the music"})
 		sound.heard({"do": "pause", "said": "Pause the music"})
 		self.assertEqual(actions, ["toggle"])
 		self.assertEqual(sound.commands.after(0, wait=0)["commands"][1]["said"], "No music is playing")
+
+	def test_help_listens_longer(self):
+		clock = Clock()
+		understanding = Understanding(Settings(enabled=True), phrases(SLIDES), clock)
+		self.assertEqual([c["do"] for c in understanding.hear(result("katinka what can i say"))], ["help"])
+		clock.now += voice.HELP_SECONDS - 1   # still reading the examples
+		self.assertEqual([c["do"] for c in understanding.hear(result("go to the weather"))], ["go"])
+
+	def test_help_gives_examples_of_slides_there_are(self):
+		app = SimpleNamespace(providers={name: SimpleNamespace(title=name.capitalize()) for name in ("buses", "quote", "weather")})
+		sound = voice.Voice(app, Settings(enabled=True))
+		sound.heard({"do": "help", "said": "Help"})
+		self.assertEqual(sound.commands.after(0, wait=0)["commands"][0]["slides"], ["the weather", "the buses"])
 
 	def test_the_slideshow_has_its_own_pause(self):
 		understanding = Understanding(Settings(enabled=True), phrases(SLIDES))

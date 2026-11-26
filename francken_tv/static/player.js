@@ -1426,20 +1426,55 @@ function showVoice(state, text, seconds = 8) {
 		: setTimeout(() => showVoice("nothing", "Didn't hear anything"), seconds * 1000);
 }
 
+// "Hey Katinka, help": examples of what to say. It listens without the name meanwhile (voice.py, HELP_SECONDS);
+// a command, or that time running out, closes it.
+const voiceHelp = document.getElementById("voice-help");
+const MIC = '<svg viewBox="0 0 24 24"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>';
+let voiceHelpTimer = null;
+
+function showVoiceHelp(slides, seconds) {
+	const said = (...phrases) => `<p>${phrases.map((phrase) => `“${escapeHtml(phrase)}”`).join(" <span>·</span> ")}</p>`;
+	const go = slides.map((slide, at) => said(`${["go to", "show me"][at % 2]} ${slide}`)).join("");
+	voiceHelp.innerHTML = `<div class="voice-help-card squircle">
+		<h2>${MIC}<span>Say <em>“Kathinka”</em> and then…</span></h2>
+		<div class="voice-help-groups">
+			<section><h3>Music &amp; sound</h3>${said("pause", "play", "skip")}${said("mute", "sound on")}</section>
+			<section class="voice-help-go"><h3>Go to a slide</h3>${go}</section>
+			<section><h3>Slides</h3>${said("next", "back")}${said("pause the slideshow")}${said("menu", "close")}</section>
+		</div>
+		<div class="voice-help-foot">Listening: just say one <div class="voice-help-time"><i style="--seconds: ${seconds}s"></i></div></div>
+	</div>`;
+	voiceHelp.classList.add("on");
+	clearTimeout(voiceHelpTimer);
+	voiceHelpTimer = setTimeout(hideVoiceHelp, seconds * 1000);
+}
+
+function hideVoiceHelp() {
+	clearTimeout(voiceHelpTimer);
+	voiceHelp.classList.remove("on");
+}
+
 async function doVoiceCommand(command) {
 	if (command.do === "listening") return showVoice("listening", "Listening", command.seconds);
+	if (command.do === "help") {
+		clearTimeout(listeningTimer);
+		listening.classList.remove("on");   // the card says it's listening
+		return showVoiceHelp(command.slides || [], command.seconds || 20);
+	}
+	const helpOpen = voiceHelp.classList.contains("on");
+	hideVoiceHelp();
 	if (command.do === "unclear") return showVoice("unclear", "Sorry, I didn't catch that");
 	if (command.do === "failed") return showVoice("unclear", command.said);   // e.g. Spotify not reachable
 	const menuOpen = menuIsOpen();
 	if (command.do === "close") {
 		if (menuOpen) closeMenu();
-		return showVoice(menuOpen ? "done" : "unclear", menuOpen ? command.said : "The menu isn't open");
+		return showVoice(menuOpen || helpOpen ? "done" : "unclear", menuOpen || helpOpen ? command.said : "Nothing to close");
 	}
 	if (command.do === "menu") {
 		if (!menuOpen) openMenu();
 		return showVoice("done", command.said);
 	}
-	const server = ["mute", "unmute", "pause", "resume"].includes(command.do);   // sound and the music: done by the server already
+	const server = ["mute", "unmute", "pause", "resume", "skip"].includes(command.do);   // sound and the music: done by the server already
 	if (menuOpen && !server) closeMenu(command.do !== "go");   // the others are about the slides
 	if (command.do === "go") {
 		showVoice("done", command.said);   // at once: the slide takes a moment
