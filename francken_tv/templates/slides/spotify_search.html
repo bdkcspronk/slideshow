@@ -2,9 +2,9 @@
 	Search Spotify for songs, playlists, albums and people (SpotifyProvider.action() in providers/spotify.py).
 	Typing (on the screen or a real keyboard, see typeKey() in player.js) goes into data-input-text;
 	Enter sends it as "search". The chips (All, Songs, Playlists, Albums, People) search again for just
-	that, as in the desktop app. Tapping a song plays it; + adds it to the queue; tapping an album or
-	playlist shows its songs, tapping a person their playlists. After +, the page comes back with a popup ("Added ... to the queue")
-	and a tick on the song.
+	that, as in the desktop app. Tapping a song (or its +) adds it to the queue: the page comes back with a popup
+	("Added ... to the queue") and a tick on the song; tapping it (or the tick) again takes it back out. Tapping an album or
+	playlist shows its songs, tapping a person their playlists.
 #}
 <div class="slide spotify-slide spotify-pick-slide" data-state="search" data-interactive data-provider="spotify" data-submit-action="search">
 	<div class="spotify-pick-header">
@@ -51,14 +51,13 @@
 		<ol class="spotify-songs spotify-results{{ ' with-albums' if cards }}">
 			{% for song in songs %}
 			<li>
-				<button class="spotify-song" data-action="play_song" data-value="{{ song.uri }}">
+				<button class="spotify-song" data-action="queue" data-value="{{ song.uri }}">
 					{% if song.cover %}<img src="{{ song.cover }}" alt="">{% else %}<span class="spotify-song-blank"></span>{% endif %}
 					<span class="spotify-song-text"><b>{{ song.title }}</b><span>{{ song.artist }}</span></span>
 					<span class="spotify-song-length">{{ song.length }}</span>
 				</button>
 				{% if song.uri in queued %}
-				{# Still a button (with no action), so keyboard focus stays on it through the redraw (data-focus-key) #}
-				<button class="spotify-control queued" data-focus-key="queue-{{ song.uri }}" aria-disabled="true" aria-label="In the queue">&#10003;</button>
+				<button class="spotify-control queued" data-action="queue" data-focus-key="queue-{{ song.uri }}" data-value="{{ song.uri }}" aria-label="In the queue: take it back out">&#10003;</button>
 				{% else %}
 				<button class="spotify-control" data-action="queue" data-focus-key="queue-{{ song.uri }}" data-value="{{ song.uri }}" aria-label="Add to the queue">+</button>
 				{% endif %}

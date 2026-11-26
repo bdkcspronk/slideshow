@@ -5,8 +5,8 @@
 The Spotify slide shows what's playing and the next song. When nothing plays, it shows the last
 played song paused where it stopped (▶ continues it); before anything has played, there is no slide.
 Its buttons skip songs, pause and change the volume; **Playlists** shows the account's playlists and
-their songs, and **Search** finds songs, albums, playlists and people by typing. Tapping a song plays
-it. **Queue** (or tapping "Up next") shows the songs coming up: tap one to play it now, × to take it out.
+their songs, and **Search** finds songs, albums, playlists and people by typing. Tapping a song there
+adds it to the queue (tap it again to take it back out). **Queue** (or tapping "Up next") shows the songs coming up: tap one to play it now, × to take it out.
 Spotify can't remove songs from its queue, so a song taken out is skipped the moment it comes up (it
 may be heard for a second). The buttons need Spotify Premium, and music already playing on some device. One-time setup:
 

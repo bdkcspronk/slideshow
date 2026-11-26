@@ -1,8 +1,8 @@
 {#
 	One playlist's (or album's, from the search) songs, a page at a time (SpotifyProvider.action() in
 	providers/spotify.py).
-	Tapping a song plays the playlist from that song; "Play all" plays it from the start; + adds a song
-	to the queue (the page comes back with a popup and a tick on the song).
+	Tapping a song (or its +) adds it to the queue: the page comes back with a popup and a tick on the song;
+	tapping it (or the tick) again takes it back out. "Play all" plays the playlist from the start.
 	Spotify only lets us list the songs of the account's own playlists; others can only be played.
 	"+ Add to library" follows a playlist on the account (its maker then shows up under People in the
 	search); "Remove" unfollows it. The account's own playlists can't be removed here.
@@ -35,15 +35,14 @@
 	<ol class="spotify-songs" start="{{ first_number }}">
 		{% for song in songs %}
 		<li>
-			<button class="spotify-song" data-action="play_song" data-value="{{ song.uri }}|{{ playlist.uri }}">
+			<button class="spotify-song" data-action="queue" data-value="{{ song.uri }}|{{ playlist.uri }}|{{ page }}">
 				<span class="spotify-song-number">{{ first_number + loop.index0 }}</span>
 				{% if song.cover %}<img src="{{ song.cover }}" alt="">{% endif %}
 				<span class="spotify-song-text"><b>{{ song.title }}</b><span>{{ song.artist }}</span></span>
 				<span class="spotify-song-length">{{ song.length }}</span>
 			</button>
 			{% if song.uri in queued %}
-			{# Still a button (with no action), so keyboard focus stays on it through the redraw (data-focus-key) #}
-			<button class="spotify-control queued" data-focus-key="queue-{{ song.uri }}" aria-disabled="true" aria-label="In the queue">&#10003;</button>
+			<button class="spotify-control queued" data-action="queue" data-focus-key="queue-{{ song.uri }}" data-value="{{ song.uri }}|{{ playlist.uri }}|{{ page }}" aria-label="In the queue: take it back out">&#10003;</button>
 			{% else %}
 			<button class="spotify-control" data-action="queue" data-focus-key="queue-{{ song.uri }}" data-value="{{ song.uri }}|{{ playlist.uri }}|{{ page }}" aria-label="Add to the queue">+</button>
 			{% endif %}

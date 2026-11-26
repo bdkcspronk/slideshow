@@ -58,6 +58,7 @@ RESIZABLE = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 FITTED_DIR = CACHE_DIR / "fitted"
 FITTED_KEEP_SECONDS = 7 * 24 * 3600   # scaled copies not shown for a week are deleted
 HOUR = 3600
+SLOW_ACTION_SECONDS = 0.25   # a tap that takes longer is logged (see send_action)
 RECENT_SLIDES = 30   # as many as player.js keeps for the left arrow
 
 
@@ -363,13 +364,21 @@ class Handler(BaseHTTPRequestHandler):
 		if provider is None:
 			self.send_error(HTTPStatus.NOT_FOUND)
 			return
+		started = time.perf_counter()
 		try:
 			slide, message = provider.action(action, [str(value) for value in values], self.server.app.clock.now())
 		except NotImplementedError:
 			self.send_error(HTTPStatus.BAD_REQUEST, "this slide is not interactive")
 			return
+		answered = time.perf_counter()
 		number = self.server.renderer.remember(slide) if slide is not None else None   # its updates now come from this slide
-		self.send_json({"html": self.server.renderer.render(slide) if slide else None, "message": message, "id": number})
+		html = self.server.renderer.render(slide) if slide else None
+		rendered = time.perf_counter()
+		# A slow tap in the log, split into the provider (e.g. Spotify's servers) and drawing the slide, to see where the time goes.
+		if rendered - started > SLOW_ACTION_SECONDS:
+			log.info("Slow tap: %s %s took %.0f ms (provider %.0f ms, render %.0f ms)", name, action,
+				(rendered - started) * 1000, (answered - started) * 1000, (rendered - answered) * 1000)
+		self.send_json({"html": html, "message": message, "id": number})
 
 	def overlay(self) -> dict:
 		"""The first thing an overlay source has to show: {"html", "seconds"}, or {} for nothing."""

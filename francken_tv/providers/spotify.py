@@ -5,7 +5,7 @@ shows its songs (spotify_songs.html); "Search" finds songs, playlists, albums an
 with All / Songs / Playlists / Albums / People chips like the desktop app (spotify_search.html).
 Tapping a person shows their public playlists (spotify_playlists.html). "Queue" (or tapping "Up next") shows
 the songs coming up (spotify_queue.html): tap one to play it now, × to take it out.
-Tapping a song plays it. "Lyrics" shows the song's lyrics, the line being sung lit up when LRCLIB
+Tapping a song in a playlist, album or the search adds it to the queue (tapping it again takes it back out). "Lyrics" shows the song's lyrics, the line being sung lit up when LRCLIB
 has them synced (spotify_lyrics.html, lyrics.py). The buttons need Spotify Premium.
 
 Uses Spotify's Web API. One-time setup (see docs/setup/spotify.md):
@@ -30,6 +30,7 @@ import secrets
 import threading
 import time
 from collections import Counter
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
@@ -41,6 +42,10 @@ from ..lyrics import Lyrics, find_lyrics
 from ..slides import Provider, Slide
 
 log = logging.getLogger(__name__)
+
+# One connection pool for every Spotify request: each tap makes a few, and a new connection (TLS handshake)
+# for every one cost about 60 ms more each. urllib3's pool is thread-safe (the refresh and taps run in parallel).
+HTTP = requests.Session()
 
 AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -83,6 +88,7 @@ SEARCH_KINDS = {"all": "track,album,playlist", "songs": "track", "playlists": "p
 QUEUE_ADD_URL = API + "/me/player/queue"
 # Spotify can't search people, nor show anyone's profile or playlists to an app in development mode:
 # People looks for the makers of the account's playlists by name.
+BROWSE_CACHE_SECONDS = 300     # searches and pages of songs are kept this long: going back, or a tick after +, is instant
 LIBRARY_MAX = 500             # playlists read to find their makers
 RECENTLY_PLAYED_URL = API + "/me/player/recently-played"
 SAVED_URL = API + "/me/library"   # add (PUT) or remove (DELETE) playlists, by uri
@@ -227,6 +233,13 @@ def parse_embed_songs(html: str) -> list[dict]:
 		"length": minutes(track.get("duration") or 0)} for track in entity.get("trackList") or [] if track.get("uri")]
 
 
+def queue_message(song: dict | None, added: bool) -> str:
+	title = song["title"] if song else ""
+	if added:
+		return f"Added {title} to the queue" if title else "Added to the queue"
+	return f"Took {title} out of the queue" if title else "Taken out of the queue"
+
+
 def heard_volume(spotify_percent: int) -> int:
 	"""The volume as it sounds, 0-100, from the speaker's own volume (spotify_percent).
 
@@ -276,6 +289,10 @@ class SpotifyProvider(Provider):
 		self.playlists: list[dict] = []           # every playlist seen, to look up names
 		self.playlist_pages: dict[int, tuple[float, list[dict], int]] = {}   # page -> (fetched, playlists, total)
 		self.embed_songs: dict[str, list[dict]] = {}   # playlist id -> songs, for playlists by others
+		self.songs_cache: dict[tuple[str, int], tuple[float, list[dict], int]] = {}   # (uri, page) -> (fetched, songs, total)
+		self.searches: dict[tuple[str, str], tuple[float, list[dict], list[dict]]] = {}   # (query, chip) -> (fetched, songs, cards)
+		self.prefetching: dict[str, Future] = {}   # uri -> the first page of its songs, fetched while the search is looked at
+		self.prefetcher = ThreadPoolExecutor(max_workers=4, thread_name_prefix="spotify-prefetch")
 		self.found: dict[str, dict] = {}    # albums and playlists found by searching, by uri
 		self.last_query = ""                # for "back to the search" from an album or playlist
 		self.search_kind = "all"            # the chip chosen in the search: a key of SEARCH_KINDS
@@ -333,7 +350,7 @@ class SpotifyProvider(Provider):
 
 	def request_token(self, form: dict) -> dict:
 		credentials = self.credentials()
-		response = requests.post(TOKEN_URL, data=form, auth=(credentials["client_id"], credentials["client_secret"]), timeout=20)
+		response = HTTP.post(TOKEN_URL, data=form, auth=(credentials["client_id"], credentials["client_secret"]), timeout=20)
 		response.raise_for_status()
 		tokens = response.json()
 		self.access_token = tokens["access_token"]
@@ -354,7 +371,7 @@ class SpotifyProvider(Provider):
 			tokens = self.request_token({"grant_type": "refresh_token", "refresh_token": self.credentials()["refresh_token"]})
 			if "refresh_token" in tokens:   # Spotify sometimes hands out a new one
 				self.save_credentials({**self.credentials(), "refresh_token": tokens["refresh_token"]})
-		response = requests.request(method, url, headers={"Authorization": f"Bearer {self.access_token}"}, timeout=20, **kwargs)
+		response = HTTP.request(method, url, headers={"Authorization": f"Bearer {self.access_token}"}, timeout=20, **kwargs)
 		if response.status_code == 401:
 			self.access_token = None   # expired early: get a new one next time
 		if response.status_code not in (401, 403, 404):
@@ -517,6 +534,27 @@ class SpotifyProvider(Provider):
 		song = left[0][1]
 		return self.next if self.next and self.next["uri"] == song["uri"] else song   # (self.next has a bigger cover)
 
+	def toggle_queue(self, song_uri: str, queued: set[str]) -> str | None:
+		"""Add a song to the queue, or (in queued: added here before) take it back out, like × on the Queue page:
+		hidden, and skipped when it comes up (skip_taken_out()). Returns what went wrong, or None."""
+		if song_uri in queued:
+			queued.discard(song_uri)
+			if self.playing and self.playing.uri == song_uri:   # it already plays: taking it back skips it
+				return self.command("POST", NEXT_URL)
+			self.taken_out[song_uri] += 1
+			self.next_fetched = (None, 0.0)   # the queue as it is now at the next check (it may not have had the song yet)
+			return None
+		if self.taken_out[song_uri]:   # added again: it's still in Spotify's queue, so just don't skip it
+			self.taken_out[song_uri] -= 1
+			self.taken_out += Counter()   # (drops the zeros)
+		else:
+			error = self.command("POST", QUEUE_ADD_URL, params={"uri": song_uri})
+			if error:
+				return error
+		queued.add(song_uri)
+		self.next_fetched = (None, 0.0)   # the next song may have changed
+		return None
+
 	def fetch_playlists(self, page: int = 0) -> tuple[list[dict], int]:
 		"""One page of the account's playlists, and how many there are."""
 		cached = self.playlist_pages.get(page)
@@ -570,7 +608,48 @@ class SpotifyProvider(Provider):
 		return [person_card(user_id, name, count) for (user_id, name), count in people.items()]
 
 	def fetch_songs(self, playlist_uri: str, page: int) -> tuple[list[dict], int]:
-		"""One page of a playlist's songs, and the number of songs in it."""
+		"""One page of a playlist's songs, and the number of songs in it: kept for a while, and the first page
+		of a searched album or playlist may already be on its way (prefetch())."""
+		cached = self.songs_cache.get((playlist_uri, page))
+		if cached and time.monotonic() - cached[0] < BROWSE_CACHE_SECONDS:
+			return cached[1], cached[2]
+		pending = self.prefetching.pop(playlist_uri, None) if page == 0 else None
+		if pending is not None:
+			try:
+				songs, total = pending.result()   # the tap waits for the request already running, instead of starting another
+			except (PermissionError, requests.RequestException):
+				pass   # asked again below, so the error is the tap's own
+			else:
+				return songs, total
+		songs, total = self.download_songs(playlist_uri, page)
+		self.remember_songs(playlist_uri, page, songs, total)
+		return songs, total
+
+	def remember_songs(self, uri: str, page: int, songs: list[dict], total: int) -> None:
+		now = time.monotonic()
+		self.songs_cache = {key: value for key, value in self.songs_cache.items() if now - value[0] < BROWSE_CACHE_SECONDS}
+		self.songs_cache[(uri, page)] = (now, songs, total)
+
+	def prefetch(self, cards: list[dict]) -> None:
+		"""Start fetching the first page of songs of the search's albums and playlists, so tapping one is quick."""
+		# Finished ones that weren't tapped: their songs are in songs_cache (or they failed, and a tap asks again).
+		self.prefetching = {uri: future for uri, future in self.prefetching.items() if not future.done()}
+		for card in cards:
+			uri = card["uri"]
+			if card.get("person") or uri in self.prefetching:
+				continue
+			cached = self.songs_cache.get((uri, 0))
+			if cached and time.monotonic() - cached[0] < BROWSE_CACHE_SECONDS:
+				continue
+			self.prefetching[uri] = self.prefetcher.submit(self.prefetch_one, uri)
+
+	def prefetch_one(self, uri: str) -> tuple[list[dict], int]:
+		songs, total = self.download_songs(uri, 0)
+		self.remember_songs(uri, 0, songs, total)
+		return songs, total
+
+	def download_songs(self, playlist_uri: str, page: int) -> tuple[list[dict], int]:
+		"""fetch_songs() without the cache."""
 		playlist_id = playlist_uri.rsplit(":", 1)[-1]
 		if playlist_uri.startswith("spotify:album:"):   # an album (from the search): its songs can always be read
 			response = self.api("GET", f"{API}/albums/{playlist_id}/tracks",
@@ -578,12 +657,15 @@ class SpotifyProvider(Provider):
 			response.raise_for_status()
 			data = response.json()
 			return [song for song in map(parse_song, data.get("items") or []) if song], data.get("total", 0)
-		response = self.api("GET", f"{API}/playlists/{playlist_id}/items",
+		# Someone else's playlist (known from the search): Spotify refuses to list it to the app, so don't ask.
+		owner = (self.found.get(playlist_uri) or self.person_lists.get(playlist_uri) or {}).get("owner_id")
+		theirs = bool(owner) and owner != self.account()
+		response = None if theirs else self.api("GET", f"{API}/playlists/{playlist_id}/items",
 			params={"limit": SONGS_PER_PAGE, "offset": page * SONGS_PER_PAGE})
-		if response.status_code in (401, 403, 404):
+		if response is None or response.status_code in (401, 403, 404):
 			# Spotify only lets apps read the account's own playlists: get the others from the public widget.
 			if playlist_id not in self.embed_songs:
-				embed = requests.get(EMBED_URL.format(id=playlist_id), headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+				embed = HTTP.get(EMBED_URL.format(id=playlist_id), headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
 				embed.raise_for_status()
 				self.embed_songs[playlist_id] = parse_embed_songs(embed.text)
 			songs = self.embed_songs[playlist_id]
@@ -599,6 +681,10 @@ class SpotifyProvider(Provider):
 			cards = self.find_people(query)[:SEARCH_CARDS_ONLY]
 			self.found.update({card["uri"]: card for card in cards})
 			return [], cards
+		cached = self.searches.get((query.casefold(), kind))
+		if cached and time.monotonic() - cached[0] < BROWSE_CACHE_SECONDS:
+			self.prefetch(cached[2])
+			return cached[1], cached[2]
 		response = self.api("GET", SEARCH_URL, params={"q": query, "type": SEARCH_KINDS[kind], "limit": SEARCH_RESULTS})
 		if response.status_code >= 400:
 			raise PermissionError("search failed")
@@ -614,6 +700,9 @@ class SpotifyProvider(Provider):
 		else:
 			cards = (albums + playlists)[:SEARCH_CARDS_ONLY]
 		self.found.update({card["uri"]: card for card in cards})
+		self.searches = {key: value for key, value in self.searches.items() if time.monotonic() - value[0] < BROWSE_CACHE_SECONDS}
+		self.searches[(query.casefold(), kind)] = (time.monotonic(), songs, cards)
+		self.prefetch(cards)
 		return songs, cards
 
 	def view(self) -> dict:
@@ -898,25 +987,25 @@ class SpotifyProvider(Provider):
 				return None, error
 			self.catch_up(now)
 			return self.now_playing(), None
+		# 'queue' adds a song to the queue (a tap on the song or its +), or takes it back out (a tap on it again, or on its tick).
 		if name == "queue" and values and values[0].count("|") == 2:   # from a playlist's or album's songs
 			song_uri, collection, page = values[0].split("|")
-			error = self.command("POST", QUEUE_ADD_URL, params={"uri": song_uri})
-			if not error:
-				self.next_fetched = (None, 0.0)   # the next song may have changed
-				self.songs_queued = (collection, (self.songs_queued[1] if self.songs_queued[0] == collection else set()) | {song_uri})
-			slide, problem = self.action("songs", [f"{collection}|{page}"], now)   # redrawn with a tick on the song
+			if self.songs_queued[0] != collection:
+				self.songs_queued = (collection, set())
+			adding = song_uri not in self.songs_queued[1]
+			error = self.toggle_queue(song_uri, self.songs_queued[1])
+			slide, problem = self.action("songs", [f"{collection}|{page}"], now)   # redrawn with (or without) a tick on the song
 			if slide is None:
 				return None, error or problem
 			song = next((song for song in slide.data["songs"] if song["uri"] == song_uri), None)
-			message = error or (f"Added {song['title']} to the queue" if song else "Added to the queue")
+			message = error or queue_message(song, adding)
 			return replace(slide, data=slide.data | {"message": message}), message
 		if name == "queue" and values:   # from the search page: it's redrawn with a popup, and a tick on the song
-			error = self.command("POST", QUEUE_ADD_URL, params={"uri": values[0]})
-			if not error:
-				self.next_fetched = (None, 0.0)   # the next song may have changed
-				self.search_view.setdefault("queued", set()).add(values[0])
+			queued = self.search_view.setdefault("queued", set())
+			adding = values[0] not in queued
+			error = self.toggle_queue(values[0], queued)
 			song = next((song for song in self.search_view.get("songs", []) if song["uri"] == values[0]), None)
-			message = error or (f"Added {song['title']} to the queue" if song else "Added to the queue")
+			message = error or queue_message(song, adding)
 			if not self.search_view:
 				return None, message
 			return Slide("spotify_search.html", self.seconds, self.search_view | {"message": message}), message
