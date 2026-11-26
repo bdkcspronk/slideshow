@@ -98,9 +98,16 @@ class Settings:
 	enabled: bool = False
 	model: str = "media/voice-model/vosk-model-small-en-us-0.15"
 	record: list[str] = field(default_factory=lambda: ["arecord", "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", str(RATE)])
-	wake: str = "hey katinka"
+	# The English model knows "katinka" and hears a Dutch "Kathinka" as it, but often misses a Dutch "Hé" or "Hee"
+	# (or hears "he"): so "Katinka" alone wakes it too.
+	wake: list[str] = field(default_factory=lambda: ["hey katinka", "he katinka", "katinka"])
 	follow_up_seconds: float = 8
-	min_confidence: float = 0.75   # every word at least this sure; "hey kathy" sounds like the wake words but scores lower
+	min_confidence: float = 0.75   # every word of the command at least this sure: lower ones are talk that sounds like it
+	wake_confidence: float = 0.5   # the wake words: a Dutch "Kathinka" scores lower than an English one, and talk doesn't get here
+
+	def __post_init__(self) -> None:
+		if isinstance(self.wake, str):
+			self.wake = [self.wake]
 
 	@classmethod
 	def from_config(cls, config: dict) -> Settings:
@@ -125,10 +132,10 @@ def phrases(slides: dict[str, str]) -> dict[str, dict]:
 	return found
 
 
-def grammar(wake: str, commands: dict[str, dict]) -> list[str]:
+def grammar(wakes: list[str], commands: dict[str, dict]) -> list[str]:
 	"""Vosk's list of what it may hear: the wake words with or without a command, a command on its own (a follow-up),
 	and "[unk]" for everything else."""
-	return [wake, *(f"{wake} {phrase}" for phrase in commands), *commands, "[unk]"]
+	return [*wakes, *(f"{wake} {phrase}" for wake in wakes for phrase in commands), *commands, "[unk]"]
 
 
 class Commands:
@@ -161,7 +168,7 @@ class Understanding:
 	def __init__(self, settings: Settings, commands: dict[str, dict], clock: Callable[[], float] = time.monotonic) -> None:
 		self.settings = settings
 		self.commands = commands
-		self.wake = settings.wake.split()
+		self.wakes = [wake.split() for wake in settings.wake]
 		self.clock = clock
 		self.awake_until = 0.0
 
@@ -169,14 +176,16 @@ class Understanding:
 		"""A Vosk result ({"text", "result": [{"word", "conf"}, ...]}) -> the commands in it (in the order said),
 		[{"do": "listening"}] for the wake words alone, [{"do": "unclear"}] for the wake words and something it
 		couldn't make out, or []."""
-		words = result.get("result") or []
-		said = [word["word"] for word in words] or result.get("text", "").split()
-		if any(word.get("conf", 1) < self.settings.min_confidence for word in words if word["word"] != "[unk]"):
+		words = result.get("result") or [{"word": word} for word in result.get("text", "").split()]
+		said = [word["word"] for word in words]
+		wake = self.wake_at(said)
+		start, end = wake or (len(said), len(said))
+		sure = [self.settings.wake_confidence if start <= at < end else self.settings.min_confidence for at in range(len(said))]
+		if any(word.get("conf", 1) < least for word, least in zip(words, sure) if word["word"] != "[unk]"):
 			log.debug("Not sure enough: %s", words)
 			return []
-		wake = self.wake_at(said)
 		if wake is not None:
-			said = said[wake + len(self.wake):]   # what was said before "Hey Katinka" wasn't for us
+			said = said[end:]   # what was said before "Hey Katinka" wasn't for us
 		elif self.clock() > self.awake_until:
 			return []   # a command without the wake words: only right after another one
 		if wake is None and (not said or "[unk]" in said):
@@ -189,11 +198,12 @@ class Understanding:
 			return [{"do": "unclear"}]
 		return commands
 
-	def wake_at(self, said: list[str]) -> int | None:
-		"""Where the (last) wake words start in what was said, or None."""
-		size = len(self.wake)
-		starts = [at for at in range(len(said) - size + 1) if said[at:at + size] == self.wake]
-		return starts[-1] if starts else None
+	def wake_at(self, said: list[str]) -> tuple[int, int] | None:
+		"""Where the (last) wake words are in what was said, (start, end), or None. Of "hey katinka" and "katinka" at
+		the same place, the longer."""
+		found = [(at, at + len(wake)) for wake in self.wakes for at in range(len(said) - len(wake) + 1)
+			if said[at:at + len(wake)] == wake]
+		return max(found, key=lambda place: (place[1], -place[0])) if found else None
 
 	def split(self, said: list[str]) -> list[dict] | None:
 		"""The commands one after another ("next next" is two), or None if anything else is in it."""
@@ -250,7 +260,7 @@ class Listener:
 			return
 		vosk, model = loaded
 		understanding = Understanding(self.settings, self.commands)
-		log.info("Listening for \"%s\" (%d commands)", self.settings.wake, len(self.commands))
+		log.info("Listening for \"%s\" (%d commands)", self.settings.wake[0], len(self.commands))
 		while not self.stopped.is_set():
 			try:
 				self.listen(self.recognizer(vosk, model), understanding)
@@ -285,7 +295,7 @@ class Listener:
 			if recognizer.AcceptWaveform(sound):
 				woke = False
 				self.understand(json.loads(recognizer.Result()), understanding, trace)
-			elif not woke and self.settings.wake in json.loads(recognizer.PartialResult()).get("partial", ""):
+			elif not woke and any(wake in json.loads(recognizer.PartialResult()).get("partial", "") for wake in self.settings.wake):
 				woke = True
 				self.heard({"do": "listening"})   # before the sentence is finished: it feels quicker
 		self.understand(json.loads(recognizer.FinalResult()), understanding, trace)

@@ -6,7 +6,7 @@
 	.venv/bin/python tools/voice_test.py --list                       everything it listens for
 
 Uses [voice] in config/config.toml (the model, the recorder, the wake words), also while enabled = false there.
-Each line shows what Vosk heard, how sure it was of each word (0-1, below min_confidence it's ignored), and the
+Each line shows what Vosk heard, how sure it was of each word (0-1: below min_confidence, or wake_confidence for the name, it's ignored), and the
 command, if any. "[unk]" is speech that isn't a command: that is what most talk in the room should give.
 A good test: play music on the TV, talk across the room, and see that nothing turns into a command.
 """
@@ -60,7 +60,7 @@ def main() -> None:
 	slides.update({extra: label or extra.capitalize() for extras in EXTRA.values() for extra, label in extras})
 	commands = phrases(slides)
 	if args.list:
-		print("\n".join(f"{settings.wake} {phrase}" for phrase in commands))
+		print("\n".join(f"{settings.wake[0]} {phrase}" for phrase in commands))
 		return
 
 	def heard(command: dict) -> None:
@@ -77,7 +77,7 @@ def main() -> None:
 		raise SystemExit(listener.problem)
 	vosk, model = loaded
 	understanding = Understanding(settings, commands)
-	print(f"{len(grammar(settings.wake, commands))} phrases; say \"{settings.wake}\" and a command", flush=True)
+	print(f"{len(grammar(settings.wake, commands))} phrases; say \"{settings.wake[0]}\" and a command", flush=True)
 	if args.say or args.file:
 		rate, sound = spoken(args.say) if args.say else read_wav(args.file)
 		listener.follow(io.BytesIO(sound), listener.recognizer(vosk, model, rate), understanding, trace)

@@ -75,13 +75,27 @@ class UnderstandingTest(unittest.TestCase):
 	def test_unsure_words_are_ignored(self):
 		self.assertEqual(self.hear("hey katinka pause", conf=0.6), [])   # "hey kathy" scores about that
 
+	def test_katinka_alone_wakes_it(self):
+		# A Dutch "Hé" or "Hee" is often missed, or heard as "he".
+		self.assertEqual(self.hear("katinka go to spotify"), ["go"])
+		self.clock.now += 100
+		self.assertEqual(self.hear("he katinka pause"), ["pause"])
+
+	def test_a_dutch_kathinka_may_score_lower_than_the_command(self):
+		heard = {"text": "", "result": [{"word": "hey", "conf": 0.62}, {"word": "katinka", "conf": 0.55},
+			{"word": "next", "conf": 1.0}]}
+		self.assertEqual([c["do"] for c in self.understanding.hear(heard)], ["next"])
+		heard["result"][1]["conf"] = 0.3
+		self.assertEqual(self.understanding.hear(heard), [])
+
 
 class GrammarTest(unittest.TestCase):
 	def test_every_phrase_with_and_without_the_wake_words(self):
 		commands = phrases(SLIDES)
-		words = grammar("hey katinka", commands)
+		words = grammar(["hey katinka", "katinka"], commands)
 		self.assertIn("hey katinka", words)
 		self.assertIn("hey katinka show me the weather", words)
+		self.assertIn("katinka show me the weather", words)
 		self.assertIn("show me the weather", words)
 		self.assertEqual(words[-1], "[unk]")
 
@@ -169,6 +183,9 @@ class VoiceTest(unittest.TestCase):
 		sound.heard({"do": "next", "said": "Next"})
 		self.assertEqual(changes, [{"muted": True}, {"muted": False}])
 		self.assertEqual([c["do"] for c in sound.commands.after(0, wait=0)["commands"]], ["mute", "unmute", "next"])   # shown in the browser
+
+	def test_one_wake_phrase_in_the_config_is_a_list_of_one(self):
+		self.assertEqual(Settings.from_config({"wake": "hey katinka"}).wake, ["hey katinka"])
 
 	def test_unknown_settings_are_refused(self):
 		with self.assertRaises(SystemExit):

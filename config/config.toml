@@ -347,9 +347,10 @@ download_voice = true            # the voice model missing: download it by itsel
 enabled = false
 model = "media/voice-model/vosk-model-small-en-us-0.15"
 record = ["arecord", "-q", "-t", "raw", "-f", "S16_LE", "-c", "1", "-r", "16000"]   # add "-D", "<device>" for another mic (arecord -L)
-wake = "hey katinka"
+wake = ["hey katinka", "he katinka", "katinka"]   # the model is English: a Dutch "Hé" is often missed or heard as "he"
 follow_up_seconds = 8        # after a command (or "Hey Katinka" alone), the next one works without "Hey Katinka" this long
-min_confidence = 0.75        # higher: fewer commands by mistake, but more ignored
+min_confidence = 0.75        # how sure of each word of the command; higher: fewer commands by mistake, but more ignored
+wake_confidence = 0.5        # how sure of "Katinka": a Dutch "Kathinka" scores lower than the English the model knows
 
 [sniffer]
 port = "/dev/ttyUSB0"

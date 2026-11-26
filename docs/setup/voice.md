@@ -11,7 +11,9 @@
 | "Hey Katinka, menu" / "close" | open / close the menu, like Esc |
 | "Hey Katinka, go to the weather" ("show me ...", "open ...") | that slide now: posters, activities, news, weather, rain, buses, timetable, photos, presence, leaderboard, puzzles, connections, world (= Wordle), cat fishing, time guesser, spotify (or music), lyrics, books, quote, commandments, poll, pet, xkcd, digger, membership, socks, socials, instagram, countdown (or beer hour), ... (all of them: `SLIDE_NAMES` in `francken_tv/voice.py`) |
 
-"Hey Katinka" on its own shows a microphone at the bottom right; then the command. For 8 seconds after a
+"Katinka" alone works too: the speech model is English and knows "Katinka", and hears a Dutch "Kathinka" as
+it, but often misses a Dutch "Hé" (the commands are English). "Hey Katinka" on its own shows a microphone at the
+bottom right; then the command. For 8 seconds after a
 command the next one works without "Hey Katinka" ("next" ... "next" ... "pause"), and several at once work too
 ("Hey Katinka, next, next"). What was heard shows at the bottom of the screen.
 
@@ -40,7 +42,11 @@ Another microphone than the default one: `arecord -L` lists the names; add `"-D"
   unplugged: it tries again every 30 seconds by itself).
 - Commands not heard, or heard wrongly: run `tools/voice_test.py` and look at the numbers after each word (how
   sure it was, 0-1). Below `min_confidence` (0.75) the sentence is ignored: lower it a little if real commands
-  score just under it, raise it if talk turns into commands. Moving the microphone away from the speakers
+  score just under it, raise it if talk turns into commands. The name has its own, lower `wake_confidence`
+(0.5): a Dutch "Kathinka" scores lower than the English one the model knows.
+- Only `hey(1.00)` and nothing after it: the sound after "hey" didn't arrive (a misheard name would show as
+  `[unk]` or a low number). The microphone cuts out or is too quiet: `arecord -d 5 -f S16_LE -r 16000 -c 1 test.wav`,
+  then `aplay test.wav` to hear what it records. Moving the microphone away from the speakers
   helps most: music from the TV makes it hard to hear people.
 - A new slide type to go to: add its spoken names to `SLIDE_NAMES` in `francken_tv/voice.py`. Only words the
   model knows work (a made-up name like "wordle" or "compucie" doesn't: pick a word that sounds the same, as
