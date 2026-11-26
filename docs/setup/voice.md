@@ -9,6 +9,7 @@
 | "Hey Katinka, pause the slideshow" ("pause the slides", "stop the slideshow") | pause the slideshow, like space |
 | "Hey Katinka, play the slideshow" ("play the slides", "resume / continue / start the slideshow") | go on with the slides |
 | "Hey Katinka, skip" ("next song", "skip the song") | the next song on Spotify |
+| "Hey Katinka, previous song" ("last song", "the song before") | the song before on Spotify, like ⏮ |
 | "Hey Katinka, next" ("next slide") / "back" ("previous") | the next slide / the one before, like → and ← |
 | "Hey Katinka, mute" ("sound off") / "sound on" | all sound off / on, like `m` |
 | "Hey Katinka, menu" / "close" | open / close the menu, like Esc |

@@ -3,7 +3,7 @@
 	pause, stop                     pause the music          play, resume, continue   play the music (Spotify)
 	pause the slides / slideshow    pause the slideshow      play the slides, ...     go on with the slides
 	next, next slide                the next slide           back, previous           the slide before
-	skip, next song                 the next song (Spotify)
+	skip, next song                 the next song (Spotify)  previous song            the song before (Spotify)
 	mute, sound off                 all sound off            sound on                 all sound on
 	menu                            open the menu (Esc)      close, close the menu    close it
 	go to <slide>, show me <slide>  that slide now, e.g. "go to the weather", "show me spotify"
@@ -18,7 +18,7 @@ It only listens for the phrases below, so anything else people say comes out as 
 model (media/voice-model/, not in git) is a download: see docs/setup/voice.md. The microphone is read with
 arecord ([voice] record in config.toml).
 
-Mute, sound on, pause, play and skip (the music on Spotify, not the slideshow) are done here; the rest goes to the browser
+Mute, sound on, pause, play, skip and previous song (the music on Spotify, not the slideshow) are done here; the rest goes to the browser
 through /api/voice (player.js, "Voice commands"), which does what the same key would do. Every command goes there,
 to show what was heard; one that failed as {"do": "failed", "said": why}.
 """
@@ -92,6 +92,7 @@ COMMANDS = {
 	"resume": ["play", "resume", "continue", "play the music", "play music"],
 	"next": ["next", "next slide"],
 	"skip": ["skip", "skip the song", "skip this song", "next song"],
+	"previous_song": ["previous song", "the previous song", "last song", "the last song", "the song before", "song before"],
 	"previous": ["back", "previous", "go back"],
 	# "slide show" too: in case the speech model only knows the two words
 	"pause_slides": [f"{verb} {the}{slides}" for verb in ("pause", "stop") for the in ("", "the ") for slides in ("slides", "slideshow", "slide show")],
@@ -103,7 +104,7 @@ COMMANDS = {
 	"close": ["close", "close the menu"],
 	"help": ["help", "what can i say", "what can you do"],
 }
-SAID = {"pause": "Pause the music", "resume": "Play the music", "skip": "Skip the song", "pause_slides": "Pause the slideshow", "resume_slides": "Play the slideshow", "next": "Next", "previous": "Back", "mute": "Sound off",
+SAID = {"pause": "Pause the music", "resume": "Play the music", "skip": "Skip the song", "previous_song": "The song before", "pause_slides": "Pause the slideshow", "resume_slides": "Play the slideshow", "next": "Next", "previous": "Back", "mute": "Sound off",
 	"unmute": "Sound on", "menu": "Menu", "close": "Close", "help": "Help"}   # what the screen shows was heard
 
 
@@ -359,20 +360,20 @@ class Voice:
 				self.app.change_settings({"muted": command["do"] == "mute"})
 			except Exception:
 				log.exception("Voice command %s failed", command["do"])
-		if command["do"] in ("pause", "resume", "skip"):
+		if command["do"] in ("pause", "resume", "skip", "previous_song"):
 			command = self.music(command)
 		self.commands.put(command)
 
 	def music(self, command: dict) -> dict:
 		"""Pause or play the music on Spotify, as its ⏯ button does (providers/spotify.py: "toggle"; with nothing
-		played yet it starts the account's last music on our speaker), or skip the song (⏭). The command back,
+		played yet it starts the account's last music on our speaker), or skip the song (⏭) or go back one (⏮). The command back,
 		or "failed" and why."""
 		spotify = self.app.providers.get("spotify")
 		if spotify is None or not spotify.connected:
 			return {"do": "failed", "said": "Spotify isn't connected"}
 		pause = command["do"] == "pause"
 		playing = bool(spotify.playing and spotify.playing.is_playing)
-		if command["do"] == "skip":
+		if command["do"] in ("skip", "previous_song"):
 			if not spotify.playing:
 				return {**command, "said": "No music is playing"}
 		elif pause and not playing:
@@ -380,7 +381,8 @@ class Voice:
 		elif not pause and playing:
 			return {**command, "said": "The music is already playing"}
 		try:
-			_, error = spotify.action("skip" if command["do"] == "skip" else "toggle", [], self.app.clock.now())
+			action = {"skip": "skip", "previous_song": "previous"}.get(command["do"], "toggle")   # the names in providers/spotify.py
+			_, error = spotify.action(action, [], self.app.clock.now())
 		except Exception:
 			log.exception("Voice command %s failed", command["do"])
 			error = "Spotify can't be reached right now"

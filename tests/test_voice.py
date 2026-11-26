@@ -226,6 +226,10 @@ class VoiceTest(unittest.TestCase):
 		self.assertEqual([c["do"] for c in heard], ["skip", "next", "skip"])
 		sound.heard(heard[0])
 		self.assertEqual(actions, ["skip"])
+		heard = understanding.hear(result("katinka previous song back"))
+		self.assertEqual([c["do"] for c in heard], ["previous_song", "previous"])   # the song before, then the slide before
+		sound.heard(heard[0])
+		self.assertEqual(actions, ["skip", "previous"])
 
 	def test_play_with_nothing_played_yet_starts_the_music(self):
 		sound, actions = self.spotify(None)

@@ -1438,7 +1438,7 @@ function showVoiceHelp(slides, seconds) {
 	voiceHelp.innerHTML = `<div class="voice-help-card squircle">
 		<h2>${MIC}<span>Say <em>“Kathinka”</em> and then…</span></h2>
 		<div class="voice-help-groups">
-			<section><h3>Music &amp; sound</h3>${said("pause", "play", "skip")}${said("mute", "sound on")}</section>
+			<section><h3>Music &amp; sound</h3>${said("pause", "play", "skip")}${said("previous song")}${said("mute", "sound on")}</section>
 			<section class="voice-help-go"><h3>Go to a slide</h3>${go}</section>
 			<section><h3>Slides</h3>${said("next", "back")}${said("pause the slideshow")}${said("menu", "close")}</section>
 		</div>
@@ -1474,7 +1474,7 @@ async function doVoiceCommand(command) {
 		if (!menuOpen) openMenu();
 		return showVoice("done", command.said);
 	}
-	const server = ["mute", "unmute", "pause", "resume", "skip"].includes(command.do);   // sound and the music: done by the server already
+	const server = ["mute", "unmute", "pause", "resume", "skip", "previous_song"].includes(command.do);   // sound and the music: done by the server already
 	if (menuOpen && !server) closeMenu(command.do !== "go");   // the others are about the slides
 	if (command.do === "go") {
 		showVoice("done", command.said);   // at once: the slide takes a moment
