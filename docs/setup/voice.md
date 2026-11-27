@@ -8,9 +8,9 @@
 | "Hey Katinka, play" ("resume", "continue", "play the music") | play it again; with nothing played yet, the account's last music on the TV PC's speaker |
 | "Hey Katinka, pause the slideshow" ("pause the slides", "stop the slideshow") | pause the slideshow, like space |
 | "Hey Katinka, play the slideshow" ("play the slides", "resume / continue / start the slideshow") | go on with the slides |
-| "Hey Katinka, skip" ("next song", "skip the song") | the next song on Spotify |
+| "Hey Katinka, next" ("skip", "next song", "skip the song") | the next song on Spotify |
 | "Hey Katinka, previous song" ("last song", "the song before") | the song before on Spotify, like ⏮ |
-| "Hey Katinka, next" ("next slide") / "back" ("previous") | the next slide / the one before, like → and ← |
+| "Hey Katinka, next slide" / "back" ("previous") | the next slide / the one before, like → and ← (plain "next" is the song) |
 | "Hey Katinka, mute" ("sound off") / "sound on" | all sound off / on, like `m` |
 | "Hey Katinka, menu" / "close" | open / close the menu, like Esc |
 | "Hey Katinka, help" ("what can I say", "what can you do") | a card with examples of what to say; for 20 seconds one works without "Hey Katinka" ("close" closes it) |
@@ -18,7 +18,7 @@
 
 "Katinka" alone works too: the speech model is English and knows "Katinka", and hears a Dutch "Kathinka" as
 it, but often misses a Dutch "Hé" (the commands are English). For 8 seconds after a command the next one works
-without "Hey Katinka" ("next" ... "next" ... "pause"), and several at once work too ("Hey Katinka, next, next").
+without "Hey Katinka" ("next slide" ... "next slide" ... "pause"), and several at once work too ("Hey Katinka, next slide, next slide").
 
 The bottom centre of the screen shows what it is doing. As soon as it hears "Katinka": a red microphone and
 "Listening". Then how it ended, for a few seconds:

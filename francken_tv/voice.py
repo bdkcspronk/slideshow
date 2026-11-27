@@ -2,8 +2,8 @@
 
 	pause, stop                     pause the music          play, resume, continue   play the music (Spotify)
 	pause the slides / slideshow    pause the slideshow      play the slides, ...     go on with the slides
-	next slide                		the next slide           back, previous           the slide before
-	skip, next song                 the next song (Spotify)  previous song            the song before (Spotify)
+	next slide                      the next slide           back, previous           the slide before
+	next, skip, next song           the next song (Spotify)  previous song            the song before (Spotify)
 	mute, sound off                 all sound off            sound on                 all sound on
 	menu                            open the menu (Esc)      close, close the menu    close it
 	go to <slide>, show me <slide>  that slide now, e.g. "go to the weather", "show me spotify"
@@ -91,7 +91,7 @@ COMMANDS = {
 	"pause": ["pause", "stop", "pause the music", "stop the music", "pause music"],
 	"resume": ["play", "resume", "continue", "play the music", "play music"],
 	"next": ["next slide"],
-	"skip": ["skip", "skip the song", "skip this song", "next song"],
+	"skip": ["next", "skip", "skip the song", "skip this song", "next song"],   # "next" alone is the song; the slide is "next slide"
 	"previous_song": ["previous song", "the previous song", "last song", "the last song", "the song before", "song before"],
 	"previous": ["back", "previous", "go back"],
 	# "slide show" too: in case the speech model only knows the two words

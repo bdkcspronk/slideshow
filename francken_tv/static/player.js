@@ -1438,9 +1438,9 @@ function showVoiceHelp(slides, seconds) {
 	voiceHelp.innerHTML = `<div class="voice-help-card squircle">
 		<h2>${MIC}<span>Say <em>“Kathinka”</em> and then…</span></h2>
 		<div class="voice-help-groups">
-			<section><h3>Music &amp; sound</h3>${said("pause", "play", "skip")}${said("previous song")}${said("mute", "sound on")}</section>
+			<section><h3>Music &amp; sound</h3>${said("pause", "play", "next")}${said("previous song")}${said("mute", "sound on")}</section>
 			<section class="voice-help-go"><h3>Go to a slide</h3>${go}</section>
-			<section><h3>Slides</h3>${said("next", "back")}${said("pause the slideshow")}${said("menu", "close")}</section>
+			<section><h3>Slides</h3>${said("next slide", "back")}${said("pause the slideshow")}${said("menu", "close")}</section>
 		</div>
 		<div class="voice-help-foot">Listening: just say one <div class="voice-help-time"><i style="--seconds: ${seconds}s"></i></div></div>
 	</div>`;

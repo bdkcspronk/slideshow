@@ -43,13 +43,13 @@ class UnderstandingTest(unittest.TestCase):
 		self.assertEqual(self.hear("go to the weather"), [])
 
 	def test_right_after_a_command_the_next_needs_no_wake_words(self):
-		self.hear("hey katinka next")
+		self.hear("hey katinka next slide")
 		self.clock.now += 5
-		self.assertEqual(self.hear("next"), ["next"])
+		self.assertEqual(self.hear("next slide"), ["next"])
 		self.clock.now += 7   # each command keeps it listening for follow_up_seconds again
 		self.assertEqual(self.hear("pause"), ["pause"])
 		self.clock.now += 9
-		self.assertEqual(self.hear("next"), [])
+		self.assertEqual(self.hear("next slide"), [])
 
 	def test_the_wake_words_alone_listen_for_a_command(self):
 		self.assertEqual(self.hear("hey katinka"), ["listening"])
@@ -57,7 +57,7 @@ class UnderstandingTest(unittest.TestCase):
 		self.assertEqual(self.hear("go to spotify"), ["go"])
 
 	def test_several_commands_at_once(self):
-		self.assertEqual(self.hear("hey katinka mute next next"), ["mute", "next", "next"])
+		self.assertEqual(self.hear("hey katinka mute next slide next slide"), ["mute", "next", "next"])
 		self.assertEqual(self.hear("hey katinka go back"), ["previous"])   # the longest phrase, not "go" + "back"
 
 	def test_talk_before_the_wake_words_is_left_out(self):
@@ -84,7 +84,7 @@ class UnderstandingTest(unittest.TestCase):
 	def test_a_dutch_kathinka_may_score_lower_than_the_command(self):
 		heard = {"text": "", "result": [{"word": "hey", "conf": 0.62}, {"word": "katinka", "conf": 0.55},
 			{"word": "next", "conf": 1.0}]}
-		self.assertEqual([c["do"] for c in self.understanding.hear(heard)], ["next"])
+		self.assertEqual([c["do"] for c in self.understanding.hear(heard)], ["skip"])
 		heard["result"][1]["conf"] = 0.3
 		self.assertEqual(self.understanding.hear(heard), [])
 
@@ -161,7 +161,7 @@ class ListenerTest(unittest.TestCase):
 		heard = []
 		settings = Settings(enabled=True)
 		listener = Listener(settings, phrases(SLIDES), heard.append)
-		sound = "".join(text.ljust(voice.CHUNK) for text in ["[unk]", "hey katinka mute", "next"]).encode()
+		sound = "".join(text.ljust(voice.CHUNK) for text in ["[unk]", "hey katinka mute", "next slide"]).encode()
 		listener.follow(io.BytesIO(sound), FakeRecognizer(), Understanding(settings, phrases(SLIDES)))
 		self.assertEqual([command["do"] for command in heard], ["mute", "next"])
 
@@ -219,11 +219,11 @@ class VoiceTest(unittest.TestCase):
 		said = [c["said"] for c in sound.commands.after(0, wait=0)["commands"]]
 		self.assertEqual(said, ["Pause the music", "The music is already playing"])
 
-	def test_skip_is_the_song_and_next_the_slide(self):
+	def test_next_is_the_song_and_next_slide_the_slide(self):
 		sound, actions = self.spotify(SimpleNamespace(is_playing=True))
 		understanding = Understanding(Settings(enabled=True), phrases(SLIDES))
-		heard = understanding.hear(result("katinka skip next next song"))
-		self.assertEqual([c["do"] for c in heard], ["skip", "next", "skip"])
+		heard = understanding.hear(result("katinka next next slide skip next song"))
+		self.assertEqual([c["do"] for c in heard], ["skip", "next", "skip", "skip"])
 		sound.heard(heard[0])
 		self.assertEqual(actions, ["skip"])
 		heard = understanding.hear(result("katinka previous song back"))
