@@ -132,17 +132,10 @@ def magazine_pages(folder: Path) -> list[Path]:
 
 
 def fake_files(project: Path, now: datetime) -> None:
-	from PIL import Image, ImageDraw
 	poster(project / "media/slides/01-symposium.png", (1920, 1080), NAVY, (255, 255, 255),
 		[("SYMPOSIUM", 0.12), ("Physics of the very small", 0.06), ("Thursday · Aletta Jacobshal", 0.045)], accent=CRIMSON)
 	poster(project / "media/slides/02-excursion.png", (1080, 1350), CREAM, NAVY,
 		[("Excursion", 0.09), ("to the", 0.05), ("synchrotron", 0.09), ("Sign up on the website", 0.035)], accent=GOLD)
-	frames = []
-	for i in range(12):
-		frame = Image.new("RGB", (960, 540), GOLD if i % 2 else CRIMSON)
-		ImageDraw.Draw(frame).text((80 + i * 12, 200), "VRIJMIBO!", font=font(140), fill=NAVY if i % 2 else (255, 255, 255))
-		frames.append(frame)
-	frames[0].save(project / "media/vrijmibo.gif", save_all=True, append_images=frames[1:], duration=150, loop=0)
 	photo(project / "media/extern/photo.jpg", (800, 1000), 9)
 	real_ero = (project / "media/ERO").is_dir()   # made by emulator.py for the real officers, however few (not with --fake-ero)
 	for i, name in enumerate(() if real_ero else ("Sam", "Noor", "Jesse", "Robin", "Eva")):
@@ -393,7 +386,7 @@ def page(project: Path, slides: list[dict], assets: list[str], tiles: dict, now:
 	style = inline_css((static / "style.css").read_text(encoding="utf-8"), static)
 	leaflet_css = inline_css((static / "vendor/leaflet/leaflet.css").read_text(encoding="utf-8"), static / "vendor/leaflet")
 	scripts = "\n".join((static / name).read_text(encoding="utf-8") for name in
-		["vendor/leaflet/leaflet.js", "vendor/qrcode/qrcode.js", "vendor/three/three.min.js", "widgets.js", "books_3d.js", "bieruur_3d.js", "instagram_3d.js"])
+		["vendor/leaflet/leaflet.js", "vendor/qrcode/qrcode.js", "vendor/three/three.min.js", "widgets.js", "books_3d.js", "bieruur_3d.js", "instagram_3d.js", "vrijmibo_3d.js"])
 	frame = FRAME.replace("/*STYLE*/", leaflet_css + "\n" + style).replace("/*SCRIPTS*/", scripts.replace("</script", "<\\/script"))
 	grotesk = base64.b64encode((static / "vendor/familjen-grotesk/familjen-grotesk-700.woff2").read_bytes()).decode()
 	data = {"slides": slides, "assets": assets, "tiles": tiles, "frame": frame,

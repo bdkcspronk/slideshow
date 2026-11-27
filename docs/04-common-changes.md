@@ -38,7 +38,7 @@ out, add them to `config/quote_filter.txt`.
 
 All in `config/config.toml`, each with a comment: `seconds` per slide type, `rotation.order` (the
 order and which types appear), `daytime_from` / `daytime_until`, the bieruur time, and the day and
-frequency of the vrijmibo GIF.
+frequency of the vrijmibo maze.
 
 ## Add a bieruur song
 

@@ -2,13 +2,9 @@ import time
 import unittest
 from datetime import datetime
 from pathlib import Path
-from tempfile import TemporaryDirectory
-
-from PIL import Image
 
 from francken_tv.background import BackgroundRunner
 from francken_tv.clock import Clock
-from francken_tv.config import DATA_DIR
 from francken_tv.nextcloud import load_credentials
 from francken_tv.providers.bieruur import BieruurCountdownProvider, BieruurSettings, BieruurTakeover, countdown_data
 from francken_tv.providers.vrijmibo import VrijmiboTakeover
@@ -226,15 +222,7 @@ class BieruurTest(unittest.TestCase):
 
 class VrijmiboTest(unittest.TestCase):
 	def setUp(self):
-		DATA_DIR.mkdir(exist_ok=True)
-		self.folder = TemporaryDirectory(dir=DATA_DIR)   # media_url() only serves files inside the project
-		path = Path(self.folder.name) / "vrijmibo.gif"
-		frames = [Image.new("RGB", (4, 4), color) for color in ("red", "blue", "green", "white")]
-		frames[0].save(path, save_all=True, append_images=frames[1:], duration=500, loop=0)
-		self.takeover = VrijmiboTakeover({"file": str(path)})
-
-	def tearDown(self):
-		self.folder.cleanup()
+		self.takeover = VrijmiboTakeover({})
 
 	def test_only_on_fridays(self):
 		self.assertIsNone(self.takeover.slide(at(THURSDAY, "12:00:00")))
@@ -250,14 +238,15 @@ class VrijmiboTest(unittest.TestCase):
 		self.assertIsNotNone(self.takeover.slide(at(FRIDAY, "12:00:10")))        # ...and the takeover still gets its turn
 		self.assertIsNone(self.takeover.menu_slide(at(THURSDAY, "12:00:00")))    # only on Fridays
 
-	def test_plays_gif_once(self):
-		self.assertEqual(self.takeover.slide(at(FRIDAY, "12:00:00")).seconds, 2.0)
+	def test_plays_the_animation_once(self):
+		slide = self.takeover.slide(at(FRIDAY, "12:00:00"))
+		self.assertEqual((slide.template, slide.seconds), ("vrijmibo.html", 15))
 
 	def test_bieruur_wins_over_vrijmibo(self):
 		scheduler = Scheduler([FixedProvider("a", 1)], [BieruurTakeover(BieruurSettings()), self.takeover])
 		self.assertEqual(scheduler.next_slide(at(FRIDAY, "16:00:00")).template, "bieruur.html")
 		# The vrijmibo slot that bieruur pushed aside still gets its turn afterwards.
-		self.assertIn("vrijmibo.gif", scheduler.next_slide(at(FRIDAY, "16:02:00")).data["url"])
+		self.assertEqual(scheduler.next_slide(at(FRIDAY, "16:02:00")).template, "vrijmibo.html")
 
 	def test_vrijmibo_is_cut_short_when_bieruur_starts(self):
 		scheduler = Scheduler([], [BieruurTakeover(BieruurSettings()), self.takeover])

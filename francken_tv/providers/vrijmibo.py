@@ -1,12 +1,17 @@
-"""The vrijmibo GIF: on Fridays it takes over the screen once every 15 minutes."""
+"""The vrijmibo takeover: on Fridays it takes over the screen once every 15 minutes.
+
+A chomper eats the beers in a neon maze and barfs out "Vrijmibo?", in 3D (templates/slides/vrijmibo.html,
+static/vrijmibo_3d.js). The animation is 15 seconds; the slide lasts as long.
+"""
 
 from __future__ import annotations
 
 from datetime import datetime
 
-from ..config import parse_weekday, project_path
-from ..media import animation_seconds
-from ..slides import Slide, Takeover, media_url
+from ..config import parse_weekday
+from ..slides import Slide, Takeover
+
+SECONDS = 15   # as long as the animation (VM.duration in static/vrijmibo_3d.js)
 
 
 class VrijmiboTakeover(Takeover):
@@ -14,7 +19,6 @@ class VrijmiboTakeover(Takeover):
 	title = "Vrijmibo"
 
 	def __init__(self, settings: dict) -> None:
-		self.path = project_path(settings.get("file", "media/vrijmibo.gif"))
 		self.weekday = parse_weekday(settings.get("weekday", "friday"))
 		self.every_minutes = settings.get("every_minutes", 15)
 		self.last_shown_slot: tuple | None = None
@@ -26,16 +30,14 @@ class VrijmiboTakeover(Takeover):
 		if slot == self.last_shown_slot:
 			return None
 		self.last_shown_slot = slot
-		return self.gif(now)
+		return self.show()
 
 	def on_today(self, now: datetime) -> bool:
-		return now.weekday() == self.weekday and self.path.is_file()
+		return now.weekday() == self.weekday
 
-	def gif(self, now: datetime) -> Slide:
-		# The URL changes every time so the browser starts the GIF from the first frame.
-		url = f"{media_url(self.path)}&t={now.timestamp():.0f}"
-		return Slide("image.html", max(1.0, animation_seconds(self.path)), {"url": url})
+	def show(self) -> Slide:
+		return Slide("vrijmibo.html", SECONDS, {})
 
 	def menu_slide(self, now: datetime) -> Slide | None:
-		"""In the menu on Fridays (Fun), any time: the GIF, without using up the slot of the next takeover."""
-		return self.gif(now) if self.on_today(now) else None
+		"""In the menu on Fridays (Fun), any time: the animation, without using up the slot of the next takeover."""
+		return self.show() if self.on_today(now) else None

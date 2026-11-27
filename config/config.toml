@@ -323,7 +323,7 @@ choose_song_minutes_before = 10
 "gdn.sci.090701.sc.moon-countdown-launch.mp3" = -34   # the Apollo launch countdown: lift-off at bieruur
 
 [vrijmibo]
-file = "media/vrijmibo.gif"
+# The neon maze (static/vrijmibo_3d.js, 15 seconds): on this day, once every so many minutes.
 weekday = "friday"
 every_minutes = 15
 

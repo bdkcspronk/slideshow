@@ -45,7 +45,7 @@ It shows:
 | A lyric video of the playing song: the line being sung, big, each line in its own style (only after bieruur, when it has synced lyrics) | Spotify, lrclib.net | `providers/lyric_video.py` |
 | Daily puzzles: Connections \| Wordle \| Catfishing \| TimeGuessr, with today's status; tap one to play it. Left out once all are done for the day | nytimes.com, catfishing.net, timeguessr.com (map: OpenStreetMap) | `providers/puzzles.py`, `connections.py`, `wordle.py`, `catfishing.py`, `timeguessr.py` |
 | Bieruur countdown: the time (HH:MM:SS) on a 3D split-flap display hanging on the wall (Three.js), with colour flaps around it flipping in waves; at bieruur "Het is bieruur!", every flap in colour, flowing like a fluid, and confetti; full screen from 15:58 to 16:02, with a song (Spotify on the TV turns down meanwhile) | | `providers/bieruur.py`, `static/bieruur_3d.js` |
-| The vrijmibo GIF, every 15 minutes on Fridays | `media/vrijmibo.gif` | `providers/vrijmibo.py` |
+| Vrijmibo, every 15 minutes on Fridays: a chomper eats the beers in a neon maze while four ghosts roam it as in the arcade game, then barfs out "Vrijmibo?" (Three.js, 15 s) | | `providers/vrijmibo.py`, `static/vrijmibo_3d.js` |
 
 Everything you'd want to change (times, durations, order, URLs) is in **`config/config.toml`**.
 
@@ -126,7 +126,7 @@ Without `start.sh`: `python3 -m francken_tv`, then open http://127.0.0.1:8080.
   Puzzles, Music, ... the same groups as the buttons of the emulator, `GROUPS` in `francken_tv/menu.py`): ←/→ choose
   a group and show its slides, ↓ goes into them and Enter opens one (↑ goes back to the tabs; slides with nothing to
   show right now are greyed out). The first tab, **Quick**, is the slide types under `[shortcuts]` with their number
-  keys (the number keys work in every tab). On Fridays the **Fun** group also has the vrijmibo GIF. The menu opens
+  keys (the number keys work in every tab). On Fridays the **Fun** group also has the vrijmibo maze. The menu opens
   on the group it was last on. Below the tabs:
   - **Settings**: the rotation settings of slides (which slide types come round, how often, in which
     months, on which days and at what time, and which ones take turns in a group), slide speed, pause

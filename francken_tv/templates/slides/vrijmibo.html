@@ -1,0 +1,9 @@
+{#
+	The vrijmibo takeover: a chomper eats the beers in a neon maze while the ghosts roam it, then barfs out "Vrijmibo?",
+	in 3D (static/vrijmibo_3d.js). The letters below are what it barfs: they fly out of its mouth. Without WebGL they
+	simply stand there, on the dark floor.
+#}
+<div class="slide vrijmibo-slide">
+	<canvas class="vrijmibo-3d" data-vrijmibo-3d aria-hidden="true"></canvas>
+	<div class="vrijmibo-text" aria-label="Vrijmibo?">{% for letter in "Vrijmibo?" %}<span aria-hidden="true">{{ letter }}</span>{% endfor %}</div>
+</div>

@@ -1487,6 +1487,26 @@ body:has(.layer.visible [data-interactive]) button { cursor: pointer; }
 @keyframes practice-ticket { from { opacity: 0; transform: translateX(calc(320 * var(--px))) rotate(5deg); } }
 @keyframes practice-drift { to { translate: calc(40 * var(--px)) calc(-30 * var(--px)); } }
 
+/* Vrijmibo: the neon maze in 3D over the whole screen (static/vrijmibo_3d.js); "Vrijmibo?" in glowing letters in the
+   upper third, which the chomper barfs out: the script moves each letter (transform and opacity only, every frame).
+   Without WebGL they simply stand there. */
+.vrijmibo-slide { position: relative; overflow: hidden; background: #04050d; }
+.vrijmibo-3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.vrijmibo-text {
+	position: absolute; left: 0; right: 0; top: 13vh;
+	display: flex; justify-content: center;
+	font: 900 22vh/1 "Londrina Solid", "DejaVu Sans", sans-serif;
+	letter-spacing: 0.01em;
+	pointer-events: none;
+}
+.vrijmibo-text span {
+	display: inline-block;
+	color: #fff4d6;
+	/* The neon glow: text-shadow on nine letters, not a full-screen layer. */
+	text-shadow: 0 0 0.03em #fff, 0 0 0.1em #ffb020, 0 0 0.28em #ff7a00, 0 0 0.6em rgb(224 58 80 / 0.7);
+}
+.vrijmibo-live .vrijmibo-text span { opacity: 0; }   /* waiting for the barf */
+
 /* Bieruur: the countdown on a white wall, dark blue text; at bieruur itself the same slide in party mode. */
 .bieruur-slide {
 	display: flex;

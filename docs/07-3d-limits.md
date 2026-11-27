@@ -69,3 +69,13 @@ the room while the feed behind it dims, hovers for a few seconds and sinks back 
 (the feed moves, the videos play), so a post off the screen isn't drawn and its video isn't uploaded. Like the books it drops to 75%
 resolution when its first seconds are slow; without WebGL the HTML phone scrolls as before. The `<video>` elements move to a speck
 behind the 3D phone, because Firefox stops decoding a video it can't see.
+
+## A slide in 3D: the vrijmibo maze
+
+The vrijmibo takeover (`static/vrijmibo_3d.js`) is a neon maze seen from straight above: a chomper eats its way along a fixed
+route, a beer every few cells, while four ghosts roam the maze by the arcade game's rules (worked out once at the start), then
+it barfs out "Vrijmibo?" (the slide's HTML letters, flying out of its mouth). 15 seconds, the same every time: every frame is a
+function of the time alone. The maze's glow is painted once on the floor (one 2000x1120 texture, the only full-screen layer),
+the tubes are two InstancedMeshes, the beers five; with the chomper, the ghosts, the small additive glows under them and the
+particles some 40 draw calls and a few thousand triangles, no shadows. Everything moves, so it draws every frame; like the books
+it drops to 75% resolution if its first 30 frames come slower than 50 a second. Without WebGL the slide shows "Vrijmibo?" as text.
