@@ -339,7 +339,10 @@ function vrijmiboScene(THREE, renderer, canvas, textLayer) {
 		{ geo: new THREE.SphereGeometry(0.165, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.45, 1).translate(0, 0.45, 0), mat: null },
 	];
 	beerParts[1].mat = beerParts[0].mat; beerParts[3].mat = beerParts[2].mat;
-	const beerMeshes = beerParts.map((p) => { const m = new THREE.InstancedMesh(p.geo, p.mat, beers.length); scene.add(m); return m; });
+	// Centred on the middle of the mug (it sways and pops round that), laid flat facing the camera as the ghosts: the
+	// foam to the top of the screen, the handle to the right.
+	const beerMeshes = beerParts.map((p) => { const m = new THREE.InstancedMesh(p.geo.translate(0, -0.26, 0), p.mat, beers.length); scene.add(m); return m; });
+	const flat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 	const beerGlows = new THREE.InstancedMesh(glowGeo, glowMat(C.beer, 0.55), beers.length);
 	scene.add(beerGlows);
 
@@ -445,9 +448,8 @@ function vrijmiboScene(THREE, renderer, canvas, textLayer) {
 			const age = t - b.eat;
 			let s = appear;
 			if (age >= 0) s = age < 0.12 ? (1 + 0.5 * age / 0.12) * (1 - age / 0.12) : 0;
-			const bob = 0.04 * Math.sin(t * 2.4 + b.spin);
-			q.setFromAxisAngle(up, b.spin + t * 1.3);
-			m4.compose(v3.set(b.x, bob, b.z), q, sc.setScalar(Math.max(s, 1e-4)));
+			q.setFromAxisAngle(up, 0.18 * Math.sin(t * 2.4 + b.spin)).multiply(flat);   // a gentle sway
+			m4.compose(v3.set(b.x, 0.2, b.z), q, sc.setScalar(Math.max(s, 1e-4)));
 			for (const m of beerMeshes) m.setMatrixAt(i, m4);
 			m4.compose(v3.set(b.x, 0.012, b.z), q.identity(), sc.setScalar(Math.max(s, 1e-4) * 1.1));
 			beerGlows.setMatrixAt(i, m4);
